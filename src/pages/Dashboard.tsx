@@ -94,7 +94,7 @@ interface PropertyForm {
   deposit: string;
   contract_term: string;
   description: string;
-  features: string;
+  features: string[];
   manager_id: string;
   client_id: string;
   is_active: boolean;
