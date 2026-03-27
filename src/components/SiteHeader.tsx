@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Search, Menu, X } from "lucide-react";
 
-const navItems = ["Офисы", "Торговля", "Склады", "Земля", "Жилая аренда", "О нас", "Контакты"];
+const navItems = ["Офисы", "Торговля", "Склады", "Земля", "Сдать объект", "О нас", "Контакты"];
 
 export default function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
