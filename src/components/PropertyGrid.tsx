@@ -23,9 +23,9 @@ export default function PropertyGrid() {
             <h2 className="font-display text-3xl font-bold text-foreground">Актуальные объекты</h2>
             <p className="text-muted-foreground mt-1">Лучшие предложения на рынке</p>
           </div>
-          <a href="#" className="hidden sm:flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+          <Link to="/catalog" className="hidden sm:flex items-center gap-1 text-sm font-medium text-primary hover:underline">
             Все объекты <ArrowRight className="w-4 h-4" />
-          </a>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
