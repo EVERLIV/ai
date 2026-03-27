@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Plus, LogOut, Users, Home, Edit, Trash2,
-  BarChart3, Eye, MapPin, ArrowLeft
+  BarChart3, Eye, MapPin, ArrowLeft, Upload, X, Star, ImageIcon
 } from "lucide-react";
 
 interface PropertyForm {
@@ -53,13 +53,19 @@ const emptyForm: PropertyForm = {
 };
 
 export default function Dashboard() {
-  const { user, signOut, hasRole } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<PropertyForm>(emptyForm);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
+  const [coverIndex, setCoverIndex] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ["dashboard-properties"],
@@ -82,9 +88,27 @@ export default function Dashboard() {
     },
   });
 
+  const uploadPhotos = async (propertyId: string): Promise<{ urls: string[]; cover: string }> => {
+    const urls: string[] = [...existingPhotos];
+
+    for (const file of photoFiles) {
+      const ext = file.name.split(".").pop();
+      const path = `${propertyId}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("property-photos").upload(path, file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("property-photos").getPublicUrl(path);
+      urls.push(urlData.publicUrl);
+    }
+
+    // Calculate cover: if coverIndex points to existing photos, use that; otherwise offset
+    const cover = urls[coverIndex] || urls[0] || "";
+    return { urls, cover };
+  };
+
   const saveMutation = useMutation({
     mutationFn: async (formData: PropertyForm) => {
-      const payload = {
+      // Create property first to get ID, then upload photos
+      const payload: any = {
         type: formData.type,
         class: formData.class,
         area: formData.area,
@@ -108,22 +132,39 @@ export default function Dashboard() {
         is_active: formData.is_active,
       };
 
+      setUploading(true);
+
       if (editId) {
+        // Upload photos
+        if (photoFiles.length > 0 || existingPhotos.length > 0) {
+          const { urls, cover } = await uploadPhotos(editId);
+          payload.photos = urls;
+          payload.cover_photo = cover;
+          payload.photos_count = urls.length;
+        }
         const { error } = await supabase.from("properties").update(payload).eq("id", editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("properties").insert(payload);
+        const { data, error } = await supabase.from("properties").insert(payload).select("id").single();
         if (error) throw error;
+        // Upload photos for new property
+        if (photoFiles.length > 0) {
+          const { urls, cover } = await uploadPhotos(data.id);
+          await supabase.from("properties").update({
+            photos: urls, cover_photo: cover, photos_count: urls.length,
+          }).eq("id", data.id);
+        }
       }
+      setUploading(false);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dashboard-properties"] });
       setDialogOpen(false);
-      setEditId(null);
-      setForm(emptyForm);
+      resetForm();
       toast({ title: editId ? "Объект обновлён" : "Объект добавлен" });
     },
     onError: (err: Error) => {
+      setUploading(false);
       toast({ title: "Ошибка", description: err.message, variant: "destructive" });
     },
   });
@@ -139,6 +180,15 @@ export default function Dashboard() {
     },
   });
 
+  const resetForm = () => {
+    setEditId(null);
+    setForm(emptyForm);
+    setPhotoFiles([]);
+    setPhotoPreviews([]);
+    setExistingPhotos([]);
+    setCoverIndex(0);
+  };
+
   const openEdit = (prop: any) => {
     setEditId(prop.id);
     setForm({
@@ -153,17 +203,53 @@ export default function Dashboard() {
       manager_id: prop.manager_id || "", client_id: prop.client_id || "",
       is_active: prop.is_active,
     });
+    const existing = prop.photos || [];
+    setExistingPhotos(existing);
+    setPhotoFiles([]);
+    setPhotoPreviews([]);
+    const ci = existing.indexOf(prop.cover_photo);
+    setCoverIndex(ci >= 0 ? ci : 0);
     setDialogOpen(true);
   };
 
   const openNew = () => {
-    setEditId(null);
-    setForm(emptyForm);
+    resetForm();
     setDialogOpen(true);
   };
 
   const updateField = (key: keyof PropertyForm, value: any) =>
     setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const totalCount = existingPhotos.length + photoFiles.length + files.length;
+    if (totalCount > 15) {
+      toast({ title: "Максимум 15 фото", variant: "destructive" });
+      return;
+    }
+    const newPreviews = files.map((f) => URL.createObjectURL(f));
+    setPhotoFiles((prev) => [...prev, ...files]);
+    setPhotoPreviews((prev) => [...prev, ...newPreviews]);
+    if (e.target) e.target.value = "";
+  };
+
+  const removeExistingPhoto = (idx: number) => {
+    setExistingPhotos((prev) => prev.filter((_, i) => i !== idx));
+    if (coverIndex === idx) setCoverIndex(0);
+    else if (coverIndex > idx) setCoverIndex((prev) => prev - 1);
+  };
+
+  const removeNewPhoto = (idx: number) => {
+    const globalIdx = existingPhotos.length + idx;
+    URL.revokeObjectURL(photoPreviews[idx]);
+    setPhotoFiles((prev) => prev.filter((_, i) => i !== idx));
+    setPhotoPreviews((prev) => prev.filter((_, i) => i !== idx));
+    if (coverIndex === globalIdx) setCoverIndex(0);
+    else if (coverIndex > globalIdx) setCoverIndex((prev) => prev - 1);
+  };
+
+  const allPhotos = [...existingPhotos, ...photoPreviews];
+  const totalPhotos = allPhotos.length;
 
   const stats = {
     total: properties.length,
@@ -171,6 +257,8 @@ export default function Dashboard() {
     totalArea: properties.reduce((s: number, p: any) => s + Number(p.area), 0),
     totalViews: properties.reduce((s: number, p: any) => s + (p.views_count || 0), 0),
   };
+
+  const isSale = form.deal_type === "Продажа";
 
   return (
     <div className="min-h-screen bg-background">
@@ -228,7 +316,7 @@ export default function Dashboard() {
           <TabsContent value="properties" className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">Объекты недвижимости</h2>
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
                 <DialogTrigger asChild>
                   <Button onClick={openNew}><Plus className="w-4 h-4 mr-1" /> Добавить объект</Button>
                 </DialogTrigger>
@@ -277,10 +365,21 @@ export default function Dashboard() {
                       <Input type="number" value={form.area || ""} onChange={(e) => updateField("area", Number(e.target.value))} />
                     </div>
                     <div className="space-y-2">
-                      <Label>Цена (₽/мес)</Label>
+                      <Label>{isSale ? "Цена (₽)" : "Цена (₽/мес)"}</Label>
                       <Input type="number" value={form.price || ""} onChange={(e) => updateField("price", Number(e.target.value))} />
                     </div>
-                    <div className="space-y-2 sm:col-span-2">
+                    {isSale && (
+                      <div className="space-y-2">
+                        <Label>Цена за м² (₽)</Label>
+                        <Input
+                          type="number"
+                          value={form.area > 0 ? Math.round(form.price / form.area) : ""}
+                          disabled
+                          className="bg-muted"
+                        />
+                      </div>
+                    )}
+                    <div className={`space-y-2 ${isSale ? "" : "sm:col-span-2"}`}>
                       <Label>Адрес</Label>
                       <Input value={form.address} onChange={(e) => updateField("address", e.target.value)} required />
                     </div>
@@ -312,20 +411,24 @@ export default function Dashboard() {
                       <Label>Планировка</Label>
                       <Input value={form.layout} onChange={(e) => updateField("layout", e.target.value)} />
                     </div>
-                    <div className="space-y-2">
-                      <Label>Залог</Label>
-                      <Input value={form.deposit} onChange={(e) => updateField("deposit", e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Срок договора</Label>
-                      <Input value={form.contract_term} onChange={(e) => updateField("contract_term", e.target.value)} />
-                    </div>
+                    {!isSale && (
+                      <>
+                        <div className="space-y-2">
+                          <Label>Залог</Label>
+                          <Input value={form.deposit} onChange={(e) => updateField("deposit", e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Срок договора</Label>
+                          <Input value={form.contract_term} onChange={(e) => updateField("contract_term", e.target.value)} />
+                        </div>
+                      </>
+                    )}
                     <div className="space-y-2">
                       <Label>Менеджер</Label>
                       <Select value={form.manager_id || "none"} onValueChange={(v) => updateField("manager_id", v === "none" ? "" : v)}>
                         <SelectTrigger><SelectValue placeholder="Выберите менеджера" /></SelectTrigger>
                         <SelectContent>
-<SelectItem value="none">Не назначен</SelectItem>
+                          <SelectItem value="none">Не назначен</SelectItem>
                           {users.map((u: any) => (
                             <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>
                           ))}
@@ -353,10 +456,102 @@ export default function Dashboard() {
                       <Input value={form.features} onChange={(e) => updateField("features", e.target.value)}
                         placeholder="Кондиционирование, Охрана, Интернет" />
                     </div>
+
+                    {/* Photos Section */}
+                    <div className="space-y-3 sm:col-span-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="flex items-center gap-2">
+                          <ImageIcon className="w-4 h-4" /> Фотографии ({totalPhotos}/15)
+                        </Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={totalPhotos >= 15}
+                        >
+                          <Upload className="w-4 h-4 mr-1" /> Загрузить
+                        </Button>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handleFileSelect}
+                          className="hidden"
+                        />
+                      </div>
+
+                      {totalPhotos === 0 ? (
+                        <div
+                          className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground cursor-pointer hover:border-primary/50 transition-colors"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <Upload className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Нажмите для загрузки фото (до 15 шт.)</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                          {existingPhotos.map((url, idx) => (
+                            <div
+                              key={`existing-${idx}`}
+                              className={`relative group aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
+                                coverIndex === idx ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"
+                              }`}
+                              onClick={() => setCoverIndex(idx)}
+                            >
+                              <img src={url} alt="" className="w-full h-full object-cover" />
+                              {coverIndex === idx && (
+                                <div className="absolute top-1 left-1 bg-primary text-primary-foreground rounded px-1.5 py-0.5 text-[10px] font-medium flex items-center gap-0.5">
+                                  <Star className="w-3 h-3" /> Главное
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); removeExistingPhoto(idx); }}
+                                className="absolute top-1 right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                          {photoPreviews.map((url, idx) => {
+                            const globalIdx = existingPhotos.length + idx;
+                            return (
+                              <div
+                                key={`new-${idx}`}
+                                className={`relative group aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
+                                  coverIndex === globalIdx ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"
+                                }`}
+                                onClick={() => setCoverIndex(globalIdx)}
+                              >
+                                <img src={url} alt="" className="w-full h-full object-cover" />
+                                {coverIndex === globalIdx && (
+                                  <div className="absolute top-1 left-1 bg-primary text-primary-foreground rounded px-1.5 py-0.5 text-[10px] font-medium flex items-center gap-0.5">
+                                    <Star className="w-3 h-3" /> Главное
+                                  </div>
+                                  )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); removeNewPhoto(idx); }}
+                                  className="absolute top-1 right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {totalPhotos > 0 && (
+                        <p className="text-xs text-muted-foreground">Нажмите на фото, чтобы сделать его главным для карточки</p>
+                      )}
+                    </div>
+
                     <div className="sm:col-span-2 flex justify-end gap-2 pt-2">
                       <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Отмена</Button>
-                      <Button type="submit" disabled={saveMutation.isPending}>
-                        {saveMutation.isPending ? "Сохранение..." : "Сохранить"}
+                      <Button type="submit" disabled={saveMutation.isPending || uploading}>
+                        {saveMutation.isPending || uploading ? "Сохранение..." : "Сохранить"}
                       </Button>
                     </div>
                   </form>
@@ -370,6 +565,7 @@ export default function Dashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-12">Фото</TableHead>
                         <TableHead>Тип</TableHead>
                         <TableHead>Адрес</TableHead>
                         <TableHead>Площадь</TableHead>
@@ -383,18 +579,29 @@ export default function Dashboard() {
                     </TableHeader>
                     <TableBody>
                       {isLoading ? (
-                        <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Загрузка...</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Загрузка...</TableCell></TableRow>
                       ) : properties.length === 0 ? (
-                        <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Нет объектов</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Нет объектов</TableCell></TableRow>
                       ) : (
                         properties.map((p: any) => (
                           <TableRow key={p.id}>
+                            <TableCell>
+                              {p.cover_photo ? (
+                                <img src={p.cover_photo} alt="" className="w-10 h-10 rounded object-cover" />
+                              ) : (
+                                <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                                  <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                                </div>
+                              )}
+                            </TableCell>
                             <TableCell>
                               <Badge variant="secondary">{p.type}</Badge>
                             </TableCell>
                             <TableCell className="max-w-[200px] truncate">{p.address}</TableCell>
                             <TableCell>{p.area} м²</TableCell>
-                            <TableCell className="font-medium">{Number(p.price).toLocaleString()} ₽</TableCell>
+                            <TableCell className="font-medium">
+                              {Number(p.price).toLocaleString()} ₽{p.deal_type === "Аренда" ? "/мес" : ""}
+                            </TableCell>
                             <TableCell>{p.deal_type}</TableCell>
                             <TableCell className="text-sm">{p.manager?.full_name || "—"}</TableCell>
                             <TableCell className="text-sm">{p.client?.full_name || "—"}</TableCell>

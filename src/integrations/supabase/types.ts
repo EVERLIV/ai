@@ -53,6 +53,7 @@ export type Database = {
           client_id: string | null
           condition: string | null
           contract_term: string | null
+          cover_photo: string | null
           created_at: string
           deal_type: string
           deposit: string | null
@@ -65,6 +66,7 @@ export type Database = {
           layout: string | null
           manager_id: string | null
           parking: string | null
+          photos: string[] | null
           photos_count: number | null
           price: number
           price_per_m2: number
@@ -82,6 +84,7 @@ export type Database = {
           client_id?: string | null
           condition?: string | null
           contract_term?: string | null
+          cover_photo?: string | null
           created_at?: string
           deal_type?: string
           deposit?: string | null
@@ -94,6 +97,7 @@ export type Database = {
           layout?: string | null
           manager_id?: string | null
           parking?: string | null
+          photos?: string[] | null
           photos_count?: number | null
           price?: number
           price_per_m2?: number
@@ -111,6 +115,7 @@ export type Database = {
           client_id?: string | null
           condition?: string | null
           contract_term?: string | null
+          cover_photo?: string | null
           created_at?: string
           deal_type?: string
           deposit?: string | null
@@ -123,6 +128,7 @@ export type Database = {
           layout?: string | null
           manager_id?: string | null
           parking?: string | null
+          photos?: string[] | null
           photos_count?: number | null
           price?: number
           price_per_m2?: number
