@@ -264,7 +264,7 @@ export default function Dashboard() {
       condition: prop.condition || "", layout: prop.layout || "",
       deal_type: prop.deal_type, deposit: prop.deposit || "",
       contract_term: prop.contract_term || "", description: prop.description || "",
-      features: (prop.features || []).join(", "),
+      features: prop.features || [],
       manager_id: prop.manager_id || "", client_id: prop.client_id || "",
       is_active: prop.is_active,
     });
