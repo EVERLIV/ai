@@ -39,7 +39,7 @@ export default function AnalyticsDashboard() {
       <div className={`container mx-auto px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
         <p className="text-sm font-medium tracking-widest uppercase text-primary text-center mb-2">Аналитика</p>
         <h2 className="font-display text-3xl font-bold text-foreground text-center mb-12">
-          Рынок коммерческой недвижимости — сегодня
+          Рынок Иркутска — сегодня
         </h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
