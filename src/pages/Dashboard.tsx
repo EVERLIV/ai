@@ -191,7 +191,7 @@ export default function Dashboard() {
         deposit: formData.deposit,
         contract_term: formData.contract_term,
         description: formData.description,
-        features: formData.features.split(",").map((f) => f.trim()).filter(Boolean),
+        features: formData.features,
         manager_id: formData.manager_id || null,
         client_id: formData.client_id || null,
         is_active: formData.is_active,
