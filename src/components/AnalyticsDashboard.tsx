@@ -5,14 +5,14 @@ import {
 } from "recharts";
 
 const rateData = [
-  { q: "Q1'23", rate: 18500 },
-  { q: "Q2'23", rate: 19200 },
-  { q: "Q3'23", rate: 19800 },
-  { q: "Q4'23", rate: 20500 },
-  { q: "Q1'24", rate: 21300 },
-  { q: "Q2'24", rate: 22100 },
-  { q: "Q3'24", rate: 22800 },
-  { q: "Q4'24", rate: 23400 },
+  { q: "Q1'23", rate: 8200 },
+  { q: "Q2'23", rate: 8500 },
+  { q: "Q3'23", rate: 8900 },
+  { q: "Q4'23", rate: 9100 },
+  { q: "Q1'24", rate: 9400 },
+  { q: "Q2'24", rate: 9800 },
+  { q: "Q3'24", rate: 10200 },
+  { q: "Q4'24", rate: 10500 },
 ];
 
 const pieData = [
