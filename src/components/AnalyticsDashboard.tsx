@@ -45,7 +45,7 @@ export default function AnalyticsDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Line chart */}
           <div className="bg-card rounded-2xl shadow-card p-6">
-            <h3 className="text-sm font-semibold text-foreground mb-4">Средняя ставка аренды офисов, ₽/м²/год</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-4">Средняя ставка аренды офисов в Иркутске, ₽/м²/год</h3>
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={rateData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(35, 15%, 88%)" />
