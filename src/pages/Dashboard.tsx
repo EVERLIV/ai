@@ -102,10 +102,10 @@ interface PropertyForm {
 
 const emptyForm: PropertyForm = {
   type: "Офис", class: "B", area: 0, price: 0, price_per_m2: 0,
-  address: "", district: "", floor: "", total_floors: 1,
-  ceiling_height: 3, parking: "", condition: "", layout: "",
-  deal_type: "Аренда", deposit: "", contract_term: "",
-  description: "", features: "", manager_id: "", client_id: "",
+  address: "", district: "Кировский", floor: "1", total_floors: 1,
+  ceiling_height: 3, parking: "Нет", condition: "Хороший ремонт", layout: "Open-space",
+  deal_type: "Аренда", deposit: "1 месяц", contract_term: "от 1 года",
+  description: "", features: [], manager_id: "", client_id: "",
   is_active: true,
 };
 
