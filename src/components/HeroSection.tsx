@@ -4,9 +4,9 @@ import { useCountUp } from "@/hooks/useCountUp";
 import { useState } from "react";
 
 const stats = [
-  { value: 12400, suffix: "+", label: "объектов" },
-  { value: 847, suffix: "", label: "городов" },
-  { value: 98, suffix: "%", label: "сделок" },
+  { value: 1850, suffix: "+", label: "объектов" },
+  { value: 24, suffix: "", label: "города региона" },
+  { value: 97, suffix: "%", label: "довольных клиентов" },
 ];
 
 export default function HeroSection() {
@@ -23,15 +23,15 @@ export default function HeroSection() {
       <div className="container mx-auto px-4 lg:px-8 py-20">
         <div className={`max-w-3xl mx-auto text-center ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
           <p className="text-sm font-medium tracking-widest uppercase text-primary mb-4">
-            Коммерческая недвижимость
+            Коммерческая недвижимость Иркутска
           </p>
           <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6">
-            Умная платформа
+            Аренда коммерческой
             <br />
-            <span className="text-primary">коммерческой</span> недвижимости
+            <span className="text-primary">недвижимости</span> в Иркутске
           </h1>
           <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
-            От офисов до земельных участков — находите объекты быстрее с ИИ
+            Офисы, торговые площади, склады и земельные участки в Иркутске и Иркутской области. Профессиональный подбор от агентства.
           </p>
 
           {/* Search bar */}
@@ -48,7 +48,7 @@ export default function HeroSection() {
             </select>
             <input
               type="text"
-              placeholder="Город или район"
+              placeholder="Район или улица"
               className="flex-1 px-4 py-3 rounded-xl bg-muted text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
             <input

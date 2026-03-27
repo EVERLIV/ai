@@ -6,15 +6,15 @@ const tabs = ["Офисы", "Торговля", "Склады", "ПСН", "Зе�
 
 export default function SearchFilters({ onAIClick }: { onAIClick: () => void }) {
   const [active, setActive] = useState(0);
-  const [area, setArea] = useState([50, 500]);
-  const [price, setPrice] = useState([30000, 300000]);
+  const [area, setArea] = useState([30, 400]);
+  const [price, setPrice] = useState([15000, 200000]);
   const { ref, isVisible } = useScrollReveal();
 
   return (
     <section ref={ref} id="search" className="py-16 bg-surface-warm">
       <div className={`container mx-auto px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
         <h2 className="font-display text-3xl font-bold text-foreground text-center mb-8">
-          Умный поиск
+          Поиск объектов
         </h2>
 
         {/* Tabs */}
@@ -75,14 +75,17 @@ export default function SearchFilters({ onAIClick }: { onAIClick: () => void }) 
           </div>
 
           <div className="flex-1 w-full">
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Район</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Район / Город</label>
             <select className="w-full px-3 py-2.5 rounded-lg bg-muted text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
               <option>Все районы</option>
-              <option>ЦАО</option>
-              <option>САО</option>
-              <option>ЮАО</option>
-              <option>СВАО</option>
-              <option>ЮЗАО</option>
+              <option>Кировский</option>
+              <option>Октябрьский</option>
+              <option>Свердловский</option>
+              <option>Ленинский</option>
+              <option>Куйбышевский</option>
+              <option>Ангарск</option>
+              <option>Шелехов</option>
+              <option>Усолье-Сибирское</option>
             </select>
           </div>
 
@@ -101,7 +104,7 @@ export default function SearchFilters({ onAIClick }: { onAIClick: () => void }) 
             className="shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gold text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
           >
             <Sparkles className="w-4 h-4" />
-            Умный подбор с ИИ
+            Подбор с ИИ
           </button>
         </div>
       </div>

@@ -7,6 +7,7 @@ import AIAssistant from "@/components/AIAssistant";
 import MapSection from "@/components/MapSection";
 import FeaturesSection from "@/components/FeaturesSection";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
+import ResidentialSection from "@/components/ResidentialSection";
 import OwnerSection from "@/components/OwnerSection";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -22,6 +23,7 @@ export default function Index() {
       <MapSection />
       <FeaturesSection />
       <AnalyticsDashboard />
+      <ResidentialSection />
       <OwnerSection />
       <SiteFooter />
       <AIAssistant open={aiOpen} onToggle={() => setAiOpen(!aiOpen)} />

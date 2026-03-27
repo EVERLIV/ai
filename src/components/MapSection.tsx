@@ -3,12 +3,12 @@ import { useState } from "react";
 import { List, Map } from "lucide-react";
 
 const markers = [
-  { x: 45, y: 35, label: "ЦАО" },
-  { x: 55, y: 50, label: "ЮАО" },
-  { x: 35, y: 55, label: "ЗАО" },
-  { x: 60, y: 30, label: "СВАО" },
-  { x: 30, y: 40, label: "СЗАО" },
-  { x: 70, y: 45, label: "ВАО" },
+  { x: 50, y: 40, label: "Кировский" },
+  { x: 60, y: 50, label: "Октябрьский" },
+  { x: 40, y: 55, label: "Свердловский" },
+  { x: 55, y: 30, label: "Ленинский" },
+  { x: 30, y: 45, label: "Куйбышевский" },
+  { x: 70, y: 35, label: "Правобережный" },
 ];
 
 export default function MapSection() {
@@ -19,7 +19,7 @@ export default function MapSection() {
     <section ref={ref} className="py-16 bg-surface-warm">
       <div className={`container mx-auto px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
         <div className="flex items-end justify-between mb-8">
-          <h2 className="font-display text-3xl font-bold text-foreground">Объекты на карте</h2>
+          <h2 className="font-display text-3xl font-bold text-foreground">Объекты на карте Иркутска</h2>
           <div className="flex bg-card rounded-lg shadow-card overflow-hidden">
             <button
               onClick={() => setView("map")}
@@ -37,9 +37,7 @@ export default function MapSection() {
         </div>
 
         <div className="bg-card rounded-2xl shadow-card overflow-hidden flex flex-col lg:flex-row" style={{ minHeight: 400 }}>
-          {/* Map area */}
           <div className="flex-1 relative bg-gradient-to-br from-secondary to-muted p-4">
-            {/* Grid lines */}
             <div className="absolute inset-4 opacity-10">
               {[...Array(8)].map((_, i) => (
                 <div key={`h${i}`} className="absolute w-full h-px bg-foreground" style={{ top: `${(i + 1) * 11}%` }} />
@@ -49,7 +47,6 @@ export default function MapSection() {
               ))}
             </div>
 
-            {/* Markers */}
             {markers.map((m) => (
               <div
                 key={m.label}
@@ -67,10 +64,19 @@ export default function MapSection() {
             ))}
           </div>
 
-          {/* Sidebar results */}
           <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border p-4 space-y-3 overflow-y-auto max-h-[400px]">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Найдено 847 объектов</p>
-            {["ЦАО — 245 объектов", "ЮАО — 189 объектов", "СВАО — 134 объекта", "ЗАО — 112 объектов", "СЗАО — 98 объектов", "ВАО — 69 объектов"].map((item) => (
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">По районам Иркутска</p>
+            {[
+              "Кировский — 312 объектов",
+              "Октябрьский — 245 объектов",
+              "Свердловский — 189 объектов",
+              "Ленинский — 134 объекта",
+              "Куйбышевский — 87 объектов",
+              "Правобережный — 56 объектов",
+              "Ангарск — 142 объекта",
+              "Шелехов — 68 объектов",
+              "Усолье-Сибирское — 45 объектов",
+            ].map((item) => (
               <div key={item} className="px-3 py-2.5 rounded-lg hover:bg-muted transition-colors cursor-pointer text-sm text-foreground">
                 {item}
               </div>

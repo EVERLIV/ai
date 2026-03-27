@@ -1,15 +1,15 @@
 const cols = [
   {
     title: "Разделы",
-    links: ["Офисы", "Торговые площади", "Склады", "Земельные участки", "Готовый бизнес"],
+    links: ["Офисы", "Торговые площади", "Склады", "Земельные участки", "Жилая аренда"],
   },
   {
-    title: "Регионы",
-    links: ["Москва", "Санкт-Петербург", "Екатеринбург", "Новосибирск", "Казань"],
+    title: "Города",
+    links: ["Иркутск", "Ангарск", "Шелехов", "Усолье-Сибирское", "Братск"],
   },
   {
     title: "Контакты",
-    links: ["+7 (495) 123-45-67", "info@arendacity.ru", "Москва, Пресненская наб., 12"],
+    links: ["+7 (3952) 55-12-34", "info@arendacity-irk.ru", "Иркутск, ул. Ленина, 18, оф. 401"],
   },
 ];
 
@@ -29,7 +29,7 @@ export default function SiteFooter() {
               </span>
             </div>
             <p className="text-sm leading-relaxed">
-              Умная платформа коммерческой недвижимости с ИИ-поиском и аналитикой рынка.
+              Агентство коммерческой недвижимости в Иркутске и Иркутской области. Профессиональный подбор и управление объектами.
             </p>
           </div>
 
@@ -48,7 +48,7 @@ export default function SiteFooter() {
         </div>
 
         <div className="border-t border-background/10 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs">© 2025 АрендаСити. Все права защищены.</p>
+          <p className="text-xs">© 2025 АрендаСити Иркутск. Все права защищены.</p>
           <div className="flex gap-4 text-xs">
             <a href="#" className="hover:text-background transition-colors">Политика конфиденциальности</a>
             <a href="#" className="hover:text-background transition-colors">Условия использования</a>
