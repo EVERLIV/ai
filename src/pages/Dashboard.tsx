@@ -555,8 +555,8 @@ export default function Dashboard() {
                       </Button>
                     </div>
                   </form>
-                </DialogContent>
-              </Dialog>
+                </SheetContent>
+              </Sheet>
             </div>
 
             <Card>
