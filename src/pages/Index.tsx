@@ -1,16 +1,30 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import SiteHeader from "@/components/SiteHeader";
+import HeroSection from "@/components/HeroSection";
+import SearchFilters from "@/components/SearchFilters";
+import PropertyGrid from "@/components/PropertyGrid";
+import AIAssistant from "@/components/AIAssistant";
+import MapSection from "@/components/MapSection";
+import FeaturesSection from "@/components/FeaturesSection";
+import AnalyticsDashboard from "@/components/AnalyticsDashboard";
+import OwnerSection from "@/components/OwnerSection";
+import SiteFooter from "@/components/SiteFooter";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+export default function Index() {
+  const [aiOpen, setAiOpen] = useState(false);
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="min-h-screen bg-background">
+      <SiteHeader />
+      <HeroSection />
+      <SearchFilters onAIClick={() => setAiOpen(true)} />
+      <PropertyGrid />
+      <MapSection />
+      <FeaturesSection />
+      <AnalyticsDashboard />
+      <OwnerSection />
+      <SiteFooter />
+      <AIAssistant open={aiOpen} onToggle={() => setAiOpen(!aiOpen)} />
     </div>
   );
-};
-
-const Index = PlaceholderIndex;
-
-export default Index;
+}
