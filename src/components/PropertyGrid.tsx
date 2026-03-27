@@ -1,4 +1,5 @@
 import { Heart, ArrowRight, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
