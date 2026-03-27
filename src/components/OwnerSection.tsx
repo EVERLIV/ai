@@ -13,7 +13,7 @@ export default function OwnerSection() {
   const { ref, isVisible } = useScrollReveal();
 
   return (
-    <section ref={ref} className="py-20">
+    <section ref={ref} id="Сдать объект" className="py-20">
       <div className={`container mx-auto px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
         <div className="bg-card rounded-3xl shadow-card overflow-hidden flex flex-col lg:flex-row">
           {/* Left */}

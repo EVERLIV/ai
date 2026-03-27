@@ -65,11 +65,11 @@ export default function SiteHeader() {
             </a>
           ))}
           <a
-            href="#Жилая аренда"
+            href="#Сдать объект"
             onClick={() => setMobileOpen(false)}
             className="mt-2 block w-full text-center text-sm font-medium px-5 py-2.5 rounded-lg border border-gold text-gold hover:bg-gold hover:text-primary-foreground transition-all"
           >
-            Сдать жильё
+            Сдать объект
           </a>
         </div>
       )}

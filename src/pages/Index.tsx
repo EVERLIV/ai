@@ -22,7 +22,6 @@ export default function Index() {
       <MapSection />
       <FeaturesSection />
       <AnalyticsDashboard />
-      <ResidentialSection />
       <OwnerSection />
       <SiteFooter />
       <AIAssistant open={aiOpen} onToggle={() => setAiOpen(!aiOpen)} />
