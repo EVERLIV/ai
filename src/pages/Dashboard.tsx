@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,11 +13,68 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Plus, LogOut, Users, Home, Edit, Trash2,
-  BarChart3, Eye, MapPin, ArrowLeft, Upload, X, Star, ImageIcon
+  BarChart3, Eye, MapPin, ArrowLeft, Upload, X, Star, ImageIcon, Search
 } from "lucide-react";
+
+// ====== Predefined options ======
+const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
+const CLASSES = ["A", "A+", "B+", "B", "C", "-"];
+const DEAL_TYPES = ["Аренда", "Продажа"];
+
+const DISTRICTS = [
+  "Кировский", "Октябрьский", "Свердловский", "Ленинский", "Куйбышевский",
+  "Ангарск", "Шелехов", "Усолье-Сибирское", "Братск", "Усть-Илимск",
+];
+
+const FLOORS = ["-", "Цоколь", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "Мансарда"];
+const TOTAL_FLOORS_OPTIONS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "12", "14", "16", "18", "20", "25", "30"];
+const CEILING_HEIGHTS = ["2.5", "2.7", "2.8", "3.0", "3.2", "3.5", "4.0", "4.2", "4.5", "5.0", "6.0", "7.0", "7.5", "8.0", "10.0", "12.0"];
+
+const PARKING_OPTIONS = ["Нет", "Наземный, 1 м/м", "Наземный, 2 м/м", "Наземный, 3 м/м", "Наземный, 5 м/м", "Наземный, 10 м/м", "Подземный", "Открытая, 5 м/м", "Открытая, 8 м/м", "Открытая, 10 м/м", "Открытая, 20 м/м", "-"];
+
+const CONDITIONS = [
+  "Евроремонт", "Хороший ремонт", "Косметический ремонт", "Рабочее состояние",
+  "Под чистовую отделку", "Shell & Core", "Требуется ремонт", "Без строений", "Новое",
+];
+
+const LAYOUTS = [
+  "Open-space", "Open-space + кабинеты", "Кабинетная", "Свободная планировка",
+  "2 кабинета + приёмная", "Open-space + 2 кабинета", "Open-space + 3 кабинета",
+  "Единое пространство", "Единое пространство + офис", "Прямоугольный участок",
+  "Г-образная", "Студия",
+];
+
+const DEPOSIT_OPTIONS = ["Нет", "1 месяц", "2 месяца", "3 месяца", "50%", "100%"];
+const CONTRACT_TERMS = ["от 1 мес", "от 3 мес", "от 6 мес", "от 1 года", "от 2 лет", "от 3 лет", "от 5 лет", "Бессрочный"];
+
+const FEATURES_LIST = [
+  "Кондиционирование", "Охрана", "Интернет", "Переговорная", "Кухня", "Ресепшн",
+  "Парковка", "Видеонаблюдение", "Мебель", "Санузел", "Кондиционер", "Пожарная сигнализация",
+  "Первая линия", "Отдельный вход", "Витрины", "Высокий трафик", "Вытяжка", "Мокрая точка",
+  "Вывеска", "Погрузка", "Рампа", "Отопление", "Грузовой подъезд", "Офисный блок",
+  "Фасадное остекление", "Вентиляция", "Лифт", "Охрана территории",
+  "Электричество 40 кВт", "Электричество 80 кВт", "Электричество 100 кВт",
+  "Водопровод", "Асфальтированный подъезд", "Ровный рельеф", "Коммерческое назначение", "Ограждение",
+];
+
+// Address suggestions for Irkutsk region
+const ADDRESS_SUGGESTIONS = [
+  "Иркутск, ул. Ленина,", "Иркутск, ул. Карла Маркса,", "Иркутск, ул. Байкальская,",
+  "Иркутск, ул. Советская,", "Иркутск, ул. Декабрьских Событий,", "Иркутск, ул. Литвинова,",
+  "Иркутск, ул. Трактовая,", "Иркутск, ул. Партизанская,", "Иркутск, ул. Дзержинского,",
+  "Иркутск, ул. Горького,", "Иркутск, ул. Красноармейская,", "Иркутск, ул. Сухэ-Батора,",
+  "Иркутск, ул. Чкалова,", "Иркутск, ул. Лермонтова,", "Иркутск, ул. Свердлова,",
+  "Иркутск, ул. Седова,", "Иркутск, ул. Ширямова,", "Иркутск, ул. Рабочая,",
+  "Иркутск, бул. Гагарина,", "Иркутск, бул. Рябикова,",
+  "Иркутск, мкр. Солнечный,", "Иркутск, мкр. Университетский,",
+  "Ангарск, ул. Карла Маркса,", "Ангарск, ул. Ленина,", "Ангарск, мкр. 12-й,",
+  "Шелехов, ул. Ленина,", "Шелехов, ул. Привокзальная,",
+  "Усолье-Сибирское, ул. Ленина,", "Братск, ул. Мира,",
+];
 
 interface PropertyForm {
   type: string;
@@ -37,7 +94,7 @@ interface PropertyForm {
   deposit: string;
   contract_term: string;
   description: string;
-  features: string;
+  features: string[];
   manager_id: string;
   client_id: string;
   is_active: boolean;
@@ -45,10 +102,10 @@ interface PropertyForm {
 
 const emptyForm: PropertyForm = {
   type: "Офис", class: "B", area: 0, price: 0, price_per_m2: 0,
-  address: "", district: "", floor: "", total_floors: 1,
-  ceiling_height: 3, parking: "", condition: "", layout: "",
-  deal_type: "Аренда", deposit: "", contract_term: "",
-  description: "", features: "", manager_id: "", client_id: "",
+  address: "", district: "Кировский", floor: "1", total_floors: 1,
+  ceiling_height: 3, parking: "Нет", condition: "Хороший ремонт", layout: "Open-space",
+  deal_type: "Аренда", deposit: "1 месяц", contract_term: "от 1 года",
+  description: "", features: [], manager_id: "", client_id: "",
   is_active: true,
 };
 
@@ -65,7 +122,15 @@ export default function Dashboard() {
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [addressQuery, setAddressQuery] = useState("");
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredAddresses = useMemo(() => {
+    if (!addressQuery || addressQuery.length < 2) return [];
+    const q = addressQuery.toLowerCase();
+    return ADDRESS_SUGGESTIONS.filter((a) => a.toLowerCase().includes(q)).slice(0, 6);
+  }, [addressQuery]);
 
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ["dashboard-properties"],
@@ -126,7 +191,7 @@ export default function Dashboard() {
         deposit: formData.deposit,
         contract_term: formData.contract_term,
         description: formData.description,
-        features: formData.features.split(",").map((f) => f.trim()).filter(Boolean),
+        features: formData.features,
         manager_id: formData.manager_id || null,
         client_id: formData.client_id || null,
         is_active: formData.is_active,
@@ -199,7 +264,7 @@ export default function Dashboard() {
       condition: prop.condition || "", layout: prop.layout || "",
       deal_type: prop.deal_type, deposit: prop.deposit || "",
       contract_term: prop.contract_term || "", description: prop.description || "",
-      features: (prop.features || []).join(", "),
+      features: prop.features || [],
       manager_id: prop.manager_id || "", client_id: prop.client_id || "",
       is_active: prop.is_active,
     });
@@ -328,14 +393,13 @@ export default function Dashboard() {
                     onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }}
                     className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4"
                   >
+                    {/* Row 1: Type, Class, Deal Type */}
                     <div className="space-y-2">
                       <Label>Тип</Label>
                       <Select value={form.type} onValueChange={(v) => updateField("type", v)}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {["Офис", "Торговая", "Склад", "Земля", "Производство"].map((t) => (
-                            <SelectItem key={t} value={t}>{t}</SelectItem>
-                          ))}
+                          {TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
@@ -344,9 +408,7 @@ export default function Dashboard() {
                       <Select value={form.class} onValueChange={(v) => updateField("class", v)}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {["A", "A+", "B+", "B", "C", "-"].map((c) => (
-                            <SelectItem key={c} value={c}>{c}</SelectItem>
-                          ))}
+                          {CLASSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
@@ -355,11 +417,12 @@ export default function Dashboard() {
                       <Select value={form.deal_type} onValueChange={(v) => updateField("deal_type", v)}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Аренда">Аренда</SelectItem>
-                          <SelectItem value="Продажа">Продажа</SelectItem>
+                          {DEAL_TYPES.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {/* Price & Area */}
                     <div className="space-y-2">
                       <Label>Площадь (м²)</Label>
                       <Input type="number" value={form.area || ""} onChange={(e) => updateField("area", Number(e.target.value))} />
@@ -371,58 +434,160 @@ export default function Dashboard() {
                     {isSale && (
                       <div className="space-y-2">
                         <Label>Цена за м² (₽)</Label>
-                        <Input
-                          type="number"
-                          value={form.area > 0 ? Math.round(form.price / form.area) : ""}
-                          disabled
-                          className="bg-muted"
-                        />
+                        <Input type="number" value={form.area > 0 ? Math.round(form.price / form.area) : ""} disabled className="bg-muted" />
                       </div>
                     )}
-                    <div className={`space-y-2 ${isSale ? "" : "sm:col-span-2"}`}>
+
+                    {/* Address with autocomplete */}
+                    <div className={`space-y-2 ${isSale ? "" : "sm:col-span-2"} relative`}>
                       <Label>Адрес</Label>
-                      <Input value={form.address} onChange={(e) => updateField("address", e.target.value)} required />
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          value={form.address}
+                          onChange={(e) => {
+                            updateField("address", e.target.value);
+                            setAddressQuery(e.target.value);
+                            setShowAddressSuggestions(true);
+                          }}
+                          onFocus={() => setShowAddressSuggestions(true)}
+                          onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 200)}
+                          className="pl-9"
+                          placeholder="Начните вводить адрес..."
+                          required
+                        />
+                      </div>
+                      {showAddressSuggestions && filteredAddresses.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
+                          {filteredAddresses.map((addr) => (
+                            <button
+                              key={addr}
+                              type="button"
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center gap-2"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => {
+                                updateField("address", addr);
+                                setAddressQuery(addr);
+                                setShowAddressSuggestions(false);
+                              }}
+                            >
+                              <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                              {addr}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
+
+                    {/* District */}
                     <div className="space-y-2">
-                      <Label>Район/город</Label>
-                      <Input value={form.district} onChange={(e) => updateField("district", e.target.value)} />
+                      <Label>Район / город</Label>
+                      <Select value={form.district || "none"} onValueChange={(v) => updateField("district", v === "none" ? "" : v)}>
+                        <SelectTrigger><SelectValue placeholder="Выберите район" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Не выбран</SelectItem>
+                          {DISTRICTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
+
+                    {/* Floor */}
                     <div className="space-y-2">
                       <Label>Этаж</Label>
-                      <Input value={form.floor} onChange={(e) => updateField("floor", e.target.value)} />
+                      <Select value={form.floor || "none"} onValueChange={(v) => updateField("floor", v === "none" ? "" : v)}>
+                        <SelectTrigger><SelectValue placeholder="Выберите этаж" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Не указан</SelectItem>
+                          {FLOORS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
+
+                    {/* Total floors */}
                     <div className="space-y-2">
                       <Label>Всего этажей</Label>
-                      <Input type="number" value={form.total_floors || ""} onChange={(e) => updateField("total_floors", Number(e.target.value))} />
+                      <Select value={String(form.total_floors)} onValueChange={(v) => updateField("total_floors", Number(v))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {TOTAL_FLOORS_OPTIONS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
+
+                    {/* Ceiling height */}
                     <div className="space-y-2">
                       <Label>Высота потолков (м)</Label>
-                      <Input type="number" step="0.1" value={form.ceiling_height || ""} onChange={(e) => updateField("ceiling_height", Number(e.target.value))} />
+                      <Select value={String(form.ceiling_height)} onValueChange={(v) => updateField("ceiling_height", Number(v))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {CEILING_HEIGHTS.map((h) => <SelectItem key={h} value={h}>{h} м</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
+
+                    {/* Parking */}
                     <div className="space-y-2">
                       <Label>Парковка</Label>
-                      <Input value={form.parking} onChange={(e) => updateField("parking", e.target.value)} />
+                      <Select value={form.parking || "none"} onValueChange={(v) => updateField("parking", v === "none" ? "" : v)}>
+                        <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Не указано</SelectItem>
+                          {PARKING_OPTIONS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
+
+                    {/* Condition */}
                     <div className="space-y-2">
                       <Label>Состояние</Label>
-                      <Input value={form.condition} onChange={(e) => updateField("condition", e.target.value)} />
+                      <Select value={form.condition || "none"} onValueChange={(v) => updateField("condition", v === "none" ? "" : v)}>
+                        <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Не указано</SelectItem>
+                          {CONDITIONS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
+
+                    {/* Layout */}
                     <div className="space-y-2">
                       <Label>Планировка</Label>
-                      <Input value={form.layout} onChange={(e) => updateField("layout", e.target.value)} />
+                      <Select value={form.layout || "none"} onValueChange={(v) => updateField("layout", v === "none" ? "" : v)}>
+                        <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Не указано</SelectItem>
+                          {LAYOUTS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
+
+                    {/* Deposit & Contract (only for rent) */}
                     {!isSale && (
                       <>
                         <div className="space-y-2">
                           <Label>Залог</Label>
-                          <Input value={form.deposit} onChange={(e) => updateField("deposit", e.target.value)} />
+                          <Select value={form.deposit || "none"} onValueChange={(v) => updateField("deposit", v === "none" ? "" : v)}>
+                            <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Не указано</SelectItem>
+                              {DEPOSIT_OPTIONS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-2">
                           <Label>Срок договора</Label>
-                          <Input value={form.contract_term} onChange={(e) => updateField("contract_term", e.target.value)} />
+                          <Select value={form.contract_term || "none"} onValueChange={(v) => updateField("contract_term", v === "none" ? "" : v)}>
+                            <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Не указано</SelectItem>
+                              {CONTRACT_TERMS.map((ct) => <SelectItem key={ct} value={ct}>{ct}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </>
                     )}
+
+                    {/* Manager & Client */}
                     <div className="space-y-2">
                       <Label>Менеджер</Label>
                       <Select value={form.manager_id || "none"} onValueChange={(v) => updateField("manager_id", v === "none" ? "" : v)}>
@@ -447,14 +612,37 @@ export default function Dashboard() {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {/* Description */}
                     <div className="space-y-2 sm:col-span-2">
                       <Label>Описание</Label>
                       <Textarea value={form.description} onChange={(e) => updateField("description", e.target.value)} rows={3} />
                     </div>
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label>Особенности (через запятую)</Label>
-                      <Input value={form.features} onChange={(e) => updateField("features", e.target.value)}
-                        placeholder="Кондиционирование, Охрана, Интернет" />
+
+                    {/* Features as checkboxes */}
+                    <div className="space-y-3 sm:col-span-2">
+                      <Label>Особенности и оснащение</Label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto rounded-lg border border-border p-3">
+                        {FEATURES_LIST.map((feature) => {
+                          const checked = form.features.includes(feature);
+                          return (
+                            <label key={feature} className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground transition-colors">
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={(v) => {
+                                  if (v) {
+                                    updateField("features", [...form.features, feature]);
+                                  } else {
+                                    updateField("features", form.features.filter((f) => f !== feature));
+                                  }
+                                }}
+                              />
+                              <span className={checked ? "text-foreground" : "text-muted-foreground"}>{feature}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-muted-foreground">Выбрано: {form.features.length}</p>
                     </div>
 
                     {/* Photos Section */}
