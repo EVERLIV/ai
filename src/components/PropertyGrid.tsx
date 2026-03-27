@@ -1,22 +1,18 @@
-import { Heart, ArrowRight, Building2, Store, Warehouse, TreePine, MapPin } from "lucide-react";
+import { Heart, ArrowRight, MapPin } from "lucide-react";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useState } from "react";
-
-const properties = [
-  { id: 1, type: "Офис", class: "A", area: 120, price: 180000, address: "Москва, Пресненская наб., 10", icon: Building2 },
-  { id: 2, type: "Торговая", class: "B", area: 85, price: 250000, address: "Москва, ул. Тверская, 22", icon: Store },
-  { id: 3, type: "Склад", class: "B", area: 450, price: 135000, address: "Москва, Дмитровское ш., 163", icon: Warehouse },
-  { id: 4, type: "Офис", class: "A", area: 200, price: 320000, address: "Москва, Ленинский пр-т, 15", icon: Building2 },
-  { id: 5, type: "Земля", class: "-", area: 1200, price: 95000, address: "МО, Одинцовский р-н, д. Жуковка", icon: TreePine },
-  { id: 6, type: "Торговая", class: "A", area: 310, price: 480000, address: "Москва, Кутузовский пр-т, 48", icon: Store },
-];
+import { useNavigate } from "react-router-dom";
+import { properties } from "@/data/properties";
 
 export default function PropertyGrid() {
   const { ref, isVisible } = useScrollReveal();
   const [saved, setSaved] = useState<number[]>([]);
+  const navigate = useNavigate();
 
-  const toggleSave = (id: number) =>
+  const toggleSave = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
     setSaved((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
 
   return (
     <section ref={ref} id="Офисы" className="py-16">
@@ -37,9 +33,9 @@ export default function PropertyGrid() {
             return (
               <div
                 key={p.id}
-                className="group bg-card rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-400 overflow-hidden hover:-translate-y-1 border-l-4 border-l-transparent hover:border-l-gold"
+                onClick={() => navigate(`/property/${p.id}`)}
+                className="group bg-card rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-400 overflow-hidden hover:-translate-y-1 border-l-4 border-l-transparent hover:border-l-gold cursor-pointer"
               >
-                {/* Image placeholder */}
                 <div className="h-48 bg-gradient-to-br from-muted to-secondary flex items-center justify-center relative">
                   <Icon className="w-12 h-12 text-muted-foreground/30" />
                   <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
@@ -61,7 +57,7 @@ export default function PropertyGrid() {
                       <div className="text-sm text-muted-foreground mt-0.5">{p.area} м²</div>
                     </div>
                     <button
-                      onClick={() => toggleSave(p.id)}
+                      onClick={(e) => toggleSave(p.id, e)}
                       className={`p-2 rounded-full transition-colors ${
                         saved.includes(p.id) ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-primary"
                       }`}
