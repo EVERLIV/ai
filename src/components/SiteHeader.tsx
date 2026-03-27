@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Search, Menu, X } from "lucide-react";
 
-const navItems = ["Офисы", "Торговля", "Склады", "Земля", "Жилая аренда", "О нас", "Контакты"];
+const navItems = ["Офисы", "Торговля", "Склады", "Земля", "Сдать объект", "О нас", "Контакты"];
 
 export default function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -38,10 +38,10 @@ export default function SiteHeader() {
             <Search className="w-4 h-4" />
           </button>
           <a
-            href="#Жилая аренда"
+            href="#Сдать объект"
             className="text-sm font-medium px-5 py-2 rounded-lg border border-gold text-gold hover:bg-gold hover:text-primary-foreground transition-all duration-300"
           >
-            Сдать жильё
+            Сдать объект
           </a>
         </div>
 
@@ -65,11 +65,11 @@ export default function SiteHeader() {
             </a>
           ))}
           <a
-            href="#Жилая аренда"
+            href="#Сдать объект"
             onClick={() => setMobileOpen(false)}
             className="mt-2 block w-full text-center text-sm font-medium px-5 py-2.5 rounded-lg border border-gold text-gold hover:bg-gold hover:text-primary-foreground transition-all"
           >
-            Сдать жильё
+            Сдать объект
           </a>
         </div>
       )}
