@@ -322,7 +322,7 @@ export default function Dashboard() {
                     </div>
                     <div className="space-y-2">
                       <Label>Менеджер</Label>
-                      <Select value={form.manager_id} onValueChange={(v) => updateField("manager_id", v)}>
+                      <Select value={form.manager_id || "none"} onValueChange={(v) => updateField("manager_id", v === "none" ? "" : v)}>
                         <SelectTrigger><SelectValue placeholder="Выберите менеджера" /></SelectTrigger>
                         <SelectContent>
 <SelectItem value="none">Не назначен</SelectItem>
