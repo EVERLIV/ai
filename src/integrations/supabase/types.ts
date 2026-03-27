@@ -14,16 +14,174 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      properties: {
+        Row: {
+          address: string
+          area: number
+          ceiling_height: number | null
+          class: string
+          client_id: string | null
+          condition: string | null
+          contract_term: string | null
+          created_at: string
+          deal_type: string
+          deposit: string | null
+          description: string | null
+          district: string
+          features: string[] | null
+          floor: string | null
+          id: string
+          is_active: boolean | null
+          layout: string | null
+          manager_id: string | null
+          parking: string | null
+          photos_count: number | null
+          price: number
+          price_per_m2: number
+          published_date: string | null
+          total_floors: number | null
+          type: string
+          updated_at: string
+          views_count: number | null
+        }
+        Insert: {
+          address?: string
+          area?: number
+          ceiling_height?: number | null
+          class?: string
+          client_id?: string | null
+          condition?: string | null
+          contract_term?: string | null
+          created_at?: string
+          deal_type?: string
+          deposit?: string | null
+          description?: string | null
+          district?: string
+          features?: string[] | null
+          floor?: string | null
+          id?: string
+          is_active?: boolean | null
+          layout?: string | null
+          manager_id?: string | null
+          parking?: string | null
+          photos_count?: number | null
+          price?: number
+          price_per_m2?: number
+          published_date?: string | null
+          total_floors?: number | null
+          type?: string
+          updated_at?: string
+          views_count?: number | null
+        }
+        Update: {
+          address?: string
+          area?: number
+          ceiling_height?: number | null
+          class?: string
+          client_id?: string | null
+          condition?: string | null
+          contract_term?: string | null
+          created_at?: string
+          deal_type?: string
+          deposit?: string | null
+          description?: string | null
+          district?: string
+          features?: string[] | null
+          floor?: string | null
+          id?: string
+          is_active?: boolean | null
+          layout?: string | null
+          manager_id?: string | null
+          parking?: string | null
+          photos_count?: number | null
+          price?: number
+          price_per_m2?: number
+          published_date?: string | null
+          total_floors?: number | null
+          type?: string
+          updated_at?: string
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "manager" | "client"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +308,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "manager", "client"],
+    },
   },
 } as const
