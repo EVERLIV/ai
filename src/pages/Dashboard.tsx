@@ -122,7 +122,15 @@ export default function Dashboard() {
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [addressQuery, setAddressQuery] = useState("");
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredAddresses = useMemo(() => {
+    if (!addressQuery || addressQuery.length < 2) return [];
+    const q = addressQuery.toLowerCase();
+    return ADDRESS_SUGGESTIONS.filter((a) => a.toLowerCase().includes(q)).slice(0, 6);
+  }, [addressQuery]);
 
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ["dashboard-properties"],
