@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -316,14 +316,14 @@ export default function Dashboard() {
           <TabsContent value="properties" className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">Объекты недвижимости</h2>
-              <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
-                <DialogTrigger asChild>
+              <Sheet open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
+                <SheetTrigger asChild>
                   <Button onClick={openNew}><Plus className="w-4 h-4 mr-1" /> Добавить объект</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>{editId ? "Редактировать объект" : "Новый объект"}</DialogTitle>
-                  </DialogHeader>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-6">
+                  <SheetHeader className="mb-4">
+                    <SheetTitle>{editId ? "Редактировать объект" : "Новый объект"}</SheetTitle>
+                  </SheetHeader>
                   <form
                     onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }}
                     className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4"
@@ -555,8 +555,8 @@ export default function Dashboard() {
                       </Button>
                     </div>
                   </form>
-                </DialogContent>
-              </Dialog>
+                </SheetContent>
+              </Sheet>
             </div>
 
             <Card>
