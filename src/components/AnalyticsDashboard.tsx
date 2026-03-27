@@ -5,14 +5,14 @@ import {
 } from "recharts";
 
 const rateData = [
-  { q: "Q1'23", rate: 18500 },
-  { q: "Q2'23", rate: 19200 },
-  { q: "Q3'23", rate: 19800 },
-  { q: "Q4'23", rate: 20500 },
-  { q: "Q1'24", rate: 21300 },
-  { q: "Q2'24", rate: 22100 },
-  { q: "Q3'24", rate: 22800 },
-  { q: "Q4'24", rate: 23400 },
+  { q: "Q1'23", rate: 8200 },
+  { q: "Q2'23", rate: 8500 },
+  { q: "Q3'23", rate: 8900 },
+  { q: "Q4'23", rate: 9100 },
+  { q: "Q1'24", rate: 9400 },
+  { q: "Q2'24", rate: 9800 },
+  { q: "Q3'24", rate: 10200 },
+  { q: "Q4'24", rate: 10500 },
 ];
 
 const pieData = [
@@ -39,13 +39,13 @@ export default function AnalyticsDashboard() {
       <div className={`container mx-auto px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
         <p className="text-sm font-medium tracking-widest uppercase text-primary text-center mb-2">Аналитика</p>
         <h2 className="font-display text-3xl font-bold text-foreground text-center mb-12">
-          Рынок коммерческой недвижимости — сегодня
+          Рынок Иркутска — сегодня
         </h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Line chart */}
           <div className="bg-card rounded-2xl shadow-card p-6">
-            <h3 className="text-sm font-semibold text-foreground mb-4">Средняя ставка аренды офисов, ₽/м²/год</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-4">Средняя ставка аренды офисов в Иркутске, ₽/м²/год</h3>
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={rateData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(35, 15%, 88%)" />

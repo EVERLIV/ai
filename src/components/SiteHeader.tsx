@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Search, Menu, X } from "lucide-react";
 
-const navItems = ["Офисы", "Торговля", "Склады", "Земля", "О нас", "Контакты"];
+const navItems = ["Офисы", "Торговля", "Склады", "Земля", "Жилая аренда", "О нас", "Контакты"];
 
 export default function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -37,9 +37,12 @@ export default function SiteHeader() {
           <button className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <Search className="w-4 h-4" />
           </button>
-          <button className="text-sm font-medium px-5 py-2 rounded-lg border border-gold text-gold hover:bg-gold hover:text-primary-foreground transition-all duration-300">
-            Разместить объект
-          </button>
+          <a
+            href="#Жилая аренда"
+            className="text-sm font-medium px-5 py-2 rounded-lg border border-gold text-gold hover:bg-gold hover:text-primary-foreground transition-all duration-300"
+          >
+            Сдать жильё
+          </a>
         </div>
 
         {/* Mobile toggle */}
@@ -61,9 +64,13 @@ export default function SiteHeader() {
               {item}
             </a>
           ))}
-          <button className="mt-2 w-full text-sm font-medium px-5 py-2.5 rounded-lg border border-gold text-gold hover:bg-gold hover:text-primary-foreground transition-all">
-            Разместить объект
-          </button>
+          <a
+            href="#Жилая аренда"
+            onClick={() => setMobileOpen(false)}
+            className="mt-2 block w-full text-center text-sm font-medium px-5 py-2.5 rounded-lg border border-gold text-gold hover:bg-gold hover:text-primary-foreground transition-all"
+          >
+            Сдать жильё
+          </a>
         </div>
       )}
     </header>
