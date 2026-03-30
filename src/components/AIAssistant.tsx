@@ -8,7 +8,7 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 const quickChips = ["Офис до 100 м² в Иркутске", "Склад в Ангарске", "Торговое на Карла Маркса"];
 
-const ELEVENLABS_AGENT_ID = ""; // TODO: paste your ElevenLabs agent ID here
+const ELEVENLABS_AGENT_ID = "agent_7301kmyt4jxxf8etgj0av5x43qb4"; // TODO: paste your ElevenLabs agent ID here
 
 export default function AIAssistant({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const [messages, setMessages] = useState<Msg[]>([
@@ -80,10 +80,9 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      const { data, error } = await supabase.functions.invoke(
-        "elevenlabs-conversation-token",
-        { body: { agent_id: ELEVENLABS_AGENT_ID } }
-      );
+      const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token", {
+        body: { agent_id: ELEVENLABS_AGENT_ID },
+      });
 
       if (error || !data?.token) {
         throw new Error(error?.message || "Не удалось получить токен");
@@ -97,9 +96,10 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
       setIsVoiceMode(true);
     } catch (err: any) {
       console.error("Voice call error:", err);
-      const msg = err?.name === "NotAllowedError"
-        ? "Разрешите доступ к микрофону для голосового звонка."
-        : err?.message || "Не удалось начать звонок";
+      const msg =
+        err?.name === "NotAllowedError"
+          ? "Разрешите доступ к микрофону для голосового звонка."
+          : err?.message || "Не удалось начать звонок";
       toast({ title: "Ошибка", description: msg, variant: "destructive" });
       setIsConnecting(false);
     }
@@ -151,7 +151,9 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center ${isVoiceMode ? "bg-primary/15" : "bg-gold/15"}`}>
+              <div
+                className={`w-9 h-9 rounded-full flex items-center justify-center ${isVoiceMode ? "bg-primary/15" : "bg-gold/15"}`}
+              >
                 {isVoiceMode ? <Phone className="w-4 h-4 text-primary" /> : <Sparkles className="w-4 h-4 text-gold" />}
               </div>
               <div>
@@ -159,16 +161,17 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
                   {isVoiceMode ? "Голосовой звонок" : "Коммерц ИИ"}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span className={`w-1.5 h-1.5 rounded-full ${isVoiceMode ? "bg-primary animate-pulse" : "bg-green-500"} status-pulse`} />
-                  {isVoiceMode
-                    ? conversation.isSpeaking
-                      ? "говорит..."
-                      : "слушает..."
-                    : "онлайн"}
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${isVoiceMode ? "bg-primary animate-pulse" : "bg-green-500"} status-pulse`}
+                  />
+                  {isVoiceMode ? (conversation.isSpeaking ? "говорит..." : "слушает...") : "онлайн"}
                 </div>
               </div>
             </div>
-            <button onClick={onToggle} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground">
+            <button
+              onClick={onToggle}
+              className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -191,9 +194,7 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
                   <div
                     key={i}
                     className={`text-sm px-4 py-2.5 rounded-xl ${
-                      t.startsWith("👤")
-                        ? "bg-primary/10 text-foreground ml-8"
-                        : "bg-muted text-foreground mr-8"
+                      t.startsWith("👤") ? "bg-primary/10 text-foreground ml-8" : "bg-muted text-foreground mr-8"
                     }`}
                   >
                     {t.slice(2)}
