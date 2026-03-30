@@ -11,6 +11,9 @@ import PropertyDetail from "./pages/PropertyDetail.tsx";
 import Catalog from "./pages/Catalog.tsx";
 import Auth from "./pages/Auth.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
+import OfficesPage from "./pages/OfficesPage.tsx";
+import RetailPage from "./pages/RetailPage.tsx";
+import WarehousesPage from "./pages/WarehousesPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -37,6 +40,9 @@ const App = () => {
               <Route path="/property/:id" element={<PropertyDetail />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/offices" element={<OfficesPage />} />
+              <Route path="/retail" element={<RetailPage />} />
+              <Route path="/warehouses" element={<WarehousesPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
