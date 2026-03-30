@@ -11,6 +11,9 @@ import PropertyDetail from "./pages/PropertyDetail.tsx";
 import Catalog from "./pages/Catalog.tsx";
 import Auth from "./pages/Auth.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
+import OfficesPage from "./pages/OfficesPage.tsx";
+import RetailPage from "./pages/RetailPage.tsx";
+import WarehousesPage from "./pages/WarehousesPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
