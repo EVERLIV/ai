@@ -30,27 +30,29 @@ export default function SiteHeader() {
         {/* Desktop nav */}
         <nav className="hidden lg:flex items-center gap-6">
           {navItems.map((item) => (
-            <a
-              key={item}
-              href={`#${item}`}
+            <Link
+              key={item.label}
+              to={item.href}
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
-              {item}
-            </a>
+              {item.label}
+            </Link>
           ))}
         </nav>
 
         {/* CTA */}
         <div className="hidden lg:flex items-center gap-3">
-          <button className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <Search className="w-4 h-4" />
-          </button>
-          <a
-            href="#Сдать объект"
-            className="text-sm font-medium px-5 py-2 rounded-lg border border-gold text-gold hover:bg-gold hover:text-primary-foreground transition-all duration-300"
+          <Link to="/catalog">
+            <button className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Search className="w-4 h-4" />
+            </button>
+          </Link>
+          <Link
+            to="/auth"
+            className="text-sm font-medium px-5 py-2 rounded-lg border border-border text-foreground hover:bg-accent/10 transition-all duration-300"
           >
-            Сдать объект
-          </a>
+            Войти
+          </Link>
         </div>
 
         {/* Mobile toggle */}
@@ -63,22 +65,22 @@ export default function SiteHeader() {
       {mobileOpen && (
         <div className="lg:hidden bg-card border-b border-border px-4 pb-4">
           {navItems.map((item) => (
-            <a
-              key={item}
-              href={`#${item}`}
+            <Link
+              key={item.label}
+              to={item.href}
               className="block py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground"
               onClick={() => setMobileOpen(false)}
             >
-              {item}
-            </a>
+              {item.label}
+            </Link>
           ))}
-          <a
-            href="#Сдать объект"
+          <Link
+            to="/auth"
             onClick={() => setMobileOpen(false)}
-            className="mt-2 block w-full text-center text-sm font-medium px-5 py-2.5 rounded-lg border border-gold text-gold hover:bg-gold hover:text-primary-foreground transition-all"
+            className="mt-2 block w-full text-center text-sm font-medium px-5 py-2.5 rounded-lg border border-border text-foreground hover:bg-accent/10 transition-all"
           >
-            Сдать объект
-          </a>
+            Войти
+          </Link>
         </div>
       )}
     </header>
