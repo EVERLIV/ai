@@ -36,15 +36,15 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
       console.log("ElevenLabs agent disconnected");
       setIsVoiceMode(false);
     },
-    onMessage: (message) => {
+    onMessage: (message: any) => {
       if (message.type === "agent_response") {
-        const text = (message as any).agent_response_event?.agent_response;
+        const text = message.agent_response_event?.agent_response;
         if (text) {
           setVoiceTranscripts((prev) => [...prev, `🤖 ${text}`]);
         }
       }
       if (message.type === "user_transcript") {
-        const text = (message as any).user_transcription_event?.user_transcript;
+        const text = message.user_transcription_event?.user_transcript;
         if (text) {
           setVoiceTranscripts((prev) => [...prev, `👤 ${text}`]);
         }
