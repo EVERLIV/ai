@@ -385,6 +385,21 @@ export default function Dashboard() {
     totalViews: properties.reduce((s: number, p: any) => s + (p.views_count || 0), 0),
   };
 
+  const sortedProperties = useMemo(() => {
+    if (!sortField) return properties;
+    return [...properties].sort((a: any, b: any) => {
+      let aVal = a[sortField];
+      let bVal = b[sortField];
+      if (typeof aVal === "string") aVal = aVal.toLowerCase();
+      if (typeof bVal === "string") bVal = bVal.toLowerCase();
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+      if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [properties, sortField, sortDir]);
+
   const isSale = form.deal_type === "Продажа";
 
   return (
