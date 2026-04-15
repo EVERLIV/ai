@@ -385,363 +385,262 @@ export default function Dashboard() {
                 <SheetTrigger asChild>
                   <Button onClick={openNew}><Plus className="w-4 h-4 mr-1" /> Добавить объект</Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-6">
-                  <SheetHeader className="mb-4">
-                    <SheetTitle>{editId ? "Редактировать объект" : "Новый объект"}</SheetTitle>
-                  </SheetHeader>
-                  <form
-                    onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }}
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4"
-                  >
-                    {/* Row 1: Type, Class, Deal Type */}
-                    <div className="space-y-2">
-                      <Label>Тип</Label>
-                      <Select value={form.type} onValueChange={(v) => updateField("type", v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto p-0">
+                  <div className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center justify-between">
+                    <SheetTitle className="text-base font-semibold">{editId ? "Редактировать объект" : "Новый объект"}</SheetTitle>
+                    <div className="flex items-center gap-2">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setDialogOpen(false)}>Отмена</Button>
+                      <Button size="sm" onClick={() => saveMutation.mutate(form)} disabled={saveMutation.isPending || uploading}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                        {saveMutation.isPending || uploading ? "Сохранение..." : "Сохранить"}
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Класс</Label>
-                      <Select value={form.class} onValueChange={(v) => updateField("class", v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {CLASSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Тип сделки</Label>
-                      <Select value={form.deal_type} onValueChange={(v) => updateField("deal_type", v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {DEAL_TYPES.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Price & Area */}
-                    <div className="space-y-2">
-                      <Label>Площадь (м²)</Label>
-                      <Input type="number" value={form.area || ""} onChange={(e) => updateField("area", Number(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>{isSale ? "Цена (₽)" : "Цена (₽/мес)"}</Label>
-                      <Input type="number" value={form.price || ""} onChange={(e) => updateField("price", Number(e.target.value))} />
-                    </div>
-                    {isSale && (
-                      <div className="space-y-2">
-                        <Label>Цена за м² (₽)</Label>
-                        <Input type="number" value={form.area > 0 ? Math.round(form.price / form.area) : ""} disabled className="bg-muted" />
+                  </div>
+                  <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }} className="p-4 space-y-4">
+                    {/* Section: Основное */}
+                    <fieldset className="border border-border rounded-lg p-3 space-y-3">
+                      <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Основное</legend>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-xs mb-1 block">Тип</Label>
+                          <Select value={form.type} onValueChange={(v) => updateField("type", v)}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>{TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">Класс</Label>
+                          <Select value={form.class} onValueChange={(v) => updateField("class", v)}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>{CLASSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">Сделка</Label>
+                          <Select value={form.deal_type} onValueChange={(v) => updateField("deal_type", v)}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>{DEAL_TYPES.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                    )}
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-xs mb-1 block">Площадь, м²</Label>
+                          <Input className="h-8 text-xs" type="number" value={form.area || ""} onChange={(e) => updateField("area", Number(e.target.value))} />
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">{isSale ? "Цена, ₽" : "Цена, ₽/мес"}</Label>
+                          <Input className="h-8 text-xs" type="number" value={form.price || ""} onChange={(e) => updateField("price", Number(e.target.value))} />
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">₽/м²</Label>
+                          <Input className="h-8 text-xs bg-muted" type="number" value={form.area > 0 ? Math.round(form.price / form.area) : ""} disabled />
+                        </div>
+                      </div>
+                    </fieldset>
 
-                    {/* Address with autocomplete */}
-                    <div className={`space-y-2 ${isSale ? "" : "sm:col-span-2"} relative`}>
-                      <Label>Адрес</Label>
+                    {/* Section: Локация */}
+                    <fieldset className="border border-border rounded-lg p-3 space-y-3">
+                      <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Локация</legend>
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          value={form.address}
-                          onChange={(e) => {
-                            updateField("address", e.target.value);
-                            setAddressQuery(e.target.value);
-                            setShowAddressSuggestions(true);
-                          }}
-                          onFocus={() => setShowAddressSuggestions(true)}
-                          onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 200)}
-                          className="pl-9"
-                          placeholder="Начните вводить адрес..."
-                          required
-                        />
+                        <Label className="text-xs mb-1 block">Адрес</Label>
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                          <Input className="h-8 text-xs pl-8" value={form.address}
+                            onChange={(e) => { updateField("address", e.target.value); setAddressQuery(e.target.value); setShowAddressSuggestions(true); }}
+                            onFocus={() => setShowAddressSuggestions(true)}
+                            onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 200)}
+                            placeholder="Начните вводить адрес..." required />
+                        </div>
+                        {showAddressSuggestions && filteredAddresses.length > 0 && (
+                          <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg overflow-hidden">
+                            {filteredAddresses.map((addr) => (
+                              <button key={addr} type="button"
+                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-accent transition-colors flex items-center gap-1.5"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => { updateField("address", addr); setAddressQuery(addr); setShowAddressSuggestions(false); }}>
+                                <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />{addr}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      {showAddressSuggestions && filteredAddresses.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
-                          {filteredAddresses.map((addr) => (
-                            <button
-                              key={addr}
-                              type="button"
-                              className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center gap-2"
-                              onMouseDown={(e) => e.preventDefault()}
-                              onClick={() => {
-                                updateField("address", addr);
-                                setAddressQuery(addr);
-                                setShowAddressSuggestions(false);
-                              }}
-                            >
-                              <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                              {addr}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* District */}
-                    <div className="space-y-2">
-                      <Label>Район / город</Label>
-                      <Select value={form.district || "none"} onValueChange={(v) => updateField("district", v === "none" ? "" : v)}>
-                        <SelectTrigger><SelectValue placeholder="Выберите район" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Не выбран</SelectItem>
-                          {DISTRICTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Floor */}
-                    <div className="space-y-2">
-                      <Label>Этаж</Label>
-                      <Select value={form.floor || "none"} onValueChange={(v) => updateField("floor", v === "none" ? "" : v)}>
-                        <SelectTrigger><SelectValue placeholder="Выберите этаж" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Не указан</SelectItem>
-                          {FLOORS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Total floors */}
-                    <div className="space-y-2">
-                      <Label>Всего этажей</Label>
-                      <Select value={String(form.total_floors)} onValueChange={(v) => updateField("total_floors", Number(v))}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {TOTAL_FLOORS_OPTIONS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Ceiling height */}
-                    <div className="space-y-2">
-                      <Label>Высота потолков (м)</Label>
-                      <Select value={String(form.ceiling_height)} onValueChange={(v) => updateField("ceiling_height", Number(v))}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {CEILING_HEIGHTS.map((h) => <SelectItem key={h} value={h}>{h} м</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Parking */}
-                    <div className="space-y-2">
-                      <Label>Парковка</Label>
-                      <Select value={form.parking || "none"} onValueChange={(v) => updateField("parking", v === "none" ? "" : v)}>
-                        <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Не указано</SelectItem>
-                          {PARKING_OPTIONS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Condition */}
-                    <div className="space-y-2">
-                      <Label>Состояние</Label>
-                      <Select value={form.condition || "none"} onValueChange={(v) => updateField("condition", v === "none" ? "" : v)}>
-                        <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Не указано</SelectItem>
-                          {CONDITIONS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Layout */}
-                    <div className="space-y-2">
-                      <Label>Планировка</Label>
-                      <Select value={form.layout || "none"} onValueChange={(v) => updateField("layout", v === "none" ? "" : v)}>
-                        <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Не указано</SelectItem>
-                          {LAYOUTS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Deposit & Contract (only for rent) */}
-                    {!isSale && (
-                      <>
-                        <div className="space-y-2">
-                          <Label>Залог</Label>
-                          <Select value={form.deposit || "none"} onValueChange={(v) => updateField("deposit", v === "none" ? "" : v)}>
-                            <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">Не указано</SelectItem>
-                              {DEPOSIT_OPTIONS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                            </SelectContent>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-xs mb-1 block">Район</Label>
+                          <Select value={form.district || "none"} onValueChange={(v) => updateField("district", v === "none" ? "" : v)}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Район" /></SelectTrigger>
+                            <SelectContent><SelectItem value="none">—</SelectItem>{DISTRICTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
                           </Select>
                         </div>
-                        <div className="space-y-2">
-                          <Label>Срок договора</Label>
-                          <Select value={form.contract_term || "none"} onValueChange={(v) => updateField("contract_term", v === "none" ? "" : v)}>
-                            <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">Не указано</SelectItem>
-                              {CONTRACT_TERMS.map((ct) => <SelectItem key={ct} value={ct}>{ct}</SelectItem>)}
-                            </SelectContent>
+                        <div>
+                          <Label className="text-xs mb-1 block">Этаж</Label>
+                          <Select value={form.floor || "none"} onValueChange={(v) => updateField("floor", v === "none" ? "" : v)}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                            <SelectContent><SelectItem value="none">—</SelectItem>{FLOORS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
                           </Select>
                         </div>
-                      </>
-                    )}
+                        <div>
+                          <Label className="text-xs mb-1 block">Этажей</Label>
+                          <Select value={String(form.total_floors)} onValueChange={(v) => updateField("total_floors", Number(v))}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>{TOTAL_FLOORS_OPTIONS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </fieldset>
 
-                    {/* Manager & Client */}
-                    <div className="space-y-2">
-                      <Label>Менеджер</Label>
-                      <Select value={form.manager_id || "none"} onValueChange={(v) => updateField("manager_id", v === "none" ? "" : v)}>
-                        <SelectTrigger><SelectValue placeholder="Выберите менеджера" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Не назначен</SelectItem>
-                          {users.map((u: any) => (
-                            <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Клиент (собственник)</Label>
-                      <Select value={form.client_id || "none"} onValueChange={(v) => updateField("client_id", v === "none" ? "" : v)}>
-                        <SelectTrigger><SelectValue placeholder="Выберите клиента" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Не назначен</SelectItem>
-                          {users.map((u: any) => (
-                            <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {/* Section: Характеристики */}
+                    <fieldset className="border border-border rounded-lg p-3 space-y-3">
+                      <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Характеристики</legend>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-xs mb-1 block">Потолки, м</Label>
+                          <Select value={String(form.ceiling_height)} onValueChange={(v) => updateField("ceiling_height", Number(v))}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>{CEILING_HEIGHTS.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">Парковка</Label>
+                          <Select value={form.parking || "none"} onValueChange={(v) => updateField("parking", v === "none" ? "" : v)}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                            <SelectContent><SelectItem value="none">—</SelectItem>{PARKING_OPTIONS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">Состояние</Label>
+                          <Select value={form.condition || "none"} onValueChange={(v) => updateField("condition", v === "none" ? "" : v)}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                            <SelectContent><SelectItem value="none">—</SelectItem>{CONDITIONS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-xs mb-1 block">Планировка</Label>
+                          <Select value={form.layout || "none"} onValueChange={(v) => updateField("layout", v === "none" ? "" : v)}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                            <SelectContent><SelectItem value="none">—</SelectItem>{LAYOUTS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        {!isSale && (
+                          <>
+                            <div>
+                              <Label className="text-xs mb-1 block">Залог</Label>
+                              <Select value={form.deposit || "none"} onValueChange={(v) => updateField("deposit", v === "none" ? "" : v)}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent><SelectItem value="none">—</SelectItem>{DEPOSIT_OPTIONS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="text-xs mb-1 block">Срок</Label>
+                              <Select value={form.contract_term || "none"} onValueChange={(v) => updateField("contract_term", v === "none" ? "" : v)}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent><SelectItem value="none">—</SelectItem>{CONTRACT_TERMS.map((ct) => <SelectItem key={ct} value={ct}>{ct}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </fieldset>
 
-                    {/* Description */}
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label>Описание</Label>
-                      <Textarea value={form.description} onChange={(e) => updateField("description", e.target.value)} rows={3} />
-                    </div>
+                    {/* Section: Назначение */}
+                    <fieldset className="border border-border rounded-lg p-3 space-y-3">
+                      <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Назначение</legend>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs mb-1 block">Менеджер</Label>
+                          <Select value={form.manager_id || "none"} onValueChange={(v) => updateField("manager_id", v === "none" ? "" : v)}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                            <SelectContent><SelectItem value="none">—</SelectItem>{users.map((u: any) => <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">Клиент</Label>
+                          <Select value={form.client_id || "none"} onValueChange={(v) => updateField("client_id", v === "none" ? "" : v)}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                            <SelectContent><SelectItem value="none">—</SelectItem>{users.map((u: any) => <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs mb-1 block">Описание</Label>
+                        <Textarea value={form.description} onChange={(e) => updateField("description", e.target.value)} rows={2} className="text-xs min-h-[60px]" />
+                      </div>
+                    </fieldset>
 
-                    {/* Features as checkboxes */}
-                    <div className="space-y-3 sm:col-span-2">
-                      <Label>Особенности и оснащение</Label>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto rounded-lg border border-border p-3">
+                    {/* Section: Особенности */}
+                    <fieldset className="border border-border rounded-lg p-3 space-y-2">
+                      <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Особенности ({form.features.length})</legend>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-1 max-h-32 overflow-y-auto">
                         {FEATURES_LIST.map((feature) => {
                           const checked = form.features.includes(feature);
                           return (
-                            <label key={feature} className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground transition-colors">
-                              <Checkbox
-                                checked={checked}
+                            <label key={feature} className="flex items-center gap-1.5 text-[11px] cursor-pointer py-0.5 hover:text-foreground transition-colors">
+                              <Checkbox className="h-3.5 w-3.5" checked={checked}
                                 onCheckedChange={(v) => {
-                                  if (v) {
-                                    updateField("features", [...form.features, feature]);
-                                  } else {
-                                    updateField("features", form.features.filter((f) => f !== feature));
-                                  }
-                                }}
-                              />
+                                  if (v) updateField("features", [...form.features, feature]);
+                                  else updateField("features", form.features.filter((f) => f !== feature));
+                                }} />
                               <span className={checked ? "text-foreground" : "text-muted-foreground"}>{feature}</span>
                             </label>
                           );
                         })}
                       </div>
-                      <p className="text-xs text-muted-foreground">Выбрано: {form.features.length}</p>
-                    </div>
+                    </fieldset>
 
-                    {/* Photos Section */}
-                    <div className="space-y-3 sm:col-span-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="flex items-center gap-2">
-                          <ImageIcon className="w-4 h-4" /> Фотографии ({totalPhotos}/15)
-                        </Label>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={totalPhotos >= 15}
-                        >
-                          <Upload className="w-4 h-4 mr-1" /> Загрузить
-                        </Button>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          multiple
-                          accept="image/*"
-                          onChange={handleFileSelect}
-                          className="hidden"
-                        />
-                      </div>
-
+                    {/* Section: Фото */}
+                    <fieldset className="border border-border rounded-lg p-3 space-y-2">
+                      <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Фото ({totalPhotos}/15)</legend>
+                      <input ref={fileInputRef} type="file" multiple accept="image/*" onChange={handleFileSelect} className="hidden" />
                       {totalPhotos === 0 ? (
-                        <div
-                          className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground cursor-pointer hover:border-primary/50 transition-colors"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          <Upload className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">Нажмите для загрузки фото (до 15 шт.)</p>
+                        <div className="border border-dashed rounded p-4 text-center text-muted-foreground cursor-pointer hover:border-primary/50 transition-colors"
+                          onClick={() => fileInputRef.current?.click()}>
+                          <Upload className="w-5 h-5 mx-auto mb-1 opacity-50" />
+                          <p className="text-xs">Загрузить фото (до 15)</p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                          {existingPhotos.map((url, idx) => (
-                            <div
-                              key={`existing-${idx}`}
-                              className={`relative group aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
-                                coverIndex === idx ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"
-                              }`}
-                              onClick={() => setCoverIndex(idx)}
-                            >
-                              <img src={url} alt="" className="w-full h-full object-cover" />
-                              {coverIndex === idx && (
-                                <div className="absolute top-1 left-1 bg-primary text-primary-foreground rounded px-1.5 py-0.5 text-[10px] font-medium flex items-center gap-0.5">
-                                  <Star className="w-3 h-3" /> Главное
-                                </div>
-                              )}
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); removeExistingPhoto(idx); }}
-                                className="absolute top-1 right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ))}
-                          {photoPreviews.map((url, idx) => {
-                            const globalIdx = existingPhotos.length + idx;
-                            return (
-                              <div
-                                key={`new-${idx}`}
-                                className={`relative group aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
-                                  coverIndex === globalIdx ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"
-                                }`}
-                                onClick={() => setCoverIndex(globalIdx)}
-                              >
+                        <>
+                          <div className="grid grid-cols-5 sm:grid-cols-7 gap-1.5">
+                            {existingPhotos.map((url, idx) => (
+                              <div key={`existing-${idx}`}
+                                className={`relative group aspect-square rounded overflow-hidden border cursor-pointer transition-all ${coverIndex === idx ? "border-primary ring-1 ring-primary/30" : "border-border hover:border-primary/40"}`}
+                                onClick={() => setCoverIndex(idx)}>
                                 <img src={url} alt="" className="w-full h-full object-cover" />
-                                {coverIndex === globalIdx && (
-                                  <div className="absolute top-1 left-1 bg-primary text-primary-foreground rounded px-1.5 py-0.5 text-[10px] font-medium flex items-center gap-0.5">
-                                    <Star className="w-3 h-3" /> Главное
-                                  </div>
-                                  )}
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); removeNewPhoto(idx); }}
-                                  className="absolute top-1 right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <X className="w-3 h-3" />
+                                {coverIndex === idx && <div className="absolute top-0.5 left-0.5 bg-primary text-primary-foreground rounded px-1 py-px text-[8px] font-medium"><Star className="w-2 h-2 inline" /></div>}
+                                <button type="button" onClick={(e) => { e.stopPropagation(); removeExistingPhoto(idx); }}
+                                  className="absolute top-0.5 right-0.5 w-4 h-4 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <X className="w-2.5 h-2.5" />
                                 </button>
                               </div>
-                            );
-                          })}
-                        </div>
+                            ))}
+                            {photoPreviews.map((url, idx) => {
+                              const globalIdx = existingPhotos.length + idx;
+                              return (
+                                <div key={`new-${idx}`}
+                                  className={`relative group aspect-square rounded overflow-hidden border cursor-pointer transition-all ${coverIndex === globalIdx ? "border-primary ring-1 ring-primary/30" : "border-border hover:border-primary/40"}`}
+                                  onClick={() => setCoverIndex(globalIdx)}>
+                                  <img src={url} alt="" className="w-full h-full object-cover" />
+                                  {coverIndex === globalIdx && <div className="absolute top-0.5 left-0.5 bg-primary text-primary-foreground rounded px-1 py-px text-[8px] font-medium"><Star className="w-2 h-2 inline" /></div>}
+                                  <button type="button" onClick={(e) => { e.stopPropagation(); removeNewPhoto(idx); }}
+                                    className="absolute top-0.5 right-0.5 w-4 h-4 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <X className="w-2.5 h-2.5" />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                            {totalPhotos < 15 && (
+                              <div className="aspect-square rounded border border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                                onClick={() => fileInputRef.current?.click()}>
+                                <Plus className="w-4 h-4 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-muted-foreground">Клик — главное фото</p>
+                        </>
                       )}
-                      {totalPhotos > 0 && (
-                        <p className="text-xs text-muted-foreground">Нажмите на фото, чтобы сделать его главным для карточки</p>
-                      )}
-                    </div>
-
-                    <div className="sm:col-span-2 flex justify-end gap-2 pt-2">
-                      <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Отмена</Button>
-                      <Button type="submit" disabled={saveMutation.isPending || uploading}>
-                        {saveMutation.isPending || uploading ? "Сохранение..." : "Сохранить"}
-                      </Button>
-                    </div>
+                    </fieldset>
                   </form>
                 </SheetContent>
               </Sheet>
