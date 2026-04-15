@@ -1,14 +1,20 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useProperties, type DbProperty } from "@/hooks/useProperties";
+import { useConversation } from "@elevenlabs/react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   SlidersHorizontal, X, ChevronDown, MapPin, Maximize2, LayoutGrid, List,
   Building2, Store, Warehouse, TreePine, ArrowUpDown, Eye, Calendar,
+  Sparkles, Send, Phone, PhoneOff, Mic, PanelLeftClose, PanelLeft,
+  Search, ChevronUp,
 } from "lucide-react";
 
-const TYPES = ["Все", "Офис", "Торговая", "Склад", "Земля", "Производство"];
+const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
 const DEALS = ["Все", "Аренда", "Продажа"];
 const CLASSES = ["Все", "A", "A+", "B+", "B", "C"];
 const SORT_OPTIONS = [
@@ -23,51 +29,216 @@ const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
 };
 
+const ELEVENLABS_AGENT_ID = "agent_7301kmyt4jxxf8etgj0av5x43qb4";
+
+// ─── Compact range input ───
 function RangeInput({ label, min, max, onMinChange, onMaxChange, suffix }: {
   label: string; min: string; max: string; onMinChange: (v: string) => void; onMaxChange: (v: string) => void; suffix?: string;
 }) {
   return (
     <div>
-      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{label}</label>
-      <div className="flex gap-2">
+      <label className="text-[11px] font-medium text-muted-foreground mb-1 block">{label}</label>
+      <div className="flex gap-1.5">
         <div className="relative flex-1">
           <input type="number" placeholder="от" value={min} onChange={(e) => onMinChange(e.target.value)}
-            className="w-full px-3 py-2 pr-8 rounded-lg bg-card text-sm text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary" />
-          {suffix && <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{suffix}</span>}
+            className="w-full px-2 py-1.5 pr-7 rounded-md bg-background text-xs text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary" />
+          {suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{suffix}</span>}
         </div>
         <div className="relative flex-1">
           <input type="number" placeholder="до" value={max} onChange={(e) => onMaxChange(e.target.value)}
-            className="w-full px-3 py-2 pr-8 rounded-lg bg-card text-sm text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary" />
-          {suffix && <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{suffix}</span>}
+            className="w-full px-2 py-1.5 pr-7 rounded-md bg-background text-xs text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary" />
+          {suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{suffix}</span>}
         </div>
       </div>
     </div>
   );
 }
 
+// ─── Compact select ───
 function SelectFilter({ label, value, options, onChange }: {
   label: string; value: string; options: string[]; onChange: (v: string) => void;
 }) {
   return (
     <div>
-      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{label}</label>
+      <label className="text-[11px] font-medium text-muted-foreground mb-1 block">{label}</label>
       <div className="relative">
         <select value={value} onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none px-3 py-2 pr-8 rounded-lg bg-card text-sm text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary">
+          className="w-full appearance-none px-2 py-1.5 pr-7 rounded-md bg-background text-xs text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary">
           {options.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
-        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
       </div>
     </div>
   );
 }
 
+// ─── Collapsible section ───
+function Section({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-b border-border pb-3">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between py-2 text-xs font-semibold text-foreground uppercase tracking-wider">
+        {title}
+        {open ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+      </button>
+      {open && <div className="space-y-2.5 pt-1">{children}</div>}
+    </div>
+  );
+}
+
+// ─── Mini AI Chat in sidebar ───
+function SidebarAIChat() {
+  const [messages, setMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isVoice, setIsVoice] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [transcripts, setTranscripts] = useState<string[]>([]);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  const conversation = useConversation({
+    onConnect: () => { setConnecting(false); setTranscripts([]); },
+    onDisconnect: () => setIsVoice(false),
+    onMessage: (msg: any) => {
+      if (msg.type === "agent_response") {
+        const t = msg.agent_response_event?.agent_response;
+        if (t) setTranscripts((p) => [...p, `🤖 ${t}`]);
+      }
+      if (msg.type === "user_transcript") {
+        const t = msg.user_transcription_event?.user_transcript;
+        if (t) setTranscripts((p) => [...p, `👤 ${t}`]);
+      }
+    },
+    onError: () => {
+      toast({ title: "Ошибка голосового агента", variant: "destructive" });
+      setConnecting(false); setIsVoice(false);
+    },
+  });
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, transcripts, loading]);
+
+  const startVoice = useCallback(async () => {
+    setConnecting(true);
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token", {
+        body: { agent_id: ELEVENLABS_AGENT_ID },
+      });
+      if (error || !data?.token) throw new Error("Нет токена");
+      await conversation.startSession({ conversationToken: data.token, connectionType: "webrtc" });
+      setIsVoice(true);
+    } catch {
+      toast({ title: "Не удалось начать звонок", variant: "destructive" });
+      setConnecting(false);
+    }
+  }, [conversation, toast]);
+
+  const endVoice = useCallback(async () => {
+    await conversation.endSession();
+    setIsVoice(false);
+  }, [conversation]);
+
+  const send = (text: string) => {
+    if (!text.trim() || loading) return;
+    setMessages((p) => [...p, { role: "user", text: text.trim() }]);
+    setInput("");
+    setLoading(true);
+    setTimeout(() => {
+      setMessages((p) => [...p, { role: "assistant", text: "Для полного ИИ подключите Lovable Cloud. Сейчас работаю в демо-режиме. Уточните ваш запрос!" }]);
+      setLoading(false);
+    }, 1200);
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
+        <div className={`w-6 h-6 rounded-full flex items-center justify-center ${isVoice ? "bg-primary/15" : "bg-accent"}`}>
+          {isVoice ? <Phone className="w-3 h-3 text-primary" /> : <Sparkles className="w-3 h-3 text-primary" />}
+        </div>
+        <span className="text-xs font-semibold text-foreground flex-1">
+          {isVoice ? "Голосовой звонок" : "ИИ-помощник"}
+        </span>
+        {isVoice && (
+          <span className="text-[10px] text-primary flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            {conversation.isSpeaking ? "говорит" : "слушает"}
+          </span>
+        )}
+      </div>
+
+      {isVoice ? (
+        <>
+          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5 min-h-0">
+            {transcripts.length === 0 && (
+              <div className="text-center py-6 text-muted-foreground">
+                <Mic className={`w-8 h-8 mx-auto mb-2 text-primary ${!conversation.isSpeaking ? "animate-pulse" : ""}`} />
+                <p className="text-[11px]">Говорите — агент слушает</p>
+              </div>
+            )}
+            {transcripts.map((t, i) => (
+              <div key={i} className={`text-[11px] px-2.5 py-1.5 rounded-lg ${t.startsWith("👤") ? "bg-primary/10 ml-4" : "bg-muted mr-4"}`}>
+                {t.slice(2)}
+              </div>
+            ))}
+            <div ref={bottomRef} />
+          </div>
+          <div className="px-3 py-2 border-t border-border">
+            <button onClick={endVoice} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity">
+              <PhoneOff className="w-3.5 h-3.5" /> Завершить
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2 min-h-0">
+            {messages.length === 0 && (
+              <p className="text-[11px] text-muted-foreground text-center py-4">Задайте вопрос о недвижимости</p>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} className={`text-[11px] px-2.5 py-1.5 rounded-lg leading-relaxed ${m.role === "user" ? "bg-primary text-primary-foreground ml-4 rounded-br-sm" : "bg-muted text-foreground mr-4 rounded-bl-sm"}`}>
+                {m.text}
+              </div>
+            ))}
+            {loading && (
+              <div className="bg-muted px-3 py-2 rounded-lg rounded-bl-sm flex gap-1 mr-4">
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" />
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:150ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:300ms]" />
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
+          <div className="px-3 py-2 border-t border-border space-y-1.5">
+            <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="flex gap-1.5">
+              <input value={input} onChange={(e) => setInput(e.target.value)}
+                placeholder="Поиск объектов..."
+                className="flex-1 px-2.5 py-1.5 rounded-md bg-background text-xs text-foreground placeholder:text-muted-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary" />
+              <button type="submit" disabled={!input.trim() || loading}
+                className="p-1.5 rounded-md bg-primary text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-opacity">
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </form>
+            <button onClick={startVoice} disabled={connecting}
+              className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-md border border-primary/30 text-primary hover:bg-primary/5 transition-colors text-[11px] font-medium disabled:opacity-50">
+              <Phone className="w-3 h-3" />
+              {connecting ? "Подключение..." : "Позвонить ИИ"}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Catalog ───
 export default function Catalog() {
   const { data: properties = [], isLoading } = useProperties();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileSidebar, setMobileSidebar] = useState(false);
   const [dealType, setDealType] = useState("Все");
-  const [propertyType, setPropertyType] = useState("Все");
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [district, setDistrict] = useState("Все");
   const [propertyClass, setPropertyClass] = useState("Все");
   const [condition, setCondition] = useState("Все");
@@ -76,26 +247,37 @@ export default function Catalog() {
   const [areaMin, setAreaMin] = useState("");
   const [areaMax, setAreaMax] = useState("");
   const [sort, setSort] = useState("date");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [aiOpen, setAiOpen] = useState(false);
 
   const districts = useMemo(() => ["Все", ...Array.from(new Set(properties.map((p) => p.district)))], [properties]);
   const conditions = useMemo(() => ["Все", ...Array.from(new Set(properties.map((p) => p.condition).filter(Boolean) as string[]))], [properties]);
 
+  const toggleType = (t: string) => {
+    setSelectedTypes((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]);
+  };
+
   const activeFiltersCount = [
-    dealType !== "Все", propertyType !== "Все", district !== "Все",
+    dealType !== "Все", selectedTypes.length > 0, district !== "Все",
     propertyClass !== "Все", condition !== "Все",
-    priceMin, priceMax, areaMin, areaMax,
+    priceMin, priceMax, areaMin, areaMax, searchQuery,
   ].filter(Boolean).length;
 
   const resetFilters = () => {
-    setDealType("Все"); setPropertyType("Все"); setDistrict("Все");
+    setDealType("Все"); setSelectedTypes([]); setDistrict("Все");
     setPropertyClass("Все"); setCondition("Все");
     setPriceMin(""); setPriceMax(""); setAreaMin(""); setAreaMax("");
+    setSearchQuery("");
   };
 
   const filtered = useMemo(() => {
     let result = [...properties];
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((p) => p.address.toLowerCase().includes(q) || p.district.toLowerCase().includes(q) || p.type.toLowerCase().includes(q));
+    }
     if (dealType !== "Все") result = result.filter((p) => p.deal_type === dealType);
-    if (propertyType !== "Все") result = result.filter((p) => p.type === propertyType);
+    if (selectedTypes.length > 0) result = result.filter((p) => selectedTypes.includes(p.type));
     if (district !== "Все") result = result.filter((p) => p.district === district);
     if (propertyClass !== "Все") result = result.filter((p) => p.class === propertyClass);
     if (condition !== "Все") result = result.filter((p) => p.condition === condition);
@@ -111,145 +293,217 @@ export default function Catalog() {
       case "area_desc": result.sort((a, b) => Number(b.area) - Number(a.area)); break;
     }
     return result;
-  }, [properties, dealType, propertyType, district, propertyClass, condition, priceMin, priceMax, areaMin, areaMax, sort]);
+  }, [properties, dealType, selectedTypes, district, propertyClass, condition, priceMin, priceMax, areaMin, areaMax, sort, searchQuery]);
 
-  return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
-
-      <div className="pt-16">
-        <div className="bg-gradient-to-br from-primary/8 to-accent/5 border-b border-border">
-          <div className="container mx-auto px-4 lg:px-8 py-8 lg:py-12">
-            <h1 className="font-display text-3xl lg:text-4xl font-bold text-foreground mb-2">Каталог объектов</h1>
-            <p className="text-muted-foreground">Коммерческая недвижимость в Иркутске и области</p>
-          </div>
+  // Sidebar content (shared between desktop & mobile)
+  const sidebarContent = (
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Поиск по адресу, району..."
+            className="w-full pl-8 pr-3 py-2 rounded-lg bg-background text-xs text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary" />
         </div>
+
+        {/* Deal type */}
+        <Section title="Тип сделки">
+          <div className="flex gap-1.5">
+            {DEALS.map((d) => (
+              <button key={d} onClick={() => setDealType(d)}
+                className={`flex-1 px-2 py-1.5 rounded-md text-[11px] font-medium transition-all ${dealType === d ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
+                {d}
+              </button>
+            ))}
+          </div>
+        </Section>
+
+        {/* Property types as checkboxes */}
+        <Section title="Тип объекта">
+          <div className="space-y-1.5">
+            {TYPES.map((t) => {
+              const Icon = typeIcons[t] || Building2;
+              const checked = selectedTypes.includes(t);
+              return (
+                <label key={t} className="flex items-center gap-2 text-xs cursor-pointer hover:text-foreground transition-colors">
+                  <Checkbox className="h-3.5 w-3.5" checked={checked} onCheckedChange={() => toggleType(t)} />
+                  <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className={checked ? "text-foreground font-medium" : "text-muted-foreground"}>{t}</span>
+                </label>
+              );
+            })}
+          </div>
+        </Section>
+
+        {/* Location */}
+        <Section title="Локация">
+          <SelectFilter label="Район / Город" value={district} options={districts} onChange={setDistrict} />
+        </Section>
+
+        {/* Price & Area */}
+        <Section title="Цена и площадь">
+          <RangeInput label="Цена, ₽" min={priceMin} max={priceMax} onMinChange={setPriceMin} onMaxChange={setPriceMax} suffix="₽" />
+          <RangeInput label="Площадь, м²" min={areaMin} max={areaMax} onMinChange={setAreaMin} onMaxChange={setAreaMax} suffix="м²" />
+        </Section>
+
+        {/* Class & Condition */}
+        <Section title="Параметры" defaultOpen={false}>
+          <SelectFilter label="Класс" value={propertyClass} options={CLASSES} onChange={setPropertyClass} />
+          <SelectFilter label="Состояние" value={condition} options={conditions} onChange={setCondition} />
+        </Section>
+
+        {/* Reset */}
+        {activeFiltersCount > 0 && (
+          <button onClick={resetFilters} className="w-full flex items-center justify-center gap-1.5 text-xs text-destructive hover:text-destructive/80 py-2 transition-colors">
+            <X className="w-3 h-3" /> Сбросить ({activeFiltersCount})
+          </button>
+        )}
       </div>
 
-      <div className="container mx-auto px-4 lg:px-8 py-6">
-        {/* Deal type tabs */}
-        <div className="flex items-center gap-2 mb-6">
-          {DEALS.map((d) => (
-            <button key={d} onClick={() => setDealType(d)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                dealType === d ? "bg-primary text-primary-foreground shadow-sm" : "bg-card text-muted-foreground border border-border hover:text-foreground hover:border-foreground/20"
-              }`}>{d}</button>
-          ))}
-          <div className="flex-1" />
-          <button onClick={() => setFiltersOpen(!filtersOpen)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
-              filtersOpen ? "bg-primary/5 border-primary/20 text-primary" : "bg-card border-border text-muted-foreground hover:text-foreground"
-            }`}>
-            <SlidersHorizontal className="w-4 h-4" /> Фильтры
-            {activeFiltersCount > 0 && (
-              <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">{activeFiltersCount}</span>
-            )}
-          </button>
-        </div>
+      {/* AI chat section at bottom */}
+      <div className="border-t border-border">
+        <button onClick={() => setAiOpen(!aiOpen)} className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-semibold text-foreground hover:bg-muted/50 transition-colors">
+          <Sparkles className="w-3.5 h-3.5 text-primary" />
+          <span className="flex-1 text-left">ИИ-помощник</span>
+          {aiOpen ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />}
+        </button>
+        {aiOpen && (
+          <div className="h-72 border-t border-border">
+            <SidebarAIChat />
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
-        {/* Filters panel */}
-        {filtersOpen && (
-          <div className="bg-card rounded-2xl border border-border p-5 mb-6 animate-fade-in-up">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-              <SelectFilter label="Тип объекта" value={propertyType} options={TYPES} onChange={setPropertyType} />
-              <SelectFilter label="Район / Город" value={district} options={districts} onChange={setDistrict} />
-              <SelectFilter label="Класс" value={propertyClass} options={CLASSES} onChange={setPropertyClass} />
-              <SelectFilter label="Состояние" value={condition} options={conditions} onChange={setCondition} />
-              <RangeInput label="Площадь, м²" min={areaMin} max={areaMax} onMinChange={setAreaMin} onMaxChange={setAreaMax} suffix="м²" />
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <SiteHeader />
+
+      <div className="pt-16 flex-1 flex flex-col">
+        {/* Top bar */}
+        <div className="bg-gradient-to-br from-primary/8 to-accent/5 border-b border-border">
+          <div className="px-4 lg:px-6 py-4 lg:py-6 flex items-center gap-4">
+            {/* Toggle sidebar desktop */}
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="hidden lg:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
+            </button>
+            {/* Toggle sidebar mobile */}
+            <button onClick={() => setMobileSidebar(true)} className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-card border border-border text-xs font-medium text-foreground">
+              <SlidersHorizontal className="w-3.5 h-3.5" /> Фильтры
+              {activeFiltersCount > 0 && <span className="w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">{activeFiltersCount}</span>}
+            </button>
+            <div className="flex-1">
+              <h1 className="font-display text-xl lg:text-2xl font-bold text-foreground">Каталог объектов</h1>
+              <p className="text-xs text-muted-foreground hidden sm:block">Коммерческая недвижимость в Иркутске и области</p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-4">
-              <div className="lg:col-span-2">
-                <RangeInput label="Цена, ₽" min={priceMin} max={priceMax} onMinChange={setPriceMin} onMaxChange={setPriceMax} suffix="₽" />
+            <div className="flex items-center gap-2">
+              <div className="relative hidden sm:block">
+                <select value={sort} onChange={(e) => setSort(e.target.value)}
+                  className="appearance-none pl-7 pr-5 py-1.5 rounded-lg bg-card text-[11px] font-medium text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary">
+                  {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <ArrowUpDown className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               </div>
-              <div className="flex items-end">
-                <button onClick={resetFilters} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive transition-colors">
-                  <X className="w-3.5 h-3.5" /> Сбросить всё
+              <div className="flex bg-muted rounded-lg p-0.5">
+                <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-md transition-all ${viewMode === "grid" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"}`}>
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md transition-all ${viewMode === "list" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"}`}>
+                  <List className="w-4 h-4" />
                 </button>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border">
-              {TYPES.filter((t) => t !== "Все").map((t) => {
-                const Icon = typeIcons[t];
-                const active = propertyType === t;
-                return (
-                  <button key={t} onClick={() => setPropertyType(active ? "Все" : t)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                      active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                    }`}>
-                    {Icon && <Icon className="w-3.5 h-3.5" />} {t}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Toolbar */}
-        <div className="flex items-center justify-between mb-5">
-          <p className="text-sm text-muted-foreground">
-            {isLoading ? "Загрузка..." : <>Найдено <span className="font-semibold text-foreground">{filtered.length}</span> объектов</>}
-          </p>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <select value={sort} onChange={(e) => setSort(e.target.value)}
-                className="appearance-none pl-8 pr-6 py-1.5 rounded-lg bg-card text-xs font-medium text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary">
-                {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-              <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-            </div>
-            <div className="flex bg-muted rounded-lg p-0.5">
-              <button onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-md transition-all ${viewMode === "grid" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"}`}>
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button onClick={() => setViewMode("list")}
-                className={`p-1.5 rounded-md transition-all ${viewMode === "list" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"}`}>
-                <List className="w-4 h-4" />
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* Results */}
-        {isLoading ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[1,2,3].map(i => (
-              <div key={i} className="bg-card rounded-2xl border border-border overflow-hidden animate-pulse">
-                <div className="h-48 bg-muted" />
-                <div className="p-4 space-y-3"><div className="h-5 bg-muted rounded w-1/2" /><div className="h-4 bg-muted rounded w-3/4" /></div>
+        {/* Main content area with sidebar */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Desktop sidebar */}
+          {sidebarOpen && (
+            <aside className="hidden lg:flex w-64 xl:w-72 shrink-0 border-r border-border bg-card flex-col overflow-hidden">
+              {sidebarContent}
+            </aside>
+          )}
+
+          {/* Mobile sidebar overlay */}
+          {mobileSidebar && (
+            <>
+              <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setMobileSidebar(false)} />
+              <aside className="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] bg-card shadow-xl flex flex-col lg:hidden animate-fade-in-up">
+                <div className="flex items-center justify-between px-3 py-3 border-b border-border">
+                  <span className="text-sm font-semibold text-foreground">Фильтры и поиск</span>
+                  <button onClick={() => setMobileSidebar(false)} className="p-1.5 rounded-md hover:bg-muted transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                {sidebarContent}
+              </aside>
+            </>
+          )}
+
+          {/* Results */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="px-4 lg:px-6 py-4">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs text-muted-foreground">
+                  {isLoading ? "Загрузка..." : <>Найдено <span className="font-semibold text-foreground">{filtered.length}</span> объектов</>}
+                </p>
+                {/* Mobile sort */}
+                <div className="relative sm:hidden">
+                  <select value={sort} onChange={(e) => setSort(e.target.value)}
+                    className="appearance-none pl-7 pr-5 py-1.5 rounded-lg bg-card text-[11px] font-medium text-foreground border border-border">
+                    {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                  <ArrowUpDown className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                </div>
               </div>
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-              <Building2 className="w-8 h-8 text-muted-foreground" />
+
+              {isLoading ? (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="bg-card rounded-2xl border border-border overflow-hidden animate-pulse">
+                      <div className="h-44 bg-muted" />
+                      <div className="p-4 space-y-3"><div className="h-5 bg-muted rounded w-1/2" /><div className="h-4 bg-muted rounded w-3/4" /></div>
+                    </div>
+                  ))}
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
+                    <Building2 className="w-7 h-7 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-display text-base font-semibold text-foreground mb-1">Объекты не найдены</h3>
+                  <p className="text-xs text-muted-foreground mb-3">Попробуйте изменить параметры фильтрации</p>
+                  <button onClick={resetFilters} className="text-xs text-primary font-medium hover:underline">Сбросить фильтры</button>
+                </div>
+              ) : viewMode === "grid" ? (
+                <div className={`grid gap-4 sm:grid-cols-2 ${sidebarOpen ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>
+                  {filtered.map((p) => <GridCard key={p.id} property={p} />)}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filtered.map((p) => <ListCard key={p.id} property={p} />)}
+                </div>
+              )}
             </div>
-            <h3 className="font-display text-lg font-semibold text-foreground mb-2">Объекты не найдены</h3>
-            <p className="text-sm text-muted-foreground mb-4">Попробуйте изменить параметры фильтрации</p>
-            <button onClick={resetFilters} className="text-sm text-primary font-medium hover:underline">Сбросить фильтры</button>
           </div>
-        ) : viewMode === "grid" ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((p) => <GridCard key={p.id} property={p} />)}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filtered.map((p) => <ListCard key={p.id} property={p} />)}
-          </div>
-        )}
+        </div>
       </div>
       <SiteFooter />
     </div>
   );
 }
 
+// ─── Cards ───
+
 function GridCard({ property: p }: { property: DbProperty }) {
   const Icon = typeIcons[p.type] || Building2;
   return (
     <Link to={`/property/${p.id}`}
       className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-card-hover transition-all duration-300">
-      <div className="relative h-48 bg-gradient-to-br from-muted to-muted/60 overflow-hidden">
+      <div className="relative h-44 bg-gradient-to-br from-muted to-muted/60 overflow-hidden">
         {p.cover_photo ? (
           <img src={p.cover_photo} alt={p.address} className="w-full h-full object-cover" />
         ) : (
@@ -307,7 +561,7 @@ function ListCard({ property: p }: { property: DbProperty }) {
   return (
     <Link to={`/property/${p.id}`}
       className="group flex bg-card rounded-xl border border-border overflow-hidden hover:shadow-card-hover transition-all duration-300">
-      <div className="relative w-56 shrink-0 bg-gradient-to-br from-muted to-muted/60 hidden sm:flex items-center justify-center overflow-hidden">
+      <div className="relative w-48 shrink-0 bg-gradient-to-br from-muted to-muted/60 hidden sm:flex items-center justify-center overflow-hidden">
         {p.cover_photo ? (
           <img src={p.cover_photo} alt={p.address} className="w-full h-full object-cover" />
         ) : (
