@@ -17,8 +17,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Plus, LogOut, Users, Home, Edit, Trash2,
-  BarChart3, Eye, MapPin, ArrowLeft, Upload, X, Star, ImageIcon, Search
+  BarChart3, Eye, MapPin, ArrowLeft, Upload, X, Star, ImageIcon, Search,
+  ArrowUpDown, ArrowUp, ArrowDown, Settings2, Check
 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 // ====== Predefined options ======
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
@@ -125,6 +127,66 @@ export default function Dashboard() {
   const [addressQuery, setAddressQuery] = useState("");
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sorting
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  // Column visibility
+  type ColKey = "photo" | "type" | "class" | "address" | "district" | "area" | "price" | "price_per_m2" | "deal_type" | "floor" | "ceiling_height" | "parking" | "condition" | "layout" | "deposit" | "contract_term" | "features" | "photos_count" | "views_count" | "manager" | "client" | "status" | "published_date" | "actions";
+
+  const ALL_COLUMNS: { key: ColKey; label: string; defaultOn: boolean }[] = [
+    { key: "photo", label: "Фото", defaultOn: true },
+    { key: "type", label: "Тип", defaultOn: true },
+    { key: "class", label: "Класс", defaultOn: true },
+    { key: "address", label: "Адрес", defaultOn: true },
+    { key: "district", label: "Район", defaultOn: true },
+    { key: "area", label: "Площадь", defaultOn: true },
+    { key: "price", label: "Цена", defaultOn: true },
+    { key: "price_per_m2", label: "₽/м²", defaultOn: false },
+    { key: "deal_type", label: "Сделка", defaultOn: true },
+    { key: "floor", label: "Этаж", defaultOn: false },
+    { key: "ceiling_height", label: "Потолки", defaultOn: false },
+    { key: "parking", label: "Парковка", defaultOn: false },
+    { key: "condition", label: "Состояние", defaultOn: false },
+    { key: "layout", label: "Планировка", defaultOn: false },
+    { key: "deposit", label: "Залог", defaultOn: false },
+    { key: "contract_term", label: "Срок", defaultOn: false },
+    { key: "features", label: "Особенности", defaultOn: false },
+    { key: "photos_count", label: "Кол-во фото", defaultOn: false },
+    { key: "views_count", label: "Просмотры", defaultOn: false },
+    { key: "published_date", label: "Дата", defaultOn: false },
+    { key: "manager", label: "Менеджер", defaultOn: true },
+    { key: "client", label: "Клиент", defaultOn: true },
+    { key: "status", label: "Статус", defaultOn: true },
+    { key: "actions", label: "Действия", defaultOn: true },
+  ];
+
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(() => new Set(ALL_COLUMNS.filter(c => c.defaultOn).map(c => c.key)));
+
+  const toggleCol = (key: ColKey) => {
+    setVisibleCols(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      if (sortDir === "asc") setSortDir("desc");
+      else { setSortField(null); setSortDir("asc"); }
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" />;
+    return sortDir === "asc" ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />;
+  };
 
   const filteredAddresses = useMemo(() => {
     if (!addressQuery || addressQuery.length < 2) return [];
@@ -322,6 +384,21 @@ export default function Dashboard() {
     totalArea: properties.reduce((s: number, p: any) => s + Number(p.area), 0),
     totalViews: properties.reduce((s: number, p: any) => s + (p.views_count || 0), 0),
   };
+
+  const sortedProperties = useMemo(() => {
+    if (!sortField) return properties;
+    return [...properties].sort((a: any, b: any) => {
+      let aVal = a[sortField];
+      let bVal = b[sortField];
+      if (typeof aVal === "string") aVal = aVal.toLowerCase();
+      if (typeof bVal === "string") bVal = bVal.toLowerCase();
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+      if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [properties, sortField, sortDir]);
 
   const isSale = form.deal_type === "Продажа";
 
@@ -647,32 +724,63 @@ export default function Dashboard() {
             </div>
 
             <Card>
+              <CardHeader className="py-3 px-4 flex-row items-center justify-between">
+                <CardTitle className="text-sm font-medium">Список объектов ({properties.length})</CardTitle>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                      <Settings2 className="w-3.5 h-3.5" /> Столбцы
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 max-h-80 overflow-y-auto">
+                    {ALL_COLUMNS.filter(c => c.key !== "actions").map(col => (
+                      <DropdownMenuCheckboxItem key={col.key} checked={visibleCols.has(col.key)} onCheckedChange={() => toggleCol(col.key)}>
+                        {col.label}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-12">Фото</TableHead>
-                        <TableHead>Тип</TableHead>
-                        <TableHead>Адрес</TableHead>
-                        <TableHead>Площадь</TableHead>
-                        <TableHead>Цена</TableHead>
-                        <TableHead>Сделка</TableHead>
-                        <TableHead>Менеджер</TableHead>
-                        <TableHead>Клиент</TableHead>
-                        <TableHead>Статус</TableHead>
-                        <TableHead className="text-right">Действия</TableHead>
+                        {visibleCols.has("photo") && <TableHead className="w-12">Фото</TableHead>}
+                        {visibleCols.has("type") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("type")}><span className="flex items-center">Тип<SortIcon field="type" /></span></TableHead>}
+                        {visibleCols.has("class") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("class")}><span className="flex items-center">Класс<SortIcon field="class" /></span></TableHead>}
+                        {visibleCols.has("address") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("address")}><span className="flex items-center">Адрес<SortIcon field="address" /></span></TableHead>}
+                        {visibleCols.has("district") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("district")}><span className="flex items-center">Район<SortIcon field="district" /></span></TableHead>}
+                        {visibleCols.has("area") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("area")}><span className="flex items-center">Площадь<SortIcon field="area" /></span></TableHead>}
+                        {visibleCols.has("price") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("price")}><span className="flex items-center">Цена<SortIcon field="price" /></span></TableHead>}
+                        {visibleCols.has("price_per_m2") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("price_per_m2")}><span className="flex items-center">₽/м²<SortIcon field="price_per_m2" /></span></TableHead>}
+                        {visibleCols.has("deal_type") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("deal_type")}><span className="flex items-center">Сделка<SortIcon field="deal_type" /></span></TableHead>}
+                        {visibleCols.has("floor") && <TableHead>Этаж</TableHead>}
+                        {visibleCols.has("ceiling_height") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("ceiling_height")}><span className="flex items-center">Потолки<SortIcon field="ceiling_height" /></span></TableHead>}
+                        {visibleCols.has("parking") && <TableHead>Парковка</TableHead>}
+                        {visibleCols.has("condition") && <TableHead>Состояние</TableHead>}
+                        {visibleCols.has("layout") && <TableHead>Планировка</TableHead>}
+                        {visibleCols.has("deposit") && <TableHead>Залог</TableHead>}
+                        {visibleCols.has("contract_term") && <TableHead>Срок</TableHead>}
+                        {visibleCols.has("features") && <TableHead>Особенности</TableHead>}
+                        {visibleCols.has("photos_count") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("photos_count")}><span className="flex items-center">Фото<SortIcon field="photos_count" /></span></TableHead>}
+                        {visibleCols.has("views_count") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("views_count")}><span className="flex items-center">Просм.<SortIcon field="views_count" /></span></TableHead>}
+                        {visibleCols.has("published_date") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("published_date")}><span className="flex items-center">Дата<SortIcon field="published_date" /></span></TableHead>}
+                        {visibleCols.has("manager") && <TableHead>Менеджер</TableHead>}
+                        {visibleCols.has("client") && <TableHead>Клиент</TableHead>}
+                        {visibleCols.has("status") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("is_active")}><span className="flex items-center">Статус<SortIcon field="is_active" /></span></TableHead>}
+                        {visibleCols.has("actions") && <TableHead className="text-right">Действия</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {isLoading ? (
-                        <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Загрузка...</TableCell></TableRow>
-                      ) : properties.length === 0 ? (
-                        <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Нет объектов</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={visibleCols.size} className="text-center py-8 text-muted-foreground">Загрузка...</TableCell></TableRow>
+                      ) : sortedProperties.length === 0 ? (
+                        <TableRow><TableCell colSpan={visibleCols.size} className="text-center py-8 text-muted-foreground">Нет объектов</TableCell></TableRow>
                       ) : (
-                        properties.map((p: any) => (
+                        sortedProperties.map((p: any) => (
                           <TableRow key={p.id}>
-                            <TableCell>
+                            {visibleCols.has("photo") && <TableCell>
                               {p.cover_photo ? (
                                 <img src={p.cover_photo} alt="" className="w-10 h-10 rounded object-cover" />
                               ) : (
@@ -680,34 +788,46 @@ export default function Dashboard() {
                                   <ImageIcon className="w-4 h-4 text-muted-foreground" />
                                 </div>
                               )}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="secondary">{p.type}</Badge>
-                            </TableCell>
-                            <TableCell className="max-w-[200px] truncate">{p.address}</TableCell>
-                            <TableCell>{p.area} м²</TableCell>
-                            <TableCell className="font-medium">
+                            </TableCell>}
+                            {visibleCols.has("type") && <TableCell><Badge variant="secondary">{p.type}</Badge></TableCell>}
+                            {visibleCols.has("class") && <TableCell><Badge variant="outline">{p.class}</Badge></TableCell>}
+                            {visibleCols.has("address") && <TableCell className="max-w-[200px] truncate text-xs">{p.address}</TableCell>}
+                            {visibleCols.has("district") && <TableCell className="text-xs">{p.district || "—"}</TableCell>}
+                            {visibleCols.has("area") && <TableCell className="text-xs">{p.area} м²</TableCell>}
+                            {visibleCols.has("price") && <TableCell className="font-medium text-xs whitespace-nowrap">
                               {Number(p.price).toLocaleString()} ₽{p.deal_type === "Аренда" ? "/мес" : ""}
-                            </TableCell>
-                            <TableCell>{p.deal_type}</TableCell>
-                            <TableCell className="text-sm">{p.manager?.full_name || "—"}</TableCell>
-                            <TableCell className="text-sm">{p.client?.full_name || "—"}</TableCell>
-                            <TableCell>
-                              <Badge variant={p.is_active ? "default" : "outline"}>
+                            </TableCell>}
+                            {visibleCols.has("price_per_m2") && <TableCell className="text-xs">{Number(p.price_per_m2).toLocaleString()} ₽</TableCell>}
+                            {visibleCols.has("deal_type") && <TableCell className="text-xs">{p.deal_type}</TableCell>}
+                            {visibleCols.has("floor") && <TableCell className="text-xs">{p.floor || "—"}{p.total_floors ? `/${p.total_floors}` : ""}</TableCell>}
+                            {visibleCols.has("ceiling_height") && <TableCell className="text-xs">{p.ceiling_height ? `${p.ceiling_height} м` : "—"}</TableCell>}
+                            {visibleCols.has("parking") && <TableCell className="text-xs">{p.parking || "—"}</TableCell>}
+                            {visibleCols.has("condition") && <TableCell className="text-xs">{p.condition || "—"}</TableCell>}
+                            {visibleCols.has("layout") && <TableCell className="text-xs">{p.layout || "—"}</TableCell>}
+                            {visibleCols.has("deposit") && <TableCell className="text-xs">{p.deposit || "—"}</TableCell>}
+                            {visibleCols.has("contract_term") && <TableCell className="text-xs">{p.contract_term || "—"}</TableCell>}
+                            {visibleCols.has("features") && <TableCell className="text-xs max-w-[150px] truncate">{(p.features || []).join(", ") || "—"}</TableCell>}
+                            {visibleCols.has("photos_count") && <TableCell className="text-xs">{p.photos_count || (p.photos?.length || 0)}</TableCell>}
+                            {visibleCols.has("views_count") && <TableCell className="text-xs">{p.views_count || 0}</TableCell>}
+                            {visibleCols.has("published_date") && <TableCell className="text-xs whitespace-nowrap">{p.published_date ? new Date(p.published_date).toLocaleDateString("ru-RU") : "—"}</TableCell>}
+                            {visibleCols.has("manager") && <TableCell className="text-xs">{p.manager?.full_name || "—"}</TableCell>}
+                            {visibleCols.has("client") && <TableCell className="text-xs">{p.client?.full_name || "—"}</TableCell>}
+                            {visibleCols.has("status") && <TableCell>
+                              <Badge variant={p.is_active ? "default" : "outline"} className="text-[10px]">
                                 {p.is_active ? "Активен" : "Скрыт"}
                               </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
+                            </TableCell>}
+                            {visibleCols.has("actions") && <TableCell className="text-right">
                               <div className="flex justify-end gap-1">
-                                <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
-                                  <Edit className="w-4 h-4" />
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}>
+                                  <Edit className="w-3.5 h-3.5" />
                                 </Button>
-                                <Button variant="ghost" size="icon"
+                                <Button variant="ghost" size="icon" className="h-7 w-7"
                                   onClick={() => { if (confirm("Удалить объект?")) deleteMutation.mutate(p.id); }}>
-                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
                                 </Button>
                               </div>
-                            </TableCell>
+                            </TableCell>}
                           </TableRow>
                         ))
                       )}
