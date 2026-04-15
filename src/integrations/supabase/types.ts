@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      objects: {
+        Row: {
+          address: string
+          area: number
+          ceiling_height: number | null
+          class: string | null
+          condition: string | null
+          contract_term: number | null
+          cover_photo: string | null
+          created_at: string
+          deal_type: string
+          deposit: number | null
+          description: string | null
+          district: string | null
+          floor: number | null
+          id: string
+          is_active: boolean
+          manager_id: string | null
+          parking: boolean | null
+          photos: Json
+          price: number | null
+          price_per_m2: number | null
+          published_date: string
+          total_floors: number | null
+          type: string
+          views_count: number
+        }
+        Insert: {
+          address: string
+          area: number
+          ceiling_height?: number | null
+          class?: string | null
+          condition?: string | null
+          contract_term?: number | null
+          cover_photo?: string | null
+          created_at?: string
+          deal_type: string
+          deposit?: number | null
+          description?: string | null
+          district?: string | null
+          floor?: number | null
+          id?: string
+          is_active?: boolean
+          manager_id?: string | null
+          parking?: boolean | null
+          photos?: Json
+          price?: number | null
+          price_per_m2?: number | null
+          published_date?: string
+          total_floors?: number | null
+          type: string
+          views_count?: number
+        }
+        Update: {
+          address?: string
+          area?: number
+          ceiling_height?: number | null
+          class?: string | null
+          condition?: string | null
+          contract_term?: number | null
+          cover_photo?: string | null
+          created_at?: string
+          deal_type?: string
+          deposit?: number | null
+          description?: string | null
+          district?: string | null
+          floor?: number | null
+          id?: string
+          is_active?: boolean
+          manager_id?: string | null
+          parking?: boolean | null
+          photos?: Json
+          price?: number | null
+          price_per_m2?: number | null
+          published_date?: string
+          total_floors?: number | null
+          type?: string
+          views_count?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
