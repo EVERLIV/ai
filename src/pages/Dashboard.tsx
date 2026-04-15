@@ -128,6 +128,66 @@ export default function Dashboard() {
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Sorting
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  // Column visibility
+  type ColKey = "photo" | "type" | "class" | "address" | "district" | "area" | "price" | "price_per_m2" | "deal_type" | "floor" | "ceiling_height" | "parking" | "condition" | "layout" | "deposit" | "contract_term" | "features" | "photos_count" | "views_count" | "manager" | "client" | "status" | "published_date" | "actions";
+
+  const ALL_COLUMNS: { key: ColKey; label: string; defaultOn: boolean }[] = [
+    { key: "photo", label: "Фото", defaultOn: true },
+    { key: "type", label: "Тип", defaultOn: true },
+    { key: "class", label: "Класс", defaultOn: true },
+    { key: "address", label: "Адрес", defaultOn: true },
+    { key: "district", label: "Район", defaultOn: true },
+    { key: "area", label: "Площадь", defaultOn: true },
+    { key: "price", label: "Цена", defaultOn: true },
+    { key: "price_per_m2", label: "₽/м²", defaultOn: false },
+    { key: "deal_type", label: "Сделка", defaultOn: true },
+    { key: "floor", label: "Этаж", defaultOn: false },
+    { key: "ceiling_height", label: "Потолки", defaultOn: false },
+    { key: "parking", label: "Парковка", defaultOn: false },
+    { key: "condition", label: "Состояние", defaultOn: false },
+    { key: "layout", label: "Планировка", defaultOn: false },
+    { key: "deposit", label: "Залог", defaultOn: false },
+    { key: "contract_term", label: "Срок", defaultOn: false },
+    { key: "features", label: "Особенности", defaultOn: false },
+    { key: "photos_count", label: "Кол-во фото", defaultOn: false },
+    { key: "views_count", label: "Просмотры", defaultOn: false },
+    { key: "published_date", label: "Дата", defaultOn: false },
+    { key: "manager", label: "Менеджер", defaultOn: true },
+    { key: "client", label: "Клиент", defaultOn: true },
+    { key: "status", label: "Статус", defaultOn: true },
+    { key: "actions", label: "Действия", defaultOn: true },
+  ];
+
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(() => new Set(ALL_COLUMNS.filter(c => c.defaultOn).map(c => c.key)));
+
+  const toggleCol = (key: ColKey) => {
+    setVisibleCols(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      if (sortDir === "asc") setSortDir("desc");
+      else { setSortField(null); setSortDir("asc"); }
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" />;
+    return sortDir === "asc" ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />;
+  };
+
   const filteredAddresses = useMemo(() => {
     if (!addressQuery || addressQuery.length < 2) return [];
     const q = addressQuery.toLowerCase();
