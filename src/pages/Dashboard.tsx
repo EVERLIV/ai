@@ -17,8 +17,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Plus, LogOut, Users, Home, Edit, Trash2,
-  BarChart3, Eye, MapPin, ArrowLeft, Upload, X, Star, ImageIcon, Search
+  BarChart3, Eye, MapPin, ArrowLeft, Upload, X, Star, ImageIcon, Search,
+  ArrowUpDown, ArrowUp, ArrowDown, Settings2, Check
 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 // ====== Predefined options ======
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
