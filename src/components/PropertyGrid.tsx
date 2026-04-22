@@ -4,6 +4,7 @@ import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProperties, type DbProperty } from "@/hooks/useProperties";
+import { getPropertyCover } from "@/lib/propertyImages";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
