@@ -6,6 +6,8 @@ import {
   Shield, Calendar, ChevronLeft, ChevronRight, User, Store, Warehouse, TreePine,
 } from "lucide-react";
 import { useState } from "react";
+import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
@@ -58,25 +60,27 @@ export default function PropertyDetail() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border">
-        <div className="container mx-auto px-4 lg:px-8 h-14 flex items-center justify-between">
+    <div className="min-h-screen bg-background flex flex-col">
+      <SiteHeader />
+
+      <div className="sticky top-16 z-30 bg-card/80 backdrop-blur-xl border-b border-border">
+        <div className="container mx-auto px-4 lg:px-8 h-12 flex items-center justify-between">
           <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Назад к списку</span>
           </button>
           <div className="flex items-center gap-2">
             <button onClick={() => setSaved(!saved)}
-              className={`p-2 rounded-lg transition-colors ${saved ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}>
+              className={`p-2 transition-colors ${saved ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}>
               <Heart className="w-5 h-5" fill={saved ? "currentColor" : "none"} />
             </button>
-            <button className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
               <Share2 className="w-5 h-5" />
             </button>
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="container mx-auto px-4 lg:px-8 py-6 lg:py-10">
+      <main className="container mx-auto px-4 lg:px-8 py-6 lg:py-10 pt-20 flex-1">
         <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
           <Link to="/" className="hover:text-foreground transition-colors">Главная</Link>
           <span>/</span>
@@ -209,6 +213,7 @@ export default function PropertyDetail() {
           <span>ID: {property.id.slice(0, 8)}</span>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }
