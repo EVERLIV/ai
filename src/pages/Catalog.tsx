@@ -504,14 +504,15 @@ export default function Catalog() {
               </div>
 
               {isLoading ? (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {[1,2,3].map(i => (
-                    <div key={i} className="bg-card rounded-2xl border border-border overflow-hidden animate-pulse">
-                      <div className="h-44 bg-muted" />
-                      <div className="p-4 space-y-3"><div className="h-5 bg-muted rounded w-1/2" /><div className="h-4 bg-muted rounded w-3/4" /></div>
-                    </div>
-                  ))}
-                </div>
+                viewMode === "grid" ? (
+                  <div className={`grid gap-4 sm:grid-cols-2 ${sidebarOpen ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>
+                    {Array.from({ length: 6 }).map((_, i) => <GridCardSkeleton key={i} />)}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {Array.from({ length: 5 }).map((_, i) => <ListCardSkeleton key={i} />)}
+                  </div>
+                )
               ) : filtered.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
