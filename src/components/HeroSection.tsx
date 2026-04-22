@@ -2,6 +2,7 @@ import { Search } from "lucide-react";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useCountUp } from "@/hooks/useCountUp";
 import { useState } from "react";
+import heroImg from "@/assets/hero-commercial.jpg";
 
 const stats = [
   { value: 1850, suffix: "+", label: "объектов" },
