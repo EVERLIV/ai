@@ -150,15 +150,15 @@ export default function AdsCatalog() {
         <div className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-2 text-foreground">
           Трафик / проходимость
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1 bg-muted/60 p-0.5 rounded-md">
           {TRAFFIC_OPTIONS.map((t) => (
             <button
               key={t.v}
               onClick={() => setTraffic(t.v)}
-              className={`flex-1 px-2 py-2 text-[11px] font-medium border transition-colors ${
+              className={`flex-1 px-2 py-1.5 text-[11px] font-medium rounded transition-colors ${
                 traffic === t.v
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-background text-muted-foreground border-border hover:text-foreground"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {t.label}
