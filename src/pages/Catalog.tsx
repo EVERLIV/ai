@@ -392,29 +392,34 @@ export default function Catalog() {
       <SiteHeader />
 
       <div className="pt-16 flex-1 flex flex-col">
-        {/* Top bar with aurora ambient glow */}
-        <div className="aurora-bg">
-          <div className="px-4 lg:px-6 py-5 lg:py-7 flex items-center gap-4">
+        {/* Top bar — minimal, без градиентного фона и без заголовка */}
+        <div className="border-b border-border/40">
+          <div className="px-3 lg:px-6 py-2.5 lg:py-3 flex items-center gap-2 lg:gap-4">
             {/* Toggle sidebar desktop */}
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="hidden lg:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
               {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
             </button>
             {/* Toggle sidebar mobile */}
-            <button onClick={() => setMobileSidebar(true)} className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-foreground hover:text-primary transition-colors">
+            <button onClick={() => setMobileSidebar(true)}
+              className="lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-foreground border border-border hover:border-primary hover:text-primary transition-colors">
               <SlidersHorizontal className="w-3.5 h-3.5" /> Фильтры
               {activeFiltersCount > 0 && <span className="count-badge">{activeFiltersCount}</span>}
             </button>
-            <div className="flex-1 min-w-0">
-              <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
-                Каталог{" "}
-                <span className="bg-gradient-to-r from-primary via-primary to-gold bg-clip-text text-transparent">объектов</span>
-              </h1>
-              <p className="text-xs text-muted-foreground hidden sm:flex items-center gap-2 mt-0.5">
-                <span className="inline-block w-1 h-1 bg-primary animate-pulse" />
-                Коммерческая недвижимость в Иркутске и области
-              </p>
+
+            {/* Result count inline (заменяет заголовок) */}
+            <div className="flex-1 min-w-0 text-xs text-muted-foreground truncate">
+              {isLoading ? (
+                <span className="inline-flex gap-1 items-center">
+                  <span className="w-1 h-1 bg-primary animate-bounce" />
+                  <span className="w-1 h-1 bg-primary animate-bounce [animation-delay:120ms]" />
+                  <span className="w-1 h-1 bg-primary animate-bounce [animation-delay:240ms]" />
+                </span>
+              ) : (
+                <>Найдено <strong className="text-foreground">{filtered.length}</strong> объектов</>
+              )}
             </div>
-            <div className="flex items-center gap-3">
+
+            <div className="flex items-center gap-2 lg:gap-3">
               <div className="input-underline relative hidden sm:block">
                 <ArrowUpDown className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                 <select value={sort} onChange={(e) => setSort(e.target.value)}
@@ -451,39 +456,36 @@ export default function Catalog() {
             </aside>
           )}
 
-          {/* Mobile sidebar overlay */}
+          {/* Mobile sidebar overlay — на весь экран */}
           {mobileSidebar && (
-            <>
-              <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setMobileSidebar(false)} />
-              <aside className="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] bg-card flex flex-col lg:hidden animate-fade-in-up">
-                <div className="flex items-center justify-between px-3 py-3">
-                  <span className="text-sm font-semibold text-foreground">Фильтры и поиск</span>
-                  <button onClick={() => setMobileSidebar(false)} className="p-1.5 hover:bg-muted transition-colors">
-                    <X className="w-4 h-4" />
-                  </button>
+            <aside className="fixed inset-0 z-50 bg-background flex flex-col lg:hidden animate-fade-in-up">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 shrink-0">
+                <div className="flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">Фильтры</span>
+                  {activeFiltersCount > 0 && <span className="count-badge">{activeFiltersCount}</span>}
                 </div>
-                {sidebarContent}
-              </aside>
-            </>
+                <button onClick={() => setMobileSidebar(false)}
+                  className="p-2 -mr-2 rounded-lg text-foreground hover:bg-muted transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-hidden">{sidebarContent}</div>
+              <div className="px-4 py-3 border-t border-border/40 shrink-0">
+                <button onClick={() => setMobileSidebar(false)}
+                  className="w-full py-2.5 rounded-lg bg-gradient-to-r from-primary to-gold text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
+                  Показать {filtered.length} объектов
+                </button>
+              </div>
+            </aside>
           )}
 
           {/* Results */}
           <div className="flex-1 overflow-y-auto">
-            <div className="px-4 lg:px-6 py-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="result-count">
-                  {isLoading ? (
-                    <span className="inline-flex gap-1">
-                      <span className="w-1 h-1 bg-primary animate-bounce" />
-                      <span className="w-1 h-1 bg-primary animate-bounce [animation-delay:120ms]" />
-                      <span className="w-1 h-1 bg-primary animate-bounce [animation-delay:240ms]" />
-                    </span>
-                  ) : (
-                    <>Найдено <strong>{filtered.length}</strong> объектов</>
-                  )}
-                </div>
-                {/* Mobile sort */}
-                <div className="relative sm:hidden">
+            <div className="px-4 lg:px-6 py-3 lg:py-4">
+              {/* Mobile sort row */}
+              <div className="flex items-center justify-end mb-3 sm:hidden">
+                <div className="relative">
                   <select value={sort} onChange={(e) => setSort(e.target.value)}
                     className="appearance-none pl-6 pr-5 py-1.5 bg-transparent text-[11px] font-medium text-foreground border-0 border-b border-border focus:outline-none focus:border-primary">
                     {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
