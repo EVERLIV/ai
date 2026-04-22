@@ -3,11 +3,9 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Link } from "react-router-dom";
 import type { DbProperty } from "@/hooks/useProperties";
-import { KeyRound, MapPin, Maximize2, X, List } from "lucide-react";
+import { MapPin, Maximize2, X, List } from "lucide-react";
 import { getPropertyCover } from "@/lib/propertyImages";
 
-const TOKEN_KEY = "mapbox_public_token";
-const GEOCACHE_KEY = "mapbox_geocache_v1";
 const IRKUTSK_CENTER: [number, number] = [104.2807, 52.2869];
 
 const GRAY_STYLE: mapboxgl.Style = {
@@ -23,7 +21,7 @@ const GRAY_STYLE: mapboxgl.Style = {
       tileSize: 256,
       attribution: "© OpenStreetMap, © CARTO",
     },
-    "labels": {
+    labels: {
       type: "raster",
       tiles: [
         "https://cartodb-basemaps-a.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png",
@@ -40,41 +38,28 @@ const GRAY_STYLE: mapboxgl.Style = {
   ],
 };
 
-type GeoCache = Record<string, { lng: number; lat: number } | null>;
 type Coords = { lng: number; lat: number };
 
-function loadCache(): GeoCache {
-  try { return JSON.parse(localStorage.getItem(GEOCACHE_KEY) || "{}"); } catch { return {}; }
-}
-function saveCache(c: GeoCache) {
-  try { localStorage.setItem(GEOCACHE_KEY, JSON.stringify(c)); } catch { }
-}
-async function geocode(address: string, token: string): Promise<Coords | null> {
-  const q = encodeURIComponent(`${address}, Иркутск, Россия`);
-  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json?access_token=${token}&limit=1&language=ru&country=ru&proximity=${IRKUTSK_CENTER[0]},${IRKUTSK_CENTER[1]}`;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const data = await res.json();
-    const f = data.features?.[0];
-    if (!f) return null;
-    return { lng: f.center[0], lat: f.center[1] };
-  } catch { return null; }
+function getCoords(p: DbProperty): Coords | null {
+  const lat = (p as any).lat;
+  const lng = (p as any).lng;
+  if (typeof lat === "number" && typeof lng === "number" && !Number.isNaN(lat) && !Number.isNaN(lng)) {
+    return { lat, lng };
+  }
+  return null;
 }
 
 export default function CatalogMap({ properties }: { properties: DbProperty[] }) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const [token, setToken] = useState<string>(() => localStorage.getItem(TOKEN_KEY) || "");
-  const [tokenInput, setTokenInput] = useState("");
-  const [coordsMap, setCoordsMap] = useState<Record<string, Coords>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(true);
   const markersRef = useRef<Record<string, mapboxgl.Marker>>({});
 
+  // Init map (no Mapbox token needed — using CARTO raster tiles)
   useEffect(() => {
-    if (!token || !mapContainer.current || mapRef.current) return;
-    mapboxgl.accessToken = token;
+    if (!mapContainer.current || mapRef.current) return;
+    mapboxgl.accessToken = "no-token-needed";
     const map = new mapboxgl.Map({
       container: mapContainer.current,
       style: GRAY_STYLE,
@@ -93,56 +78,20 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
       mapRef.current = null;
       markersRef.current = {};
     };
-  }, [token]);
+  }, []);
 
-  useEffect(() => {
-    if (!token || properties.length === 0) return;
-    let cancelled = false;
-    const cache = loadCache();
-
-    const run = async () => {
-      const initial: Record<string, Coords> = {};
-      for (const p of properties) {
-        const key = p.address?.trim();
-        if (!key) continue;
-        const c = cache[key];
-        if (c) initial[p.id] = c;
-      }
-      setCoordsMap(initial);
-
-      for (const p of properties) {
-        if (cancelled) return;
-        const key = p.address?.trim();
-        if (!key) continue;
-        if (cache[key] !== undefined) continue;
-        const c = await geocode(key, token);
-        cache[key] = c;
-        saveCache(cache);
-        await new Promise((r) => setTimeout(r, 120));
-        if (cancelled) return;
-        if (!c) continue;
-        setCoordsMap((prev) => ({ ...prev, [p.id]: c }));
-      }
-    };
-    run();
-    return () => { cancelled = true; };
-  }, [properties, token]);
-
-  // Сброс activeId, если объект ушёл из выборки фильтров
   useEffect(() => {
     if (activeId && !properties.find((p) => p.id === activeId)) {
       setActiveId(null);
     }
   }, [properties, activeId]);
 
-  // Синхронизация маркеров с текущей выборкой properties + автозум к bounds
+  // Sync markers + auto-fit
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
     const visibleIds = new Set(properties.map((p) => p.id));
-
-    // удаляем маркеры объектов, которых больше нет в выборке
     Object.keys(markersRef.current).forEach((id) => {
       if (!visibleIds.has(id)) {
         markersRef.current[id]?.remove();
@@ -154,7 +103,7 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
     let hasPoints = 0;
 
     properties.forEach((p) => {
-      const c = coordsMap[p.id];
+      const c = getCoords(p);
       if (!c) return;
       bounds.extend([c.lng, c.lat]);
       hasPoints++;
@@ -186,36 +135,27 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
       markersRef.current[p.id] = marker;
     });
 
-    // Авто-подгон карты под текущую выборку (каждый раз, когда она меняется)
     if (hasPoints >= 2) {
       try {
         map.fitBounds(bounds, { padding: 80, maxZoom: 14, duration: 600 });
       } catch { }
     } else if (hasPoints === 1) {
-      const only = properties.find((p) => coordsMap[p.id]);
-      const c = only ? coordsMap[only.id] : null;
+      const only = properties.find((p) => getCoords(p));
+      const c = only ? getCoords(only) : null;
       if (c) map.easeTo({ center: [c.lng, c.lat], zoom: 14, duration: 600 });
     } else {
-      // нет точек — возвращаемся к центру Иркутска
       map.easeTo({ center: IRKUTSK_CENTER, zoom: 11, duration: 600 });
     }
-  }, [coordsMap, properties, activeId]);
+  }, [properties, activeId]);
 
   const activeProperty = useMemo(
     () => properties.find((p) => p.id === activeId) || null,
     [activeId, properties]
   );
 
-  const handleSaveToken = () => {
-    const t = tokenInput.trim();
-    if (!t.startsWith("pk.")) return;
-    localStorage.setItem(TOKEN_KEY, t);
-    setToken(t);
-  };
-
   const focusProperty = (p: DbProperty) => {
     const map = mapRef.current;
-    const c = coordsMap[p.id];
+    const c = getCoords(p);
     if (!map || !c) {
       setActiveId(p.id);
       return;
@@ -224,41 +164,13 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
     map.easeTo({ center: [c.lng, c.lat], zoom: Math.max(map.getZoom(), 13), duration: 500 });
   };
 
-  if (!token) {
-    return (
-      <div className="flex items-center justify-center p-6 bg-card border border-border" style={{ minHeight: 480 }}>
-        <div className="max-w-md w-full">
-          <div className="flex items-center gap-2 mb-3 text-foreground">
-            <KeyRound className="w-4 h-4" />
-            <h3 className="font-semibold text-sm uppercase tracking-wider">Подключите Mapbox</h3>
-          </div>
-          <p className="text-sm text-muted-foreground mb-4">
-            Введите ваш публичный токен Mapbox (pk.…) {" "}
-            <a href="https://account.mapbox.com/access-tokens/" target="_blank" rel="noreferrer" className="text-primary hover:underline">
-              account.mapbox.com
-            </a>. Токен сохраняется только в вашем браузере.
-          </p>
-          <div className="flex gap-2">
-            <input
-              value={tokenInput}
-              onChange={(e) => setTokenInput(e.target.value)}
-              placeholder="pk.eyJ1Ijoi..."
-              className="flex-1 px-3 py-2 text-sm bg-background border border-border focus:outline-none focus:border-primary"
-            />
-            <button onClick={handleSaveToken} className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-              Подключить
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const withCoords = properties.filter(getCoords).length;
 
   return (
     <div className="relative flex h-[calc(100vh-180px)] min-h-[520px] bg-card overflow-hidden">
       <aside className="hidden lg:flex w-[360px] xl:w-[400px] shrink-0 flex-col border-r border-border overflow-hidden">
         <div className="px-4 py-2.5 border-b border-border text-[11px] text-muted-foreground">
-          <strong className="text-foreground">{properties.length}</strong> объектов на карте
+          <strong className="text-foreground">{properties.length}</strong> объектов · {withCoords} на карте
         </div>
         <div className="flex-1 overflow-y-auto divide-y divide-border">
           {properties.map((p) => (
@@ -354,6 +266,7 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
 }
 
 function MapListItem({ p, active, onClick }: { p: DbProperty; active: boolean; onClick: () => void }) {
+  const hasCoords = getCoords(p) !== null;
   return (
     <button
       onClick={onClick}
@@ -375,6 +288,9 @@ function MapListItem({ p, active, onClick }: { p: DbProperty; active: boolean; o
             {p.deal_type}
           </span>
           <span className="text-[10px] text-muted-foreground">{p.type}</span>
+          {!hasCoords && (
+            <span className="text-[9px] text-muted-foreground/70 italic">без координат</span>
+          )}
         </div>
         <div className="font-display text-sm font-bold text-foreground truncate">
           {Number(p.price).toLocaleString("ru-RU")} ₽
@@ -459,13 +375,8 @@ function MobileCard({ p }: { p: DbProperty }) {
         </div>
         <div className="font-display text-sm font-bold text-foreground truncate">
           {Number(p.price).toLocaleString("ru-RU")} ₽
-          {p.deal_type === "Аренда" && <span className="text-[10px] font-normal text-muted-foreground">/мес</span>}
         </div>
-        <div className="flex items-center gap-1 text-[11px] text-muted-foreground truncate mt-0.5">
-          <MapPin className="w-3 h-3 shrink-0" />
-          <span className="truncate">{p.address}</span>
-        </div>
-        <div className="text-[11px] text-foreground mt-0.5">{p.area} м²</div>
+        <div className="text-[10px] text-muted-foreground truncate">{p.address}</div>
       </div>
     </>
   );
