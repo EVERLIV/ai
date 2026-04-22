@@ -237,9 +237,38 @@ export default function MapSection() {
             };
             const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
             const saved = isSaved(p.id);
-            const cover = p.cover
-              ? `<div style="width:100%; height:96px; background:#f5f3ef url('${p.cover}') center/cover no-repeat; margin-bottom:8px;"></div>`
-              : "";
+            // Inline SVG fallback — warm gradient + building icon, matches project palette
+            const fallbackSvg =
+              "data:image/svg+xml;utf8," +
+              encodeURIComponent(
+                `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 96' preserveAspectRatio='xMidYMid slice'>
+                  <defs>
+                    <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+                      <stop offset='0%' stop-color='hsl(35, 30%, 92%)'/>
+                      <stop offset='50%' stop-color='hsl(38, 60%, 88%)'/>
+                      <stop offset='100%' stop-color='hsl(40, 20%, 96%)'/>
+                    </linearGradient>
+                  </defs>
+                  <rect width='240' height='96' fill='url(%23g)'/>
+                  <g transform='translate(96 24)' fill='none' stroke='hsl(220, 10%, 45%)' stroke-width='1.5' opacity='0.55'>
+                    <rect x='4' y='10' width='40' height='38'/>
+                    <rect x='12' y='18' width='6' height='6'/>
+                    <rect x='24' y='18' width='6' height='6'/>
+                    <rect x='36' y='18' width='4' height='6'/>
+                    <rect x='12' y='30' width='6' height='6'/>
+                    <rect x='24' y='30' width='6' height='6'/>
+                    <rect x='36' y='30' width='4' height='6'/>
+                    <rect x='20' y='40' width='10' height='8'/>
+                  </g>
+                </svg>`
+              );
+
+            const coverSrc = p.cover || fallbackSvg;
+            const escapedFallback = fallbackSvg.replace(/'/g, "\\'");
+            const cover = `<div style="width:100%; height:96px; margin-bottom:8px; background:hsl(35, 25%, 96%); overflow:hidden;">
+              <img src="${coverSrc}" alt="" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.onerror=null;this.src='${escapedFallback}';"/>
+            </div>`;
+
             new mapboxgl.Popup({ offset: 12, closeButton: true, maxWidth: "260px" })
               .setLngLat(coords)
               .setHTML(
