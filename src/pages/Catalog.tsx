@@ -481,9 +481,17 @@ export default function Catalog() {
           <div className="flex-1 overflow-y-auto">
             <div className="px-4 lg:px-6 py-4">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-xs text-muted-foreground">
-                  {isLoading ? "Загрузка..." : <>Найдено <span className="font-semibold text-foreground">{filtered.length}</span> объектов</>}
-                </p>
+                <div className="result-count">
+                  {isLoading ? (
+                    <span className="inline-flex gap-1">
+                      <span className="w-1 h-1 bg-primary animate-bounce" />
+                      <span className="w-1 h-1 bg-primary animate-bounce [animation-delay:120ms]" />
+                      <span className="w-1 h-1 bg-primary animate-bounce [animation-delay:240ms]" />
+                    </span>
+                  ) : (
+                    <>Найдено <strong>{filtered.length}</strong> объектов</>
+                  )}
+                </div>
                 {/* Mobile sort */}
                 <div className="relative sm:hidden">
                   <select value={sort} onChange={(e) => setSort(e.target.value)}
