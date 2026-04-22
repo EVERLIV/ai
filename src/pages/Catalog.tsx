@@ -392,29 +392,34 @@ export default function Catalog() {
       <SiteHeader />
 
       <div className="pt-16 flex-1 flex flex-col">
-        {/* Top bar with aurora ambient glow */}
-        <div className="aurora-bg">
-          <div className="px-4 lg:px-6 py-5 lg:py-7 flex items-center gap-4">
+        {/* Top bar — minimal, без градиентного фона и без заголовка */}
+        <div className="border-b border-border/40">
+          <div className="px-3 lg:px-6 py-2.5 lg:py-3 flex items-center gap-2 lg:gap-4">
             {/* Toggle sidebar desktop */}
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="hidden lg:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
               {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
             </button>
             {/* Toggle sidebar mobile */}
-            <button onClick={() => setMobileSidebar(true)} className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-foreground hover:text-primary transition-colors">
+            <button onClick={() => setMobileSidebar(true)}
+              className="lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-foreground border border-border hover:border-primary hover:text-primary transition-colors">
               <SlidersHorizontal className="w-3.5 h-3.5" /> Фильтры
               {activeFiltersCount > 0 && <span className="count-badge">{activeFiltersCount}</span>}
             </button>
-            <div className="flex-1 min-w-0">
-              <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
-                Каталог{" "}
-                <span className="bg-gradient-to-r from-primary via-primary to-gold bg-clip-text text-transparent">объектов</span>
-              </h1>
-              <p className="text-xs text-muted-foreground hidden sm:flex items-center gap-2 mt-0.5">
-                <span className="inline-block w-1 h-1 bg-primary animate-pulse" />
-                Коммерческая недвижимость в Иркутске и области
-              </p>
+
+            {/* Result count inline (заменяет заголовок) */}
+            <div className="flex-1 min-w-0 text-xs text-muted-foreground truncate">
+              {isLoading ? (
+                <span className="inline-flex gap-1 items-center">
+                  <span className="w-1 h-1 bg-primary animate-bounce" />
+                  <span className="w-1 h-1 bg-primary animate-bounce [animation-delay:120ms]" />
+                  <span className="w-1 h-1 bg-primary animate-bounce [animation-delay:240ms]" />
+                </span>
+              ) : (
+                <>Найдено <strong className="text-foreground">{filtered.length}</strong> объектов</>
+              )}
             </div>
-            <div className="flex items-center gap-3">
+
+            <div className="flex items-center gap-2 lg:gap-3">
               <div className="input-underline relative hidden sm:block">
                 <ArrowUpDown className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                 <select value={sort} onChange={(e) => setSort(e.target.value)}
