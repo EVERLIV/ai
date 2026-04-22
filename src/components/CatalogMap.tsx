@@ -128,23 +128,36 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
     return () => { cancelled = true; };
   }, [properties, token]);
 
+  // Сброс activeId, если объект ушёл из выборки фильтров
+  useEffect(() => {
+    if (activeId && !properties.find((p) => p.id === activeId)) {
+      setActiveId(null);
+    }
+  }, [properties, activeId]);
+
+  // Синхронизация маркеров с текущей выборкой properties + автозум к bounds
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    const ids = new Set(Object.keys(coordsMap));
+    const visibleIds = new Set(properties.map((p) => p.id));
+
+    // удаляем маркеры объектов, которых больше нет в выборке
     Object.keys(markersRef.current).forEach((id) => {
-      if (!ids.has(id) || !properties.find((p) => p.id === id)) {
+      if (!visibleIds.has(id)) {
         markersRef.current[id]?.remove();
         delete markersRef.current[id];
       }
     });
 
     const bounds = new mapboxgl.LngLatBounds();
+    let hasPoints = 0;
+
     properties.forEach((p) => {
       const c = coordsMap[p.id];
       if (!c) return;
       bounds.extend([c.lng, c.lat]);
+      hasPoints++;
 
       if (markersRef.current[p.id]) {
         const el = markersRef.current[p.id].getElement();
@@ -173,11 +186,18 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
       markersRef.current[p.id] = marker;
     });
 
-    if (Object.keys(coordsMap).length > 1 && !(map as any).__fitDone) {
+    // Авто-подгон карты под текущую выборку (каждый раз, когда она меняется)
+    if (hasPoints >= 2) {
       try {
-        map.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 600 });
-        (map as any).__fitDone = true;
+        map.fitBounds(bounds, { padding: 80, maxZoom: 14, duration: 600 });
       } catch { }
+    } else if (hasPoints === 1) {
+      const only = properties.find((p) => coordsMap[p.id]);
+      const c = only ? coordsMap[only.id] : null;
+      if (c) map.easeTo({ center: [c.lng, c.lat], zoom: 14, duration: 600 });
+    } else {
+      // нет точек — возвращаемся к центру Иркутска
+      map.easeTo({ center: IRKUTSK_CENTER, zoom: 11, duration: 600 });
     }
   }, [coordsMap, properties, activeId]);
 
