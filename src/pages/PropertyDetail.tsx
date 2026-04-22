@@ -8,6 +8,7 @@ import {
 import { useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import NearbyPropertiesSlider from "@/components/NearbyPropertiesSlider";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
@@ -206,6 +207,12 @@ export default function PropertyDetail() {
         <div className="lg:hidden mt-6">
           <PropertyContactCard contactForm={contactForm} setContactForm={setContactForm} />
         </div>
+
+        <NearbyPropertiesSlider
+          district={property.district}
+          excludeId={property.id}
+          type={property.type}
+        />
 
         <div className="flex flex-wrap items-center gap-4 mt-8 pt-6 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {property.published_date ? new Date(property.published_date).toLocaleDateString("ru-RU") : "—"}</span>
