@@ -72,16 +72,25 @@ function SelectFilter({ label, value, options, onChange }: {
   );
 }
 
-// ─── Collapsible section ───
+// ─── Collapsible section with smooth grid animation ───
 function Section({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="pb-3">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between py-2 text-xs font-semibold text-foreground uppercase tracking-wider">
-        {title}
-        {open ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+    <div className="pb-2">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-2 text-[11px] font-semibold text-foreground uppercase tracking-[0.08em] hover:text-primary transition-colors"
+      >
+        <span>{title}</span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+        />
       </button>
-      {open && <div className="space-y-2.5 pt-1">{children}</div>}
+      <div className={`collapse-grid ${open ? "is-open" : ""}`}>
+        <div className="collapse-inner">
+          <div className="space-y-2.5 pt-1.5">{children}</div>
+        </div>
+      </div>
     </div>
   );
 }
