@@ -96,12 +96,12 @@ export default function PropertyDetail() {
           <div className="flex-1 min-w-0">
             {/* Gallery */}
             <div className="rounded-2xl overflow-hidden mb-6">
-              <div className="relative bg-gradient-to-br from-muted to-secondary aspect-[16/9] flex items-center justify-center overflow-hidden">
-                {photos.length > 0 ? (
-                  <img src={photos[activePhoto]} alt={property.address} className="w-full h-full object-cover" />
-                ) : (
-                  <Icon className="w-20 h-20 text-muted-foreground/20" />
-                )}
+              <div className="relative bg-muted aspect-[16/9] overflow-hidden">
+                <img
+                  src={photos.length > 0 ? photos[activePhoto] : getDefaultPropertyImage(property.type)}
+                  alt={property.address}
+                  className="w-full h-full object-cover"
+                />
                 {photosCount > 1 && (
                   <>
                     <button onClick={() => setActivePhoto(Math.max(0, activePhoto - 1))}
