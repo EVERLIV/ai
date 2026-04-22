@@ -18,9 +18,11 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Plus, LogOut, Users, Home, Edit, Trash2,
   BarChart3, Eye, MapPin, ArrowLeft, Upload, X, Star, ImageIcon, Search,
-  ArrowUpDown, ArrowUp, ArrowDown, Settings2, Check
+  ArrowUpDown, ArrowUp, ArrowDown, Settings2, Check, Megaphone,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import AdPlacementsManager from "@/components/admin/AdPlacementsManager";
+import AdPlacementsTab from "@/components/admin/AdPlacementsTab";
 
 // ====== Predefined options ======
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
