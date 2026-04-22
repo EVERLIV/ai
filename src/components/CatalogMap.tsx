@@ -377,11 +377,12 @@ function ActiveCard({ p, onClose, compact = false }: { p: DbProperty; onClose: (
     <div className="bg-card border border-border overflow-hidden">
       <div className="flex">
         <div className={`${compact ? "w-24 h-24" : "w-28 h-28"} shrink-0 bg-muted overflow-hidden`}>
-          {p.cover_photo ? (
-            <img src={p.cover_photo} alt={p.address} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">нет фото</div>
-          )}
+          <img
+            src={getPropertyCover(p.cover_photo, p.type)}
+            alt={p.address}
+            loading="lazy"
+            className="w-full h-full object-cover"
+          />
         </div>
         <div className="flex-1 min-w-0 p-3">
           <div className="flex items-start justify-between gap-2">
