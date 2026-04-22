@@ -4,6 +4,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { Link } from "react-router-dom";
 import type { DbProperty } from "@/hooks/useProperties";
 import { KeyRound, MapPin, Maximize2, X, List } from "lucide-react";
+import { getPropertyCover } from "@/lib/propertyImages";
 
 const TOKEN_KEY = "mapbox_public_token";
 const GEOCACHE_KEY = "mapbox_geocache_v1";
