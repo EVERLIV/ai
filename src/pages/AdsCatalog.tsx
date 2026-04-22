@@ -116,10 +116,10 @@ export default function AdsCatalog() {
                 key={t.key}
                 type="button"
                 onClick={() => toggleType(t.key)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] border transition-colors ${
+                className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-full transition-colors ${
                   checked
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background text-muted-foreground border-border hover:text-foreground hover:border-foreground/30"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground"
                 }`}
               >
                 <Icon className="w-3 h-3" />
@@ -150,15 +150,15 @@ export default function AdsCatalog() {
         <div className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-2 text-foreground">
           Трафик / проходимость
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1 bg-muted/60 p-0.5 rounded-md">
           {TRAFFIC_OPTIONS.map((t) => (
             <button
               key={t.v}
               onClick={() => setTraffic(t.v)}
-              className={`flex-1 px-2 py-2 text-[11px] font-medium border transition-colors ${
+              className={`flex-1 px-2 py-1.5 text-[11px] font-medium rounded transition-colors ${
                 traffic === t.v
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-background text-muted-foreground border-border hover:text-foreground"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {t.label}
@@ -177,10 +177,10 @@ export default function AdsCatalog() {
             <button
               key={a.v}
               onClick={() => setAvailability(a.v)}
-              className={`px-2.5 py-1.5 text-[11px] font-medium border transition-colors ${
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-full transition-colors ${
                 availability === a.v
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-background text-muted-foreground border-border hover:text-foreground"
+                  ? "bg-foreground text-background"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
               }`}
             >
               {a.label}
@@ -209,7 +209,7 @@ export default function AdsCatalog() {
       {activeCount > 0 && (
         <button
           onClick={reset}
-          className="w-full text-[11px] py-2 border border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
+          className="w-full text-[11px] py-2 rounded-md bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors"
         >
           Сбросить фильтры ({activeCount})
         </button>
@@ -244,8 +244,8 @@ export default function AdsCatalog() {
           <div className="flex gap-0 lg:gap-6">
             {/* Desktop sidebar */}
             <aside className="hidden lg:block w-[280px] xl:w-[300px] shrink-0">
-              <div className="sticky top-20 bg-card border border-border">
-                <div className="px-4 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-foreground border-b border-border">
+              <div className="sticky top-20">
+                <div className="px-4 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-foreground">
                   Фильтры
                 </div>
                 {filtersBlock}
