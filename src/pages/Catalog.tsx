@@ -76,7 +76,7 @@ function SelectFilter({ label, value, options, onChange }: {
 function Section({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border-b border-border pb-3">
+    <div className="pb-3">
       <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between py-2 text-xs font-semibold text-foreground uppercase tracking-wider">
         {title}
         {open ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
@@ -362,14 +362,14 @@ export default function Catalog() {
       </div>
 
       {/* AI chat section at bottom */}
-      <div className="border-t border-border">
+      <div>
         <button onClick={() => setAiOpen(!aiOpen)} className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-semibold text-foreground hover:bg-muted/50 transition-colors">
           <Sparkles className="w-3.5 h-3.5 text-primary" />
           <span className="flex-1 text-left">ИИ-помощник</span>
           {aiOpen ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />}
         </button>
         {aiOpen && (
-          <div className="h-72 border-t border-border">
+          <div className="h-72">
             <SidebarAIChat />
           </div>
         )}
@@ -383,16 +383,16 @@ export default function Catalog() {
 
       <div className="pt-16 flex-1 flex flex-col">
         {/* Top bar */}
-        <div className="bg-gradient-to-br from-primary/8 to-accent/5 border-b border-border">
+        <div>
           <div className="px-4 lg:px-6 py-4 lg:py-6 flex items-center gap-4">
             {/* Toggle sidebar desktop */}
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="hidden lg:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
               {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
             </button>
             {/* Toggle sidebar mobile */}
-            <button onClick={() => setMobileSidebar(true)} className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-card border border-border text-xs font-medium text-foreground">
+            <button onClick={() => setMobileSidebar(true)} className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-foreground">
               <SlidersHorizontal className="w-3.5 h-3.5" /> Фильтры
-              {activeFiltersCount > 0 && <span className="w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">{activeFiltersCount}</span>}
+              {activeFiltersCount > 0 && <span className="w-4 h-4 bg-primary text-primary-foreground text-[10px] flex items-center justify-center">{activeFiltersCount}</span>}
             </button>
             <div className="flex-1">
               <h1 className="font-display text-xl lg:text-2xl font-bold text-foreground">Каталог объектов</h1>
@@ -401,16 +401,16 @@ export default function Catalog() {
             <div className="flex items-center gap-2">
               <div className="relative hidden sm:block">
                 <select value={sort} onChange={(e) => setSort(e.target.value)}
-                  className="appearance-none pl-7 pr-5 py-1.5 rounded-lg bg-card text-[11px] font-medium text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary">
+                  className="appearance-none pl-7 pr-5 py-1.5 bg-transparent text-[11px] font-medium text-foreground focus:outline-none">
                   {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
                 <ArrowUpDown className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               </div>
-              <div className="flex bg-muted rounded-lg p-0.5">
-                <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-md transition-all ${viewMode === "grid" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"}`}>
+              <div className="flex p-0.5">
+                <button onClick={() => setViewMode("grid")} className={`p-1.5 transition-all ${viewMode === "grid" ? "text-foreground" : "text-muted-foreground"}`}>
                   <LayoutGrid className="w-4 h-4" />
                 </button>
-                <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md transition-all ${viewMode === "list" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"}`}>
+                <button onClick={() => setViewMode("list")} className={`p-1.5 transition-all ${viewMode === "list" ? "text-foreground" : "text-muted-foreground"}`}>
                   <List className="w-4 h-4" />
                 </button>
               </div>
@@ -422,7 +422,7 @@ export default function Catalog() {
         <div className="flex-1 flex overflow-hidden">
           {/* Desktop sidebar */}
           {sidebarOpen && (
-            <aside className="hidden lg:flex w-64 xl:w-72 shrink-0 border-r border-border bg-card flex-col overflow-hidden">
+            <aside className="hidden lg:flex w-64 xl:w-72 shrink-0 flex-col overflow-hidden">
               {sidebarContent}
             </aside>
           )}
@@ -431,10 +431,10 @@ export default function Catalog() {
           {mobileSidebar && (
             <>
               <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setMobileSidebar(false)} />
-              <aside className="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] bg-card shadow-xl flex flex-col lg:hidden animate-fade-in-up">
-                <div className="flex items-center justify-between px-3 py-3 border-b border-border">
+              <aside className="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] bg-card flex flex-col lg:hidden animate-fade-in-up">
+                <div className="flex items-center justify-between px-3 py-3">
                   <span className="text-sm font-semibold text-foreground">Фильтры и поиск</span>
-                  <button onClick={() => setMobileSidebar(false)} className="p-1.5 rounded-md hover:bg-muted transition-colors">
+                  <button onClick={() => setMobileSidebar(false)} className="p-1.5 hover:bg-muted transition-colors">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
