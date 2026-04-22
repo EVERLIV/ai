@@ -30,11 +30,17 @@ Deno.serve(async (req) => {
       .not("id", "is", null);
     if (delErr) throw delErr;
 
+    // Strip empty/null id so DB default (gen_random_uuid) applies
+    const cleaned = rows.map((r: any) => {
+      const { id, ...rest } = r;
+      return id ? { id, ...rest } : rest;
+    });
+
     // Bulk insert in chunks
     const chunkSize = 50;
     let inserted = 0;
-    for (let i = 0; i < rows.length; i += chunkSize) {
-      const chunk = rows.slice(i, i + chunkSize);
+    for (let i = 0; i < cleaned.length; i += chunkSize) {
+      const chunk = cleaned.slice(i, i + chunkSize);
       const { error } = await supabase.from("properties").insert(chunk);
       if (error) throw error;
       inserted += chunk.length;
