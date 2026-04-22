@@ -7,6 +7,7 @@ const navItems = [
   { label: "Торговля", href: "/retail" },
   { label: "Склады", href: "/warehouses" },
   { label: "Каталог", href: "/catalog" },
+  { label: "Реклама", href: "/ads" },
   { label: "О нас", href: "/#about" },
   { label: "Контакты", href: "/#contacts" },
 ];
