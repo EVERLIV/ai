@@ -603,7 +603,6 @@ function GridCard({ property: p }: { property: DbProperty }) {
 }
 
 function ListCard({ property: p }: { property: DbProperty }) {
-  const Icon = typeIcons[p.type] || Building2;
   return (
     <Link to={`/property/${p.id}`}
       className="group flex bg-card rounded-xl border border-border overflow-hidden hover:shadow-card-hover transition-all duration-300">
