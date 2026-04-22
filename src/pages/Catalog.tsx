@@ -490,47 +490,51 @@ export default function Catalog() {
 
           {/* Results */}
           <div className="flex-1 overflow-y-auto">
-            <div className="px-4 lg:px-6 py-3 lg:py-4">
-              {/* Mobile sort row */}
-              <div className="flex items-center justify-end mb-3 sm:hidden">
-                <div className="relative">
-                  <select value={sort} onChange={(e) => setSort(e.target.value)}
-                    className="appearance-none pl-6 pr-5 py-1.5 bg-transparent text-[11px] font-medium text-foreground border-0 border-b border-border focus:outline-none focus:border-primary">
-                    {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                  <ArrowUpDown className="absolute left-1 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+            {viewMode === "map" ? (
+              <CatalogMap properties={filtered} />
+            ) : (
+              <div className="px-4 lg:px-6 py-3 lg:py-4">
+                {/* Mobile sort row */}
+                <div className="flex items-center justify-end mb-3 sm:hidden">
+                  <div className="relative">
+                    <select value={sort} onChange={(e) => setSort(e.target.value)}
+                      className="appearance-none pl-6 pr-5 py-1.5 bg-transparent text-[11px] font-medium text-foreground border-0 border-b border-border focus:outline-none focus:border-primary">
+                      {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                    <ArrowUpDown className="absolute left-1 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                  </div>
                 </div>
-              </div>
 
-              {isLoading ? (
-                viewMode === "grid" ? (
+                {isLoading ? (
+                  viewMode === "grid" ? (
+                    <div className={`grid gap-4 sm:grid-cols-2 ${sidebarOpen ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>
+                      {Array.from({ length: 6 }).map((_, i) => <GridCardSkeleton key={i} />)}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {Array.from({ length: 5 }).map((_, i) => <ListCardSkeleton key={i} />)}
+                    </div>
+                  )
+                ) : filtered.length === 0 ? (
+                  <div className="text-center py-16">
+                    <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
+                      <Building2 className="w-7 h-7 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-display text-base font-semibold text-foreground mb-1">Объекты не найдены</h3>
+                    <p className="text-xs text-muted-foreground mb-3">Попробуйте изменить параметры фильтрации</p>
+                    <button onClick={resetFilters} className="text-xs text-primary font-medium hover:underline">Сбросить фильтры</button>
+                  </div>
+                ) : viewMode === "grid" ? (
                   <div className={`grid gap-4 sm:grid-cols-2 ${sidebarOpen ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>
-                    {Array.from({ length: 6 }).map((_, i) => <GridCardSkeleton key={i} />)}
+                    {filtered.map((p) => <GridCard key={p.id} property={p} />)}
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {Array.from({ length: 5 }).map((_, i) => <ListCardSkeleton key={i} />)}
+                    {filtered.map((p) => <ListCard key={p.id} property={p} />)}
                   </div>
-                )
-              ) : filtered.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
-                    <Building2 className="w-7 h-7 text-muted-foreground" />
-                  </div>
-                  <h3 className="font-display text-base font-semibold text-foreground mb-1">Объекты не найдены</h3>
-                  <p className="text-xs text-muted-foreground mb-3">Попробуйте изменить параметры фильтрации</p>
-                  <button onClick={resetFilters} className="text-xs text-primary font-medium hover:underline">Сбросить фильтры</button>
-                </div>
-              ) : viewMode === "grid" ? (
-                <div className={`grid gap-4 sm:grid-cols-2 ${sidebarOpen ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>
-                  {filtered.map((p) => <GridCard key={p.id} property={p} />)}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {filtered.map((p) => <ListCard key={p.id} property={p} />)}
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
