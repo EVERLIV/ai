@@ -177,10 +177,10 @@ export default function AdsCatalog() {
             <button
               key={a.v}
               onClick={() => setAvailability(a.v)}
-              className={`px-2.5 py-1.5 text-[11px] font-medium border transition-colors ${
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-full transition-colors ${
                 availability === a.v
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-background text-muted-foreground border-border hover:text-foreground"
+                  ? "bg-foreground text-background"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
               }`}
             >
               {a.label}
