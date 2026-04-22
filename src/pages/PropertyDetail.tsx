@@ -174,7 +174,13 @@ export default function PropertyDetail() {
 
             <section className="mb-8">
               <h2 className="font-display text-xl font-semibold text-foreground mb-4">Расположение</h2>
-              <PropertyMap address={property.address} district={property.district} height={340} />
+              <PropertyMap
+                address={property.address}
+                district={property.district}
+                lat={(property as any).lat ?? null}
+                lng={(property as any).lng ?? null}
+                height={340}
+              />
               <div className="flex flex-wrap gap-4 mt-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <MapPin className="w-4 h-4 text-primary" /> {property.address} · {property.district}
