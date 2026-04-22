@@ -122,7 +122,22 @@ export default function MapSection() {
     });
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;
+
+    // Delegated handler for "Save" buttons inside popups
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest<HTMLButtonElement>("[data-save-id]");
+      if (!btn) return;
+      e.preventDefault();
+      const id = btn.dataset.saveId!;
+      const nowSaved = toggleSaved(id);
+      btn.textContent = nowSaved ? "✓ Сохранено" : "Сохранить";
+      btn.style.background = nowSaved ? "hsl(40 15% 94%)" : "#fff";
+    };
+    document.addEventListener("click", onClick);
+
     return () => {
+      document.removeEventListener("click", onClick);
       map.remove();
       mapRef.current = null;
     };
