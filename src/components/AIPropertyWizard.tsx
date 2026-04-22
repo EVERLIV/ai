@@ -205,10 +205,10 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
   // ── Result view ──
   if (showResult) {
     return (
-      <div className="rounded-xl bg-gradient-to-br from-primary/5 via-transparent to-gold/5 ring-1 ring-primary/10">
+      <div className="bg-gradient-to-br from-primary/5 via-transparent to-gold/5 min-w-0 overflow-hidden">
         {Header}
         {Progress}
-        <div className="px-3 pb-3 space-y-2">
+        <div className="px-3 pb-3 space-y-2 min-w-0">
           {loading ? (
             <div className="py-6 flex flex-col items-center gap-2">
               <Loader2 className="w-5 h-5 text-primary animate-spin" />
@@ -225,7 +225,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
           ) : (
             <>
               {/* AI summary */}
-              <div className="rounded-lg bg-card/60 border border-primary/15 p-2.5">
+              <div className="bg-primary/5 p-2.5">
                 <div className="flex items-start gap-1.5">
                   <Sparkles className="w-3 h-3 text-primary shrink-0 mt-0.5" />
                   <div className="text-[10.5px] text-foreground/90 leading-relaxed">{result.summary}</div>
@@ -239,7 +239,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
                   if (!p) return null;
                   return (
                     <div key={pick.id}
-                      className="rounded-lg border border-border bg-card/60 hover:border-primary/40 transition-all p-2.5 space-y-2">
+                      className="bg-card/60 hover:bg-card transition-all p-2.5 space-y-2 min-w-0">
                       {/* score + price */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
