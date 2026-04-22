@@ -78,7 +78,7 @@ export default function MapSection() {
   const [tokenInput, setTokenInput] = useState("");
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  
   const { data: properties = [] } = useProperties();
 
   const districts = useMemo(() => {
