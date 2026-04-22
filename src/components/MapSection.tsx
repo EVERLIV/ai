@@ -264,9 +264,16 @@ export default function MapSection() {
               );
 
             const coverSrc = p.cover || fallbackSvg;
+            const escapedFallback = fallbackSvg.replace(/'/g, "\\'");
             const cover = `<div style="width:100%; height:96px; margin-bottom:8px; background:hsl(35, 25%, 96%); overflow:hidden;">
-              <img src="${coverSrc}" alt="" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.onerror=null;this.src='${fallbackSvg}';"/>
+              <img src="${coverSrc}" alt="" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.onerror=null;this.src='${escapedFallback}';"/>
             </div>`;
+
+            new mapboxgl.Popup({ offset: 12, closeButton: true, maxWidth: "260px" })
+              .setLngLat(coords)
+              .setHTML(
+                `<div style="font-family: Inter, sans-serif; width: 240px;">
+                  ${cover}
                   <div style="display:inline-block; font-size:10px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase; color:#666; border:1px solid hsl(35 18% 88%); padding:2px 6px; margin-bottom:6px;">${p.type} · ${p.class} класс</div>
                   <div style="font-weight:600; font-size:13px; color:#1a1a1a; line-height:1.3; margin-bottom:6px;">${p.address}</div>
                   <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid hsl(35 18% 93%);">
