@@ -6,6 +6,8 @@ import {
   Shield, Calendar, ChevronLeft, ChevronRight, User, Store, Warehouse, TreePine,
 } from "lucide-react";
 import { useState } from "react";
+import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
