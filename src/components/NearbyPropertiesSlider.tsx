@@ -67,7 +67,7 @@ export default function NearbyPropertiesSlider({ district, excludeId, type }: Pr
             className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             aria-label="Next"
           >
-            <ChevronRight className="w-4 h-4 text-foreground" />
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
