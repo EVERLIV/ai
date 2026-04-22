@@ -721,6 +721,16 @@ export default function Dashboard() {
                         </>
                       )}
                     </fieldset>
+
+                    {/* Section: Реклама — только для уже сохранённых объектов */}
+                    {editId && (
+                      <fieldset className="border border-border rounded-lg p-3">
+                        <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">
+                          Реклама на объекте
+                        </legend>
+                        <AdPlacementsManager propertyId={editId} />
+                      </fieldset>
+                    )}
                   </form>
                 </SheetContent>
               </Sheet>
