@@ -173,25 +173,10 @@ export default function PropertyDetail() {
 
             <section className="mb-8">
               <h2 className="font-display text-xl font-semibold text-foreground mb-4">Расположение</h2>
-              <div className="rounded-2xl bg-gradient-to-br from-secondary to-muted h-64 relative overflow-hidden flex items-center justify-center">
-                <div className="absolute inset-0 opacity-10">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={`h${i}`} className="absolute w-full h-px bg-foreground" style={{ top: `${(i + 1) * 14}%` }} />
-                  ))}
-                  {[...Array(8)].map((_, i) => (
-                    <div key={`v${i}`} className="absolute h-full w-px bg-foreground" style={{ left: `${(i + 1) * 11}%` }} />
-                  ))}
-                </div>
-                <div className="relative z-10 flex flex-col items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-primary relative">
-                    <div className="absolute inset-0 rounded-full bg-primary map-pulse" />
-                  </div>
-                  <span className="text-xs font-medium text-foreground bg-card/80 backdrop-blur px-3 py-1.5 rounded-full shadow-card">{property.address}</span>
-                </div>
-              </div>
+              <PropertyMap address={property.address} district={property.district} height={340} />
               <div className="flex flex-wrap gap-4 mt-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="w-4 h-4 text-primary" /> {property.district}
+                  <MapPin className="w-4 h-4 text-primary" /> {property.address} · {property.district}
                 </div>
               </div>
             </section>
