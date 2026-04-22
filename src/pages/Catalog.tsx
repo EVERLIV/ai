@@ -41,13 +41,13 @@ function RangeInput({ label, min, max, onMinChange, onMaxChange, suffix }: {
       <div className="flex gap-1.5">
         <div className="relative flex-1">
           <input type="number" placeholder="от" value={min} onChange={(e) => onMinChange(e.target.value)}
-            className="w-full px-2 py-1.5 pr-7 rounded-md bg-background text-xs text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary" />
-          {suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{suffix}</span>}
+            className="w-full px-0 py-1.5 pr-7 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none focus:border-primary transition-colors" />
+          {suffix && <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{suffix}</span>}
         </div>
         <div className="relative flex-1">
           <input type="number" placeholder="до" value={max} onChange={(e) => onMaxChange(e.target.value)}
-            className="w-full px-2 py-1.5 pr-7 rounded-md bg-background text-xs text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary" />
-          {suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{suffix}</span>}
+            className="w-full px-0 py-1.5 pr-7 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none focus:border-primary transition-colors" />
+          {suffix && <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{suffix}</span>}
         </div>
       </div>
     </div>
@@ -63,10 +63,10 @@ function SelectFilter({ label, value, options, onChange }: {
       <label className="text-[11px] font-medium text-muted-foreground mb-1 block">{label}</label>
       <div className="relative">
         <select value={value} onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none px-2 py-1.5 pr-7 rounded-md bg-background text-xs text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary">
+          className="w-full appearance-none px-0 py-1.5 pr-7 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none focus:border-primary transition-colors">
           {options.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
-        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+        <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
       </div>
     </div>
   );
