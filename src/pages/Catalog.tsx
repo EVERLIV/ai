@@ -259,7 +259,6 @@ export default function Catalog() {
   const [areaMax, setAreaMax] = useState("");
   const [sort, setSort] = useState("date");
   const [searchQuery, setSearchQuery] = useState("");
-  const [aiOpen, setAiOpen] = useState(false);
 
   const districts = useMemo(() => ["Все", ...Array.from(new Set(properties.map((p) => p.district)))], [properties]);
   const conditions = useMemo(() => ["Все", ...Array.from(new Set(properties.map((p) => p.condition).filter(Boolean) as string[]))], [properties]);
