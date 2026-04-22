@@ -81,7 +81,7 @@ export default function NearbyPropertiesSlider({ district, excludeId, type }: Pr
           <Link
             key={p.id}
             to={`/property/${p.id}`}
-            className="group min-w-[280px] max-w-[280px] snap-start border border-border bg-card overflow-hidden hover:bg-muted/30 transition-colors"
+            className="group min-w-[280px] max-w-[280px] snap-start bg-card overflow-hidden hover:bg-muted/30 transition-colors"
           >
             <div className="relative h-40 overflow-hidden bg-muted">
               {p.cover_photo ? (
