@@ -9,6 +9,7 @@ import { useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import NearbyPropertiesSlider from "@/components/NearbyPropertiesSlider";
+import PropertyMap from "@/components/PropertyMap";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
