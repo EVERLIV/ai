@@ -422,11 +422,19 @@ export default function Catalog() {
                 </select>
                 <ArrowUpDown className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               </div>
-              <div className="flex p-0.5">
-                <button onClick={() => setViewMode("grid")} className={`p-1.5 transition-all ${viewMode === "grid" ? "text-foreground" : "text-muted-foreground"}`}>
+              <div className="flex">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-1.5 transition-all duration-300 ${viewMode === "grid" ? "tab-active-gradient" : "text-muted-foreground hover:text-foreground"}`}
+                  aria-label="Grid view"
+                >
                   <LayoutGrid className="w-4 h-4" />
                 </button>
-                <button onClick={() => setViewMode("list")} className={`p-1.5 transition-all ${viewMode === "list" ? "text-foreground" : "text-muted-foreground"}`}>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-1.5 transition-all duration-300 ${viewMode === "list" ? "tab-active-gradient" : "text-muted-foreground hover:text-foreground"}`}
+                  aria-label="List view"
+                >
                   <List className="w-4 h-4" />
                 </button>
               </div>
