@@ -9,10 +9,11 @@ import SiteFooter from "@/components/SiteFooter";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   SlidersHorizontal, X, ChevronDown, MapPin, Maximize2, LayoutGrid, List,
-  Building2, Store, Warehouse, TreePine, ArrowUpDown, Eye, Calendar,
+  Building2, Store, Warehouse, TreePine, Factory, ArrowUpDown, Eye, Calendar,
   Sparkles, Send, Phone, PhoneOff, Mic, PanelLeftClose, PanelLeft,
   Search, ChevronUp,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
 const DEALS = ["Все", "Аренда", "Продажа"];
@@ -26,7 +27,7 @@ const SORT_OPTIONS = [
 ];
 
 const typeIcons: Record<string, React.ElementType> = {
-  "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
+  "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine, "Производство": Factory,
 };
 
 const ELEVENLABS_AGENT_ID = "agent_7301kmyt4jxxf8etgj0av5x43qb4";
@@ -503,14 +504,15 @@ export default function Catalog() {
               </div>
 
               {isLoading ? (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {[1,2,3].map(i => (
-                    <div key={i} className="bg-card rounded-2xl border border-border overflow-hidden animate-pulse">
-                      <div className="h-44 bg-muted" />
-                      <div className="p-4 space-y-3"><div className="h-5 bg-muted rounded w-1/2" /><div className="h-4 bg-muted rounded w-3/4" /></div>
-                    </div>
-                  ))}
-                </div>
+                viewMode === "grid" ? (
+                  <div className={`grid gap-4 sm:grid-cols-2 ${sidebarOpen ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>
+                    {Array.from({ length: 6 }).map((_, i) => <GridCardSkeleton key={i} />)}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {Array.from({ length: 5 }).map((_, i) => <ListCardSkeleton key={i} />)}
+                  </div>
+                )
               ) : filtered.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
@@ -646,5 +648,84 @@ function ListCard({ property: p }: { property: DbProperty }) {
         </div>
       </div>
     </Link>
+  );
+}
+
+// ─── Skeletons ───
+
+function GridCardSkeleton() {
+  return (
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
+      <div className="relative h-44 overflow-hidden">
+        <Skeleton className="absolute inset-0 rounded-none" />
+        <div className="absolute top-3 left-3 flex gap-1.5">
+          <Skeleton className="h-4 w-14 rounded-md" />
+          <Skeleton className="h-4 w-12 rounded-md" />
+        </div>
+      </div>
+      <div className="p-4 space-y-3">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1.5">
+            <Skeleton className="h-5 w-28" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Skeleton className="h-3 w-3 rounded-full" />
+          <Skeleton className="h-3 w-3/4" />
+        </div>
+        <div className="flex gap-3">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-3 w-14" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+        <div className="flex gap-1">
+          <Skeleton className="h-4 w-14 rounded-md" />
+          <Skeleton className="h-4 w-16 rounded-md" />
+          <Skeleton className="h-4 w-12 rounded-md" />
+        </div>
+        <div className="pt-3 border-t border-border flex items-center justify-between">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-3 w-16" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ListCardSkeleton() {
+  return (
+    <div className="flex bg-card rounded-xl border border-border overflow-hidden">
+      <div className="relative w-48 shrink-0 hidden sm:block">
+        <Skeleton className="absolute inset-0 rounded-none" />
+      </div>
+      <div className="flex-1 p-4 flex flex-col justify-between gap-3">
+        <div className="space-y-2">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1.5">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-3 w-44" />
+            </div>
+            <Skeleton className="h-3 w-10" />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Skeleton className="h-3 w-3 rounded-full" />
+            <Skeleton className="h-3 w-2/3" />
+          </div>
+          <div className="flex gap-4">
+            <Skeleton className="h-3 w-14" />
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+        </div>
+        <div className="flex gap-1">
+          <Skeleton className="h-4 w-14 rounded-md" />
+          <Skeleton className="h-4 w-16 rounded-md" />
+          <Skeleton className="h-4 w-12 rounded-md" />
+          <Skeleton className="h-4 w-20 rounded-md" />
+        </div>
+      </div>
+    </div>
   );
 }
