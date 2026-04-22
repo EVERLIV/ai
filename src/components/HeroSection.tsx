@@ -20,7 +20,22 @@ export default function HeroSection() {
   const counts = [c1, c2, c3];
 
   return (
-    <section ref={ref} className="hero-mesh min-h-screen flex items-center pt-16">
+    <section ref={ref} className="relative min-h-screen flex items-center pt-16 overflow-hidden">
+      {/* Background photo */}
+      <div className="absolute inset-0 -z-10">
+        <img
+          src={heroImg}
+          alt="Бизнес-центр Иркутска на закате"
+          width={1920}
+          height={1080}
+          className="w-full h-full object-cover"
+          fetchPriority="high"
+        />
+        {/* Readability overlay — warm gradient consistent with brand */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/55 to-background/95" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/60 via-transparent to-background/40" />
+      </div>
+
       <div className="container mx-auto px-4 lg:px-8 py-20">
         <div className={`max-w-3xl mx-auto text-center ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
           <p className="text-sm font-medium tracking-widest uppercase text-primary mb-4">
