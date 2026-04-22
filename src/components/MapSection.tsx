@@ -41,6 +41,26 @@ const GRAY_STYLE: mapboxgl.Style = {
   ],
 };
 
+const SAVED_KEY = "saved_properties_v1";
+function loadSaved(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(SAVED_KEY) || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+function isSaved(id: string): boolean {
+  return loadSaved().has(id);
+}
+function toggleSaved(id: string): boolean {
+  const s = loadSaved();
+  if (s.has(id)) s.delete(id);
+  else s.add(id);
+  localStorage.setItem(SAVED_KEY, JSON.stringify([...s]));
+  window.dispatchEvent(new CustomEvent("saved-properties-changed"));
+  return s.has(id);
+}
+
 type GeoCache = Record<string, { lng: number; lat: number } | null>;
 
 function loadCache(): GeoCache {
