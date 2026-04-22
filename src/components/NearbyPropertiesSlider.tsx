@@ -57,14 +57,14 @@ export default function NearbyPropertiesSlider({ district, excludeId, type }: Pr
         <div className="hidden sm:flex items-center gap-2">
           <button
             onClick={() => scroll("left")}
-            className="w-9 h-9 border border-border flex items-center justify-center hover:bg-muted transition-colors"
+            className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             aria-label="Previous"
           >
-            <ChevronLeft className="w-4 h-4 text-foreground" />
+            <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={() => scroll("right")}
-            className="w-9 h-9 border border-border flex items-center justify-center hover:bg-muted transition-colors"
+            className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             aria-label="Next"
           >
             <ChevronRight className="w-4 h-4 text-foreground" />
