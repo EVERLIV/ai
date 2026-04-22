@@ -14,6 +14,201 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_invoices: {
+        Row: {
+          amount: number
+          binding_id: string
+          created_at: string
+          due_date: string | null
+          id: string
+          note: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          amount: number
+          binding_id: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          note?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          amount?: number
+          binding_id?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          note?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_invoices_binding_id_fkey"
+            columns: ["binding_id"]
+            isOneToOne: false
+            referencedRelation: "admin_tenant_bindings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_messages: {
+        Row: {
+          binding_id: string
+          created_at: string
+          direction: string
+          id: string
+          message: string
+        }
+        Insert: {
+          binding_id: string
+          created_at?: string
+          direction?: string
+          id?: string
+          message: string
+        }
+        Update: {
+          binding_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          message?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_messages_binding_id_fkey"
+            columns: ["binding_id"]
+            isOneToOne: false
+            referencedRelation: "admin_tenant_bindings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_tenant_bindings: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          landlord_name: string | null
+          lease_until: string | null
+          manager_name: string | null
+          monthly_rent: number | null
+          object_id: string
+          phone: string | null
+          tenant_name: string
+          utilities_monthly: number | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          landlord_name?: string | null
+          lease_until?: string | null
+          manager_name?: string | null
+          monthly_rent?: number | null
+          object_id: string
+          phone?: string | null
+          tenant_name: string
+          utilities_monthly?: number | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          landlord_name?: string | null
+          lease_until?: string | null
+          manager_name?: string | null
+          monthly_rent?: number | null
+          object_id?: string
+          phone?: string | null
+          tenant_name?: string
+          utilities_monthly?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_tenant_bindings_object_id_fkey"
+            columns: ["object_id"]
+            isOneToOne: false
+            referencedRelation: "objects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          object_id: string | null
+          payload: Json
+          source_page: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          object_id?: string | null
+          payload?: Json
+          source_page: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          object_id?: string | null
+          payload?: Json
+          source_page?: string
+        }
+        Relationships: []
+      }
+      crm_leads: {
+        Row: {
+          business_category: string | null
+          created_at: string
+          email: string | null
+          id: string
+          message: string | null
+          name: string | null
+          object_id: string | null
+          phone: string | null
+          source: string
+          status: string
+        }
+        Insert: {
+          business_category?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          name?: string | null
+          object_id?: string | null
+          phone?: string | null
+          source: string
+          status?: string
+        }
+        Update: {
+          business_category?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          name?: string | null
+          object_id?: string | null
+          phone?: string | null
+          source?: string
+          status?: string
+        }
+        Relationships: []
+      }
       objects: {
         Row: {
           address: string
