@@ -73,12 +73,26 @@
     font-family: var(--font-display);
   }
 
-  /* Strict design: kill all rounding and shadows globally */
+  /* Strict design: kill all rounding, shadows and hover transforms globally */
   *,
   *::before,
   *::after {
     border-radius: 0 !important;
     box-shadow: none !important;
+  }
+
+  /* Unify border thickness */
+  .border, [class*="border-"] {
+    border-width: 1px;
+  }
+
+  /* Disable hover translate/scale transforms for strict feel */
+  .hover\:-translate-y-1:hover,
+  .hover\:-translate-y-0\.5:hover,
+  .hover\:translate-y-1:hover,
+  .hover\:scale-105:hover,
+  .hover\:scale-110:hover {
+    transform: none !important;
   }
 }
 
