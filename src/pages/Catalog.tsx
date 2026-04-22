@@ -477,10 +477,10 @@ export default function Catalog() {
                 {/* Mobile sort */}
                 <div className="relative sm:hidden">
                   <select value={sort} onChange={(e) => setSort(e.target.value)}
-                    className="appearance-none pl-7 pr-5 py-1.5 rounded-lg bg-card text-[11px] font-medium text-foreground border border-border">
+                    className="appearance-none pl-6 pr-5 py-1.5 bg-transparent text-[11px] font-medium text-foreground border-0 border-b border-border focus:outline-none focus:border-primary">
                     {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
-                  <ArrowUpDown className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                  <ArrowUpDown className="absolute left-1 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
                 </div>
               </div>
 
