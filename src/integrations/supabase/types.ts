@@ -14,6 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_placements: {
+        Row: {
+          ad_type: Database["public"]["Enums"]["ad_type"]
+          availability: Database["public"]["Enums"]["ad_availability"]
+          created_at: string
+          description: string | null
+          height_m: number | null
+          id: string
+          is_active: boolean
+          lighting: string | null
+          monthly_price: number
+          photo: string | null
+          property_id: string
+          side: string | null
+          title: string
+          traffic: Database["public"]["Enums"]["ad_traffic"]
+          updated_at: string
+          width_m: number | null
+        }
+        Insert: {
+          ad_type: Database["public"]["Enums"]["ad_type"]
+          availability?: Database["public"]["Enums"]["ad_availability"]
+          created_at?: string
+          description?: string | null
+          height_m?: number | null
+          id?: string
+          is_active?: boolean
+          lighting?: string | null
+          monthly_price?: number
+          photo?: string | null
+          property_id: string
+          side?: string | null
+          title?: string
+          traffic?: Database["public"]["Enums"]["ad_traffic"]
+          updated_at?: string
+          width_m?: number | null
+        }
+        Update: {
+          ad_type?: Database["public"]["Enums"]["ad_type"]
+          availability?: Database["public"]["Enums"]["ad_availability"]
+          created_at?: string
+          description?: string | null
+          height_m?: number | null
+          id?: string
+          is_active?: boolean
+          lighting?: string | null
+          monthly_price?: number
+          photo?: string | null
+          property_id?: string
+          side?: string | null
+          title?: string
+          traffic?: Database["public"]["Enums"]["ad_traffic"]
+          updated_at?: string
+          width_m?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_placements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_invoices: {
         Row: {
           amount: number
@@ -463,6 +528,20 @@ export type Database = {
       }
     }
     Enums: {
+      ad_availability: "available" | "occupied" | "reserved"
+      ad_traffic: "low" | "medium" | "high"
+      ad_type:
+        | "billboard"
+        | "pavilion_paint"
+        | "led_running_line"
+        | "roof_sign"
+        | "facade_banner"
+        | "window_sticker"
+        | "pillar_wrap"
+        | "wall_mural"
+        | "sidewalk_stand"
+        | "digital_screen"
+        | "flag_pole"
       app_role: "admin" | "manager" | "client"
     }
     CompositeTypes: {
@@ -591,6 +670,21 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      ad_availability: ["available", "occupied", "reserved"],
+      ad_traffic: ["low", "medium", "high"],
+      ad_type: [
+        "billboard",
+        "pavilion_paint",
+        "led_running_line",
+        "roof_sign",
+        "facade_banner",
+        "window_sticker",
+        "pillar_wrap",
+        "wall_mural",
+        "sidewalk_stand",
+        "digital_screen",
+        "flag_pole",
+      ],
       app_role: ["admin", "manager", "client"],
     },
   },

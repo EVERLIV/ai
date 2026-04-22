@@ -18,9 +18,11 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Plus, LogOut, Users, Home, Edit, Trash2,
   BarChart3, Eye, MapPin, ArrowLeft, Upload, X, Star, ImageIcon, Search,
-  ArrowUpDown, ArrowUp, ArrowDown, Settings2, Check
+  ArrowUpDown, ArrowUp, ArrowDown, Settings2, Check, Megaphone,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import AdPlacementsManager from "@/components/admin/AdPlacementsManager";
+import AdPlacementsTab from "@/components/admin/AdPlacementsTab";
 
 // ====== Predefined options ======
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
@@ -451,6 +453,7 @@ export default function Dashboard() {
         <Tabs defaultValue="properties">
           <TabsList>
             <TabsTrigger value="properties"><Home className="w-4 h-4 mr-1" /> Объекты</TabsTrigger>
+            <TabsTrigger value="ads"><Megaphone className="w-4 h-4 mr-1" /> Реклама</TabsTrigger>
             <TabsTrigger value="users"><Users className="w-4 h-4 mr-1" /> Пользователи</TabsTrigger>
           </TabsList>
 
@@ -718,6 +721,16 @@ export default function Dashboard() {
                         </>
                       )}
                     </fieldset>
+
+                    {/* Section: Реклама — только для уже сохранённых объектов */}
+                    {editId && (
+                      <fieldset className="border border-border rounded-lg p-3">
+                        <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">
+                          Реклама на объекте
+                        </legend>
+                        <AdPlacementsManager propertyId={editId} />
+                      </fieldset>
+                    )}
                   </form>
                 </SheetContent>
               </Sheet>
@@ -836,6 +849,11 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Ads Tab */}
+          <TabsContent value="ads" className="space-y-4">
+            <AdPlacementsTab />
           </TabsContent>
 
           {/* Users Tab */}
