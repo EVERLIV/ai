@@ -593,7 +593,7 @@ function GridCard({ property: p }: { property: DbProperty }) {
             <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] text-muted-foreground">+{(p.features || []).length - 3}</span>
           )}
         </div>
-        <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-[10px] text-muted-foreground">
+        <div className="mt-3 flex items-center justify-between text-[10px] text-muted-foreground">
           <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {p.published_date ? new Date(p.published_date).toLocaleDateString("ru-RU") : "—"}</span>
           <span>{p.district}</span>
         </div>
