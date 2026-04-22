@@ -551,14 +551,13 @@ function GridCard({ property: p }: { property: DbProperty }) {
   return (
     <Link to={`/property/${p.id}`}
       className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-card-hover transition-all duration-300">
-      <div className="relative h-44 bg-gradient-to-br from-muted to-muted/60 overflow-hidden">
-        {p.cover_photo ? (
-          <img src={p.cover_photo} alt={p.address} className="w-full h-full object-cover" />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Icon className="w-12 h-12 text-muted-foreground/30" />
-          </div>
-        )}
+      <div className="relative h-44 bg-muted overflow-hidden">
+        <img
+          src={getPropertyCover(p.cover_photo, p.type)}
+          alt={p.address}
+          loading="lazy"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+        />
         <div className="absolute top-3 left-3 flex gap-1.5">
           <span className="px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">{p.deal_type}</span>
           <span className="px-2 py-0.5 rounded-md bg-card/90 backdrop-blur text-foreground text-[10px] font-semibold">{p.type}</span>
