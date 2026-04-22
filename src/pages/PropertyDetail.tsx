@@ -10,6 +10,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import NearbyPropertiesSlider from "@/components/NearbyPropertiesSlider";
 import PropertyMap from "@/components/PropertyMap";
+import { getDefaultPropertyImage } from "@/lib/propertyImages";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
