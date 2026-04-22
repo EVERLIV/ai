@@ -310,18 +310,25 @@ export default function Catalog() {
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Поиск по адресу, району..."
-            className="w-full pl-8 pr-3 py-2 rounded-lg bg-background text-xs text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary" />
+            className="w-full pl-6 pr-2 py-2 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none focus:border-primary transition-colors" />
         </div>
 
         {/* Deal type */}
         <Section title="Тип сделки">
-          <div className="flex gap-1.5">
+          <div className="flex gap-1">
             {DEALS.map((d) => (
-              <button key={d} onClick={() => setDealType(d)}
-                className={`flex-1 px-2 py-1.5 rounded-md text-[11px] font-medium transition-all ${dealType === d ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
+              <button
+                key={d}
+                onClick={() => setDealType(d)}
+                className={`flex-1 px-2 py-1.5 text-[11px] font-medium transition-all duration-300 ${
+                  dealType === d
+                    ? "tab-active-gradient"
+                    : "text-muted-foreground tab-hover-gradient hover:text-foreground"
+                }`}
+              >
                 {d}
               </button>
             ))}
