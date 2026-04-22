@@ -191,3 +191,21 @@
 .typing-dot:nth-child(1) { animation: typingDot 1.4s ease-in-out infinite; }
 .typing-dot:nth-child(2) { animation: typingDot 1.4s ease-in-out 0.2s infinite; }
 .typing-dot:nth-child(3) { animation: typingDot 1.4s ease-in-out 0.4s infinite; }
+
+/* Mapbox strict overrides — match project minimal style */
+.mapboxgl-popup-content {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: 1px solid hsl(var(--border));
+  padding: 10px 12px !important;
+  background: hsl(var(--card));
+}
+.mapboxgl-popup-tip { display: none; }
+.mapboxgl-ctrl-group {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: 1px solid hsl(var(--border));
+}
+.mapboxgl-ctrl-group button { border-radius: 0 !important; }
+.mapboxgl-canvas { outline: none; }
+.mapbox-marker-strict { cursor: pointer; }
