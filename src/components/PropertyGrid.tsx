@@ -4,6 +4,7 @@ import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProperties, type DbProperty } from "@/hooks/useProperties";
+import { getPropertyCover } from "@/lib/propertyImages";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
@@ -56,12 +57,13 @@ export default function PropertyGrid() {
                   onClick={() => navigate(`/property/${p.id}`)}
                   className="group bg-card rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-400 overflow-hidden hover:-translate-y-1 border-l-4 border-l-transparent hover:border-l-gold cursor-pointer"
                 >
-                  <div className="relative h-48 bg-gradient-to-br from-muted to-secondary flex items-center justify-center overflow-hidden">
-                    {p.cover_photo ? (
-                      <img src={p.cover_photo} alt={p.address} className="w-full h-full object-cover" />
-                    ) : (
-                      <Icon className="w-12 h-12 text-muted-foreground/30" />
-                    )}
+                  <div className="relative h-48 bg-muted overflow-hidden">
+                    <img
+                      src={getPropertyCover(p.cover_photo, p.type)}
+                      alt={p.address}
+                      loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                    />
                     <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
                       {p.type}
                     </span>
