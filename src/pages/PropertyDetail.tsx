@@ -207,7 +207,7 @@ export default function PropertyDetail() {
           <PropertyContactCard contactForm={contactForm} setContactForm={setContactForm} />
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 mt-8 pt-6 border-t border-border text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-4 mt-8 pt-6 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {property.published_date ? new Date(property.published_date).toLocaleDateString("ru-RU") : "—"}</span>
           <span className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" /> {property.views_count || 0} просмотров</span>
           <span>ID: {property.id.slice(0, 8)}</span>
