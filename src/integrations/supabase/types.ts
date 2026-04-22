@@ -404,7 +404,9 @@ export type Database = {
           floor: string | null
           id: string
           is_active: boolean | null
+          lat: number | null
           layout: string | null
+          lng: number | null
           manager_id: string | null
           parking: string | null
           photos: string[] | null
@@ -435,7 +437,9 @@ export type Database = {
           floor?: string | null
           id?: string
           is_active?: boolean | null
+          lat?: number | null
           layout?: string | null
+          lng?: number | null
           manager_id?: string | null
           parking?: string | null
           photos?: string[] | null
@@ -466,7 +470,9 @@ export type Database = {
           floor?: string | null
           id?: string
           is_active?: boolean | null
+          lat?: number | null
           layout?: string | null
+          lng?: number | null
           manager_id?: string | null
           parking?: string | null
           photos?: string[] | null
