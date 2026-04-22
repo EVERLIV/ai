@@ -209,7 +209,7 @@ export default function AdsCatalog() {
       {activeCount > 0 && (
         <button
           onClick={reset}
-          className="w-full text-[11px] py-2 border border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
+          className="w-full text-[11px] py-2 rounded-md bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors"
         >
           Сбросить фильтры ({activeCount})
         </button>
