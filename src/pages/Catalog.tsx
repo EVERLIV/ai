@@ -402,29 +402,35 @@ export default function Catalog() {
       <SiteHeader />
 
       <div className="pt-16 flex-1 flex flex-col">
-        {/* Top bar */}
-        <div>
-          <div className="px-4 lg:px-6 py-4 lg:py-6 flex items-center gap-4">
+        {/* Top bar with aurora ambient glow */}
+        <div className="aurora-bg">
+          <div className="px-4 lg:px-6 py-5 lg:py-7 flex items-center gap-4">
             {/* Toggle sidebar desktop */}
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="hidden lg:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="hidden lg:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
               {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
             </button>
             {/* Toggle sidebar mobile */}
-            <button onClick={() => setMobileSidebar(true)} className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-foreground">
+            <button onClick={() => setMobileSidebar(true)} className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-foreground hover:text-primary transition-colors">
               <SlidersHorizontal className="w-3.5 h-3.5" /> Фильтры
-              {activeFiltersCount > 0 && <span className="w-4 h-4 bg-primary text-primary-foreground text-[10px] flex items-center justify-center">{activeFiltersCount}</span>}
+              {activeFiltersCount > 0 && <span className="count-badge">{activeFiltersCount}</span>}
             </button>
-            <div className="flex-1">
-              <h1 className="font-display text-xl lg:text-2xl font-bold text-foreground">Каталог объектов</h1>
-              <p className="text-xs text-muted-foreground hidden sm:block">Коммерческая недвижимость в Иркутске и области</p>
+            <div className="flex-1 min-w-0">
+              <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
+                Каталог{" "}
+                <span className="bg-gradient-to-r from-primary via-primary to-gold bg-clip-text text-transparent">объектов</span>
+              </h1>
+              <p className="text-xs text-muted-foreground hidden sm:flex items-center gap-2 mt-0.5">
+                <span className="inline-block w-1 h-1 bg-primary animate-pulse" />
+                Коммерческая недвижимость в Иркутске и области
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative hidden sm:block">
+            <div className="flex items-center gap-3">
+              <div className="input-underline relative hidden sm:block">
+                <ArrowUpDown className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                 <select value={sort} onChange={(e) => setSort(e.target.value)}
-                  className="appearance-none pl-7 pr-5 py-1.5 bg-transparent text-[11px] font-medium text-foreground focus:outline-none">
+                  className="appearance-none pl-5 pr-5 py-1.5 bg-transparent text-[11px] font-medium text-foreground border-0 border-b border-border focus:outline-none cursor-pointer">
                   {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
-                <ArrowUpDown className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               </div>
               <div className="flex">
                 <button
