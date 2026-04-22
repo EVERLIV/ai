@@ -198,17 +198,28 @@ export default function MapSection() {
             const f = e.features?.[0];
             if (!f) return;
             const p = f.properties as {
-              address: string; type: string; area: number; class: string; price: number; id: string;
+              address: string; type: string; area: number; class: string; price: number; id: string; cover: string;
             };
             const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
-            new mapboxgl.Popup({ offset: 12, closeButton: false })
+            const saved = isSaved(p.id);
+            const cover = p.cover
+              ? `<div style="width:100%; height:96px; background:#f5f3ef url('${p.cover}') center/cover no-repeat; margin-bottom:8px;"></div>`
+              : "";
+            new mapboxgl.Popup({ offset: 12, closeButton: true, maxWidth: "260px" })
               .setLngLat(coords)
               .setHTML(
-                `<div style="font-family: Inter, sans-serif; min-width: 180px;">
-                  <div style="font-weight:600; font-size:13px; color:#1a1a1a; margin-bottom:4px;">${p.address}</div>
-                  <div style="font-size:12px; color:#666; margin-bottom:6px;">${p.type} · ${p.area} м² · ${p.class} класс</div>
-                  <div style="font-weight:600; font-size:13px; color:#1a1a1a;">${Number(p.price).toLocaleString("ru-RU")} ₽</div>
-                  <a href="/property/${p.id}" style="display:inline-block; margin-top:6px; font-size:12px; color:hsl(0 72% 51%); text-decoration:none;">Подробнее →</a>
+                `<div style="font-family: Inter, sans-serif; width: 240px;">
+                  ${cover}
+                  <div style="display:inline-block; font-size:10px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase; color:#666; border:1px solid hsl(35 18% 88%); padding:2px 6px; margin-bottom:6px;">${p.type} · ${p.class} класс</div>
+                  <div style="font-weight:600; font-size:13px; color:#1a1a1a; line-height:1.3; margin-bottom:6px;">${p.address}</div>
+                  <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid hsl(35 18% 93%);">
+                    <span style="font-weight:700; font-size:15px; color:#1a1a1a;">${Number(p.price).toLocaleString("ru-RU")} ₽</span>
+                    <span style="font-size:12px; color:#666;">${p.area} м²</span>
+                  </div>
+                  <div style="display:flex; gap:6px;">
+                    <a href="/property/${p.id}" style="flex:1; text-align:center; padding:7px 10px; font-size:12px; font-weight:600; background:hsl(0 72% 51%); color:#fff; text-decoration:none;">Подробнее</a>
+                    <button data-save-id="${p.id}" style="flex:1; padding:7px 10px; font-size:12px; font-weight:600; background:${saved ? "hsl(40 15% 94%)" : "#fff"}; color:#1a1a1a; border:1px solid hsl(35 18% 88%); cursor:pointer;">${saved ? "✓ Сохранено" : "Сохранить"}</button>
+                  </div>
                 </div>`
               )
               .addTo(map);
@@ -230,7 +241,7 @@ export default function MapSection() {
           features.push({
             type: "Feature",
             geometry: { type: "Point", coordinates: [cached.lng, cached.lat] },
-            properties: { id: p.id, address: p.address, type: p.type, area: p.area, class: p.class, price: p.price },
+            properties: { id: p.id, address: p.address, type: p.type, area: p.area, class: p.class, price: p.price, cover: p.cover_photo || "" },
           });
           bounds.extend([cached.lng, cached.lat]);
         }
@@ -254,7 +265,7 @@ export default function MapSection() {
         features.push({
           type: "Feature",
           geometry: { type: "Point", coordinates: [coords.lng, coords.lat] },
-          properties: { id: p.id, address: p.address, type: p.type, area: p.area, class: p.class, price: p.price },
+          properties: { id: p.id, address: p.address, type: p.type, area: p.area, class: p.class, price: p.price, cover: p.cover_photo || "" },
         });
         bounds.extend([coords.lng, coords.lat]);
         updateSource();
