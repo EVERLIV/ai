@@ -34,7 +34,7 @@
     --input: 35 15% 88%;
     --ring: 0 72% 51%;
 
-    --radius: 0.625rem;
+    --radius: 0rem;
 
     --gold: 38 75% 55%;
     --gold-light: 38 60% 90%;
@@ -46,9 +46,9 @@
     --font-display: 'Playfair Display', Georgia, serif;
     --font-body: 'Inter', system-ui, sans-serif;
 
-    --shadow-card: 0 1px 3px 0 hsl(220 25% 10% / 0.04), 0 4px 16px 0 hsl(220 25% 10% / 0.06);
-    --shadow-card-hover: 0 4px 12px 0 hsl(220 25% 10% / 0.08), 0 16px 40px 0 hsl(220 25% 10% / 0.1);
-    --shadow-float: 0 8px 30px -4px hsl(0 72% 51% / 0.15), 0 20px 60px -8px hsl(220 25% 10% / 0.12);
+    --shadow-card: none;
+    --shadow-card-hover: none;
+    --shadow-float: none;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
