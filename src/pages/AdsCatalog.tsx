@@ -116,10 +116,10 @@ export default function AdsCatalog() {
                 key={t.key}
                 type="button"
                 onClick={() => toggleType(t.key)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] border transition-colors ${
+                className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-full transition-colors ${
                   checked
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background text-muted-foreground border-border hover:text-foreground hover:border-foreground/30"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground"
                 }`}
               >
                 <Icon className="w-3 h-3" />
