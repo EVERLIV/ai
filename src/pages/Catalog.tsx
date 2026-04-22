@@ -246,7 +246,7 @@ function SidebarAIChat() {
 // ─── Main Catalog ───
 export default function Catalog() {
   const { data: properties = [], isLoading } = useProperties();
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [dealType, setDealType] = useState("Все");
