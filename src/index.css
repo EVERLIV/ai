@@ -192,6 +192,35 @@
 .typing-dot:nth-child(2) { animation: typingDot 1.4s ease-in-out 0.2s infinite; }
 .typing-dot:nth-child(3) { animation: typingDot 1.4s ease-in-out 0.4s infinite; }
 
+/* Smooth collapse via CSS-grid (no JS height measuring needed) */
+.collapse-grid {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 280ms cubic-bezier(0.32, 0.72, 0, 1), opacity 200ms ease;
+  opacity: 0;
+}
+.collapse-grid.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.collapse-grid > .collapse-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Soft gradient highlight for active tabs/pills */
+.tab-active-gradient {
+  background-image: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(0 78% 58%) 100%);
+  color: hsl(var(--primary-foreground));
+}
+.tab-hover-gradient {
+  position: relative;
+  transition: color 200ms ease, background-color 200ms ease;
+}
+.tab-hover-gradient:hover {
+  background-image: linear-gradient(135deg, hsl(var(--muted)) 0%, hsl(var(--surface-warm)) 100%);
+}
+
 /* Mapbox strict overrides — match project minimal style */
 .mapboxgl-popup-content {
   border-radius: 0 !important;

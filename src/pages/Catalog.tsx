@@ -41,13 +41,13 @@ function RangeInput({ label, min, max, onMinChange, onMaxChange, suffix }: {
       <div className="flex gap-1.5">
         <div className="relative flex-1">
           <input type="number" placeholder="от" value={min} onChange={(e) => onMinChange(e.target.value)}
-            className="w-full px-2 py-1.5 pr-7 rounded-md bg-background text-xs text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary" />
-          {suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{suffix}</span>}
+            className="w-full px-0 py-1.5 pr-7 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none focus:border-primary transition-colors" />
+          {suffix && <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{suffix}</span>}
         </div>
         <div className="relative flex-1">
           <input type="number" placeholder="до" value={max} onChange={(e) => onMaxChange(e.target.value)}
-            className="w-full px-2 py-1.5 pr-7 rounded-md bg-background text-xs text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary" />
-          {suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{suffix}</span>}
+            className="w-full px-0 py-1.5 pr-7 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none focus:border-primary transition-colors" />
+          {suffix && <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{suffix}</span>}
         </div>
       </div>
     </div>
@@ -63,25 +63,34 @@ function SelectFilter({ label, value, options, onChange }: {
       <label className="text-[11px] font-medium text-muted-foreground mb-1 block">{label}</label>
       <div className="relative">
         <select value={value} onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none px-2 py-1.5 pr-7 rounded-md bg-background text-xs text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary">
+          className="w-full appearance-none px-0 py-1.5 pr-7 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none focus:border-primary transition-colors">
           {options.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
-        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+        <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
       </div>
     </div>
   );
 }
 
-// ─── Collapsible section ───
+// ─── Collapsible section with smooth grid animation ───
 function Section({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="pb-3">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between py-2 text-xs font-semibold text-foreground uppercase tracking-wider">
-        {title}
-        {open ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+    <div className="pb-2">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-2 text-[11px] font-semibold text-foreground uppercase tracking-[0.08em] hover:text-primary transition-colors"
+      >
+        <span>{title}</span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+        />
       </button>
-      {open && <div className="space-y-2.5 pt-1">{children}</div>}
+      <div className={`collapse-grid ${open ? "is-open" : ""}`}>
+        <div className="collapse-inner">
+          <div className="space-y-2.5 pt-1.5">{children}</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -301,18 +310,25 @@ export default function Catalog() {
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Поиск по адресу, району..."
-            className="w-full pl-8 pr-3 py-2 rounded-lg bg-background text-xs text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary" />
+            className="w-full pl-6 pr-2 py-2 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none focus:border-primary transition-colors" />
         </div>
 
         {/* Deal type */}
         <Section title="Тип сделки">
-          <div className="flex gap-1.5">
+          <div className="flex gap-1">
             {DEALS.map((d) => (
-              <button key={d} onClick={() => setDealType(d)}
-                className={`flex-1 px-2 py-1.5 rounded-md text-[11px] font-medium transition-all ${dealType === d ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
+              <button
+                key={d}
+                onClick={() => setDealType(d)}
+                className={`flex-1 px-2 py-1.5 text-[11px] font-medium transition-all duration-300 ${
+                  dealType === d
+                    ? "tab-active-gradient"
+                    : "text-muted-foreground tab-hover-gradient hover:text-foreground"
+                }`}
+              >
                 {d}
               </button>
             ))}
@@ -406,11 +422,19 @@ export default function Catalog() {
                 </select>
                 <ArrowUpDown className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               </div>
-              <div className="flex p-0.5">
-                <button onClick={() => setViewMode("grid")} className={`p-1.5 transition-all ${viewMode === "grid" ? "text-foreground" : "text-muted-foreground"}`}>
+              <div className="flex">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-1.5 transition-all duration-300 ${viewMode === "grid" ? "tab-active-gradient" : "text-muted-foreground hover:text-foreground"}`}
+                  aria-label="Grid view"
+                >
                   <LayoutGrid className="w-4 h-4" />
                 </button>
-                <button onClick={() => setViewMode("list")} className={`p-1.5 transition-all ${viewMode === "list" ? "text-foreground" : "text-muted-foreground"}`}>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-1.5 transition-all duration-300 ${viewMode === "list" ? "tab-active-gradient" : "text-muted-foreground hover:text-foreground"}`}
+                  aria-label="List view"
+                >
                   <List className="w-4 h-4" />
                 </button>
               </div>
@@ -453,10 +477,10 @@ export default function Catalog() {
                 {/* Mobile sort */}
                 <div className="relative sm:hidden">
                   <select value={sort} onChange={(e) => setSort(e.target.value)}
-                    className="appearance-none pl-7 pr-5 py-1.5 rounded-lg bg-card text-[11px] font-medium text-foreground border border-border">
+                    className="appearance-none pl-6 pr-5 py-1.5 bg-transparent text-[11px] font-medium text-foreground border-0 border-b border-border focus:outline-none focus:border-primary">
                     {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
-                  <ArrowUpDown className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                  <ArrowUpDown className="absolute left-1 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
                 </div>
               </div>
 
