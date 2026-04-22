@@ -281,11 +281,11 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
                       {/* actions */}
                       <div className="flex gap-1">
                         <Link to={`/property/${p.id}`}
-                          className="flex-1 text-center px-2 py-1 rounded-md text-[10px] font-medium text-foreground border border-border hover:border-primary hover:text-primary transition-all">
+                          className="flex-1 text-center px-2 py-1 text-[10px] font-medium text-foreground bg-muted hover:bg-muted/70 hover:text-primary transition-all">
                           Подробнее
                         </Link>
                         <Link to={`/?focus=${p.id}#map`}
-                          className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium bg-gradient-to-r from-primary to-gold text-primary-foreground hover:opacity-90 transition-opacity">
+                          className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 text-[10px] font-medium bg-gradient-to-r from-primary to-gold text-primary-foreground hover:opacity-90 transition-opacity">
                           На карте <ArrowRight className="w-2.5 h-2.5" />
                         </Link>
                       </div>
@@ -295,7 +295,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
               </div>
 
               <button onClick={reset}
-                className="w-full inline-flex items-center justify-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors py-1.5 border-t border-border/50 mt-1">
+                className="w-full inline-flex items-center justify-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors py-1.5 mt-1">
                 <RotateCcw className="w-2.5 h-2.5" /> Новый подбор
               </button>
             </>
@@ -307,11 +307,11 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
 
   // ── Steps ──
   return (
-    <div className="rounded-xl bg-gradient-to-br from-primary/5 via-transparent to-gold/5 ring-1 ring-primary/10">
+    <div className="bg-gradient-to-br from-primary/5 via-transparent to-gold/5 min-w-0 overflow-hidden">
       {Header}
       {Progress}
 
-      <div className="px-3 pb-3 min-h-[120px]">
+      <div className="px-3 pb-3 min-h-[120px] min-w-0">
         {/* 0: deal */}
         {step === 0 && (
           <div className="animate-fade-in-up">
