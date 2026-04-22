@@ -443,6 +443,13 @@ export default function Catalog() {
                 >
                   <List className="w-4 h-4" />
                 </button>
+                <button
+                  onClick={() => setViewMode("map")}
+                  className={`p-1.5 transition-all duration-300 ${viewMode === "map" ? "tab-active-gradient" : "text-muted-foreground hover:text-foreground"}`}
+                  aria-label="Map view"
+                >
+                  <MapIcon className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
