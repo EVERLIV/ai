@@ -608,12 +608,13 @@ function ListCard({ property: p }: { property: DbProperty }) {
   return (
     <Link to={`/property/${p.id}`}
       className="group flex bg-card rounded-xl border border-border overflow-hidden hover:shadow-card-hover transition-all duration-300">
-      <div className="relative w-48 shrink-0 bg-gradient-to-br from-muted to-muted/60 hidden sm:flex items-center justify-center overflow-hidden">
-        {p.cover_photo ? (
-          <img src={p.cover_photo} alt={p.address} className="w-full h-full object-cover" />
-        ) : (
-          <Icon className="w-10 h-10 text-muted-foreground/30" />
-        )}
+      <div className="relative w-48 shrink-0 bg-muted hidden sm:block overflow-hidden">
+        <img
+          src={getPropertyCover(p.cover_photo, p.type)}
+          alt={p.address}
+          loading="lazy"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+        />
         <div className="absolute top-2 left-2 flex gap-1">
           <span className="px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">{p.deal_type}</span>
         </div>
