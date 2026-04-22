@@ -208,18 +208,207 @@
   min-height: 0;
 }
 
-/* Soft gradient highlight for active tabs/pills */
+/* ───── Modern unique micro-design ───── */
+
+/* Active tab — glassy gradient with subtle glow */
 .tab-active-gradient {
-  background-image: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(0 78% 58%) 100%);
+  position: relative;
+  background-image: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(12 82% 58%) 50%, hsl(var(--gold)) 120%);
   color: hsl(var(--primary-foreground));
+  box-shadow:
+    0 0 0 1px hsl(var(--primary) / 0.2),
+    0 8px 24px -8px hsl(var(--primary) / 0.45),
+    inset 0 1px 0 hsl(0 0% 100% / 0.18) !important;
+  isolation: isolate;
 }
+.tab-active-gradient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, hsl(0 0% 100% / 0.18) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: tabShine 3.6s ease-in-out infinite;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+@keyframes tabShine {
+  0%, 100% { background-position: 200% 0; }
+  50% { background-position: -50% 0; }
+}
+
 .tab-hover-gradient {
   position: relative;
-  transition: color 200ms ease, background-color 200ms ease;
+  transition: color 220ms ease, transform 220ms cubic-bezier(0.32, 0.72, 0, 1);
 }
-.tab-hover-gradient:hover {
-  background-image: linear-gradient(135deg, hsl(var(--muted)) 0%, hsl(var(--surface-warm)) 100%);
+.tab-hover-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, hsl(var(--gold) / 0.12) 0%, hsl(var(--primary) / 0.08) 100%);
+  opacity: 0;
+  transition: opacity 250ms ease;
+  pointer-events: none;
 }
+.tab-hover-gradient:hover::before { opacity: 1; }
+.tab-hover-gradient:hover { transform: translateY(-1px); }
+
+/* Aurora ambient glow behind page header */
+.aurora-bg {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.aurora-bg::before,
+.aurora-bg::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  filter: blur(60px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.aurora-bg::before {
+  width: 380px; height: 380px;
+  top: -180px; left: -120px;
+  background: radial-gradient(circle, hsl(var(--primary) / 0.35), transparent 70%);
+  animation: auroraDrift1 14s ease-in-out infinite;
+}
+.aurora-bg::after {
+  width: 320px; height: 320px;
+  top: -140px; right: -80px;
+  background: radial-gradient(circle, hsl(var(--gold) / 0.4), transparent 70%);
+  animation: auroraDrift2 18s ease-in-out infinite;
+}
+@keyframes auroraDrift1 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(60px, 30px); }
+}
+@keyframes auroraDrift2 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-40px, 20px); }
+}
+
+/* Animated bottom-line for inputs (replaces flat border-b) */
+.input-underline {
+  position: relative;
+}
+.input-underline::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--gold)));
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 350ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.input-underline:focus-within::after { transform: scaleX(1); }
+
+/* Pill chip — interactive, with internal accent dot */
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  cursor: pointer;
+  transition: all 240ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.chip::before {
+  content: "";
+  width: 5px; height: 5px;
+  background: hsl(var(--muted-foreground) / 0.4);
+  transition: all 240ms ease;
+}
+.chip:hover {
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--primary) / 0.4);
+  transform: translateY(-1px);
+}
+.chip.is-active {
+  color: hsl(var(--primary-foreground));
+  background-image: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(12 82% 58%) 100%);
+  border-color: transparent;
+  box-shadow: 0 6px 18px -6px hsl(var(--primary) / 0.5);
+}
+.chip.is-active::before {
+  background: hsl(var(--gold));
+  box-shadow: 0 0 8px hsl(var(--gold));
+}
+
+/* Section title with leading accent bar */
+.section-title {
+  position: relative;
+  padding-left: 10px;
+}
+.section-title::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 2px; height: 10px;
+  background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--gold)));
+  transition: height 240ms ease;
+}
+.section-title:hover::before { height: 14px; }
+
+/* Sidebar count badge with soft glow */
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px; height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 600;
+  background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(12 82% 58%));
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 4px 12px -4px hsl(var(--primary) / 0.55);
+}
+
+/* Soft floating result count card */
+.result-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+  box-shadow: 0 2px 8px -4px hsl(220 25% 10% / 0.06);
+}
+.result-count strong {
+  color: hsl(var(--foreground));
+  font-weight: 700;
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--gold)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Override the global * { box-shadow: none } for our intentional shadows */
+.tab-active-gradient,
+.chip,
+.chip.is-active,
+.count-badge,
+.result-count {
+  box-shadow: revert;
+}
+.tab-active-gradient { box-shadow:
+  0 0 0 1px hsl(var(--primary) / 0.2),
+  0 8px 24px -8px hsl(var(--primary) / 0.45),
+  inset 0 1px 0 hsl(0 0% 100% / 0.18) !important;
+}
+.chip.is-active { box-shadow: 0 6px 18px -6px hsl(var(--primary) / 0.5) !important; }
+.count-badge { box-shadow: 0 4px 12px -4px hsl(var(--primary) / 0.55) !important; }
+.result-count { box-shadow: 0 2px 8px -4px hsl(220 25% 10% / 0.06) !important; }
 
 /* Mapbox strict overrides — match project minimal style */
 .mapboxgl-popup-content {
