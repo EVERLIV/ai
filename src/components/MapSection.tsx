@@ -1,31 +1,199 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
-import { useState } from "react";
-import { List, Map } from "lucide-react";
+import { useProperties } from "@/hooks/useProperties";
+import { List, Map as MapIcon, KeyRound } from "lucide-react";
+import { Link } from "react-router-dom";
 
-const markers = [
-  { x: 50, y: 40, label: "Кировский" },
-  { x: 60, y: 50, label: "Октябрьский" },
-  { x: 40, y: 55, label: "Свердловский" },
-  { x: 55, y: 30, label: "Ленинский" },
-  { x: 30, y: 45, label: "Куйбышевский" },
-  { x: 70, y: 35, label: "Правобережный" },
-];
+const TOKEN_KEY = "mapbox_public_token";
+const GEOCACHE_KEY = "mapbox_geocache_v1";
+const IRKUTSK_CENTER: [number, number] = [104.2807, 52.2869];
+
+// Strict grayscale style matching the project palette
+const GRAY_STYLE: mapboxgl.Style = {
+  version: 8,
+  sources: {
+    "raster-tiles": {
+      type: "raster",
+      tiles: [
+        "https://cartodb-basemaps-a.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png",
+        "https://cartodb-basemaps-b.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png",
+        "https://cartodb-basemaps-c.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png",
+      ],
+      tileSize: 256,
+      attribution: "© OpenStreetMap, © CARTO",
+    },
+    "labels": {
+      type: "raster",
+      tiles: [
+        "https://cartodb-basemaps-a.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png",
+        "https://cartodb-basemaps-b.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png",
+        "https://cartodb-basemaps-c.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png",
+      ],
+      tileSize: 256,
+    },
+  },
+  layers: [
+    { id: "bg", type: "background", paint: { "background-color": "#f5f3ef" } },
+    { id: "tiles", type: "raster", source: "raster-tiles" },
+    { id: "tile-labels", type: "raster", source: "labels" },
+  ],
+};
+
+type GeoCache = Record<string, { lng: number; lat: number } | null>;
+
+function loadCache(): GeoCache {
+  try {
+    return JSON.parse(localStorage.getItem(GEOCACHE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+function saveCache(c: GeoCache) {
+  try {
+    localStorage.setItem(GEOCACHE_KEY, JSON.stringify(c));
+  } catch {}
+}
+
+async function geocode(address: string, token: string): Promise<{ lng: number; lat: number } | null> {
+  const q = encodeURIComponent(`${address}, Иркутск, Россия`);
+  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json?access_token=${token}&limit=1&language=ru&country=ru&proximity=${IRKUTSK_CENTER[0]},${IRKUTSK_CENTER[1]}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const f = data.features?.[0];
+    if (!f) return null;
+    return { lng: f.center[0], lat: f.center[1] };
+  } catch {
+    return null;
+  }
+}
 
 export default function MapSection() {
   const { ref, isVisible } = useScrollReveal();
   const [view, setView] = useState<"map" | "list">("map");
+  const [token, setToken] = useState<string>(() => localStorage.getItem(TOKEN_KEY) || "");
+  const [tokenInput, setTokenInput] = useState("");
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const { data: properties = [] } = useProperties();
+
+  const districts = useMemo(() => {
+    const counts = new Map<string, number>();
+    properties.forEach((p) => {
+      if (p.district) counts.set(p.district, (counts.get(p.district) || 0) + 1);
+    });
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  }, [properties]);
+
+  // Init map
+  useEffect(() => {
+    if (!token || !mapContainer.current || mapRef.current) return;
+    mapboxgl.accessToken = token;
+    const map = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: GRAY_STYLE,
+      center: IRKUTSK_CENTER,
+      zoom: 11,
+      attributionControl: true,
+    });
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+    mapRef.current = map;
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [token]);
+
+  // Add markers
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !token || properties.length === 0) return;
+
+    let cancelled = false;
+    const cache = loadCache();
+
+    const run = async () => {
+      // Wait for map style to load
+      if (!map.isStyleLoaded()) {
+        await new Promise<void>((r) => map.once("load", () => r()));
+      }
+      // Clear old markers
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+
+      const bounds = new mapboxgl.LngLatBounds();
+      let added = 0;
+
+      for (const p of properties) {
+        if (cancelled) return;
+        const key = p.address?.trim();
+        if (!key) continue;
+
+        let coords = cache[key];
+        if (coords === undefined) {
+          coords = await geocode(key, token);
+          cache[key] = coords;
+          saveCache(cache);
+          // small delay to be polite to API
+          await new Promise((r) => setTimeout(r, 120));
+        }
+        if (!coords) continue;
+
+        const el = document.createElement("div");
+        el.className = "mapbox-marker-strict";
+        el.innerHTML = `<div class="w-3 h-3 bg-primary border border-primary-foreground"></div>`;
+
+        const popup = new mapboxgl.Popup({ offset: 14, closeButton: false }).setHTML(
+          `<div style="font-family: Inter, sans-serif; min-width: 180px;">
+            <div style="font-weight:600; font-size:13px; color:#1a1a1a; margin-bottom:4px;">${p.address}</div>
+            <div style="font-size:12px; color:#666; margin-bottom:6px;">${p.type} · ${p.area} м² · ${p.class} класс</div>
+            <div style="font-weight:600; font-size:13px; color:#1a1a1a;">${Number(p.price).toLocaleString("ru-RU")} ₽</div>
+            <a href="/property/${p.id}" style="display:inline-block; margin-top:6px; font-size:12px; color:hsl(0 72% 51%); text-decoration:none;">Подробнее →</a>
+          </div>`
+        );
+
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat([coords.lng, coords.lat])
+          .setPopup(popup)
+          .addTo(map);
+        markersRef.current.push(marker);
+        bounds.extend([coords.lng, coords.lat]);
+        added++;
+      }
+
+      if (added > 1 && !cancelled) {
+        map.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 600 });
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [properties, token]);
+
+  const handleSaveToken = () => {
+    const t = tokenInput.trim();
+    if (!t.startsWith("pk.")) return;
+    localStorage.setItem(TOKEN_KEY, t);
+    setToken(t);
+  };
 
   return (
     <section ref={ref} className="py-16 bg-surface-warm">
       <div className={`container mx-auto px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
         <div className="flex items-end justify-between mb-8">
           <h2 className="font-display text-3xl font-bold text-foreground">Объекты на карте Иркутска</h2>
-          <div className="flex bg-card rounded-lg shadow-card overflow-hidden">
+          <div className="flex bg-card overflow-hidden border border-border">
             <button
               onClick={() => setView("map")}
               className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${view === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
             >
-              <Map className="w-4 h-4" /> Карта
+              <MapIcon className="w-4 h-4" /> Карта
             </button>
             <button
               onClick={() => setView("list")}
@@ -36,51 +204,76 @@ export default function MapSection() {
           </div>
         </div>
 
-        <div className="bg-card rounded-2xl shadow-card overflow-hidden flex flex-col lg:flex-row" style={{ minHeight: 400 }}>
-          <div className="flex-1 relative bg-gradient-to-br from-secondary to-muted p-4">
-            <div className="absolute inset-4 opacity-10">
-              {[...Array(8)].map((_, i) => (
-                <div key={`h${i}`} className="absolute w-full h-px bg-foreground" style={{ top: `${(i + 1) * 11}%` }} />
-              ))}
-              {[...Array(8)].map((_, i) => (
-                <div key={`v${i}`} className="absolute h-full w-px bg-foreground" style={{ left: `${(i + 1) * 11}%` }} />
-              ))}
-            </div>
-
-            {markers.map((m) => (
-              <div
-                key={m.label}
-                className="absolute flex flex-col items-center"
-                style={{ left: `${m.x}%`, top: `${m.y}%`, transform: "translate(-50%, -50%)" }}
-              >
-                <div className="relative">
-                  <div className="w-3 h-3 rounded-full bg-primary z-10 relative" />
-                  <div className="absolute inset-0 w-3 h-3 rounded-full bg-primary map-pulse" />
+        <div className="bg-card overflow-hidden flex flex-col lg:flex-row" style={{ minHeight: 480 }}>
+          <div className="flex-1 relative bg-muted">
+            {!token ? (
+              <div className="absolute inset-0 flex items-center justify-center p-8">
+                <div className="max-w-md w-full bg-card p-6 border border-border">
+                  <div className="flex items-center gap-2 mb-3 text-foreground">
+                    <KeyRound className="w-4 h-4" />
+                    <h3 className="font-semibold text-sm uppercase tracking-wider">Подключите Mapbox</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Введите ваш публичный токен Mapbox (pk.…). Получить бесплатно:{" "}
+                    <a
+                      href="https://account.mapbox.com/access-tokens/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      account.mapbox.com
+                    </a>
+                    . Токен сохраняется только в вашем браузере.
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      value={tokenInput}
+                      onChange={(e) => setTokenInput(e.target.value)}
+                      placeholder="pk.eyJ1Ijoi..."
+                      className="flex-1 px-3 py-2 text-sm bg-background border border-border focus:outline-none focus:border-primary"
+                    />
+                    <button
+                      onClick={handleSaveToken}
+                      className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      Подключить
+                    </button>
+                  </div>
                 </div>
-                <span className="mt-1.5 text-xs font-medium text-foreground bg-card/80 px-1.5 py-0.5 rounded">
-                  {m.label}
-                </span>
               </div>
-            ))}
+            ) : (
+              <div ref={mapContainer} className="absolute inset-0" />
+            )}
           </div>
 
-          <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border p-4 space-y-3 overflow-y-auto max-h-[400px]">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">По районам Иркутска</p>
-            {[
-              "Кировский — 312 объектов",
-              "Октябрьский — 245 объектов",
-              "Свердловский — 189 объектов",
-              "Ленинский — 134 объекта",
-              "Куйбышевский — 87 объектов",
-              "Правобережный — 56 объектов",
-              "Ангарск — 142 объекта",
-              "Шелехов — 68 объектов",
-              "Усолье-Сибирское — 45 объектов",
-            ].map((item) => (
-              <div key={item} className="px-3 py-2.5 rounded-lg hover:bg-muted transition-colors cursor-pointer text-sm text-foreground">
-                {item}
-              </div>
-            ))}
+          <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border p-4 space-y-2 overflow-y-auto max-h-[480px]">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">По районам</p>
+              {token && (
+                <button
+                  onClick={() => {
+                    localStorage.removeItem(TOKEN_KEY);
+                    setToken("");
+                  }}
+                  className="text-[10px] text-muted-foreground hover:text-foreground uppercase tracking-wider"
+                >
+                  Сменить токен
+                </button>
+              )}
+            </div>
+            {districts.length === 0 ? (
+              <div className="text-sm text-muted-foreground">Нет данных</div>
+            ) : (
+              districts.map(([name, count]) => (
+                <div
+                  key={name}
+                  className="flex items-center justify-between px-3 py-2.5 hover:bg-muted transition-colors cursor-pointer text-sm text-foreground border-b border-border last:border-b-0"
+                >
+                  <span>{name}</span>
+                  <span className="text-xs text-muted-foreground">{count}</span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
