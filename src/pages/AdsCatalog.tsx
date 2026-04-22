@@ -244,8 +244,8 @@ export default function AdsCatalog() {
           <div className="flex gap-0 lg:gap-6">
             {/* Desktop sidebar */}
             <aside className="hidden lg:block w-[280px] xl:w-[300px] shrink-0">
-              <div className="sticky top-20 bg-card border border-border">
-                <div className="px-4 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-foreground border-b border-border">
+              <div className="sticky top-20">
+                <div className="px-4 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-foreground">
                   Фильтры
                 </div>
                 {filtersBlock}
