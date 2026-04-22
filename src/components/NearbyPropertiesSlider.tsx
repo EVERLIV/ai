@@ -44,7 +44,7 @@ export default function NearbyPropertiesSlider({ district, excludeId, type }: Pr
   };
 
   return (
-    <section className="mt-12 pt-8 border-t border-border">
+    <section className="mt-12 pt-8">
       <div className="flex items-end justify-between mb-5">
         <div>
           <h2 className="text-xl sm:text-2xl font-display font-bold text-foreground">
@@ -57,17 +57,17 @@ export default function NearbyPropertiesSlider({ district, excludeId, type }: Pr
         <div className="hidden sm:flex items-center gap-2">
           <button
             onClick={() => scroll("left")}
-            className="w-9 h-9 border border-border flex items-center justify-center hover:bg-muted transition-colors"
+            className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             aria-label="Previous"
           >
-            <ChevronLeft className="w-4 h-4 text-foreground" />
+            <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={() => scroll("right")}
-            className="w-9 h-9 border border-border flex items-center justify-center hover:bg-muted transition-colors"
+            className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             aria-label="Next"
           >
-            <ChevronRight className="w-4 h-4 text-foreground" />
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -81,7 +81,7 @@ export default function NearbyPropertiesSlider({ district, excludeId, type }: Pr
           <Link
             key={p.id}
             to={`/property/${p.id}`}
-            className="group min-w-[280px] max-w-[280px] snap-start border border-border bg-card overflow-hidden hover:bg-muted/30 transition-colors"
+            className="group min-w-[280px] max-w-[280px] snap-start bg-card overflow-hidden hover:bg-muted/30 transition-colors"
           >
             <div className="relative h-40 overflow-hidden bg-muted">
               {p.cover_photo ? (
