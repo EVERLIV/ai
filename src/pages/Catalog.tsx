@@ -27,7 +27,7 @@ const SORT_OPTIONS = [
 ];
 
 const typeIcons: Record<string, React.ElementType> = {
-  "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
+  "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine, "Производство": Factory,
 };
 
 const ELEVENLABS_AGENT_ID = "agent_7301kmyt4jxxf8etgj0av5x43qb4";
