@@ -44,7 +44,7 @@ export default function NearbyPropertiesSlider({ district, excludeId, type }: Pr
   };
 
   return (
-    <section className="mt-12 pt-8 border-t border-border">
+    <section className="mt-12 pt-8">
       <div className="flex items-end justify-between mb-5">
         <div>
           <h2 className="text-xl sm:text-2xl font-display font-bold text-foreground">
