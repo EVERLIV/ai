@@ -78,7 +78,7 @@ export default function MapSection() {
   const [tokenInput, setTokenInput] = useState("");
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  
   const { data: properties = [] } = useProperties();
 
   const districts = useMemo(() => {
@@ -108,7 +108,7 @@ export default function MapSection() {
     };
   }, [token]);
 
-  // Add markers
+  // Geocode + add clustered source/layers
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !token || properties.length === 0) return;
@@ -117,55 +117,150 @@ export default function MapSection() {
     const cache = loadCache();
 
     const run = async () => {
-      // Wait for map style to load
       if (!map.isStyleLoaded()) {
         await new Promise<void>((r) => map.once("load", () => r()));
       }
-      // Clear old markers
-      markersRef.current.forEach((m) => m.remove());
-      markersRef.current = [];
+      if (cancelled) return;
 
+      const features: GeoJSON.Feature<GeoJSON.Point>[] = [];
       const bounds = new mapboxgl.LngLatBounds();
-      let added = 0;
 
+      const updateSource = () => {
+        const data: GeoJSON.FeatureCollection<GeoJSON.Point> = {
+          type: "FeatureCollection",
+          features,
+        };
+        const src = map.getSource("properties") as mapboxgl.GeoJSONSource | undefined;
+        if (src) {
+          src.setData(data);
+        } else {
+          map.addSource("properties", {
+            type: "geojson",
+            data,
+            cluster: true,
+            clusterMaxZoom: 14,
+            clusterRadius: 50,
+          });
+
+          map.addLayer({
+            id: "clusters",
+            type: "circle",
+            source: "properties",
+            filter: ["has", "point_count"],
+            paint: {
+              "circle-color": "hsl(0, 72%, 51%)",
+              "circle-radius": ["step", ["get", "point_count"], 16, 10, 22, 50, 28],
+              "circle-stroke-width": 2,
+              "circle-stroke-color": "#ffffff",
+            },
+          });
+
+          map.addLayer({
+            id: "cluster-count",
+            type: "symbol",
+            source: "properties",
+            filter: ["has", "point_count"],
+            layout: {
+              "text-field": ["get", "point_count_abbreviated"],
+              "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+              "text-size": 12,
+            },
+            paint: { "text-color": "#ffffff" },
+          });
+
+          map.addLayer({
+            id: "unclustered-point",
+            type: "circle",
+            source: "properties",
+            filter: ["!", ["has", "point_count"]],
+            paint: {
+              "circle-color": "hsl(0, 72%, 51%)",
+              "circle-radius": 6,
+              "circle-stroke-width": 2,
+              "circle-stroke-color": "#ffffff",
+            },
+          });
+
+          map.on("click", "clusters", (e) => {
+            const f = map.queryRenderedFeatures(e.point, { layers: ["clusters"] })[0];
+            const clusterId = f.properties?.cluster_id;
+            const source = map.getSource("properties") as mapboxgl.GeoJSONSource;
+            source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+              if (err) return;
+              map.easeTo({
+                center: (f.geometry as GeoJSON.Point).coordinates as [number, number],
+                zoom,
+              });
+            });
+          });
+
+          map.on("click", "unclustered-point", (e) => {
+            const f = e.features?.[0];
+            if (!f) return;
+            const p = f.properties as {
+              address: string; type: string; area: number; class: string; price: number; id: string;
+            };
+            const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
+            new mapboxgl.Popup({ offset: 12, closeButton: false })
+              .setLngLat(coords)
+              .setHTML(
+                `<div style="font-family: Inter, sans-serif; min-width: 180px;">
+                  <div style="font-weight:600; font-size:13px; color:#1a1a1a; margin-bottom:4px;">${p.address}</div>
+                  <div style="font-size:12px; color:#666; margin-bottom:6px;">${p.type} · ${p.area} м² · ${p.class} класс</div>
+                  <div style="font-weight:600; font-size:13px; color:#1a1a1a;">${Number(p.price).toLocaleString("ru-RU")} ₽</div>
+                  <a href="/property/${p.id}" style="display:inline-block; margin-top:6px; font-size:12px; color:hsl(0 72% 51%); text-decoration:none;">Подробнее →</a>
+                </div>`
+              )
+              .addTo(map);
+          });
+
+          ["clusters", "unclustered-point"].forEach((id) => {
+            map.on("mouseenter", id, () => (map.getCanvas().style.cursor = "pointer"));
+            map.on("mouseleave", id, () => (map.getCanvas().style.cursor = ""));
+          });
+        }
+      };
+
+      // First pass: use cached coords for instant render
+      for (const p of properties) {
+        const key = p.address?.trim();
+        if (!key) continue;
+        const cached = cache[key];
+        if (cached) {
+          features.push({
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [cached.lng, cached.lat] },
+            properties: { id: p.id, address: p.address, type: p.type, area: p.area, class: p.class, price: p.price },
+          });
+          bounds.extend([cached.lng, cached.lat]);
+        }
+      }
+      updateSource();
+      if (features.length > 1) {
+        map.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 600 });
+      }
+
+      // Second pass: geocode missing addresses
       for (const p of properties) {
         if (cancelled) return;
         const key = p.address?.trim();
-        if (!key) continue;
-
-        let coords = cache[key];
-        if (coords === undefined) {
-          coords = await geocode(key, token);
-          cache[key] = coords;
-          saveCache(cache);
-          // small delay to be polite to API
-          await new Promise((r) => setTimeout(r, 120));
-        }
+        if (!key || cache[key] !== undefined) continue;
+        const coords = await geocode(key, token);
+        cache[key] = coords;
+        saveCache(cache);
+        await new Promise((r) => setTimeout(r, 120));
+        if (cancelled) return;
         if (!coords) continue;
-
-        const el = document.createElement("div");
-        el.className = "mapbox-marker-strict";
-        el.innerHTML = `<div class="w-3 h-3 bg-primary border border-primary-foreground"></div>`;
-
-        const popup = new mapboxgl.Popup({ offset: 14, closeButton: false }).setHTML(
-          `<div style="font-family: Inter, sans-serif; min-width: 180px;">
-            <div style="font-weight:600; font-size:13px; color:#1a1a1a; margin-bottom:4px;">${p.address}</div>
-            <div style="font-size:12px; color:#666; margin-bottom:6px;">${p.type} · ${p.area} м² · ${p.class} класс</div>
-            <div style="font-weight:600; font-size:13px; color:#1a1a1a;">${Number(p.price).toLocaleString("ru-RU")} ₽</div>
-            <a href="/property/${p.id}" style="display:inline-block; margin-top:6px; font-size:12px; color:hsl(0 72% 51%); text-decoration:none;">Подробнее →</a>
-          </div>`
-        );
-
-        const marker = new mapboxgl.Marker({ element: el })
-          .setLngLat([coords.lng, coords.lat])
-          .setPopup(popup)
-          .addTo(map);
-        markersRef.current.push(marker);
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [coords.lng, coords.lat] },
+          properties: { id: p.id, address: p.address, type: p.type, area: p.area, class: p.class, price: p.price },
+        });
         bounds.extend([coords.lng, coords.lat]);
-        added++;
+        updateSource();
       }
 
-      if (added > 1 && !cancelled) {
+      if (features.length > 1 && !cancelled) {
         map.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 600 });
       }
     };
