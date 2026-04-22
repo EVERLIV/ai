@@ -319,10 +319,10 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
             <div className="grid grid-cols-3 gap-1.5">
               {DEALS.map((d) => (
                 <button key={d} onClick={() => { setDeal(d); next(); }}
-                  className={`px-2 py-2 rounded-lg text-[11px] font-medium border transition-all ${
+                  className={`px-2 py-2 text-[11px] font-medium transition-all ${
                     deal === d
-                      ? "border-primary bg-primary/10 text-foreground"
-                      : "border-border hover:border-primary text-foreground hover:bg-primary/5"
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-foreground hover:bg-muted/70 hover:text-primary"
                   }`}>
                   {d}
                 </button>
@@ -339,10 +339,10 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
               {TYPES.map(({ label, icon: Icon }) => (
                 <button key={label}
                   onClick={() => { setType(label); next(); }}
-                  className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[11px] border transition-all ${
+                  className={`inline-flex items-center gap-1 px-2 py-1.5 text-[11px] transition-all ${
                     type === label
-                      ? "border-primary bg-primary/10 text-foreground"
-                      : "border-border hover:border-primary hover:text-primary"
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-foreground hover:bg-muted/70 hover:text-primary"
                   }`}>
                   <Icon className="w-3 h-3" /> {label}
                 </button>
@@ -362,10 +362,10 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
             <div className="flex flex-wrap gap-1.5">
               {ACTIVITIES.map(({ label, icon: Icon }) => (
                 <button key={label} onClick={() => setActivity(label)}
-                  className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[11px] border transition-all ${
+                  className={`inline-flex items-center gap-1 px-2 py-1.5 text-[11px] transition-all ${
                     activity === label
-                      ? "border-primary bg-primary/10 text-foreground"
-                      : "border-border hover:border-primary hover:text-primary"
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-foreground hover:bg-muted/70 hover:text-primary"
                   }`}>
                   <Icon className="w-3 h-3" /> {label}
                 </button>
@@ -381,10 +381,10 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
             <div className="flex flex-wrap gap-1">
               {districts.slice(0, 12).map((d) => (
                 <button key={d} onClick={() => setDistrict(d)}
-                  className={`px-2 py-1 rounded-md text-[11px] border transition-all ${
+                  className={`px-2 py-1 text-[11px] transition-all ${
                     district === d
-                      ? "border-primary bg-primary/10 text-foreground"
-                      : "border-border hover:border-primary hover:text-primary"
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-foreground hover:bg-muted/70 hover:text-primary"
                   }`}>
                   {d}
                 </button>
@@ -395,17 +395,17 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
 
         {/* 4: budget */}
         {step === 4 && (
-          <div className="animate-fade-in-up">
+          <div className="animate-fade-in-up min-w-0">
             <p className="text-[11px] text-foreground/80 mb-2">
               Бюджет, ₽ {deal === "Аренда" ? "(в месяц)" : ""}
             </p>
-            <div className="flex gap-1.5 mb-2">
-              <input type="number" value={budgetMin} onChange={(e) => setBudgetMin(e.target.value)}
+            <div className="flex gap-1.5 mb-2 min-w-0">
+              <input type="number" inputMode="numeric" value={budgetMin} onChange={(e) => setBudgetMin(e.target.value)}
                 placeholder="от"
-                className="flex-1 px-2 py-1.5 bg-transparent text-[11px] text-foreground border-b border-border focus:outline-none focus:border-primary" />
-              <input type="number" value={budgetMax} onChange={(e) => setBudgetMax(e.target.value)}
+                className="flex-1 min-w-0 w-full px-2 py-1.5 bg-muted text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:bg-muted/70" />
+              <input type="number" inputMode="numeric" value={budgetMax} onChange={(e) => setBudgetMax(e.target.value)}
                 placeholder="до"
-                className="flex-1 px-2 py-1.5 bg-transparent text-[11px] text-foreground border-b border-border focus:outline-none focus:border-primary" />
+                className="flex-1 min-w-0 w-full px-2 py-1.5 bg-muted text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:bg-muted/70" />
             </div>
             <div className="flex flex-wrap gap-1">
               {[
@@ -416,7 +416,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
               ].map((q) => (
                 <button key={q.label}
                   onClick={() => { setBudgetMin(q.min); setBudgetMax(q.max); }}
-                  className="px-1.5 py-0.5 text-[10px] rounded border border-border hover:border-primary hover:text-primary transition-all">
+                  className="px-2 py-0.5 text-[10px] bg-muted text-muted-foreground hover:bg-muted/70 hover:text-primary transition-all">
                   {q.label}
                 </button>
               ))}
@@ -426,15 +426,15 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
 
         {/* 5: area */}
         {step === 5 && (
-          <div className="animate-fade-in-up">
+          <div className="animate-fade-in-up min-w-0">
             <p className="text-[11px] text-foreground/80 mb-2">Площадь, м²</p>
-            <div className="flex gap-1.5 mb-2">
-              <input type="number" value={areaMin} onChange={(e) => setAreaMin(e.target.value)}
+            <div className="flex gap-1.5 mb-2 min-w-0">
+              <input type="number" inputMode="numeric" value={areaMin} onChange={(e) => setAreaMin(e.target.value)}
                 placeholder="от"
-                className="flex-1 px-2 py-1.5 bg-transparent text-[11px] text-foreground border-b border-border focus:outline-none focus:border-primary" />
-              <input type="number" value={areaMax} onChange={(e) => setAreaMax(e.target.value)}
+                className="flex-1 min-w-0 w-full px-2 py-1.5 bg-muted text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:bg-muted/70" />
+              <input type="number" inputMode="numeric" value={areaMax} onChange={(e) => setAreaMax(e.target.value)}
                 placeholder="до"
-                className="flex-1 px-2 py-1.5 bg-transparent text-[11px] text-foreground border-b border-border focus:outline-none focus:border-primary" />
+                className="flex-1 min-w-0 w-full px-2 py-1.5 bg-muted text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:bg-muted/70" />
             </div>
             <div className="flex flex-wrap gap-1">
               {[
@@ -446,7 +446,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
               ].map((q) => (
                 <button key={q.label}
                   onClick={() => { setAreaMin(q.min); setAreaMax(q.max); }}
-                  className="px-1.5 py-0.5 text-[10px] rounded border border-border hover:border-primary hover:text-primary transition-all">
+                  className="px-2 py-0.5 text-[10px] bg-muted text-muted-foreground hover:bg-muted/70 hover:text-primary transition-all">
                   {q.label}
                 </button>
               ))}
@@ -462,10 +462,10 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
               <div className="flex flex-wrap gap-1">
                 {CLASSES.map((c) => (
                   <button key={c} onClick={() => setPropertyClass(c)}
-                    className={`px-2 py-1 rounded-md text-[11px] border transition-all ${
+                    className={`px-2 py-1 text-[11px] transition-all ${
                       propertyClass === c
-                        ? "border-primary bg-primary/10 text-foreground"
-                        : "border-border hover:border-primary hover:text-primary"
+                        ? "bg-primary/10 text-primary"
+                        : "bg-muted text-foreground hover:bg-muted/70 hover:text-primary"
                     }`}>
                     {c}
                   </button>
@@ -477,10 +477,10 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
               <div className="flex flex-wrap gap-1">
                 {CONDITIONS.map((c) => (
                   <button key={c} onClick={() => setCondition(c)}
-                    className={`px-2 py-1 rounded-md text-[11px] border transition-all ${
+                    className={`px-2 py-1 text-[11px] transition-all ${
                       condition === c
-                        ? "border-primary bg-primary/10 text-foreground"
-                        : "border-border hover:border-primary hover:text-primary"
+                        ? "bg-primary/10 text-primary"
+                        : "bg-muted text-foreground hover:bg-muted/70 hover:text-primary"
                     }`}>
                     {c}
                   </button>
@@ -492,7 +492,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
 
         {/* 7: features + notes */}
         {step === 7 && (
-          <div className="animate-fade-in-up space-y-2.5">
+          <div className="animate-fade-in-up space-y-2.5 min-w-0">
             <div>
               <p className="text-[11px] text-foreground/80 mb-1.5">Удобства</p>
               <div className="flex flex-wrap gap-1.5">
@@ -500,10 +500,10 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
                   const active = selectedFeatures.includes(label);
                   return (
                     <button key={label} onClick={() => toggleFeature(label)}
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] border transition-all ${
+                      className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] transition-all ${
                         active
-                          ? "border-primary bg-primary/10 text-foreground"
-                          : "border-border hover:border-primary hover:text-primary"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-muted text-foreground hover:bg-muted/70 hover:text-primary"
                       }`}>
                       <Icon className="w-3 h-3" /> {label}
                     </button>
@@ -511,18 +511,18 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
                 })}
               </div>
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-[11px] text-foreground/80 mb-1.5">Доп. пожелания</p>
               <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
                 placeholder="Например: рядом метро, отдельный вход, витрина 5м..."
                 rows={2}
-                className="w-full px-2 py-1.5 bg-transparent text-[11px] text-foreground border border-border rounded-md focus:outline-none focus:border-primary resize-none" />
+                className="w-full min-w-0 px-2 py-1.5 bg-muted text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:bg-muted/70 resize-none" />
             </div>
           </div>
         )}
 
         {/* nav */}
-        <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-border/40">
+        <div className="flex items-center justify-between pt-2.5 mt-2">
           <button onClick={back} disabled={step === 0}
             className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-primary disabled:opacity-30 disabled:hover:text-muted-foreground transition-colors">
             <ChevronLeft className="w-3 h-3" /> Назад
@@ -537,7 +537,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
             </button>
           ) : (
             <button onClick={runAI}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-gradient-to-r from-primary to-gold text-primary-foreground hover:opacity-90 transition-opacity shadow-sm">
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium bg-gradient-to-r from-primary to-gold text-primary-foreground hover:opacity-90 transition-opacity">
               ИИ-подбор <Sparkles className="w-3 h-3" />
             </button>
           )}
