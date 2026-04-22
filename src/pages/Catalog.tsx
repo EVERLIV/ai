@@ -12,9 +12,10 @@ import {
   SlidersHorizontal, X, ChevronDown, MapPin, Maximize2, LayoutGrid, List,
   Building2, Store, Warehouse, TreePine, Factory, ArrowUpDown, Eye, Calendar,
   Sparkles, Send, Phone, PhoneOff, Mic, PanelLeftClose, PanelLeft,
-  Search, ChevronUp,
+  Search, ChevronUp, Map as MapIcon,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import CatalogMap from "@/components/CatalogMap";
 
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
 const DEALS = ["Все", "Аренда", "Продажа"];
