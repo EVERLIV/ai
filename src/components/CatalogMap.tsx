@@ -423,11 +423,12 @@ function MobileCard({ p }: { p: DbProperty }) {
   return (
     <>
       <div className="h-28 bg-muted overflow-hidden">
-        {p.cover_photo ? (
-          <img src={p.cover_photo} alt={p.address} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">нет фото</div>
-        )}
+        <img
+          src={getPropertyCover(p.cover_photo, p.type)}
+          alt={p.address}
+          loading="lazy"
+          className="w-full h-full object-cover"
+        />
       </div>
       <div className="p-2.5">
         <div className="flex items-center gap-1.5 mb-0.5">
