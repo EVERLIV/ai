@@ -456,20 +456,28 @@ export default function Catalog() {
             </aside>
           )}
 
-          {/* Mobile sidebar overlay */}
+          {/* Mobile sidebar overlay — на весь экран */}
           {mobileSidebar && (
-            <>
-              <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setMobileSidebar(false)} />
-              <aside className="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] bg-card flex flex-col lg:hidden animate-fade-in-up">
-                <div className="flex items-center justify-between px-3 py-3">
-                  <span className="text-sm font-semibold text-foreground">Фильтры и поиск</span>
-                  <button onClick={() => setMobileSidebar(false)} className="p-1.5 hover:bg-muted transition-colors">
-                    <X className="w-4 h-4" />
-                  </button>
+            <aside className="fixed inset-0 z-50 bg-background flex flex-col lg:hidden animate-fade-in-up">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 shrink-0">
+                <div className="flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">Фильтры</span>
+                  {activeFiltersCount > 0 && <span className="count-badge">{activeFiltersCount}</span>}
                 </div>
-                {sidebarContent}
-              </aside>
-            </>
+                <button onClick={() => setMobileSidebar(false)}
+                  className="p-2 -mr-2 rounded-lg text-foreground hover:bg-muted transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-hidden">{sidebarContent}</div>
+              <div className="px-4 py-3 border-t border-border/40 shrink-0">
+                <button onClick={() => setMobileSidebar(false)}
+                  className="w-full py-2.5 rounded-lg bg-gradient-to-r from-primary to-gold text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
+                  Показать {filtered.length} объектов
+                </button>
+              </div>
+            </aside>
           )}
 
           {/* Results */}
