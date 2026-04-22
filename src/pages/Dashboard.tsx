@@ -851,6 +851,11 @@ export default function Dashboard() {
             </Card>
           </TabsContent>
 
+          {/* Ads Tab */}
+          <TabsContent value="ads" className="space-y-4">
+            <AdPlacementsTab />
+          </TabsContent>
+
           {/* Users Tab */}
           <TabsContent value="users">
             <Card>
