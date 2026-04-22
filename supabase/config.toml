@@ -2,6 +2,3 @@ project_id = "xbdwapunrlnxcuxjhaca"
 
 [functions.ai-property-pick]
 verify_jwt = false
-
-[functions.import-properties]
-verify_jwt = false
