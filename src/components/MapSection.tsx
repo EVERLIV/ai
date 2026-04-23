@@ -49,10 +49,18 @@ function getCoords(p: DbProperty): { lat: number; lng: number } | null {
   return null;
 }
 
+type Cluster = {
+  key: string;
+  lat: number;
+  lng: number;
+  items: DbProperty[];
+};
+
 export default function MapSection() {
   const { ref, isVisible } = useScrollReveal();
   const [view, setView] = useState<"map" | "list">("map");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeClusterKey, setActiveClusterKey] = useState<string | null>(null);
   const [activeDistrict, setActiveDistrict] = useState<string>("Все");
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -72,6 +80,28 @@ export default function MapSection() {
     [filtered]
   );
 
+  // Group by rounded coordinate (~11m precision) OR by exact address.
+  const clusters = useMemo<Cluster[]>(() => {
+    const map = new Map<string, Cluster>();
+    withCoords.forEach((p) => {
+      const c = getCoords(p)!;
+      // round to 4 decimals (~11m) to merge same-building markers
+      const key = `${c.lat.toFixed(4)}_${c.lng.toFixed(4)}`;
+      const existing = map.get(key);
+      if (existing) {
+        existing.items.push(p);
+      } else {
+        map.set(key, { key, lat: c.lat, lng: c.lng, items: [p] });
+      }
+    });
+    return Array.from(map.values());
+  }, [withCoords]);
+
+  const activeCluster = useMemo(
+    () => clusters.find((c) => c.key === activeClusterKey) || null,
+    [clusters, activeClusterKey]
+  );
+
   const districts = useMemo(() => {
     const counts = new Map<string, number>();
     properties.forEach((p) => {
@@ -80,10 +110,8 @@ export default function MapSection() {
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
   }, [properties]);
 
-  const activeProperty = useMemo(
-    () => withCoords.find((p) => p.id === activeId) || null,
-    [withCoords, activeId]
-  );
+  // (single-property card uses activeCluster.items[0])
+
 
   // Init map — once. Wheel zoom is disabled, controls only via buttons / dblclick.
   useEffect(() => {
@@ -116,7 +144,7 @@ export default function MapSection() {
     };
   }, [view]);
 
-  // Render markers + fit bounds
+  // Render markers + fit bounds (one marker per cluster)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -126,47 +154,50 @@ export default function MapSection() {
       Object.values(markersRef.current).forEach((m) => m.remove());
       markersRef.current = {};
 
-      if (withCoords.length === 0) return;
+      if (clusters.length === 0) return;
 
       const bounds = new mapboxgl.LngLatBounds();
 
-      withCoords.forEach((p) => {
-        const c = getCoords(p)!;
+      clusters.forEach((cluster) => {
+        const count = cluster.items.length;
+        const minPrice = Math.min(...cluster.items.map((i) => Number(i.price) || 0));
         const el = document.createElement("div");
         el.className = "ms-pin-wrap";
+        const badge = count > 1
+          ? `<div class="ms-pin-count">${count}</div>`
+          : "";
         el.innerHTML = `
           <div class="ms-pin-pulse"></div>
           <div class="ms-pin">
-            <span>${Math.round(Number(p.price) / 1000)}к</span>
+            <span>${count > 1 ? `от ` : ""}${Math.round(minPrice / 1000)}к</span>
           </div>
+          ${badge}
           <div class="ms-pin-tip"></div>
         `;
         el.addEventListener("click", (e) => {
           e.stopPropagation();
-          setActiveId(p.id);
-          map.easeTo({ center: [c.lng, c.lat], zoom: Math.max(map.getZoom(), 13), duration: 500 });
+          setActiveClusterKey(cluster.key);
+          setActiveId(count === 1 ? cluster.items[0].id : null);
+          map.easeTo({ center: [cluster.lng, cluster.lat], zoom: Math.max(map.getZoom(), 13), duration: 500 });
         });
 
-        // anchor "bottom" -> the very bottom of the element sits on the coord.
-        // Our element's bottom is the tip of the pin pointer.
         const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
-          .setLngLat([c.lng, c.lat])
+          .setLngLat([cluster.lng, cluster.lat])
           .addTo(map);
-        markersRef.current[p.id] = marker;
-        bounds.extend([c.lng, c.lat]);
+        markersRef.current[cluster.key] = marker;
+        bounds.extend([cluster.lng, cluster.lat]);
       });
 
-      if (withCoords.length > 1) {
+      if (clusters.length > 1) {
         map.fitBounds(bounds, { padding: 80, maxZoom: 13, duration: 700 });
-      } else if (withCoords.length === 1) {
-        const c = getCoords(withCoords[0])!;
-        map.easeTo({ center: [c.lng, c.lat], zoom: 14 });
+      } else if (clusters.length === 1) {
+        map.easeTo({ center: [clusters[0].lng, clusters[0].lat], zoom: 14 });
       }
     };
 
     if (map.isStyleLoaded()) place();
     else map.once("load", place);
-  }, [withCoords]);
+  }, [clusters]);
 
   return (
     <section ref={ref} className="py-16 bg-surface-warm">
@@ -213,50 +244,107 @@ export default function MapSection() {
               <>
                 <div ref={mapContainer} className="absolute inset-0" />
 
-                {/* Active property card overlay */}
-                {activeProperty && (
-                  <div className="absolute left-4 bottom-4 right-4 sm:right-auto sm:max-w-[320px] z-10 animate-fade-in">
+                {/* Active cluster overlay */}
+                {activeCluster && (
+                  <div className="absolute left-4 bottom-4 right-4 sm:right-auto sm:max-w-[340px] z-10 animate-fade-in">
                     <div className="bg-card rounded-xl shadow-card-hover overflow-hidden border border-border">
-                      <div className="relative h-32 bg-muted">
-                        <img
-                          src={getPropertyCover(activeProperty.cover_photo, activeProperty.type)}
-                          alt={activeProperty.address}
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          onClick={() => setActiveId(null)}
-                          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/90 backdrop-blur text-foreground flex items-center justify-center hover:bg-background transition-colors text-lg leading-none"
-                          aria-label="Закрыть"
-                        >
-                          ×
-                        </button>
-                        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">
-                          {activeProperty.type}
-                        </span>
-                      </div>
-                      <div className="p-3">
-                        <div className="flex items-baseline justify-between gap-2 mb-1">
-                          <span className="font-display text-lg font-bold text-foreground">
-                            {Number(activeProperty.price).toLocaleString("ru-RU")} ₽
-                            {activeProperty.deal_type === "Аренда" && (
-                              <span className="text-xs font-normal text-muted-foreground">/мес</span>
-                            )}
-                          </span>
-                          <span className="text-xs text-muted-foreground shrink-0">
-                            {activeProperty.area} м²
-                          </span>
-                        </div>
-                        <div className="flex items-start gap-1 text-xs text-muted-foreground mb-3">
-                          <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
-                          <span className="line-clamp-2">{activeProperty.address}</span>
-                        </div>
-                        <Link
-                          to={`/property/${activeProperty.id}`}
-                          className="block w-full text-center py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-                        >
-                          Подробнее
-                        </Link>
-                      </div>
+                      {activeCluster.items.length === 1 ? (
+                        (() => {
+                          const p = activeCluster.items[0];
+                          return (
+                            <>
+                              <div className="relative h-32 bg-muted">
+                                <img
+                                  src={getPropertyCover(p.cover_photo, p.type)}
+                                  alt={p.address}
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  onClick={() => { setActiveClusterKey(null); setActiveId(null); }}
+                                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/90 backdrop-blur text-foreground flex items-center justify-center hover:bg-background transition-colors text-lg leading-none"
+                                  aria-label="Закрыть"
+                                >
+                                  ×
+                                </button>
+                                <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">
+                                  {p.type}
+                                </span>
+                              </div>
+                              <div className="p-3">
+                                <div className="flex items-baseline justify-between gap-2 mb-1">
+                                  <span className="font-display text-lg font-bold text-foreground">
+                                    {Number(p.price).toLocaleString("ru-RU")} ₽
+                                    {p.deal_type === "Аренда" && (
+                                      <span className="text-xs font-normal text-muted-foreground">/мес</span>
+                                    )}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground shrink-0">{p.area} м²</span>
+                                </div>
+                                <div className="flex items-start gap-1 text-xs text-muted-foreground mb-3">
+                                  <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
+                                  <span className="line-clamp-2">{p.address}</span>
+                                </div>
+                                <Link
+                                  to={`/property/${p.id}`}
+                                  className="block w-full text-center py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                                >
+                                  Подробнее
+                                </Link>
+                              </div>
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <>
+                          <div className="flex items-start justify-between gap-2 px-3 pt-3 pb-2 border-b border-border">
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-primary mb-0.5">
+                                {activeCluster.items.length} объектов на адресе
+                              </p>
+                              <p className="text-xs font-medium text-foreground line-clamp-2 flex items-start gap-1">
+                                <MapPin className="w-3 h-3 shrink-0 mt-0.5 text-muted-foreground" />
+                                {activeCluster.items[0].address}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => { setActiveClusterKey(null); setActiveId(null); }}
+                              className="w-7 h-7 rounded-full bg-muted text-foreground flex items-center justify-center hover:bg-muted/80 transition-colors text-lg leading-none shrink-0"
+                              aria-label="Закрыть"
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <div className="max-h-[280px] overflow-y-auto divide-y divide-border">
+                            {activeCluster.items.map((p) => (
+                              <Link
+                                key={p.id}
+                                to={`/property/${p.id}`}
+                                className="flex items-center gap-2.5 p-2.5 hover:bg-muted/50 transition-colors"
+                              >
+                                <div className="w-12 h-12 rounded-md overflow-hidden bg-muted shrink-0">
+                                  <img
+                                    src={getPropertyCover(p.cover_photo, p.type)}
+                                    alt={p.address}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-semibold text-foreground truncate">
+                                    {Number(p.price).toLocaleString("ru-RU")} ₽
+                                    {p.deal_type === "Аренда" && (
+                                      <span className="text-[10px] font-normal text-muted-foreground">/мес</span>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-muted-foreground truncate">
+                                    {p.type} · {p.area} м²{p.floor ? ` · ${p.floor} эт.` : ""}
+                                  </div>
+                                </div>
+                                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                              </Link>
+                            ))}
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -302,7 +390,7 @@ export default function MapSection() {
               </p>
               {activeDistrict !== "Все" && (
                 <button
-                  onClick={() => setActiveDistrict("Все")}
+                  onClick={() => { setActiveDistrict("Все"); setActiveClusterKey(null); setActiveId(null); }}
                   className="text-[10px] text-primary hover:underline"
                 >
                   Сбросить
@@ -312,7 +400,7 @@ export default function MapSection() {
 
             <button
               type="button"
-              onClick={() => { setActiveDistrict("Все"); setActiveId(null); }}
+              onClick={() => { setActiveDistrict("Все"); setActiveClusterKey(null); setActiveId(null); }}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
                 activeDistrict === "Все"
                   ? "bg-primary text-primary-foreground"
@@ -335,7 +423,7 @@ export default function MapSection() {
                   <button
                     key={name}
                     type="button"
-                    onClick={() => { setActiveDistrict(name); setActiveId(null); }}
+                    onClick={() => { setActiveDistrict(name); setActiveClusterKey(null); setActiveId(null); }}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
                       active
                         ? "bg-primary text-primary-foreground"
@@ -411,6 +499,27 @@ export default function MapSection() {
         }
         .ms-pin-wrap:hover .ms-pin {
           transform: translateX(-50%) translateY(-2px) scale(1.05);
+        }
+        .ms-pin-count {
+          position: absolute;
+          top: -2px;
+          right: 2px;
+          z-index: 3;
+          min-width: 18px;
+          height: 18px;
+          padding: 0 5px;
+          border-radius: 999px;
+          background: hsl(45 90% 50%);
+          color: hsl(0 0% 10%);
+          font-family: Inter, sans-serif;
+          font-size: 10px;
+          font-weight: 800;
+          line-height: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 2px solid #fff;
+          box-shadow: 0 2px 6px rgb(0 0 0 / 0.2);
         }
         .ms-pin-pulse {
           position: absolute;
