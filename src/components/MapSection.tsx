@@ -167,12 +167,11 @@ export default function MapSection() {
           ? `<div class="ms-pin-count">${count}</div>`
           : "";
         el.innerHTML = `
-          <div class="ms-pin-pulse"></div>
+          <div class="ms-pin-shadow"></div>
           <div class="ms-pin">
             <span>${count > 1 ? `от ` : ""}${Math.round(minPrice / 1000)}к</span>
           </div>
           ${badge}
-          <div class="ms-pin-tip"></div>
         `;
         el.addEventListener("click", (e) => {
           e.stopPropagation();
