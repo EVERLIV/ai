@@ -502,6 +502,27 @@ export default function MapSection() {
         .ms-pin-wrap:hover .ms-pin {
           transform: translateX(-50%) translateY(-2px) scale(1.05);
         }
+        .ms-pin-count {
+          position: absolute;
+          top: -2px;
+          right: 2px;
+          z-index: 3;
+          min-width: 18px;
+          height: 18px;
+          padding: 0 5px;
+          border-radius: 999px;
+          background: hsl(45 90% 50%);
+          color: hsl(0 0% 10%);
+          font-family: Inter, sans-serif;
+          font-size: 10px;
+          font-weight: 800;
+          line-height: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 2px solid #fff;
+          box-shadow: 0 2px 6px rgb(0 0 0 / 0.2);
+        }
         .ms-pin-pulse {
           position: absolute;
           left: 50%;
