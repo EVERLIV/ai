@@ -2,15 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
-import { useProperties } from "@/hooks/useProperties";
-import { List, Map as MapIcon, KeyRound } from "lucide-react";
+import { useProperties, type DbProperty } from "@/hooks/useProperties";
+import { List, Map as MapIcon, MapPin, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getPropertyCover } from "@/lib/propertyImages";
 
-const TOKEN_KEY = "mapbox_public_token";
-const GEOCACHE_KEY = "mapbox_geocache_v1";
 const IRKUTSK_CENTER: [number, number] = [104.2807, 52.2869];
 
-// Strict grayscale style matching the project palette
+// Token-less raster style — CARTO Positron tiles
 const GRAY_STYLE: mapboxgl.Style = {
   version: 8,
   sources: {
@@ -24,7 +23,7 @@ const GRAY_STYLE: mapboxgl.Style = {
       tileSize: 256,
       attribution: "© OpenStreetMap, © CARTO",
     },
-    "labels": {
+    labels: {
       type: "raster",
       tiles: [
         "https://cartodb-basemaps-a.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png",
@@ -41,65 +40,29 @@ const GRAY_STYLE: mapboxgl.Style = {
   ],
 };
 
-const SAVED_KEY = "saved_properties_v1";
-function loadSaved(): Set<string> {
-  try {
-    return new Set(JSON.parse(localStorage.getItem(SAVED_KEY) || "[]"));
-  } catch {
-    return new Set();
+function getCoords(p: DbProperty): { lat: number; lng: number } | null {
+  const lat = (p as any).lat;
+  const lng = (p as any).lng;
+  if (typeof lat === "number" && typeof lng === "number" && !Number.isNaN(lat) && !Number.isNaN(lng)) {
+    return { lat, lng };
   }
-}
-function isSaved(id: string): boolean {
-  return loadSaved().has(id);
-}
-function toggleSaved(id: string): boolean {
-  const s = loadSaved();
-  if (s.has(id)) s.delete(id);
-  else s.add(id);
-  localStorage.setItem(SAVED_KEY, JSON.stringify([...s]));
-  window.dispatchEvent(new CustomEvent("saved-properties-changed"));
-  return s.has(id);
-}
-
-type GeoCache = Record<string, { lng: number; lat: number } | null>;
-
-function loadCache(): GeoCache {
-  try {
-    return JSON.parse(localStorage.getItem(GEOCACHE_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-function saveCache(c: GeoCache) {
-  try {
-    localStorage.setItem(GEOCACHE_KEY, JSON.stringify(c));
-  } catch {}
-}
-
-async function geocode(address: string, token: string): Promise<{ lng: number; lat: number } | null> {
-  const q = encodeURIComponent(`${address}, Иркутск, Россия`);
-  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json?access_token=${token}&limit=1&language=ru&country=ru&proximity=${IRKUTSK_CENTER[0]},${IRKUTSK_CENTER[1]}`;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const data = await res.json();
-    const f = data.features?.[0];
-    if (!f) return null;
-    return { lng: f.center[0], lat: f.center[1] };
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 export default function MapSection() {
   const { ref, isVisible } = useScrollReveal();
   const [view, setView] = useState<"map" | "list">("map");
-  const [token, setToken] = useState<string>(() => localStorage.getItem(TOKEN_KEY) || "");
-  const [tokenInput, setTokenInput] = useState("");
+  const [activeId, setActiveId] = useState<string | null>(null);
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  
+  const markersRef = useRef<Record<string, mapboxgl.Marker>>({});
+
   const { data: properties = [] } = useProperties();
+
+  const withCoords = useMemo(
+    () => properties.filter((p) => getCoords(p) !== null),
+    [properties]
+  );
 
   const districts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -109,10 +72,15 @@ export default function MapSection() {
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
   }, [properties]);
 
+  const activeProperty = useMemo(
+    () => withCoords.find((p) => p.id === activeId) || null,
+    [withCoords, activeId]
+  );
+
   // Init map
   useEffect(() => {
-    if (!token || !mapContainer.current || mapRef.current) return;
-    mapboxgl.accessToken = token;
+    if (!mapContainer.current || mapRef.current || view !== "map") return;
+    mapboxgl.accessToken = "no-token-needed";
     const map = new mapboxgl.Map({
       container: mapContainer.current,
       style: GRAY_STYLE,
@@ -123,330 +91,280 @@ export default function MapSection() {
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;
 
-    // Delegated handler for "Save" buttons inside popups
-    const onClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const btn = target.closest<HTMLButtonElement>("[data-save-id]");
-      if (!btn) return;
-      e.preventDefault();
-      const id = btn.dataset.saveId!;
-      const nowSaved = toggleSaved(id);
-      btn.textContent = nowSaved ? "✓ Сохранено" : "Сохранить";
-      btn.style.background = nowSaved ? "hsl(40 15% 94%)" : "#fff";
-    };
-    document.addEventListener("click", onClick);
-
     return () => {
-      document.removeEventListener("click", onClick);
+      Object.values(markersRef.current).forEach((m) => m.remove());
+      markersRef.current = {};
       map.remove();
       mapRef.current = null;
     };
-  }, [token]);
+  }, [view]);
 
-  // Geocode + add clustered source/layers
+  // Render markers + fit bounds
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !token || properties.length === 0) return;
+    if (!map || withCoords.length === 0) return;
 
-    let cancelled = false;
-    const cache = loadCache();
+    const place = () => {
+      // Clear old markers
+      Object.values(markersRef.current).forEach((m) => m.remove());
+      markersRef.current = {};
 
-    const run = async () => {
-      if (!map.isStyleLoaded()) {
-        await new Promise<void>((r) => map.once("load", () => r()));
-      }
-      if (cancelled) return;
-
-      const features: GeoJSON.Feature<GeoJSON.Point>[] = [];
       const bounds = new mapboxgl.LngLatBounds();
 
-      const updateSource = () => {
-        const data: GeoJSON.FeatureCollection<GeoJSON.Point> = {
-          type: "FeatureCollection",
-          features,
-        };
-        const src = map.getSource("properties") as mapboxgl.GeoJSONSource | undefined;
-        if (src) {
-          src.setData(data);
-        } else {
-          map.addSource("properties", {
-            type: "geojson",
-            data,
-            cluster: true,
-            clusterMaxZoom: 14,
-            clusterRadius: 50,
-          });
-
-          map.addLayer({
-            id: "clusters",
-            type: "circle",
-            source: "properties",
-            filter: ["has", "point_count"],
-            paint: {
-              "circle-color": "hsl(0, 72%, 51%)",
-              "circle-radius": ["step", ["get", "point_count"], 16, 10, 22, 50, 28],
-              "circle-stroke-width": 2,
-              "circle-stroke-color": "#ffffff",
-            },
-          });
-
-          map.addLayer({
-            id: "cluster-count",
-            type: "symbol",
-            source: "properties",
-            filter: ["has", "point_count"],
-            layout: {
-              "text-field": ["get", "point_count_abbreviated"],
-              "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-              "text-size": 12,
-            },
-            paint: { "text-color": "#ffffff" },
-          });
-
-          map.addLayer({
-            id: "unclustered-point",
-            type: "circle",
-            source: "properties",
-            filter: ["!", ["has", "point_count"]],
-            paint: {
-              "circle-color": "hsl(0, 72%, 51%)",
-              "circle-radius": 6,
-              "circle-stroke-width": 2,
-              "circle-stroke-color": "#ffffff",
-            },
-          });
-
-          map.on("click", "clusters", (e) => {
-            const f = map.queryRenderedFeatures(e.point, { layers: ["clusters"] })[0];
-            const clusterId = f.properties?.cluster_id;
-            const source = map.getSource("properties") as mapboxgl.GeoJSONSource;
-            source.getClusterExpansionZoom(clusterId, (err, zoom) => {
-              if (err) return;
-              map.easeTo({
-                center: (f.geometry as GeoJSON.Point).coordinates as [number, number],
-                zoom,
-              });
-            });
-          });
-
-          map.on("click", "unclustered-point", (e) => {
-            const f = e.features?.[0];
-            if (!f) return;
-            const p = f.properties as {
-              address: string; type: string; area: number; class: string; price: number; id: string; cover: string;
-            };
-            const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
-            const saved = isSaved(p.id);
-            // Inline SVG fallback — warm gradient + building icon, matches project palette
-            const fallbackSvg =
-              "data:image/svg+xml;utf8," +
-              encodeURIComponent(
-                `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 96' preserveAspectRatio='xMidYMid slice'>
-                  <defs>
-                    <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
-                      <stop offset='0%' stop-color='hsl(35, 30%, 92%)'/>
-                      <stop offset='50%' stop-color='hsl(38, 60%, 88%)'/>
-                      <stop offset='100%' stop-color='hsl(40, 20%, 96%)'/>
-                    </linearGradient>
-                  </defs>
-                  <rect width='240' height='96' fill='url(%23g)'/>
-                  <g transform='translate(96 24)' fill='none' stroke='hsl(220, 10%, 45%)' stroke-width='1.5' opacity='0.55'>
-                    <rect x='4' y='10' width='40' height='38'/>
-                    <rect x='12' y='18' width='6' height='6'/>
-                    <rect x='24' y='18' width='6' height='6'/>
-                    <rect x='36' y='18' width='4' height='6'/>
-                    <rect x='12' y='30' width='6' height='6'/>
-                    <rect x='24' y='30' width='6' height='6'/>
-                    <rect x='36' y='30' width='4' height='6'/>
-                    <rect x='20' y='40' width='10' height='8'/>
-                  </g>
-                </svg>`
-              );
-
-            const coverSrc = p.cover || fallbackSvg;
-            const escapedFallback = fallbackSvg.replace(/'/g, "\\'");
-            const cover = `<div style="width:100%; height:96px; margin-bottom:8px; background:hsl(35, 25%, 96%); overflow:hidden;">
-              <img src="${coverSrc}" alt="" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.onerror=null;this.src='${escapedFallback}';"/>
-            </div>`;
-
-            new mapboxgl.Popup({ offset: 12, closeButton: true, maxWidth: "260px" })
-              .setLngLat(coords)
-              .setHTML(
-                `<div style="font-family: Inter, sans-serif; width: 240px;">
-                  ${cover}
-                  <div style="display:inline-block; font-size:10px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase; color:#666; border:1px solid hsl(35 18% 88%); padding:2px 6px; margin-bottom:6px;">${p.type} · ${p.class} класс</div>
-                  <div style="font-weight:600; font-size:13px; color:#1a1a1a; line-height:1.3; margin-bottom:6px;">${p.address}</div>
-                  <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid hsl(35 18% 93%);">
-                    <span style="font-weight:700; font-size:15px; color:#1a1a1a;">${Number(p.price).toLocaleString("ru-RU")} ₽</span>
-                    <span style="font-size:12px; color:#666;">${p.area} м²</span>
-                  </div>
-                  <div style="display:flex; gap:6px;">
-                    <a href="/property/${p.id}" style="flex:1; text-align:center; padding:7px 10px; font-size:12px; font-weight:600; background:hsl(0 72% 51%); color:#fff; text-decoration:none;">Подробнее</a>
-                    <button data-save-id="${p.id}" style="flex:1; padding:7px 10px; font-size:12px; font-weight:600; background:${saved ? "hsl(40 15% 94%)" : "#fff"}; color:#1a1a1a; border:1px solid hsl(35 18% 88%); cursor:pointer;">${saved ? "✓ Сохранено" : "Сохранить"}</button>
-                  </div>
-                </div>`
-              )
-              .addTo(map);
-          });
-
-          ["clusters", "unclustered-point"].forEach((id) => {
-            map.on("mouseenter", id, () => (map.getCanvas().style.cursor = "pointer"));
-            map.on("mouseleave", id, () => (map.getCanvas().style.cursor = ""));
-          });
-        }
-      };
-
-      // First pass: use cached coords for instant render
-      for (const p of properties) {
-        const key = p.address?.trim();
-        if (!key) continue;
-        const cached = cache[key];
-        if (cached) {
-          features.push({
-            type: "Feature",
-            geometry: { type: "Point", coordinates: [cached.lng, cached.lat] },
-            properties: { id: p.id, address: p.address, type: p.type, area: p.area, class: p.class, price: p.price, cover: p.cover_photo || "" },
-          });
-          bounds.extend([cached.lng, cached.lat]);
-        }
-      }
-      updateSource();
-      if (features.length > 1) {
-        map.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 600 });
-      }
-
-      // Second pass: geocode missing addresses
-      for (const p of properties) {
-        if (cancelled) return;
-        const key = p.address?.trim();
-        if (!key || cache[key] !== undefined) continue;
-        const coords = await geocode(key, token);
-        cache[key] = coords;
-        saveCache(cache);
-        await new Promise((r) => setTimeout(r, 120));
-        if (cancelled) return;
-        if (!coords) continue;
-        features.push({
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [coords.lng, coords.lat] },
-          properties: { id: p.id, address: p.address, type: p.type, area: p.area, class: p.class, price: p.price, cover: p.cover_photo || "" },
+      withCoords.forEach((p) => {
+        const c = getCoords(p)!;
+        const el = document.createElement("div");
+        el.className = "ms-pin-wrap";
+        el.innerHTML = `
+          <div class="ms-pin-pulse"></div>
+          <div class="ms-pin">
+            <span>${Math.round(Number(p.price) / 1000)}к</span>
+          </div>
+        `;
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          setActiveId(p.id);
+          map.easeTo({ center: [c.lng, c.lat], zoom: Math.max(map.getZoom(), 13), duration: 500 });
         });
-        bounds.extend([coords.lng, coords.lat]);
-        updateSource();
-      }
 
-      if (features.length > 1 && !cancelled) {
-        map.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 600 });
+        const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
+          .setLngLat([c.lng, c.lat])
+          .addTo(map);
+        markersRef.current[p.id] = marker;
+        bounds.extend([c.lng, c.lat]);
+      });
+
+      if (withCoords.length > 1) {
+        map.fitBounds(bounds, { padding: 60, maxZoom: 13, duration: 700 });
+      } else if (withCoords.length === 1) {
+        const c = getCoords(withCoords[0])!;
+        map.easeTo({ center: [c.lng, c.lat], zoom: 14 });
       }
     };
 
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [properties, token]);
-
-  const handleSaveToken = () => {
-    const t = tokenInput.trim();
-    if (!t.startsWith("pk.")) return;
-    localStorage.setItem(TOKEN_KEY, t);
-    setToken(t);
-  };
+    if (map.isStyleLoaded()) place();
+    else map.once("load", place);
+  }, [withCoords]);
 
   return (
     <section ref={ref} className="py-16 bg-surface-warm">
       <div className={`container mx-auto px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
-        <div className="flex items-end justify-between mb-8">
-          <h2 className="font-display text-3xl font-bold text-foreground">Объекты на карте Иркутска</h2>
-          <div className="flex bg-card overflow-hidden border border-border">
+        <div className="flex items-end justify-between mb-8 flex-wrap gap-3">
+          <div>
+            <p className="text-xs font-medium tracking-widest uppercase text-primary mb-2">
+              Карта объектов
+            </p>
+            <h2 className="font-display text-3xl font-bold text-foreground">
+              Объекты на карте Иркутска
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              {withCoords.length} объектов с координатами · {properties.length} всего
+            </p>
+          </div>
+          <div className="flex bg-card overflow-hidden border border-border rounded-lg">
             <button
               onClick={() => setView("map")}
-              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${view === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
+                view === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
             >
               <MapIcon className="w-4 h-4" /> Карта
             </button>
             <button
               onClick={() => setView("list")}
-              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
+                view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
             >
               <List className="w-4 h-4" /> Список
             </button>
           </div>
         </div>
 
-        <div className="bg-card overflow-hidden flex flex-col lg:flex-row" style={{ minHeight: 480 }}>
+        <div
+          className="bg-card overflow-hidden flex flex-col lg:flex-row rounded-2xl shadow-card"
+          style={{ minHeight: 520 }}
+        >
+          {/* Map / List view */}
           <div className="flex-1 relative bg-muted">
-            {!token ? (
-              <div className="absolute inset-0 flex items-center justify-center p-8">
-                <div className="max-w-md w-full bg-card p-6 border border-border">
-                  <div className="flex items-center gap-2 mb-3 text-foreground">
-                    <KeyRound className="w-4 h-4" />
-                    <h3 className="font-semibold text-sm uppercase tracking-wider">Подключите Mapbox</h3>
+            {view === "map" ? (
+              <>
+                <div ref={mapContainer} className="absolute inset-0" />
+
+                {/* Active property card overlay */}
+                {activeProperty && (
+                  <div className="absolute left-4 bottom-4 right-4 sm:right-auto sm:max-w-[320px] z-10 animate-fade-in">
+                    <div className="bg-card rounded-xl shadow-card-hover overflow-hidden border border-border">
+                      <div className="relative h-32 bg-muted">
+                        <img
+                          src={getPropertyCover(activeProperty.cover_photo, activeProperty.type)}
+                          alt={activeProperty.address}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          onClick={() => setActiveId(null)}
+                          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/90 backdrop-blur text-foreground flex items-center justify-center hover:bg-background transition-colors text-lg leading-none"
+                          aria-label="Закрыть"
+                        >
+                          ×
+                        </button>
+                        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">
+                          {activeProperty.type}
+                        </span>
+                      </div>
+                      <div className="p-3">
+                        <div className="flex items-baseline justify-between gap-2 mb-1">
+                          <span className="font-display text-lg font-bold text-foreground">
+                            {Number(activeProperty.price).toLocaleString("ru-RU")} ₽
+                            {activeProperty.deal_type === "Аренда" && (
+                              <span className="text-xs font-normal text-muted-foreground">/мес</span>
+                            )}
+                          </span>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {activeProperty.area} м²
+                          </span>
+                        </div>
+                        <div className="flex items-start gap-1 text-xs text-muted-foreground mb-3">
+                          <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
+                          <span className="line-clamp-2">{activeProperty.address}</span>
+                        </div>
+                        <Link
+                          to={`/property/${activeProperty.id}`}
+                          className="block w-full text-center py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                        >
+                          Подробнее
+                        </Link>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Введите ваш публичный токен Mapbox (pk.…). Получить бесплатно:{" "}
-                    <a
-                      href="https://account.mapbox.com/access-tokens/"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      account.mapbox.com
-                    </a>
-                    . Токен сохраняется только в вашем браузере.
-                  </p>
-                  <div className="flex gap-2">
-                    <input
-                      value={tokenInput}
-                      onChange={(e) => setTokenInput(e.target.value)}
-                      placeholder="pk.eyJ1Ijoi..."
-                      className="flex-1 px-3 py-2 text-sm bg-background border border-border focus:outline-none focus:border-primary"
-                    />
-                    <button
-                      onClick={handleSaveToken}
-                      className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                    >
-                      Подключить
-                    </button>
-                  </div>
-                </div>
-              </div>
+                )}
+              </>
             ) : (
-              <div ref={mapContainer} className="absolute inset-0" />
+              <div className="absolute inset-0 overflow-y-auto p-4 space-y-2">
+                {withCoords.map((p) => (
+                  <Link
+                    key={p.id}
+                    to={`/property/${p.id}`}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors border border-border"
+                  >
+                    <div className="w-16 h-16 rounded-md overflow-hidden bg-muted shrink-0">
+                      <img
+                        src={getPropertyCover(p.cover_photo, p.type)}
+                        alt={p.address}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-foreground truncate">
+                        {Number(p.price).toLocaleString("ru-RU")} ₽
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                          {p.area} м² · {p.type}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        {p.address}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             )}
           </div>
 
-          <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border p-4 space-y-2 overflow-y-auto max-h-[480px]">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">По районам</p>
-              {token && (
-                <button
-                  onClick={() => {
-                    localStorage.removeItem(TOKEN_KEY);
-                    setToken("");
-                  }}
-                  className="text-[10px] text-muted-foreground hover:text-foreground uppercase tracking-wider"
-                >
-                  Сменить токен
-                </button>
-              )}
-            </div>
+          {/* Districts sidebar */}
+          <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border p-4 space-y-2 overflow-y-auto max-h-[520px] bg-card">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+              По районам
+            </p>
             {districts.length === 0 ? (
-              <div className="text-sm text-muted-foreground">Нет данных</div>
+              <p className="text-xs text-muted-foreground">Нет данных</p>
             ) : (
               districts.map(([name, count]) => (
                 <div
                   key={name}
-                  className="flex items-center justify-between px-3 py-2.5 hover:bg-muted transition-colors cursor-pointer text-sm text-foreground border-b border-border last:border-b-0"
+                  className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-muted/40 hover:bg-muted transition-colors"
                 >
-                  <span>{name}</span>
-                  <span className="text-xs text-muted-foreground">{count}</span>
+                  <div className="flex items-center gap-2 text-sm text-foreground">
+                    <MapPin className="w-3.5 h-3.5 text-primary" />
+                    {name}
+                  </div>
+                  <span className="text-xs font-medium text-muted-foreground">{count}</span>
                 </div>
               ))
             )}
+            <Link
+              to="/catalog"
+              className="mt-3 flex items-center justify-center gap-1 w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              Все объекты <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </div>
+
+      <style>{`
+        .ms-pin-wrap {
+          position: relative;
+          width: 44px;
+          height: 56px;
+          cursor: pointer;
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+        }
+        .ms-pin {
+          position: relative;
+          z-index: 2;
+          min-width: 44px;
+          height: 30px;
+          padding: 0 8px;
+          background: hsl(0 72% 51%);
+          color: #fff;
+          font-family: Inter, sans-serif;
+          font-size: 11px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 2px solid #fff;
+          border-radius: 999px;
+          box-shadow: 0 4px 14px hsl(0 72% 51% / 0.35);
+          transition: transform 0.2s ease;
+        }
+        .ms-pin:after {
+          content: "";
+          position: absolute;
+          bottom: -7px;
+          left: 50%;
+          transform: translateX(-50%) rotate(45deg);
+          width: 10px;
+          height: 10px;
+          background: hsl(0 72% 51%);
+          border-right: 2px solid #fff;
+          border-bottom: 2px solid #fff;
+        }
+        .ms-pin-wrap:hover .ms-pin {
+          transform: translateY(-3px) scale(1.05);
+        }
+        .ms-pin-pulse {
+          position: absolute;
+          bottom: 4px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 30px;
+          height: 30px;
+          background: hsl(0 72% 51%);
+          border-radius: 50%;
+          opacity: 0.35;
+          animation: msPinPulse 2s ease-out infinite;
+        }
+        @keyframes msPinPulse {
+          0%   { transform: translateX(-50%) scale(0.6); opacity: 0.5; }
+          70%  { transform: translateX(-50%) scale(2); opacity: 0; }
+          100% { transform: translateX(-50%) scale(2); opacity: 0; }
+        }
+      `}</style>
     </section>
   );
 }
