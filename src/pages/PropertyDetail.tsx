@@ -66,31 +66,45 @@ export default function PropertyDetail() {
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
 
-      <div className="sticky top-16 z-30 bg-card/80 backdrop-blur-xl border-b border-border">
-        <div className="container mx-auto px-4 lg:px-8 h-12 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Назад к списку</span>
+      <div className="sticky top-16 z-30 bg-card/85 backdrop-blur-xl border-b border-border">
+        <div className="container mx-auto px-3 lg:px-8 h-10 lg:h-11 flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="Назад"
+            className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setSaved(!saved)}
-              className={`p-2 transition-colors ${saved ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}>
-              <Heart className="w-5 h-5" fill={saved ? "currentColor" : "none"} />
+
+          <nav className="flex-1 min-w-0 flex items-center gap-1.5 text-[11px] lg:text-xs text-muted-foreground whitespace-nowrap overflow-hidden">
+            <Link to="/" className="hover:text-foreground transition-colors shrink-0">Главная</Link>
+            <span className="shrink-0 opacity-50">/</span>
+            <Link to="/catalog" className="hover:text-foreground transition-colors shrink-0">{property.type}</Link>
+            <span className="shrink-0 opacity-50">/</span>
+            <span className="text-foreground truncate min-w-0">{property.address}</span>
+          </nav>
+
+          <div className="shrink-0 flex items-center gap-1">
+            <button
+              onClick={() => setSaved(!saved)}
+              aria-label="Сохранить"
+              className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
+                saved ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              <Heart className="w-4 h-4" fill={saved ? "currentColor" : "none"} />
             </button>
-            <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-              <Share2 className="w-5 h-5" />
+            <button
+              aria-label="Поделиться"
+              className="flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <Share2 className="w-4 h-4" />
             </button>
           </div>
         </div>
       </div>
 
-      <main className="container mx-auto px-4 lg:px-8 py-6 lg:py-10 pt-20 flex-1">
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
-          <Link to="/" className="hover:text-foreground transition-colors">Главная</Link>
-          <span>/</span>
-          <Link to="/catalog" className="hover:text-foreground transition-colors">{property.type}</Link>
-          <span>/</span>
-          <span className="text-foreground">{property.address}</span>
-        </nav>
+      <main className="container mx-auto px-4 lg:px-8 py-6 lg:py-10 pt-16 lg:pt-20 flat-1 flex-1">
 
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 min-w-0">
