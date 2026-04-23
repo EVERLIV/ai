@@ -146,7 +146,7 @@ export default function MapSection() {
     };
   }, [view]);
 
-  // Render markers + fit bounds
+  // Render markers + fit bounds (one marker per cluster)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -156,47 +156,50 @@ export default function MapSection() {
       Object.values(markersRef.current).forEach((m) => m.remove());
       markersRef.current = {};
 
-      if (withCoords.length === 0) return;
+      if (clusters.length === 0) return;
 
       const bounds = new mapboxgl.LngLatBounds();
 
-      withCoords.forEach((p) => {
-        const c = getCoords(p)!;
+      clusters.forEach((cluster) => {
+        const count = cluster.items.length;
+        const minPrice = Math.min(...cluster.items.map((i) => Number(i.price) || 0));
         const el = document.createElement("div");
         el.className = "ms-pin-wrap";
+        const badge = count > 1
+          ? `<div class="ms-pin-count">${count}</div>`
+          : "";
         el.innerHTML = `
           <div class="ms-pin-pulse"></div>
           <div class="ms-pin">
-            <span>${Math.round(Number(p.price) / 1000)}к</span>
+            <span>${count > 1 ? `от ` : ""}${Math.round(minPrice / 1000)}к</span>
           </div>
+          ${badge}
           <div class="ms-pin-tip"></div>
         `;
         el.addEventListener("click", (e) => {
           e.stopPropagation();
-          setActiveId(p.id);
-          map.easeTo({ center: [c.lng, c.lat], zoom: Math.max(map.getZoom(), 13), duration: 500 });
+          setActiveClusterKey(cluster.key);
+          setActiveId(count === 1 ? cluster.items[0].id : null);
+          map.easeTo({ center: [cluster.lng, cluster.lat], zoom: Math.max(map.getZoom(), 13), duration: 500 });
         });
 
-        // anchor "bottom" -> the very bottom of the element sits on the coord.
-        // Our element's bottom is the tip of the pin pointer.
         const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
-          .setLngLat([c.lng, c.lat])
+          .setLngLat([cluster.lng, cluster.lat])
           .addTo(map);
-        markersRef.current[p.id] = marker;
-        bounds.extend([c.lng, c.lat]);
+        markersRef.current[cluster.key] = marker;
+        bounds.extend([cluster.lng, cluster.lat]);
       });
 
-      if (withCoords.length > 1) {
+      if (clusters.length > 1) {
         map.fitBounds(bounds, { padding: 80, maxZoom: 13, duration: 700 });
-      } else if (withCoords.length === 1) {
-        const c = getCoords(withCoords[0])!;
-        map.easeTo({ center: [c.lng, c.lat], zoom: 14 });
+      } else if (clusters.length === 1) {
+        map.easeTo({ center: [clusters[0].lng, clusters[0].lat], zoom: 14 });
       }
     };
 
     if (map.isStyleLoaded()) place();
     else map.once("load", place);
-  }, [withCoords]);
+  }, [clusters]);
 
   return (
     <section ref={ref} className="py-16 bg-surface-warm">
