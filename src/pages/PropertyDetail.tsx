@@ -104,7 +104,7 @@ export default function PropertyDetail() {
         </div>
       </div>
 
-      <main className="container mx-auto px-4 lg:px-8 py-6 lg:py-10 pt-16 lg:pt-20 flat-1 flex-1">
+      <main className="container mx-auto px-4 lg:px-8 py-6 lg:py-10 pt-16 lg:pt-20 flex-1">
 
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 min-w-0">
