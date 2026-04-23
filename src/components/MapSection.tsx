@@ -246,50 +246,107 @@ export default function MapSection() {
               <>
                 <div ref={mapContainer} className="absolute inset-0" />
 
-                {/* Active property card overlay */}
-                {activeProperty && (
-                  <div className="absolute left-4 bottom-4 right-4 sm:right-auto sm:max-w-[320px] z-10 animate-fade-in">
+                {/* Active cluster overlay */}
+                {activeCluster && (
+                  <div className="absolute left-4 bottom-4 right-4 sm:right-auto sm:max-w-[340px] z-10 animate-fade-in">
                     <div className="bg-card rounded-xl shadow-card-hover overflow-hidden border border-border">
-                      <div className="relative h-32 bg-muted">
-                        <img
-                          src={getPropertyCover(activeProperty.cover_photo, activeProperty.type)}
-                          alt={activeProperty.address}
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          onClick={() => setActiveId(null)}
-                          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/90 backdrop-blur text-foreground flex items-center justify-center hover:bg-background transition-colors text-lg leading-none"
-                          aria-label="Закрыть"
-                        >
-                          ×
-                        </button>
-                        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">
-                          {activeProperty.type}
-                        </span>
-                      </div>
-                      <div className="p-3">
-                        <div className="flex items-baseline justify-between gap-2 mb-1">
-                          <span className="font-display text-lg font-bold text-foreground">
-                            {Number(activeProperty.price).toLocaleString("ru-RU")} ₽
-                            {activeProperty.deal_type === "Аренда" && (
-                              <span className="text-xs font-normal text-muted-foreground">/мес</span>
-                            )}
-                          </span>
-                          <span className="text-xs text-muted-foreground shrink-0">
-                            {activeProperty.area} м²
-                          </span>
-                        </div>
-                        <div className="flex items-start gap-1 text-xs text-muted-foreground mb-3">
-                          <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
-                          <span className="line-clamp-2">{activeProperty.address}</span>
-                        </div>
-                        <Link
-                          to={`/property/${activeProperty.id}`}
-                          className="block w-full text-center py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-                        >
-                          Подробнее
-                        </Link>
-                      </div>
+                      {activeCluster.items.length === 1 ? (
+                        (() => {
+                          const p = activeCluster.items[0];
+                          return (
+                            <>
+                              <div className="relative h-32 bg-muted">
+                                <img
+                                  src={getPropertyCover(p.cover_photo, p.type)}
+                                  alt={p.address}
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  onClick={() => { setActiveClusterKey(null); setActiveId(null); }}
+                                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/90 backdrop-blur text-foreground flex items-center justify-center hover:bg-background transition-colors text-lg leading-none"
+                                  aria-label="Закрыть"
+                                >
+                                  ×
+                                </button>
+                                <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">
+                                  {p.type}
+                                </span>
+                              </div>
+                              <div className="p-3">
+                                <div className="flex items-baseline justify-between gap-2 mb-1">
+                                  <span className="font-display text-lg font-bold text-foreground">
+                                    {Number(p.price).toLocaleString("ru-RU")} ₽
+                                    {p.deal_type === "Аренда" && (
+                                      <span className="text-xs font-normal text-muted-foreground">/мес</span>
+                                    )}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground shrink-0">{p.area} м²</span>
+                                </div>
+                                <div className="flex items-start gap-1 text-xs text-muted-foreground mb-3">
+                                  <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
+                                  <span className="line-clamp-2">{p.address}</span>
+                                </div>
+                                <Link
+                                  to={`/property/${p.id}`}
+                                  className="block w-full text-center py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                                >
+                                  Подробнее
+                                </Link>
+                              </div>
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <>
+                          <div className="flex items-start justify-between gap-2 px-3 pt-3 pb-2 border-b border-border">
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-primary mb-0.5">
+                                {activeCluster.items.length} объектов на адресе
+                              </p>
+                              <p className="text-xs font-medium text-foreground line-clamp-2 flex items-start gap-1">
+                                <MapPin className="w-3 h-3 shrink-0 mt-0.5 text-muted-foreground" />
+                                {activeCluster.items[0].address}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => { setActiveClusterKey(null); setActiveId(null); }}
+                              className="w-7 h-7 rounded-full bg-muted text-foreground flex items-center justify-center hover:bg-muted/80 transition-colors text-lg leading-none shrink-0"
+                              aria-label="Закрыть"
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <div className="max-h-[280px] overflow-y-auto divide-y divide-border">
+                            {activeCluster.items.map((p) => (
+                              <Link
+                                key={p.id}
+                                to={`/property/${p.id}`}
+                                className="flex items-center gap-2.5 p-2.5 hover:bg-muted/50 transition-colors"
+                              >
+                                <div className="w-12 h-12 rounded-md overflow-hidden bg-muted shrink-0">
+                                  <img
+                                    src={getPropertyCover(p.cover_photo, p.type)}
+                                    alt={p.address}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-semibold text-foreground truncate">
+                                    {Number(p.price).toLocaleString("ru-RU")} ₽
+                                    {p.deal_type === "Аренда" && (
+                                      <span className="text-[10px] font-normal text-muted-foreground">/мес</span>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-muted-foreground truncate">
+                                    {p.type} · {p.area} м²{p.floor ? ` · ${p.floor} эт.` : ""}
+                                  </div>
+                                </div>
+                                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                              </Link>
+                            ))}
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
