@@ -392,7 +392,7 @@ export default function MapSection() {
               </p>
               {activeDistrict !== "Все" && (
                 <button
-                  onClick={() => setActiveDistrict("Все")}
+                  onClick={() => { setActiveDistrict("Все"); setActiveClusterKey(null); setActiveId(null); }}
                   className="text-[10px] text-primary hover:underline"
                 >
                   Сбросить
