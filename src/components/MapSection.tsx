@@ -199,24 +199,24 @@ export default function MapSection() {
   }, [clusters]);
 
   return (
-    <section ref={ref} className="py-16 bg-surface-warm">
-      <div className={`container mx-auto px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
-        <div className="flex items-end justify-between mb-8 flex-wrap gap-3">
-          <div>
-            <p className="text-xs font-medium tracking-widest uppercase text-primary mb-2">
+    <section ref={ref} className="py-10 sm:py-16 bg-surface-warm">
+      <div className={`container mx-auto px-3 sm:px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
+        <div className="flex items-end justify-between mb-5 sm:mb-8 flex-wrap gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] sm:text-xs font-medium tracking-widest uppercase text-primary mb-1.5 sm:mb-2">
               Карта объектов
             </p>
-            <h2 className="font-display text-3xl font-bold text-foreground">
+            <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
               Объекты на карте Иркутска
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               {withCoords.length} объектов на карте · {filtered.length} всего{activeDistrict !== "Все" ? ` в районе «${activeDistrict}»` : ""}
             </p>
           </div>
-          <div className="flex bg-card overflow-hidden border border-border rounded-lg">
+          <div className="flex bg-card overflow-hidden border border-border rounded-lg shrink-0">
             <button
               onClick={() => setView("map")}
-              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
                 view === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -224,7 +224,7 @@ export default function MapSection() {
             </button>
             <button
               onClick={() => setView("list")}
-              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
                 view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -234,8 +234,7 @@ export default function MapSection() {
         </div>
 
         <div
-          className="bg-card overflow-hidden flex flex-col lg:flex-row rounded-2xl shadow-card"
-          style={{ minHeight: 520 }}
+          className="bg-card overflow-hidden flex flex-col lg:flex-row rounded-xl sm:rounded-2xl shadow-card min-h-[420px] sm:min-h-[520px]"
         >
           {/* Map / List view */}
           <div className="flex-1 relative bg-muted">
