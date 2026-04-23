@@ -425,7 +425,7 @@ export default function MapSection() {
                   <button
                     key={name}
                     type="button"
-                    onClick={() => { setActiveDistrict(name); setActiveId(null); }}
+                    onClick={() => { setActiveDistrict(name); setActiveClusterKey(null); setActiveId(null); }}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
                       active
                         ? "bg-primary text-primary-foreground"
