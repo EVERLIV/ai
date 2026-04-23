@@ -199,24 +199,24 @@ export default function MapSection() {
   }, [clusters]);
 
   return (
-    <section ref={ref} className="py-16 bg-surface-warm">
-      <div className={`container mx-auto px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
-        <div className="flex items-end justify-between mb-8 flex-wrap gap-3">
-          <div>
-            <p className="text-xs font-medium tracking-widest uppercase text-primary mb-2">
+    <section ref={ref} className="py-10 sm:py-16 bg-surface-warm">
+      <div className={`container mx-auto px-3 sm:px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
+        <div className="flex items-end justify-between mb-5 sm:mb-8 flex-wrap gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] sm:text-xs font-medium tracking-widest uppercase text-primary mb-1.5 sm:mb-2">
               Карта объектов
             </p>
-            <h2 className="font-display text-3xl font-bold text-foreground">
+            <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
               Объекты на карте Иркутска
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               {withCoords.length} объектов на карте · {filtered.length} всего{activeDistrict !== "Все" ? ` в районе «${activeDistrict}»` : ""}
             </p>
           </div>
-          <div className="flex bg-card overflow-hidden border border-border rounded-lg">
+          <div className="flex bg-card overflow-hidden border border-border rounded-lg shrink-0">
             <button
               onClick={() => setView("map")}
-              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
                 view === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -224,7 +224,7 @@ export default function MapSection() {
             </button>
             <button
               onClick={() => setView("list")}
-              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
                 view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -234,11 +234,10 @@ export default function MapSection() {
         </div>
 
         <div
-          className="bg-card overflow-hidden flex flex-col lg:flex-row rounded-2xl shadow-card"
-          style={{ minHeight: 520 }}
+          className="bg-card overflow-hidden flex flex-col lg:flex-row rounded-xl sm:rounded-2xl shadow-card min-h-[420px] sm:min-h-[520px]"
         >
           {/* Map / List view */}
-          <div className="flex-1 relative bg-muted">
+          <div className="flex-1 relative bg-muted min-h-[360px] lg:min-h-0">
             {view === "map" ? (
               <>
                 <div ref={mapContainer} className="absolute inset-0" />
@@ -381,10 +380,10 @@ export default function MapSection() {
             )}
           </div>
 
-          {/* Districts sidebar — clickable filters */}
-          <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border p-4 space-y-1.5 overflow-y-auto max-h-[520px] bg-card">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          {/* Districts sidebar — clickable filters. Horizontal scroll on mobile, vertical sidebar on lg+ */}
+          <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border bg-card lg:max-h-[520px] lg:overflow-y-auto">
+            <div className="flex items-center justify-between px-3 sm:px-4 pt-3 sm:pt-4 pb-2">
+              <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 По районам
               </p>
               {activeDistrict !== "Все" && (
@@ -397,53 +396,58 @@ export default function MapSection() {
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={() => { setActiveDistrict("Все"); setActiveClusterKey(null); setActiveId(null); }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                activeDistrict === "Все"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted/40 text-foreground hover:bg-muted"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <MapPin className={`w-3.5 h-3.5 ${activeDistrict === "Все" ? "text-primary-foreground" : "text-primary"}`} />
-                Все районы
-              </span>
-              <span className="text-xs font-medium opacity-80">{properties.length}</span>
-            </button>
+            <div className="flex lg:flex-col gap-1.5 px-3 sm:px-4 pb-3 sm:pb-4 overflow-x-auto lg:overflow-x-visible scrollbar-thin">
+              <button
+                type="button"
+                onClick={() => { setActiveDistrict("Все"); setActiveClusterKey(null); setActiveId(null); }}
+                className={`shrink-0 lg:w-full flex items-center gap-2 lg:justify-between px-3 py-2 lg:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap transition-colors ${
+                  activeDistrict === "Все"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/40 text-foreground hover:bg-muted"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <MapPin className={`w-3.5 h-3.5 ${activeDistrict === "Все" ? "text-primary-foreground" : "text-primary"}`} />
+                  Все районы
+                </span>
+                <span className="text-[11px] font-medium opacity-80">{properties.length}</span>
+              </button>
 
-            {districts.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Нет данных</p>
-            ) : (
-              districts.map(([name, count]) => {
-                const active = activeDistrict === name;
-                return (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => { setActiveDistrict(name); setActiveClusterKey(null); setActiveId(null); }}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                      active
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/40 text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <MapPin className={`w-3.5 h-3.5 ${active ? "text-primary-foreground" : "text-primary"}`} />
-                      {name}
-                    </span>
-                    <span className="text-xs font-medium opacity-80">{count}</span>
-                  </button>
-                );
-              })
-            )}
-            <Link
-              to="/catalog"
-              className="mt-3 flex items-center justify-center gap-1 w-full py-2.5 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity"
-            >
-              Все объекты <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+              {districts.length === 0 ? (
+                <p className="text-xs text-muted-foreground px-1">Нет данных</p>
+              ) : (
+                districts.map(([name, count]) => {
+                  const active = activeDistrict === name;
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => { setActiveDistrict(name); setActiveClusterKey(null); setActiveId(null); }}
+                      className={`shrink-0 lg:w-full flex items-center gap-2 lg:justify-between px-3 py-2 lg:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap transition-colors ${
+                        active
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/40 text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <MapPin className={`w-3.5 h-3.5 ${active ? "text-primary-foreground" : "text-primary"}`} />
+                        {name}
+                      </span>
+                      <span className="text-[11px] font-medium opacity-80">{count}</span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="px-3 sm:px-4 pb-4">
+              <Link
+                to="/catalog"
+                className="flex items-center justify-center gap-1 w-full py-2.5 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Все объекты <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -459,7 +463,8 @@ export default function MapSection() {
           will-change: transform;
           transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
         }
-        .ms-pin-wrap:hover { transform: translateY(-3px); }
+        .ms-pin-wrap:hover { transform: translateY(-4px) scale(1.08); }
+        .ms-pin-wrap:active { transform: translateY(-2px) scale(1.04); transition-duration: 0.12s; }
 
         /* Soft organic teardrop pin */
         .ms-pin {
@@ -487,14 +492,16 @@ export default function MapSection() {
             0 6px 18px -6px hsl(0 72% 35% / 0.55),
             0 2px 6px -2px hsl(0 72% 35% / 0.35);
           white-space: nowrap;
-          transition: box-shadow 0.25s ease, background 0.25s ease;
+          transition:
+            box-shadow 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+            background 0.3s ease;
         }
         .ms-pin-wrap:hover .ms-pin {
-          background: linear-gradient(145deg, hsl(0 75% 60%) 0%, hsl(8 80% 52%) 100%);
+          background: linear-gradient(145deg, hsl(0 78% 62%) 0%, hsl(10 82% 54%) 100%);
           box-shadow:
-            0 1px 0 hsl(0 0% 100% / 0.3) inset,
-            0 10px 24px -8px hsl(0 72% 35% / 0.6),
-            0 3px 8px -2px hsl(0 72% 35% / 0.4);
+            0 1px 0 hsl(0 0% 100% / 0.35) inset,
+            0 14px 28px -10px hsl(0 72% 30% / 0.65),
+            0 4px 10px -2px hsl(0 72% 30% / 0.45);
         }
 
         /* Soft elliptical ground shadow — replaces the triangle tip */
@@ -508,14 +515,14 @@ export default function MapSection() {
           border-radius: 50%;
           background: radial-gradient(ellipse at center, hsl(0 0% 0% / 0.28) 0%, hsl(0 0% 0% / 0) 70%);
           z-index: 0;
-          transition: width 0.25s ease, opacity 0.25s ease;
+          transition: width 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease;
         }
         .ms-pin-wrap:hover .ms-pin-shadow {
-          width: 34px;
-          opacity: 0.85;
+          width: 38px;
+          opacity: 0.9;
         }
 
-        /* Count badge — gold, organic */
+        /* Count badge — gold, organic. Smoothly shifts to deeper amber on hover. */
         .ms-pin-count {
           position: absolute;
           top: -4px;
@@ -536,6 +543,17 @@ export default function MapSection() {
           justify-content: center;
           border: 1.5px solid #fff;
           box-shadow: 0 2px 6px hsl(38 80% 30% / 0.35);
+          transition:
+            background 0.3s ease,
+            color 0.3s ease,
+            box-shadow 0.3s ease,
+            transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+        .ms-pin-wrap:hover .ms-pin-count {
+          background: linear-gradient(145deg, hsl(38 96% 54%), hsl(28 92% 46%));
+          color: hsl(0 0% 100%);
+          box-shadow: 0 4px 12px hsl(28 90% 30% / 0.5);
+          transform: scale(1.12);
         }
 
         /* Mapbox NavigationControl polish */
