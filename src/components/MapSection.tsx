@@ -463,7 +463,8 @@ export default function MapSection() {
           will-change: transform;
           transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
         }
-        .ms-pin-wrap:hover { transform: translateY(-3px); }
+        .ms-pin-wrap:hover { transform: translateY(-4px) scale(1.08); }
+        .ms-pin-wrap:active { transform: translateY(-2px) scale(1.04); transition-duration: 0.12s; }
 
         /* Soft organic teardrop pin */
         .ms-pin {
@@ -491,14 +492,16 @@ export default function MapSection() {
             0 6px 18px -6px hsl(0 72% 35% / 0.55),
             0 2px 6px -2px hsl(0 72% 35% / 0.35);
           white-space: nowrap;
-          transition: box-shadow 0.25s ease, background 0.25s ease;
+          transition:
+            box-shadow 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+            background 0.3s ease;
         }
         .ms-pin-wrap:hover .ms-pin {
-          background: linear-gradient(145deg, hsl(0 75% 60%) 0%, hsl(8 80% 52%) 100%);
+          background: linear-gradient(145deg, hsl(0 78% 62%) 0%, hsl(10 82% 54%) 100%);
           box-shadow:
-            0 1px 0 hsl(0 0% 100% / 0.3) inset,
-            0 10px 24px -8px hsl(0 72% 35% / 0.6),
-            0 3px 8px -2px hsl(0 72% 35% / 0.4);
+            0 1px 0 hsl(0 0% 100% / 0.35) inset,
+            0 14px 28px -10px hsl(0 72% 30% / 0.65),
+            0 4px 10px -2px hsl(0 72% 30% / 0.45);
         }
 
         /* Soft elliptical ground shadow — replaces the triangle tip */
@@ -512,14 +515,14 @@ export default function MapSection() {
           border-radius: 50%;
           background: radial-gradient(ellipse at center, hsl(0 0% 0% / 0.28) 0%, hsl(0 0% 0% / 0) 70%);
           z-index: 0;
-          transition: width 0.25s ease, opacity 0.25s ease;
+          transition: width 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease;
         }
         .ms-pin-wrap:hover .ms-pin-shadow {
-          width: 34px;
-          opacity: 0.85;
+          width: 38px;
+          opacity: 0.9;
         }
 
-        /* Count badge — gold, organic */
+        /* Count badge — gold, organic. Smoothly shifts to deeper amber on hover. */
         .ms-pin-count {
           position: absolute;
           top: -4px;
@@ -540,6 +543,17 @@ export default function MapSection() {
           justify-content: center;
           border: 1.5px solid #fff;
           box-shadow: 0 2px 6px hsl(38 80% 30% / 0.35);
+          transition:
+            background 0.3s ease,
+            color 0.3s ease,
+            box-shadow 0.3s ease,
+            transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+        .ms-pin-wrap:hover .ms-pin-count {
+          background: linear-gradient(145deg, hsl(38 96% 54%), hsl(28 92% 46%));
+          color: hsl(0 0% 100%);
+          box-shadow: 0 4px 12px hsl(28 90% 30% / 0.5);
+          transform: scale(1.12);
         }
 
         /* Mapbox NavigationControl polish */
