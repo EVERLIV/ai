@@ -380,10 +380,10 @@ export default function MapSection() {
             )}
           </div>
 
-          {/* Districts sidebar — clickable filters */}
-          <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border p-4 space-y-1.5 overflow-y-auto max-h-[520px] bg-card">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          {/* Districts sidebar — clickable filters. Horizontal scroll on mobile, vertical sidebar on lg+ */}
+          <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border bg-card lg:max-h-[520px] lg:overflow-y-auto">
+            <div className="flex items-center justify-between px-3 sm:px-4 pt-3 sm:pt-4 pb-2">
+              <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 По районам
               </p>
               {activeDistrict !== "Все" && (
@@ -396,53 +396,58 @@ export default function MapSection() {
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={() => { setActiveDistrict("Все"); setActiveClusterKey(null); setActiveId(null); }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                activeDistrict === "Все"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted/40 text-foreground hover:bg-muted"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <MapPin className={`w-3.5 h-3.5 ${activeDistrict === "Все" ? "text-primary-foreground" : "text-primary"}`} />
-                Все районы
-              </span>
-              <span className="text-xs font-medium opacity-80">{properties.length}</span>
-            </button>
+            <div className="flex lg:flex-col gap-1.5 px-3 sm:px-4 pb-3 sm:pb-4 overflow-x-auto lg:overflow-x-visible scrollbar-thin">
+              <button
+                type="button"
+                onClick={() => { setActiveDistrict("Все"); setActiveClusterKey(null); setActiveId(null); }}
+                className={`shrink-0 lg:w-full flex items-center gap-2 lg:justify-between px-3 py-2 lg:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap transition-colors ${
+                  activeDistrict === "Все"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/40 text-foreground hover:bg-muted"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <MapPin className={`w-3.5 h-3.5 ${activeDistrict === "Все" ? "text-primary-foreground" : "text-primary"}`} />
+                  Все районы
+                </span>
+                <span className="text-[11px] font-medium opacity-80">{properties.length}</span>
+              </button>
 
-            {districts.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Нет данных</p>
-            ) : (
-              districts.map(([name, count]) => {
-                const active = activeDistrict === name;
-                return (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => { setActiveDistrict(name); setActiveClusterKey(null); setActiveId(null); }}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                      active
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/40 text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <MapPin className={`w-3.5 h-3.5 ${active ? "text-primary-foreground" : "text-primary"}`} />
-                      {name}
-                    </span>
-                    <span className="text-xs font-medium opacity-80">{count}</span>
-                  </button>
-                );
-              })
-            )}
-            <Link
-              to="/catalog"
-              className="mt-3 flex items-center justify-center gap-1 w-full py-2.5 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity"
-            >
-              Все объекты <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+              {districts.length === 0 ? (
+                <p className="text-xs text-muted-foreground px-1">Нет данных</p>
+              ) : (
+                districts.map(([name, count]) => {
+                  const active = activeDistrict === name;
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => { setActiveDistrict(name); setActiveClusterKey(null); setActiveId(null); }}
+                      className={`shrink-0 lg:w-full flex items-center gap-2 lg:justify-between px-3 py-2 lg:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap transition-colors ${
+                        active
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/40 text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <MapPin className={`w-3.5 h-3.5 ${active ? "text-primary-foreground" : "text-primary"}`} />
+                        {name}
+                      </span>
+                      <span className="text-[11px] font-medium opacity-80">{count}</span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="px-3 sm:px-4 pb-4">
+              <Link
+                to="/catalog"
+                className="flex items-center justify-center gap-1 w-full py-2.5 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Все объекты <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
         </div>
       </div>
