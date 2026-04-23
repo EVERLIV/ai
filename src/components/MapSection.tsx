@@ -167,12 +167,11 @@ export default function MapSection() {
           ? `<div class="ms-pin-count">${count}</div>`
           : "";
         el.innerHTML = `
-          <div class="ms-pin-pulse"></div>
+          <div class="ms-pin-shadow"></div>
           <div class="ms-pin">
             <span>${count > 1 ? `от ` : ""}${Math.round(minPrice / 1000)}к</span>
           </div>
           ${badge}
-          <div class="ms-pin-tip"></div>
         `;
         el.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -450,96 +449,96 @@ export default function MapSection() {
       </div>
 
       <style>{`
-        /* The wrapper's BOTTOM edge sits on the geo coordinate (anchor:"bottom").
-           So the pin tip must be at the wrapper's bottom. */
+        /* Wrapper bottom edge sits on geo coordinate (anchor:"bottom"). */
         .ms-pin-wrap {
           position: relative;
-          width: 56px;
-          height: 56px;
+          width: 64px;
+          height: 44px;
           cursor: pointer;
           pointer-events: auto;
+          will-change: transform;
+          transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
         }
+        .ms-pin-wrap:hover { transform: translateY(-3px); }
+
+        /* Soft organic teardrop pin */
         .ms-pin {
           position: absolute;
           left: 50%;
-          top: 4px;
+          bottom: 6px;
           transform: translateX(-50%);
           z-index: 2;
-          min-width: 44px;
-          height: 28px;
-          padding: 0 9px;
-          background: hsl(0 72% 51%);
+          min-width: 48px;
+          height: 30px;
+          padding: 0 12px;
           color: #fff;
           font-family: Inter, sans-serif;
           font-size: 11px;
-          font-weight: 700;
+          font-weight: 600;
+          letter-spacing: 0.01em;
           line-height: 1;
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 2px solid #fff;
-          border-radius: 999px;
-          box-shadow: 0 4px 14px hsl(0 72% 51% / 0.4);
-          transition: transform 0.18s ease;
+          background: linear-gradient(145deg, hsl(0 72% 56%) 0%, hsl(8 78% 48%) 100%);
+          border-radius: 16px 16px 16px 4px;
+          box-shadow:
+            0 1px 0 hsl(0 0% 100% / 0.25) inset,
+            0 6px 18px -6px hsl(0 72% 35% / 0.55),
+            0 2px 6px -2px hsl(0 72% 35% / 0.35);
           white-space: nowrap;
+          transition: box-shadow 0.25s ease, background 0.25s ease;
         }
-        /* Triangle tip — its tip aligns exactly with wrapper bottom (0px). */
-        .ms-pin-tip {
+        .ms-pin-wrap:hover .ms-pin {
+          background: linear-gradient(145deg, hsl(0 75% 60%) 0%, hsl(8 80% 52%) 100%);
+          box-shadow:
+            0 1px 0 hsl(0 0% 100% / 0.3) inset,
+            0 10px 24px -8px hsl(0 72% 35% / 0.6),
+            0 3px 8px -2px hsl(0 72% 35% / 0.4);
+        }
+
+        /* Soft elliptical ground shadow — replaces the triangle tip */
+        .ms-pin-shadow {
           position: absolute;
           left: 50%;
           bottom: 0;
-          transform: translate(-50%, 0);
-          width: 0;
-          height: 0;
-          border-left: 6px solid transparent;
-          border-right: 6px solid transparent;
-          border-top: 10px solid hsl(0 72% 51%);
-          filter: drop-shadow(0 1px 0 #fff);
-          z-index: 1;
+          transform: translateX(-50%);
+          width: 28px;
+          height: 6px;
+          border-radius: 50%;
+          background: radial-gradient(ellipse at center, hsl(0 0% 0% / 0.28) 0%, hsl(0 0% 0% / 0) 70%);
+          z-index: 0;
+          transition: width 0.25s ease, opacity 0.25s ease;
         }
-        .ms-pin-wrap:hover .ms-pin {
-          transform: translateX(-50%) translateY(-2px) scale(1.05);
+        .ms-pin-wrap:hover .ms-pin-shadow {
+          width: 34px;
+          opacity: 0.85;
         }
+
+        /* Count badge — gold, organic */
         .ms-pin-count {
           position: absolute;
-          top: -2px;
+          top: -4px;
           right: 2px;
           z-index: 3;
           min-width: 18px;
           height: 18px;
           padding: 0 5px;
           border-radius: 999px;
-          background: hsl(45 90% 50%);
-          color: hsl(0 0% 10%);
+          background: linear-gradient(145deg, hsl(45 92% 58%), hsl(38 88% 48%));
+          color: hsl(20 25% 15%);
           font-family: Inter, sans-serif;
           font-size: 10px;
-          font-weight: 800;
+          font-weight: 700;
           line-height: 1;
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 2px solid #fff;
-          box-shadow: 0 2px 6px rgb(0 0 0 / 0.2);
+          border: 1.5px solid #fff;
+          box-shadow: 0 2px 6px hsl(38 80% 30% / 0.35);
         }
-        .ms-pin-pulse {
-          position: absolute;
-          left: 50%;
-          bottom: 4px;
-          transform: translate(-50%, 0);
-          width: 18px;
-          height: 18px;
-          background: hsl(0 72% 51%);
-          border-radius: 50%;
-          opacity: 0.45;
-          animation: msPinPulse 2s ease-out infinite;
-          z-index: 0;
-        }
-        @keyframes msPinPulse {
-          0%   { transform: translate(-50%, 0) scale(0.6); opacity: 0.55; }
-          70%  { transform: translate(-50%, 0) scale(2.4); opacity: 0; }
-          100% { transform: translate(-50%, 0) scale(2.4); opacity: 0; }
-        }
-        /* Make Mapbox NavigationControl look in-system */
+
+        /* Mapbox NavigationControl polish */
         .mapboxgl-ctrl-group {
           border-radius: 10px !important;
           overflow: hidden;
