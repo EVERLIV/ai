@@ -237,7 +237,7 @@ export default function MapSection() {
           className="bg-card overflow-hidden flex flex-col lg:flex-row rounded-xl sm:rounded-2xl shadow-card min-h-[420px] sm:min-h-[520px]"
         >
           {/* Map / List view */}
-          <div className="flex-1 relative bg-muted">
+          <div className="flex-1 relative bg-muted min-h-[360px] lg:min-h-0">
             {view === "map" ? (
               <>
                 <div ref={mapContainer} className="absolute inset-0" />
