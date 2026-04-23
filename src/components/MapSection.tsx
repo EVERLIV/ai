@@ -53,15 +53,23 @@ export default function MapSection() {
   const { ref, isVisible } = useScrollReveal();
   const [view, setView] = useState<"map" | "list">("map");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeDistrict, setActiveDistrict] = useState<string>("Все");
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Record<string, mapboxgl.Marker>>({});
 
   const { data: properties = [] } = useProperties();
 
+  const filtered = useMemo(
+    () => (activeDistrict === "Все"
+      ? properties
+      : properties.filter((p) => p.district === activeDistrict)),
+    [properties, activeDistrict]
+  );
+
   const withCoords = useMemo(
-    () => properties.filter((p) => getCoords(p) !== null),
-    [properties]
+    () => filtered.filter((p) => getCoords(p) !== null),
+    [filtered]
   );
 
   const districts = useMemo(() => {
@@ -77,7 +85,7 @@ export default function MapSection() {
     [withCoords, activeId]
   );
 
-  // Init map
+  // Init map — once. Wheel zoom is disabled, controls only via buttons / dblclick.
   useEffect(() => {
     if (!mapContainer.current || mapRef.current || view !== "map") return;
     mapboxgl.accessToken = "no-token-needed";
@@ -85,10 +93,19 @@ export default function MapSection() {
       container: mapContainer.current,
       style: GRAY_STYLE,
       center: IRKUTSK_CENTER,
-      zoom: 11,
+      zoom: 9,
       attributionControl: true,
+      scrollZoom: false,
+      boxZoom: false,
+      dragRotate: false,
+      touchZoomRotate: false,
+      touchPitch: false,
+      doubleClickZoom: true,
     });
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+    map.addControl(
+      new mapboxgl.NavigationControl({ showCompass: false, visualizePitch: false }),
+      "top-right"
+    );
     mapRef.current = map;
 
     return () => {
@@ -102,12 +119,14 @@ export default function MapSection() {
   // Render markers + fit bounds
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || withCoords.length === 0) return;
+    if (!map) return;
 
     const place = () => {
       // Clear old markers
       Object.values(markersRef.current).forEach((m) => m.remove());
       markersRef.current = {};
+
+      if (withCoords.length === 0) return;
 
       const bounds = new mapboxgl.LngLatBounds();
 
@@ -120,6 +139,7 @@ export default function MapSection() {
           <div class="ms-pin">
             <span>${Math.round(Number(p.price) / 1000)}к</span>
           </div>
+          <div class="ms-pin-tip"></div>
         `;
         el.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -127,6 +147,8 @@ export default function MapSection() {
           map.easeTo({ center: [c.lng, c.lat], zoom: Math.max(map.getZoom(), 13), duration: 500 });
         });
 
+        // anchor "bottom" -> the very bottom of the element sits on the coord.
+        // Our element's bottom is the tip of the pin pointer.
         const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
           .setLngLat([c.lng, c.lat])
           .addTo(map);
@@ -135,7 +157,7 @@ export default function MapSection() {
       });
 
       if (withCoords.length > 1) {
-        map.fitBounds(bounds, { padding: 60, maxZoom: 13, duration: 700 });
+        map.fitBounds(bounds, { padding: 80, maxZoom: 13, duration: 700 });
       } else if (withCoords.length === 1) {
         const c = getCoords(withCoords[0])!;
         map.easeTo({ center: [c.lng, c.lat], zoom: 14 });
