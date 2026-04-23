@@ -3,6 +3,7 @@ import SiteHeader from "@/components/SiteHeader";
 import HeroSection from "@/components/HeroSection";
 import SearchFilters from "@/components/SearchFilters";
 import PropertyGrid from "@/components/PropertyGrid";
+import RentSection from "@/components/RentSection";
 import AIAssistant from "@/components/AIAssistant";
 import MapSection from "@/components/MapSection";
 import FeaturesSection from "@/components/FeaturesSection";
@@ -19,6 +20,7 @@ export default function Index() {
       <HeroSection />
       <SearchFilters onAIClick={() => setAiOpen(true)} />
       <PropertyGrid />
+      <RentSection />
       <MapSection />
       <FeaturesSection />
       <AnalyticsDashboard />
