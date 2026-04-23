@@ -362,65 +362,79 @@ export default function MapSection() {
       </div>
 
       <style>{`
+        /* The wrapper's BOTTOM edge sits on the geo coordinate (anchor:"bottom").
+           So the pin tip must be at the wrapper's bottom. */
         .ms-pin-wrap {
           position: relative;
-          width: 44px;
+          width: 56px;
           height: 56px;
           cursor: pointer;
-          display: flex;
-          align-items: flex-end;
-          justify-content: center;
+          pointer-events: auto;
         }
         .ms-pin {
-          position: relative;
+          position: absolute;
+          left: 50%;
+          top: 4px;
+          transform: translateX(-50%);
           z-index: 2;
           min-width: 44px;
-          height: 30px;
-          padding: 0 8px;
+          height: 28px;
+          padding: 0 9px;
           background: hsl(0 72% 51%);
           color: #fff;
           font-family: Inter, sans-serif;
           font-size: 11px;
           font-weight: 700;
+          line-height: 1;
           display: flex;
           align-items: center;
           justify-content: center;
           border: 2px solid #fff;
           border-radius: 999px;
-          box-shadow: 0 4px 14px hsl(0 72% 51% / 0.35);
-          transition: transform 0.2s ease;
+          box-shadow: 0 4px 14px hsl(0 72% 51% / 0.4);
+          transition: transform 0.18s ease;
+          white-space: nowrap;
         }
-        .ms-pin:after {
-          content: "";
+        /* Triangle tip — its tip aligns exactly with wrapper bottom (0px). */
+        .ms-pin-tip {
           position: absolute;
-          bottom: -7px;
           left: 50%;
-          transform: translateX(-50%) rotate(45deg);
-          width: 10px;
-          height: 10px;
-          background: hsl(0 72% 51%);
-          border-right: 2px solid #fff;
-          border-bottom: 2px solid #fff;
+          bottom: 0;
+          transform: translate(-50%, 0);
+          width: 0;
+          height: 0;
+          border-left: 6px solid transparent;
+          border-right: 6px solid transparent;
+          border-top: 10px solid hsl(0 72% 51%);
+          filter: drop-shadow(0 1px 0 #fff);
+          z-index: 1;
         }
         .ms-pin-wrap:hover .ms-pin {
-          transform: translateY(-3px) scale(1.05);
+          transform: translateX(-50%) translateY(-2px) scale(1.05);
         }
         .ms-pin-pulse {
           position: absolute;
-          bottom: 4px;
           left: 50%;
-          transform: translateX(-50%);
-          width: 30px;
-          height: 30px;
+          bottom: 4px;
+          transform: translate(-50%, 0);
+          width: 18px;
+          height: 18px;
           background: hsl(0 72% 51%);
           border-radius: 50%;
-          opacity: 0.35;
+          opacity: 0.45;
           animation: msPinPulse 2s ease-out infinite;
+          z-index: 0;
         }
         @keyframes msPinPulse {
-          0%   { transform: translateX(-50%) scale(0.6); opacity: 0.5; }
-          70%  { transform: translateX(-50%) scale(2); opacity: 0; }
-          100% { transform: translateX(-50%) scale(2); opacity: 0; }
+          0%   { transform: translate(-50%, 0) scale(0.6); opacity: 0.55; }
+          70%  { transform: translate(-50%, 0) scale(2.4); opacity: 0; }
+          100% { transform: translate(-50%, 0) scale(2.4); opacity: 0; }
+        }
+        /* Make Mapbox NavigationControl look in-system */
+        .mapboxgl-ctrl-group {
+          border-radius: 10px !important;
+          overflow: hidden;
+          box-shadow: 0 4px 14px rgb(0 0 0 / 0.08) !important;
         }
       `}</style>
     </section>
