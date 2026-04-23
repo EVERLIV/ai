@@ -53,15 +53,23 @@ export default function MapSection() {
   const { ref, isVisible } = useScrollReveal();
   const [view, setView] = useState<"map" | "list">("map");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeDistrict, setActiveDistrict] = useState<string>("Все");
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Record<string, mapboxgl.Marker>>({});
 
   const { data: properties = [] } = useProperties();
 
+  const filtered = useMemo(
+    () => (activeDistrict === "Все"
+      ? properties
+      : properties.filter((p) => p.district === activeDistrict)),
+    [properties, activeDistrict]
+  );
+
   const withCoords = useMemo(
-    () => properties.filter((p) => getCoords(p) !== null),
-    [properties]
+    () => filtered.filter((p) => getCoords(p) !== null),
+    [filtered]
   );
 
   const districts = useMemo(() => {
@@ -77,7 +85,7 @@ export default function MapSection() {
     [withCoords, activeId]
   );
 
-  // Init map
+  // Init map — once. Wheel zoom is disabled, controls only via buttons / dblclick.
   useEffect(() => {
     if (!mapContainer.current || mapRef.current || view !== "map") return;
     mapboxgl.accessToken = "no-token-needed";
@@ -85,10 +93,19 @@ export default function MapSection() {
       container: mapContainer.current,
       style: GRAY_STYLE,
       center: IRKUTSK_CENTER,
-      zoom: 11,
+      zoom: 9,
       attributionControl: true,
+      scrollZoom: false,
+      boxZoom: false,
+      dragRotate: false,
+      touchZoomRotate: false,
+      touchPitch: false,
+      doubleClickZoom: true,
     });
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+    map.addControl(
+      new mapboxgl.NavigationControl({ showCompass: false, visualizePitch: false }),
+      "top-right"
+    );
     mapRef.current = map;
 
     return () => {
@@ -102,12 +119,14 @@ export default function MapSection() {
   // Render markers + fit bounds
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || withCoords.length === 0) return;
+    if (!map) return;
 
     const place = () => {
       // Clear old markers
       Object.values(markersRef.current).forEach((m) => m.remove());
       markersRef.current = {};
+
+      if (withCoords.length === 0) return;
 
       const bounds = new mapboxgl.LngLatBounds();
 
@@ -120,6 +139,7 @@ export default function MapSection() {
           <div class="ms-pin">
             <span>${Math.round(Number(p.price) / 1000)}к</span>
           </div>
+          <div class="ms-pin-tip"></div>
         `;
         el.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -127,6 +147,8 @@ export default function MapSection() {
           map.easeTo({ center: [c.lng, c.lat], zoom: Math.max(map.getZoom(), 13), duration: 500 });
         });
 
+        // anchor "bottom" -> the very bottom of the element sits on the coord.
+        // Our element's bottom is the tip of the pin pointer.
         const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
           .setLngLat([c.lng, c.lat])
           .addTo(map);
@@ -135,7 +157,7 @@ export default function MapSection() {
       });
 
       if (withCoords.length > 1) {
-        map.fitBounds(bounds, { padding: 60, maxZoom: 13, duration: 700 });
+        map.fitBounds(bounds, { padding: 80, maxZoom: 13, duration: 700 });
       } else if (withCoords.length === 1) {
         const c = getCoords(withCoords[0])!;
         map.easeTo({ center: [c.lng, c.lat], zoom: 14 });
@@ -158,7 +180,7 @@ export default function MapSection() {
               Объекты на карте Иркутска
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              {withCoords.length} объектов с координатами · {properties.length} всего
+              {withCoords.length} объектов на карте · {filtered.length} всего{activeDistrict !== "Все" ? ` в районе «${activeDistrict}»` : ""}
             </p>
           </div>
           <div className="flex bg-card overflow-hidden border border-border rounded-lg">
@@ -272,30 +294,66 @@ export default function MapSection() {
             )}
           </div>
 
-          {/* Districts sidebar */}
-          <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border p-4 space-y-2 overflow-y-auto max-h-[520px] bg-card">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-              По районам
-            </p>
+          {/* Districts sidebar — clickable filters */}
+          <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border p-4 space-y-1.5 overflow-y-auto max-h-[520px] bg-card">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                По районам
+              </p>
+              {activeDistrict !== "Все" && (
+                <button
+                  onClick={() => setActiveDistrict("Все")}
+                  className="text-[10px] text-primary hover:underline"
+                >
+                  Сбросить
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => { setActiveDistrict("Все"); setActiveId(null); }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                activeDistrict === "Все"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted/40 text-foreground hover:bg-muted"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <MapPin className={`w-3.5 h-3.5 ${activeDistrict === "Все" ? "text-primary-foreground" : "text-primary"}`} />
+                Все районы
+              </span>
+              <span className="text-xs font-medium opacity-80">{properties.length}</span>
+            </button>
+
             {districts.length === 0 ? (
               <p className="text-xs text-muted-foreground">Нет данных</p>
             ) : (
-              districts.map(([name, count]) => (
-                <div
-                  key={name}
-                  className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-muted/40 hover:bg-muted transition-colors"
-                >
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <MapPin className="w-3.5 h-3.5 text-primary" />
-                    {name}
-                  </div>
-                  <span className="text-xs font-medium text-muted-foreground">{count}</span>
-                </div>
-              ))
+              districts.map(([name, count]) => {
+                const active = activeDistrict === name;
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => { setActiveDistrict(name); setActiveId(null); }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      active
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted/40 text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <MapPin className={`w-3.5 h-3.5 ${active ? "text-primary-foreground" : "text-primary"}`} />
+                      {name}
+                    </span>
+                    <span className="text-xs font-medium opacity-80">{count}</span>
+                  </button>
+                );
+              })
             )}
             <Link
               to="/catalog"
-              className="mt-3 flex items-center justify-center gap-1 w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+              className="mt-3 flex items-center justify-center gap-1 w-full py-2.5 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity"
             >
               Все объекты <ArrowRight className="w-3.5 h-3.5" />
             </Link>
@@ -304,65 +362,79 @@ export default function MapSection() {
       </div>
 
       <style>{`
+        /* The wrapper's BOTTOM edge sits on the geo coordinate (anchor:"bottom").
+           So the pin tip must be at the wrapper's bottom. */
         .ms-pin-wrap {
           position: relative;
-          width: 44px;
+          width: 56px;
           height: 56px;
           cursor: pointer;
-          display: flex;
-          align-items: flex-end;
-          justify-content: center;
+          pointer-events: auto;
         }
         .ms-pin {
-          position: relative;
+          position: absolute;
+          left: 50%;
+          top: 4px;
+          transform: translateX(-50%);
           z-index: 2;
           min-width: 44px;
-          height: 30px;
-          padding: 0 8px;
+          height: 28px;
+          padding: 0 9px;
           background: hsl(0 72% 51%);
           color: #fff;
           font-family: Inter, sans-serif;
           font-size: 11px;
           font-weight: 700;
+          line-height: 1;
           display: flex;
           align-items: center;
           justify-content: center;
           border: 2px solid #fff;
           border-radius: 999px;
-          box-shadow: 0 4px 14px hsl(0 72% 51% / 0.35);
-          transition: transform 0.2s ease;
+          box-shadow: 0 4px 14px hsl(0 72% 51% / 0.4);
+          transition: transform 0.18s ease;
+          white-space: nowrap;
         }
-        .ms-pin:after {
-          content: "";
+        /* Triangle tip — its tip aligns exactly with wrapper bottom (0px). */
+        .ms-pin-tip {
           position: absolute;
-          bottom: -7px;
           left: 50%;
-          transform: translateX(-50%) rotate(45deg);
-          width: 10px;
-          height: 10px;
-          background: hsl(0 72% 51%);
-          border-right: 2px solid #fff;
-          border-bottom: 2px solid #fff;
+          bottom: 0;
+          transform: translate(-50%, 0);
+          width: 0;
+          height: 0;
+          border-left: 6px solid transparent;
+          border-right: 6px solid transparent;
+          border-top: 10px solid hsl(0 72% 51%);
+          filter: drop-shadow(0 1px 0 #fff);
+          z-index: 1;
         }
         .ms-pin-wrap:hover .ms-pin {
-          transform: translateY(-3px) scale(1.05);
+          transform: translateX(-50%) translateY(-2px) scale(1.05);
         }
         .ms-pin-pulse {
           position: absolute;
-          bottom: 4px;
           left: 50%;
-          transform: translateX(-50%);
-          width: 30px;
-          height: 30px;
+          bottom: 4px;
+          transform: translate(-50%, 0);
+          width: 18px;
+          height: 18px;
           background: hsl(0 72% 51%);
           border-radius: 50%;
-          opacity: 0.35;
+          opacity: 0.45;
           animation: msPinPulse 2s ease-out infinite;
+          z-index: 0;
         }
         @keyframes msPinPulse {
-          0%   { transform: translateX(-50%) scale(0.6); opacity: 0.5; }
-          70%  { transform: translateX(-50%) scale(2); opacity: 0; }
-          100% { transform: translateX(-50%) scale(2); opacity: 0; }
+          0%   { transform: translate(-50%, 0) scale(0.6); opacity: 0.55; }
+          70%  { transform: translate(-50%, 0) scale(2.4); opacity: 0; }
+          100% { transform: translate(-50%, 0) scale(2.4); opacity: 0; }
+        }
+        /* Make Mapbox NavigationControl look in-system */
+        .mapboxgl-ctrl-group {
+          border-radius: 10px !important;
+          overflow: hidden;
+          box-shadow: 0 4px 14px rgb(0 0 0 / 0.08) !important;
         }
       `}</style>
     </section>
