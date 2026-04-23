@@ -110,10 +110,8 @@ export default function MapSection() {
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
   }, [properties]);
 
-  const activeProperty = useMemo(
-    () => withCoords.find((p) => p.id === activeId) || null,
-    [withCoords, activeId]
-  );
+  // (single-property card uses activeCluster.items[0])
+
 
   // Init map — once. Wheel zoom is disabled, controls only via buttons / dblclick.
   useEffect(() => {
