@@ -4,7 +4,7 @@ import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProperties, type DbProperty } from "@/hooks/useProperties";
-import { getPropertyCover } from "@/lib/propertyImages";
+import PropertyImage from "@/components/PropertyImage";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
@@ -58,13 +58,12 @@ export default function PropertyGrid() {
                   className="group bg-card rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-400 overflow-hidden hover:-translate-y-1 border-l-4 border-l-transparent hover:border-l-gold cursor-pointer"
                 >
                   <div className="relative h-48 bg-muted overflow-hidden">
-                    <img
-                      src={getPropertyCover(p.cover_photo, p.type)}
+                    <PropertyImage
+                      src={p.cover_photo}
                       alt={p.address}
-                      loading="lazy"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                      imgClassName="transition-transform duration-500 group-hover:scale-[1.05]"
                     />
-                    <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
+                    <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium z-10">
                       {p.type}
                     </span>
                     {p.class !== "-" && (
