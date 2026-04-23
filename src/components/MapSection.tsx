@@ -180,7 +180,7 @@ export default function MapSection() {
               Объекты на карте Иркутска
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              {withCoords.length} объектов с координатами · {properties.length} всего
+              {withCoords.length} объектов на карте · {filtered.length} всего{activeDistrict !== "Все" ? ` в районе «${activeDistrict}»` : ""}
             </p>
           </div>
           <div className="flex bg-card overflow-hidden border border-border rounded-lg">
