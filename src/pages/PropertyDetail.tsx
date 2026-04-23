@@ -282,7 +282,7 @@ export default function PropertyDetail() {
 
 function PropertyPriceBlock({ property }: { property: any }) {
   return (
-    <div className="bg-card rounded-2xl shadow-card p-6">
+    <div id="contact-form" className="bg-card rounded-2xl shadow-card p-6 scroll-mt-24">
       <div className="text-3xl font-bold text-foreground">
         {Number(property.price).toLocaleString("ru-RU")} ₽
         {property.deal_type === "Аренда" && <span className="text-base font-normal text-muted-foreground">/мес</span>}
