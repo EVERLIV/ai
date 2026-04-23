@@ -84,7 +84,7 @@ export default function PropertyDetail() {
             <span className="text-foreground truncate min-w-0">{property.address}</span>
           </nav>
 
-          <div className="shrink-0 flex items-center gap-1">
+          <div className="shrink-0 hidden lg:flex items-center gap-1">
             <button
               onClick={() => setSaved(!saved)}
               aria-label="Сохранить"
@@ -104,7 +104,55 @@ export default function PropertyDetail() {
         </div>
       </div>
 
-      <main className="container mx-auto px-4 lg:px-8 py-6 lg:py-10 pt-16 lg:pt-20 flex-1">
+      {/* Mobile bottom action bar */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_24px_-12px_hsl(0_0%_0%/0.15)]">
+        <div className="grid grid-cols-4 px-2 py-2 gap-1 max-w-md mx-auto">
+          <a
+            href="tel:+73952551234"
+            aria-label="Позвонить"
+            className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-primary hover:bg-primary/10 active:scale-95 transition-all"
+          >
+            <Phone className="w-6 h-6" strokeWidth={2.2} />
+            <span className="text-[10px] font-medium">Звонок</span>
+          </a>
+          <a
+            href="#contact-form"
+            aria-label="Написать"
+            className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-foreground hover:bg-muted active:scale-95 transition-all"
+          >
+            <Mail className="w-6 h-6" strokeWidth={2.2} />
+            <span className="text-[10px] font-medium">Написать</span>
+          </a>
+          <button
+            onClick={() => setSaved(!saved)}
+            aria-label="Сохранить"
+            aria-pressed={saved}
+            className={`flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl active:scale-95 transition-all ${
+              saved ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"
+            }`}
+          >
+            <Heart className="w-6 h-6" strokeWidth={2.2} fill={saved ? "currentColor" : "none"} />
+            <span className="text-[10px] font-medium">Сохранить</span>
+          </button>
+          <button
+            onClick={() => {
+              if (navigator.share) {
+                navigator.share({ title: property.address, url: window.location.href }).catch(() => {});
+              } else {
+                navigator.clipboard?.writeText(window.location.href);
+              }
+            }}
+            aria-label="Поделиться"
+            className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-foreground hover:bg-muted active:scale-95 transition-all"
+          >
+            <Share2 className="w-6 h-6" strokeWidth={2.2} />
+            <span className="text-[10px] font-medium">Поделиться</span>
+          </button>
+        </div>
+        <div className="h-[env(safe-area-inset-bottom)]" />
+      </div>
+
+      <main className="container mx-auto px-4 lg:px-8 py-6 lg:py-10 pt-16 lg:pt-20 pb-28 lg:pb-10 flex-1">
 
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 min-w-0">
@@ -234,7 +282,7 @@ export default function PropertyDetail() {
 
 function PropertyPriceBlock({ property }: { property: any }) {
   return (
-    <div className="bg-card rounded-2xl shadow-card p-6">
+    <div id="contact-form" className="bg-card rounded-2xl shadow-card p-6 scroll-mt-24">
       <div className="text-3xl font-bold text-foreground">
         {Number(property.price).toLocaleString("ru-RU")} ₽
         {property.deal_type === "Аренда" && <span className="text-base font-normal text-muted-foreground">/мес</span>}
