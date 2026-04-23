@@ -49,10 +49,18 @@ function getCoords(p: DbProperty): { lat: number; lng: number } | null {
   return null;
 }
 
+type Cluster = {
+  key: string;
+  lat: number;
+  lng: number;
+  items: DbProperty[];
+};
+
 export default function MapSection() {
   const { ref, isVisible } = useScrollReveal();
   const [view, setView] = useState<"map" | "list">("map");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeClusterKey, setActiveClusterKey] = useState<string | null>(null);
   const [activeDistrict, setActiveDistrict] = useState<string>("Все");
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -70,6 +78,28 @@ export default function MapSection() {
   const withCoords = useMemo(
     () => filtered.filter((p) => getCoords(p) !== null),
     [filtered]
+  );
+
+  // Group by rounded coordinate (~11m precision) OR by exact address.
+  const clusters = useMemo<Cluster[]>(() => {
+    const map = new Map<string, Cluster>();
+    withCoords.forEach((p) => {
+      const c = getCoords(p)!;
+      // round to 4 decimals (~11m) to merge same-building markers
+      const key = `${c.lat.toFixed(4)}_${c.lng.toFixed(4)}`;
+      const existing = map.get(key);
+      if (existing) {
+        existing.items.push(p);
+      } else {
+        map.set(key, { key, lat: c.lat, lng: c.lng, items: [p] });
+      }
+    });
+    return Array.from(map.values());
+  }, [withCoords]);
+
+  const activeCluster = useMemo(
+    () => clusters.find((c) => c.key === activeClusterKey) || null,
+    [clusters, activeClusterKey]
   );
 
   const districts = useMemo(() => {
