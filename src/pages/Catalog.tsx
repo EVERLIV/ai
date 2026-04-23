@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import CatalogMap from "@/components/CatalogMap";
-import { getPropertyCover } from "@/lib/propertyImages";
+import PropertyImage from "@/components/PropertyImage";
 
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
 const DEALS = ["Все", "Аренда", "Продажа"];
@@ -551,11 +551,10 @@ function GridCard({ property: p }: { property: DbProperty }) {
     <Link to={`/property/${p.id}`}
       className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-card-hover transition-all duration-300">
       <div className="relative h-44 bg-muted overflow-hidden">
-        <img
-          src={getPropertyCover(p.cover_photo, p.type)}
+        <PropertyImage
+          src={p.cover_photo}
           alt={p.address}
-          loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          imgClassName="transition-transform duration-500 group-hover:scale-[1.03]"
         />
         <div className="absolute top-3 left-3 flex gap-1.5">
           <span className="px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">{p.deal_type}</span>
@@ -607,11 +606,10 @@ function ListCard({ property: p }: { property: DbProperty }) {
     <Link to={`/property/${p.id}`}
       className="group flex bg-card rounded-xl border border-border overflow-hidden hover:shadow-card-hover transition-all duration-300">
       <div className="relative w-48 shrink-0 bg-muted hidden sm:block overflow-hidden">
-        <img
-          src={getPropertyCover(p.cover_photo, p.type)}
+        <PropertyImage
+          src={p.cover_photo}
           alt={p.address}
-          loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          imgClassName="transition-transform duration-500 group-hover:scale-[1.03]"
         />
         <div className="absolute top-2 left-2 flex gap-1">
           <span className="px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">{p.deal_type}</span>
