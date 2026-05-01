@@ -1,44 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster";
+import "leaflet.markercluster/dist/MarkerCluster.css";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useProperties, type DbProperty } from "@/hooks/useProperties";
 import { List, Map as MapIcon, MapPin, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getPropertyCover } from "@/lib/propertyImages";
 
-const IRKUTSK_CENTER: [number, number] = [104.2807, 52.2869];
-
-// Token-less raster style — CARTO Positron tiles
-const GRAY_STYLE: mapboxgl.Style = {
-  version: 8,
-  sources: {
-    "raster-tiles": {
-      type: "raster",
-      tiles: [
-        "https://cartodb-basemaps-a.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png",
-        "https://cartodb-basemaps-b.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png",
-        "https://cartodb-basemaps-c.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png",
-      ],
-      tileSize: 256,
-      attribution: "© OpenStreetMap, © CARTO",
-    },
-    labels: {
-      type: "raster",
-      tiles: [
-        "https://cartodb-basemaps-a.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png",
-        "https://cartodb-basemaps-b.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png",
-        "https://cartodb-basemaps-c.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png",
-      ],
-      tileSize: 256,
-    },
-  },
-  layers: [
-    { id: "bg", type: "background", paint: { "background-color": "#f5f3ef" } },
-    { id: "tiles", type: "raster", source: "raster-tiles" },
-    { id: "tile-labels", type: "raster", source: "labels" },
-  ],
-};
+const IRKUTSK_CENTER: L.LatLngTuple = [52.2869, 104.2807];
 
 function getCoords(p: DbProperty): { lat: number; lng: number } | null {
   const lat = (p as any).lat;
@@ -49,22 +20,28 @@ function getCoords(p: DbProperty): { lat: number; lng: number } | null {
   return null;
 }
 
-type Cluster = {
-  key: string;
-  lat: number;
-  lng: number;
-  items: DbProperty[];
-};
+// Extract a street key from an address (text before first comma, normalized).
+// Used for street-level grouping at lower zoom levels.
+function getStreetKey(address: string): string {
+  if (!address) return "—";
+  return address.split(",")[0].trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function formatPrice(value: number): string {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(value >= 10_000_000 ? 0 : 1)} млн`;
+  if (value >= 1_000) return `${Math.round(value / 1_000)}к`;
+  return `${value}`;
+}
 
 export default function MapSection() {
   const { ref, isVisible } = useScrollReveal();
   const [view, setView] = useState<"map" | "list">("map");
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [activeClusterKey, setActiveClusterKey] = useState<string | null>(null);
+  const [activeProperty, setActiveProperty] = useState<DbProperty | null>(null);
   const [activeDistrict, setActiveDistrict] = useState<string>("Все");
+
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<Record<string, mapboxgl.Marker>>({});
+  const mapRef = useRef<L.Map | null>(null);
+  const clusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
 
   const { data: properties = [] } = useProperties();
 
@@ -80,28 +57,6 @@ export default function MapSection() {
     [filtered]
   );
 
-  // Group by rounded coordinate (~11m precision) OR by exact address.
-  const clusters = useMemo<Cluster[]>(() => {
-    const map = new Map<string, Cluster>();
-    withCoords.forEach((p) => {
-      const c = getCoords(p)!;
-      // round to 4 decimals (~11m) to merge same-building markers
-      const key = `${c.lat.toFixed(4)}_${c.lng.toFixed(4)}`;
-      const existing = map.get(key);
-      if (existing) {
-        existing.items.push(p);
-      } else {
-        map.set(key, { key, lat: c.lat, lng: c.lng, items: [p] });
-      }
-    });
-    return Array.from(map.values());
-  }, [withCoords]);
-
-  const activeCluster = useMemo(
-    () => clusters.find((c) => c.key === activeClusterKey) || null,
-    [clusters, activeClusterKey]
-  );
-
   const districts = useMemo(() => {
     const counts = new Map<string, number>();
     properties.forEach((p) => {
@@ -110,93 +65,137 @@ export default function MapSection() {
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
   }, [properties]);
 
-  // (single-property card uses activeCluster.items[0])
-
-
-  // Init map — once. Wheel zoom is disabled, controls only via buttons / dblclick.
+  // ---- Init map (once per view switch to "map") ----
   useEffect(() => {
-    if (!mapContainer.current || mapRef.current || view !== "map") return;
-    mapboxgl.accessToken = "no-token-needed";
-    const map = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: GRAY_STYLE,
+    if (view !== "map" || !mapContainer.current || mapRef.current) return;
+
+    const map = L.map(mapContainer.current, {
       center: IRKUTSK_CENTER,
-      zoom: 9,
+      zoom: 12,
+      scrollWheelZoom: false, // controls only via buttons / pinch / dblclick
+      zoomControl: true,
       attributionControl: true,
-      scrollZoom: false,
-      boxZoom: false,
-      dragRotate: false,
-      touchZoomRotate: false,
-      touchPitch: false,
-      doubleClickZoom: true,
+      preferCanvas: false,
     });
-    map.addControl(
-      new mapboxgl.NavigationControl({ showCompass: false, visualizePitch: false }),
-      "top-right"
-    );
+
+    // CartoDB Positron — clean, low-POI tiles
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      subdomains: "abcd",
+      attribution: "© OpenStreetMap, © CARTO",
+      maxZoom: 19,
+    }).addTo(map);
+
+    // Cluster group: street-level grouping. Big radius at low zoom, collapses near zoom 15+.
+    const cluster = (L as any).markerClusterGroup({
+      showCoverageOnHover: false,
+      spiderfyOnMaxZoom: true,
+      zoomToBoundsOnClick: false, // we handle this with flyTo
+      removeOutsideVisibleBounds: true,
+      maxClusterRadius: (zoom: number) => {
+        if (zoom >= 15) return 1;   // basically every marker its own
+        if (zoom >= 13) return 30;  // tight street-level clusters
+        return 80;                   // city-scale
+      },
+      iconCreateFunction: (c: any) => {
+        const count = c.getChildCount();
+        return L.divIcon({
+          html: `<div class="ms-cluster"><span>${count}</span></div>`,
+          className: "ms-cluster-wrap",
+          iconSize: [44, 44],
+          iconAnchor: [22, 22],
+        });
+      },
+      // Spiderfy distance for same-coord markers
+      spiderfyDistanceMultiplier: 1.6,
+    }) as L.MarkerClusterGroup;
+
+    // Custom click on cluster: smooth flyTo, no popup
+    cluster.on("clusterclick", (e: any) => {
+      const center = e.layer.getLatLng();
+      const targetZoom = Math.min(map.getZoom() + 2, 17);
+      map.flyTo(center, targetZoom, { duration: 0.6 });
+    });
+
+    map.addLayer(cluster);
+    clusterGroupRef.current = cluster;
     mapRef.current = map;
 
+    // Ensure correct sizing after mount
+    setTimeout(() => map.invalidateSize(), 0);
+
     return () => {
-      Object.values(markersRef.current).forEach((m) => m.remove());
-      markersRef.current = {};
       map.remove();
       mapRef.current = null;
+      clusterGroupRef.current = null;
     };
   }, [view]);
 
-  // Render markers + fit bounds (one marker per cluster)
+  // ---- Sync markers when filtered data changes ----
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    const cluster = clusterGroupRef.current;
+    if (!map || !cluster) return;
 
-    const place = () => {
-      // Clear old markers
-      Object.values(markersRef.current).forEach((m) => m.remove());
-      markersRef.current = {};
+    cluster.clearLayers();
 
-      if (clusters.length === 0) return;
+    if (withCoords.length === 0) return;
 
-      const bounds = new mapboxgl.LngLatBounds();
+    const markers: L.Marker[] = [];
 
-      clusters.forEach((cluster) => {
-        const count = cluster.items.length;
-        const minPrice = Math.min(...cluster.items.map((i) => Number(i.price) || 0));
-        const el = document.createElement("div");
-        el.className = "ms-pin-wrap";
-        const badge = count > 1
-          ? `<div class="ms-pin-count">${count}</div>`
-          : "";
-        el.innerHTML = `
-          <div class="ms-pin-shadow"></div>
-          <div class="ms-pin">
-            <span>${count > 1 ? `от ` : ""}${Math.round(minPrice / 1000)}к</span>
-          </div>
-          ${badge}
-        `;
-        el.addEventListener("click", (e) => {
-          e.stopPropagation();
-          setActiveClusterKey(cluster.key);
-          setActiveId(count === 1 ? cluster.items[0].id : null);
-          map.easeTo({ center: [cluster.lng, cluster.lat], zoom: Math.max(map.getZoom(), 13), duration: 500 });
-        });
+    withCoords.forEach((p) => {
+      const c = getCoords(p)!;
+      const price = Number(p.price) || 0;
+      const label = `от ${formatPrice(price)} ₽`;
 
-        const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
-          .setLngLat([cluster.lng, cluster.lat])
-          .addTo(map);
-        markersRef.current[cluster.key] = marker;
-        bounds.extend([cluster.lng, cluster.lat]);
+      const icon = L.divIcon({
+        html: `<button type="button" class="ms-pill" aria-label="${label}"><span>${label}</span></button>`,
+        className: "ms-pill-wrap",
+        iconSize: [0, 0], // sized by inner content
+        iconAnchor: [0, 0],
       });
 
-      if (clusters.length > 1) {
-        map.fitBounds(bounds, { padding: 80, maxZoom: 13, duration: 700 });
-      } else if (clusters.length === 1) {
-        map.easeTo({ center: [clusters[0].lng, clusters[0].lat], zoom: 14 });
-      }
-    };
+      const marker = L.marker([c.lat, c.lng], {
+        icon,
+        // Group markers on same street so MarkerCluster keeps them together at low zoom.
+        // (Kept as metadata; clustering itself is distance-based by design.)
+        // @ts-expect-error attach data
+        _streetKey: getStreetKey(p.address),
+      });
 
-    if (map.isStyleLoaded()) place();
-    else map.once("load", place);
-  }, [clusters]);
+      marker.on("click", () => {
+        setActiveProperty(p);
+        // Toggle inverted state on this pill
+        const el = (marker as any)._icon as HTMLElement | undefined;
+        if (el) {
+          document.querySelectorAll(".ms-pill-wrap.is-active").forEach((n) => n.classList.remove("is-active"));
+          el.classList.add("is-active");
+        }
+        map.flyTo([c.lat, c.lng], Math.max(map.getZoom(), 15), { duration: 0.5 });
+      });
+
+      markers.push(marker);
+    });
+
+    cluster.addLayers(markers);
+
+    // Fit bounds with padding once
+    const group = L.featureGroup(markers);
+    const bounds = group.getBounds();
+    if (bounds.isValid()) {
+      if (markers.length === 1) {
+        map.flyTo(bounds.getCenter(), 15, { duration: 0.6 });
+      } else {
+        map.flyToBounds(bounds, { padding: [60, 60], duration: 0.7, maxZoom: 14 });
+      }
+    }
+  }, [withCoords]);
+
+  // Close active card if it's filtered out
+  useEffect(() => {
+    if (activeProperty && !filtered.find((p) => p.id === activeProperty.id)) {
+      setActiveProperty(null);
+    }
+  }, [filtered, activeProperty]);
 
   return (
     <section ref={ref} className="py-10 sm:py-16 bg-surface-warm">
@@ -233,117 +232,17 @@ export default function MapSection() {
           </div>
         </div>
 
-        <div
-          className="bg-card overflow-hidden flex flex-col lg:flex-row rounded-xl sm:rounded-2xl shadow-card min-h-[420px] sm:min-h-[520px]"
-        >
+        <div className="bg-card overflow-hidden flex flex-col lg:flex-row rounded-xl sm:rounded-2xl shadow-card min-h-[420px] sm:min-h-[520px]">
           {/* Map / List view */}
           <div className="flex-1 relative bg-muted min-h-[360px] lg:min-h-0">
             {view === "map" ? (
               <>
-                <div ref={mapContainer} className="absolute inset-0" />
+                <div ref={mapContainer} className="absolute inset-0" style={{ zIndex: 0 }} />
 
-                {/* Active cluster overlay */}
-                {activeCluster && (
-                  <div className="absolute left-4 bottom-4 right-4 sm:right-auto sm:max-w-[340px] z-10 animate-fade-in">
-                    <div className="bg-card rounded-xl shadow-card-hover overflow-hidden border border-border">
-                      {activeCluster.items.length === 1 ? (
-                        (() => {
-                          const p = activeCluster.items[0];
-                          return (
-                            <>
-                              <div className="relative h-32 bg-muted">
-                                <img
-                                  src={getPropertyCover(p.cover_photo, p.type)}
-                                  alt={p.address}
-                                  className="w-full h-full object-cover"
-                                />
-                                <button
-                                  onClick={() => { setActiveClusterKey(null); setActiveId(null); }}
-                                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/90 backdrop-blur text-foreground flex items-center justify-center hover:bg-background transition-colors text-lg leading-none"
-                                  aria-label="Закрыть"
-                                >
-                                  ×
-                                </button>
-                                <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">
-                                  {p.type}
-                                </span>
-                              </div>
-                              <div className="p-3">
-                                <div className="flex items-baseline justify-between gap-2 mb-1">
-                                  <span className="font-display text-lg font-bold text-foreground">
-                                    {Number(p.price).toLocaleString("ru-RU")} ₽
-                                    {p.deal_type === "Аренда" && (
-                                      <span className="text-xs font-normal text-muted-foreground">/мес</span>
-                                    )}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground shrink-0">{p.area} м²</span>
-                                </div>
-                                <div className="flex items-start gap-1 text-xs text-muted-foreground mb-3">
-                                  <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
-                                  <span className="line-clamp-2">{p.address}</span>
-                                </div>
-                                <Link
-                                  to={`/property/${p.id}`}
-                                  className="block w-full text-center py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-                                >
-                                  Подробнее
-                                </Link>
-                              </div>
-                            </>
-                          );
-                        })()
-                      ) : (
-                        <>
-                          <div className="flex items-start justify-between gap-2 px-3 pt-3 pb-2 border-b border-border">
-                            <div className="min-w-0">
-                              <p className="text-[10px] font-semibold uppercase tracking-wider text-primary mb-0.5">
-                                {activeCluster.items.length} объектов на адресе
-                              </p>
-                              <p className="text-xs font-medium text-foreground line-clamp-2 flex items-start gap-1">
-                                <MapPin className="w-3 h-3 shrink-0 mt-0.5 text-muted-foreground" />
-                                {activeCluster.items[0].address}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => { setActiveClusterKey(null); setActiveId(null); }}
-                              className="w-7 h-7 rounded-full bg-muted text-foreground flex items-center justify-center hover:bg-muted/80 transition-colors text-lg leading-none shrink-0"
-                              aria-label="Закрыть"
-                            >
-                              ×
-                            </button>
-                          </div>
-                          <div className="max-h-[280px] overflow-y-auto divide-y divide-border">
-                            {activeCluster.items.map((p) => (
-                              <Link
-                                key={p.id}
-                                to={`/property/${p.id}`}
-                                className="flex items-center gap-2.5 p-2.5 hover:bg-muted/50 transition-colors"
-                              >
-                                <div className="w-12 h-12 rounded-md overflow-hidden bg-muted shrink-0">
-                                  <img
-                                    src={getPropertyCover(p.cover_photo, p.type)}
-                                    alt={p.address}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-xs font-semibold text-foreground truncate">
-                                    {Number(p.price).toLocaleString("ru-RU")} ₽
-                                    {p.deal_type === "Аренда" && (
-                                      <span className="text-[10px] font-normal text-muted-foreground">/мес</span>
-                                    )}
-                                  </div>
-                                  <div className="text-[11px] text-muted-foreground truncate">
-                                    {p.type} · {p.area} м²{p.floor ? ` · ${p.floor} эт.` : ""}
-                                  </div>
-                                </div>
-                                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                              </Link>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </div>
+                {/* Active property card (desktop: floating; mobile: bottom sheet) */}
+                {activeProperty && (
+                  <div className="absolute left-3 right-3 bottom-3 sm:right-auto sm:max-w-[340px] z-[400] animate-fade-in-up">
+                    <PropertyCard p={activeProperty} onClose={() => setActiveProperty(null)} />
                   </div>
                 )}
               </>
@@ -380,7 +279,7 @@ export default function MapSection() {
             )}
           </div>
 
-          {/* Districts sidebar — clickable filters. Horizontal scroll on mobile, vertical sidebar on lg+ */}
+          {/* Districts sidebar */}
           <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border bg-card lg:max-h-[520px] lg:overflow-y-auto">
             <div className="flex items-center justify-between px-3 sm:px-4 pt-3 sm:pt-4 pb-2">
               <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -388,7 +287,7 @@ export default function MapSection() {
               </p>
               {activeDistrict !== "Все" && (
                 <button
-                  onClick={() => { setActiveDistrict("Все"); setActiveClusterKey(null); setActiveId(null); }}
+                  onClick={() => { setActiveDistrict("Все"); setActiveProperty(null); }}
                   className="text-[10px] text-primary hover:underline"
                 >
                   Сбросить
@@ -399,7 +298,7 @@ export default function MapSection() {
             <div className="flex lg:flex-col gap-1.5 px-3 sm:px-4 pb-3 sm:pb-4 overflow-x-auto lg:overflow-x-visible scrollbar-thin">
               <button
                 type="button"
-                onClick={() => { setActiveDistrict("Все"); setActiveClusterKey(null); setActiveId(null); }}
+                onClick={() => { setActiveDistrict("Все"); setActiveProperty(null); }}
                 className={`shrink-0 lg:w-full flex items-center gap-2 lg:justify-between px-3 py-2 lg:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap transition-colors ${
                   activeDistrict === "Все"
                     ? "bg-primary text-primary-foreground"
@@ -422,7 +321,7 @@ export default function MapSection() {
                     <button
                       key={name}
                       type="button"
-                      onClick={() => { setActiveDistrict(name); setActiveClusterKey(null); setActiveId(null); }}
+                      onClick={() => { setActiveDistrict(name); setActiveProperty(null); }}
                       className={`shrink-0 lg:w-full flex items-center gap-2 lg:justify-between px-3 py-2 lg:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap transition-colors ${
                         active
                           ? "bg-primary text-primary-foreground"
@@ -453,116 +352,157 @@ export default function MapSection() {
       </div>
 
       <style>{`
-        /* Wrapper bottom edge sits on geo coordinate (anchor:"bottom"). */
-        .ms-pin-wrap {
-          position: relative;
-          width: 64px;
-          height: 44px;
-          cursor: pointer;
-          pointer-events: auto;
-          will-change: transform;
-          transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+        /* ---- Pill price marker ---- */
+        .ms-pill-wrap {
+          background: transparent !important;
+          border: 0 !important;
         }
-        .ms-pin-wrap:hover { transform: translateY(-4px) scale(1.08); }
-        .ms-pin-wrap:active { transform: translateY(-2px) scale(1.04); transition-duration: 0.12s; }
-
-        /* Soft organic teardrop pin */
-        .ms-pin {
-          position: absolute;
-          left: 50%;
-          bottom: 6px;
-          transform: translateX(-50%);
-          z-index: 2;
-          min-width: 48px;
-          height: 30px;
-          padding: 0 12px;
-          color: #fff;
-          font-family: Inter, sans-serif;
-          font-size: 11px;
-          font-weight: 600;
+        .ms-pill {
+          /* Anchor visually centered on the geo-point */
+          transform: translate(-50%, -50%);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 6px 12px;
+          border-radius: 9999px;
+          background: #ffffff;
+          color: hsl(220 25% 12%);
+          font-family: Inter, system-ui, sans-serif;
+          font-size: 12px;
+          font-weight: 700;
           letter-spacing: 0.01em;
           line-height: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(145deg, hsl(0 72% 56%) 0%, hsl(8 78% 48%) 100%);
-          border-radius: 16px 16px 16px 4px;
-          box-shadow:
-            0 1px 0 hsl(0 0% 100% / 0.25) inset,
-            0 6px 18px -6px hsl(0 72% 35% / 0.55),
-            0 2px 6px -2px hsl(0 72% 35% / 0.35);
           white-space: nowrap;
-          transition:
-            box-shadow 0.3s cubic-bezier(0.32, 0.72, 0, 1),
-            background 0.3s ease;
-        }
-        .ms-pin-wrap:hover .ms-pin {
-          background: linear-gradient(145deg, hsl(0 78% 62%) 0%, hsl(10 82% 54%) 100%);
+          border: 1px solid hsl(220 15% 88%);
           box-shadow:
-            0 1px 0 hsl(0 0% 100% / 0.35) inset,
-            0 14px 28px -10px hsl(0 72% 30% / 0.65),
-            0 4px 10px -2px hsl(0 72% 30% / 0.45);
+            0 2px 4px hsl(220 25% 10% / 0.08),
+            0 6px 14px -6px hsl(220 25% 10% / 0.18);
+          cursor: pointer;
+          transition:
+            transform 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+            background 0.2s ease,
+            color 0.2s ease,
+            box-shadow 0.2s ease;
+        }
+        .ms-pill:hover {
+          transform: translate(-50%, -50%) scale(1.1);
+          box-shadow:
+            0 4px 10px hsl(220 25% 10% / 0.12),
+            0 12px 24px -8px hsl(220 25% 10% / 0.28);
+          z-index: 5;
+        }
+        .ms-pill-wrap.is-active .ms-pill {
+          background: hsl(0 72% 51%);
+          color: #ffffff;
+          border-color: hsl(0 72% 45%);
+          box-shadow:
+            0 4px 10px hsl(0 72% 40% / 0.30),
+            0 12px 26px -8px hsl(0 72% 35% / 0.45);
         }
 
-        /* Soft elliptical ground shadow — replaces the triangle tip */
-        .ms-pin-shadow {
-          position: absolute;
-          left: 50%;
-          bottom: 0;
-          transform: translateX(-50%);
-          width: 28px;
-          height: 6px;
+        /* ---- Cluster (synced with brand: clean blue) ---- */
+        .ms-cluster-wrap {
+          background: transparent !important;
+          border: 0 !important;
+        }
+        .ms-cluster {
+          width: 44px;
+          height: 44px;
           border-radius: 50%;
-          background: radial-gradient(ellipse at center, hsl(0 0% 0% / 0.28) 0%, hsl(0 0% 0% / 0) 70%);
-          z-index: 0;
-          transition: width 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease;
-        }
-        .ms-pin-wrap:hover .ms-pin-shadow {
-          width: 38px;
-          opacity: 0.9;
-        }
-
-        /* Count badge — gold, organic. Smoothly shifts to deeper amber on hover. */
-        .ms-pin-count {
-          position: absolute;
-          top: -4px;
-          right: 2px;
-          z-index: 3;
-          min-width: 18px;
-          height: 18px;
-          padding: 0 5px;
-          border-radius: 999px;
-          background: linear-gradient(145deg, hsl(45 92% 58%), hsl(38 88% 48%));
-          color: hsl(20 25% 15%);
-          font-family: Inter, sans-serif;
-          font-size: 10px;
-          font-weight: 700;
-          line-height: 1;
+          background: linear-gradient(145deg, hsl(212 90% 56%), hsl(218 88% 46%));
+          color: #fff;
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 1.5px solid #fff;
-          box-shadow: 0 2px 6px hsl(38 80% 30% / 0.35);
-          transition:
-            background 0.3s ease,
-            color 0.3s ease,
-            box-shadow 0.3s ease,
-            transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+          font-family: Inter, system-ui, sans-serif;
+          font-size: 13px;
+          font-weight: 700;
+          border: 3px solid #fff;
+          box-shadow:
+            0 2px 6px hsl(218 60% 30% / 0.25),
+            0 8px 18px -6px hsl(218 60% 30% / 0.35);
+          cursor: pointer;
+          transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.2s ease;
         }
-        .ms-pin-wrap:hover .ms-pin-count {
-          background: linear-gradient(145deg, hsl(38 96% 54%), hsl(28 92% 46%));
-          color: hsl(0 0% 100%);
-          box-shadow: 0 4px 12px hsl(28 90% 30% / 0.5);
-          transform: scale(1.12);
+        .ms-cluster:hover {
+          transform: scale(1.08);
+          box-shadow:
+            0 4px 10px hsl(218 60% 30% / 0.3),
+            0 14px 26px -8px hsl(218 60% 30% / 0.45);
         }
 
-        /* Mapbox NavigationControl polish */
-        .mapboxgl-ctrl-group {
-          border-radius: 10px !important;
-          overflow: hidden;
+        /* ---- Cleanup default Leaflet cluster styles ---- */
+        .marker-cluster-small,
+        .marker-cluster-medium,
+        .marker-cluster-large,
+        .marker-cluster-small div,
+        .marker-cluster-medium div,
+        .marker-cluster-large div {
+          background: transparent !important;
+          color: transparent !important;
+          box-shadow: none !important;
+        }
+
+        /* Spiderfy lines stay subtle */
+        .leaflet-cluster-spider-leg {
+          stroke: hsl(220 15% 60%) !important;
+          stroke-opacity: 0.5 !important;
+        }
+
+        /* Leaflet zoom controls */
+        .leaflet-bar a {
+          border-radius: 6px !important;
+        }
+        .leaflet-control-zoom {
+          border: 0 !important;
           box-shadow: 0 4px 14px rgb(0 0 0 / 0.08) !important;
         }
       `}</style>
     </section>
+  );
+}
+
+function PropertyCard({ p, onClose }: { p: DbProperty; onClose: () => void }) {
+  return (
+    <div className="bg-card rounded-xl shadow-card-hover overflow-hidden border border-border">
+      <div className="relative h-32 bg-muted">
+        <img
+          src={getPropertyCover(p.cover_photo, p.type)}
+          alt={p.address}
+          className="w-full h-full object-cover"
+        />
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/90 backdrop-blur text-foreground flex items-center justify-center hover:bg-background transition-colors text-lg leading-none"
+          aria-label="Закрыть"
+        >
+          ×
+        </button>
+        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">
+          {p.type}
+        </span>
+      </div>
+      <div className="p-3">
+        <div className="flex items-baseline justify-between gap-2 mb-1">
+          <span className="font-display text-lg font-bold text-foreground">
+            {Number(p.price).toLocaleString("ru-RU")} ₽
+            {p.deal_type === "Аренда" && (
+              <span className="text-xs font-normal text-muted-foreground">/мес</span>
+            )}
+          </span>
+          <span className="text-xs text-muted-foreground shrink-0">{p.area} м²</span>
+        </div>
+        <div className="flex items-start gap-1 text-xs text-muted-foreground mb-3">
+          <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
+          <span className="line-clamp-2">{p.address}</span>
+        </div>
+        <Link
+          to={`/property/${p.id}`}
+          className="block w-full text-center py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+        >
+          Подробнее
+        </Link>
+      </div>
+    </div>
   );
 }
