@@ -305,7 +305,17 @@ function MapListItem({ p, active, onClick }: { p: DbProperty; active: boolean; o
   );
 }
 
-function ActiveCard({ p, onClose, compact = false }: { p: DbProperty; onClose: () => void; compact?: boolean }) {
+function ActiveCard({
+  p,
+  onClose,
+  onStreetView,
+  compact = false,
+}: {
+  p: DbProperty;
+  onClose: () => void;
+  onStreetView: () => void;
+  compact?: boolean;
+}) {
   return (
     <div className="bg-card border border-border overflow-hidden">
       <div className="flex">
@@ -340,12 +350,20 @@ function ActiveCard({ p, onClose, compact = false }: { p: DbProperty; onClose: (
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
-          <Link
-            to={`/property/${p.id}`}
-            className="mt-2 inline-flex w-full justify-center px-3 py-1.5 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity"
-          >
-            Открыть карточку
-          </Link>
+          <div className="mt-2 flex gap-1.5">
+            <button
+              onClick={onStreetView}
+              className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-muted text-foreground text-[11px] font-semibold hover:bg-muted/70 transition-colors"
+            >
+              <Eye className="w-3 h-3" /> Улица
+            </button>
+            <Link
+              to={`/property/${p.id}`}
+              className="flex-1 inline-flex justify-center px-3 py-1.5 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity"
+            >
+              Карточка
+            </Link>
+          </div>
         </div>
       </div>
     </div>
