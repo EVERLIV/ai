@@ -1,33 +1,27 @@
-import { useCallback, useRef } from "react";
-import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
+import { useEffect, useRef } from "react";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { MapPin } from "lucide-react";
 
-const IRKUTSK_CENTER = { lat: 52.2869, lng: 104.2807 };
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string;
+const IRKUTSK_CENTER: [number, number] = [104.2807, 52.2869];
 
-const MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { elementType: "geometry", stylers: [{ color: "#f5f3ef" }] },
-  { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#6b6b6b" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#f5f3ef" }] },
-  { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
-  { featureType: "poi", stylers: [{ visibility: "off" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
-  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#8a8a8a" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#dfe7ec" }] },
-];
-
-const MAP_OPTIONS: google.maps.MapOptions = {
-  styles: MAP_STYLES,
-  disableDefaultUI: false,
-  zoomControl: true,
-  streetViewControl: false,
-  mapTypeControl: false,
-  fullscreenControl: false,
-  scrollwheel: false,
-  clickableIcons: false,
-  gestureHandling: "cooperative",
+// Free CartoDB Positron raster tiles — clean light style, no API key
+const MAP_STYLE: maplibregl.StyleSpecification = {
+  version: 8,
+  sources: {
+    "carto-light": {
+      type: "raster",
+      tiles: [
+        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+        "https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+      ],
+      tileSize: 256,
+      attribution: "© OpenStreetMap, © CARTO",
+    },
+  },
+  layers: [{ id: "carto-light", type: "raster", source: "carto-light" }],
 };
 
 interface PropertyMapProps {
@@ -39,57 +33,53 @@ interface PropertyMapProps {
 }
 
 export default function PropertyMap({ address, district, lat, lng, height = 320 }: PropertyMapProps) {
-  const { isLoaded } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-  });
-  const mapRef = useRef<google.maps.Map | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
 
-  const hasCoords = typeof lat === "number" && typeof lng === "number" && !Number.isNaN(lat) && !Number.isNaN(lng);
-  const center = hasCoords ? { lat: lat!, lng: lng! } : IRKUTSK_CENTER;
+  const hasCoords =
+    typeof lat === "number" && typeof lng === "number" && !Number.isNaN(lat) && !Number.isNaN(lng);
+  const center: [number, number] = hasCoords ? [lng!, lat!] : IRKUTSK_CENTER;
 
-  const onLoad = useCallback((map: google.maps.Map) => {
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+
+    const map = new maplibregl.Map({
+      container: containerRef.current,
+      style: MAP_STYLE,
+      center,
+      zoom: hasCoords ? 15 : 11,
+      attributionControl: { compact: true },
+    });
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    map.scrollZoom.disable();
+
+    if (hasCoords) {
+      const el = document.createElement("div");
+      el.className = "property-pin-wrap";
+      el.innerHTML = `<div class="property-pin-pulse"></div><div class="property-pin"></div>`;
+      new maplibregl.Marker({ element: el, anchor: "center" }).setLngLat(center).addTo(map);
+    }
+
     mapRef.current = map;
-  }, []);
-  const onUnmount = useCallback(() => {
-    mapRef.current = null;
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="relative bg-muted overflow-hidden" style={{ height }}>
-      {isLoaded ? (
-        <GoogleMap
-          mapContainerClassName="absolute inset-0"
-          center={center}
-          zoom={hasCoords ? 15 : 11}
-          options={MAP_OPTIONS}
-          onLoad={onLoad}
-          onUnmount={onUnmount}
-        >
-          {hasCoords && (
-            <OverlayView
-              position={center}
-              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-              getPixelPositionOffset={(w, h) => ({ x: -w / 2, y: -h / 2 })}
-            >
-              <div className="property-pin-wrap">
-                <div className="property-pin-pulse" />
-                <div className="property-pin" />
-              </div>
-            </OverlayView>
-          )}
-        </GoogleMap>
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
-          Загрузка карты…
-        </div>
-      )}
+      <div ref={containerRef} className="absolute inset-0" />
 
-      {!hasCoords && isLoaded && (
+      {!hasCoords && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-xs text-muted-foreground bg-background/60 backdrop-blur-sm pointer-events-none">
           <MapPin className="w-5 h-5 text-primary" />
           <span>Координаты для этого объекта не указаны</span>
-          <span className="text-[10px] opacity-70">{address}{district && ` · ${district}`}</span>
+          <span className="text-[10px] opacity-70">
+            {address}
+            {district && ` · ${district}`}
+          </span>
         </div>
       )}
 
@@ -109,7 +99,9 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
           height: 16px;
           background: hsl(0, 72%, 51%);
           border: 3px solid #fff;
+          border-radius: 50%;
           z-index: 2;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
         .property-pin-pulse {
           position: absolute;
@@ -117,6 +109,7 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
           width: 28px;
           height: 28px;
           background: hsl(0, 72%, 51%);
+          border-radius: 50%;
           opacity: 0.45;
           animation: propertyPinPulse 1.8s ease-out infinite;
         }
@@ -125,6 +118,7 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
           70%  { transform: scale(1.8); opacity: 0; }
           100% { transform: scale(1.8); opacity: 0; }
         }
+        .maplibregl-ctrl-attrib { font-size: 10px; }
       `}</style>
     </div>
   );
