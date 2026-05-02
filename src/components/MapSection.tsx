@@ -6,20 +6,10 @@ import { useProperties, type DbProperty } from "@/hooks/useProperties";
 import { List, Map as MapIcon, MapPin, ArrowRight, Eye, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getPropertyCover } from "@/lib/propertyImages";
+import { getCoords, hasStreetView, type Coords } from "@/lib/propertyGeo";
 import StreetViewModal from "./StreetViewModal";
 
 const IRKUTSK_CENTER: [number, number] = [104.2807, 52.2869];
-
-type Coords = { lng: number; lat: number };
-
-function getCoords(p: DbProperty): Coords | null {
-  const lat = (p as any).lat;
-  const lng = (p as any).lng;
-  if (typeof lat === "number" && typeof lng === "number" && !Number.isNaN(lat) && !Number.isNaN(lng)) {
-    return { lat, lng };
-  }
-  return null;
-}
 
 function formatPrice(value: number): string {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(value >= 10_000_000 ? 0 : 1)}M`;
