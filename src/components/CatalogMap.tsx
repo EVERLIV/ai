@@ -45,6 +45,7 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
   const [activeId, setActiveId] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(true);
   const [mapReady, setMapReady] = useState(false);
+  const [streetViewFor, setStreetViewFor] = useState<DbProperty | null>(null);
 
   // ---- Init map ----
   useEffect(() => {
