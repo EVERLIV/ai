@@ -319,6 +319,7 @@ function ActiveCard({
   onStreetView: () => void;
   compact?: boolean;
 }) {
+  const showStreetView = hasStreetView(p);
   return (
     <div className="bg-card border border-border overflow-hidden">
       <div className="flex">
