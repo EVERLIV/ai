@@ -62,7 +62,6 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
       const el = document.createElement("div");
       el.className = "pm-pin";
       el.innerHTML = `
-        <span class="pm-pin__pulse"></span>
         <span class="pm-pin__dot">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
@@ -136,23 +135,6 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
           z-index: 2;
         }
         .pm-pin__dot > svg { transform: rotate(45deg); }
-        .pm-pin__pulse {
-          position: absolute;
-          left: 50%;
-          bottom: 0;
-          width: 32px;
-          height: 32px;
-          margin-left: -16px;
-          background: hsl(0, 72%, 51%);
-          border-radius: 50%;
-          opacity: 0.45;
-          animation: pmPinPulse 1.8s ease-out infinite;
-        }
-        @keyframes pmPinPulse {
-          0%   { transform: scale(0.6); opacity: 0.55; }
-          70%  { transform: scale(1.8); opacity: 0; }
-          100% { transform: scale(1.8); opacity: 0; }
-        }
         .maplibregl-ctrl-attrib { font-size: 10px; }
       `}</style>
     </div>
