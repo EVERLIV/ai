@@ -355,12 +355,14 @@ function ActiveCard({
             </button>
           </div>
           <div className="mt-2 flex gap-1.5">
-            <button
-              onClick={onStreetView}
-              className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-muted text-foreground text-[11px] font-semibold hover:bg-muted/70 transition-colors"
-            >
-              <Eye className="w-3 h-3" /> Улица
-            </button>
+            {showStreetView && (
+              <button
+                onClick={onStreetView}
+                className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-muted text-foreground text-[11px] font-semibold hover:bg-muted/70 transition-colors"
+              >
+                <Eye className="w-3 h-3" /> Улица
+              </button>
+            )}
             <Link
               to={`/property/${p.id}`}
               className="flex-1 inline-flex justify-center px-3 py-1.5 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity"
