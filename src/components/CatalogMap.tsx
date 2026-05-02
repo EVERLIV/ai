@@ -3,8 +3,9 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Link } from "react-router-dom";
 import type { DbProperty } from "@/hooks/useProperties";
-import { MapPin, Maximize2, X, List } from "lucide-react";
+import { MapPin, Maximize2, X, List, Eye } from "lucide-react";
 import { getPropertyCover } from "@/lib/propertyImages";
+import StreetViewModal from "./StreetViewModal";
 
 const IRKUTSK_CENTER: [number, number] = [104.2807, 52.2869];
 
@@ -44,6 +45,7 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
   const [activeId, setActiveId] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(true);
   const [mapReady, setMapReady] = useState(false);
+  const [streetViewFor, setStreetViewFor] = useState<DbProperty | null>(null);
 
   // ---- Init map ----
   useEffect(() => {
@@ -173,7 +175,11 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
 
         {activeProperty && (
           <div className="hidden lg:block absolute bottom-4 left-4 w-[320px] z-10 animate-fade-in-up">
-            <ActiveCard p={activeProperty} onClose={() => setActiveId(null)} />
+            <ActiveCard
+              p={activeProperty}
+              onClose={() => setActiveId(null)}
+              onStreetView={() => setStreetViewFor(activeProperty)}
+            />
           </div>
         )}
 
@@ -191,7 +197,12 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
 
           {!listOpen && activeProperty && (
             <div className="bg-card border-t border-border p-3 animate-fade-in-up">
-              <ActiveCard p={activeProperty} onClose={() => setActiveId(null)} compact />
+              <ActiveCard
+                p={activeProperty}
+                onClose={() => setActiveId(null)}
+                onStreetView={() => setStreetViewFor(activeProperty)}
+                compact
+              />
             </div>
           )}
 
@@ -214,6 +225,19 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
           )}
         </div>
       </div>
+
+      {streetViewFor && (() => {
+        const c = getCoords(streetViewFor);
+        if (!c) return null;
+        return (
+          <StreetViewModal
+            lat={c.lat}
+            lng={c.lng}
+            address={streetViewFor.address}
+            onClose={() => setStreetViewFor(null)}
+          />
+        );
+      })()}
 
       <style>{`
         .price-pin {
@@ -294,7 +318,17 @@ function MapListItem({ p, active, onClick }: { p: DbProperty; active: boolean; o
   );
 }
 
-function ActiveCard({ p, onClose, compact = false }: { p: DbProperty; onClose: () => void; compact?: boolean }) {
+function ActiveCard({
+  p,
+  onClose,
+  onStreetView,
+  compact = false,
+}: {
+  p: DbProperty;
+  onClose: () => void;
+  onStreetView: () => void;
+  compact?: boolean;
+}) {
   return (
     <div className="bg-card border border-border overflow-hidden">
       <div className="flex">
@@ -329,12 +363,20 @@ function ActiveCard({ p, onClose, compact = false }: { p: DbProperty; onClose: (
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
-          <Link
-            to={`/property/${p.id}`}
-            className="mt-2 inline-flex w-full justify-center px-3 py-1.5 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity"
-          >
-            Открыть карточку
-          </Link>
+          <div className="mt-2 flex gap-1.5">
+            <button
+              onClick={onStreetView}
+              className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-muted text-foreground text-[11px] font-semibold hover:bg-muted/70 transition-colors"
+            >
+              <Eye className="w-3 h-3" /> Улица
+            </button>
+            <Link
+              to={`/property/${p.id}`}
+              className="flex-1 inline-flex justify-center px-3 py-1.5 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity"
+            >
+              Карточка
+            </Link>
+          </div>
         </div>
       </div>
     </div>
