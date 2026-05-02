@@ -135,23 +135,6 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
           z-index: 2;
         }
         .pm-pin__dot > svg { transform: rotate(45deg); }
-        .pm-pin__pulse {
-          position: absolute;
-          left: 50%;
-          bottom: 0;
-          width: 32px;
-          height: 32px;
-          margin-left: -16px;
-          background: hsl(0, 72%, 51%);
-          border-radius: 50%;
-          opacity: 0.45;
-          animation: pmPinPulse 1.8s ease-out infinite;
-        }
-        @keyframes pmPinPulse {
-          0%   { transform: scale(0.6); opacity: 0.55; }
-          70%  { transform: scale(1.8); opacity: 0; }
-          100% { transform: scale(1.8); opacity: 0; }
-        }
         .maplibregl-ctrl-attrib { font-size: 10px; }
       `}</style>
     </div>
