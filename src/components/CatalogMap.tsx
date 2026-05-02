@@ -226,6 +226,19 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
         </div>
       </div>
 
+      {streetViewFor && (() => {
+        const c = getCoords(streetViewFor);
+        if (!c) return null;
+        return (
+          <StreetViewModal
+            lat={c.lat}
+            lng={c.lng}
+            address={streetViewFor.address}
+            onClose={() => setStreetViewFor(null)}
+          />
+        );
+      })()}
+
       <style>{`
         .price-pin {
           font-family: 'Inter', system-ui, sans-serif;
