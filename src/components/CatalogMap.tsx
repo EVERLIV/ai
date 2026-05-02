@@ -175,7 +175,11 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
 
         {activeProperty && (
           <div className="hidden lg:block absolute bottom-4 left-4 w-[320px] z-10 animate-fade-in-up">
-            <ActiveCard p={activeProperty} onClose={() => setActiveId(null)} />
+            <ActiveCard
+              p={activeProperty}
+              onClose={() => setActiveId(null)}
+              onStreetView={() => setStreetViewFor(activeProperty)}
+            />
           </div>
         )}
 
