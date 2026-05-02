@@ -317,32 +317,44 @@ export default function MapSection() {
       })()}
 
       <style>{`
-        .ms-price-pin {
-          font-family: 'Inter', system-ui, sans-serif;
-          font-size: 11px;
-          font-weight: 700;
-          color: hsl(220, 25%, 10%);
-          background: #fff;
-          border: 1px solid hsl(220, 25%, 10%);
-          padding: 4px 8px;
+        .ms-pin {
+          background: transparent;
+          border: 0;
+          padding: 0;
           cursor: pointer;
-          white-space: nowrap;
-          transition: transform 160ms ease, background 160ms ease, color 160ms ease;
-          line-height: 1;
-          border-radius: 4px;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: transform 180ms cubic-bezier(.2,.8,.2,1);
+          transform-origin: bottom center;
         }
-        .ms-price-pin:hover {
-          background: hsl(220, 25%, 10%);
-          color: #fff;
-          z-index: 5;
-        }
-        .ms-price-pin.is-active {
+        .ms-pin__dot {
+          width: 30px;
+          height: 30px;
+          border-radius: 50% 50% 50% 0;
           background: hsl(0, 72%, 51%);
           color: #fff;
-          border-color: hsl(0, 72%, 51%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transform: rotate(-45deg);
+          border: 2px solid #fff;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.15);
+        }
+        .ms-pin__dot > svg {
+          transform: rotate(45deg);
+        }
+        .ms-pin:hover {
+          transform: translateY(-2px) scale(1.06);
+          z-index: 5;
+        }
+        .ms-pin.is-active {
           z-index: 10;
-          transform: translateY(-2px) scale(1.05);
+          transform: translateY(-3px) scale(1.18);
+        }
+        .ms-pin.is-active .ms-pin__dot {
+          background: hsl(220, 25%, 10%);
+          box-shadow: 0 6px 16px rgba(0,0,0,0.35), 0 0 0 4px hsl(0, 72%, 51% / 0.25);
         }
         .maplibregl-ctrl-attrib { font-size: 10px; }
       `}</style>
