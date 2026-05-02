@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
+import { useEffect, useMemo, useRef, useState } from "react";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { Link } from "react-router-dom";
 import type { DbProperty } from "@/hooks/useProperties";
 import { MapPin, Maximize2, X, List } from "lucide-react";
 import { getPropertyCover } from "@/lib/propertyImages";
 
-const IRKUTSK_CENTER = { lat: 52.2869, lng: 104.2807 };
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string;
+const IRKUTSK_CENTER: [number, number] = [104.2807, 52.2869];
 
 type Coords = { lng: number; lat: number };
 
@@ -19,72 +19,122 @@ function getCoords(p: DbProperty): Coords | null {
   return null;
 }
 
-// Subtle light gray map style (Google Maps native)
-const MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { elementType: "geometry", stylers: [{ color: "#f5f3ef" }] },
-  { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#6b6b6b" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#f5f3ef" }] },
-  { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
-  { featureType: "poi", stylers: [{ visibility: "off" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
-  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#8a8a8a" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#dfe7ec" }] },
-  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#7d97a6" }] },
-];
-
-const MAP_OPTIONS: google.maps.MapOptions = {
-  styles: MAP_STYLES,
-  disableDefaultUI: false,
-  zoomControl: true,
-  streetViewControl: false,
-  mapTypeControl: false,
-  fullscreenControl: false,
-  scrollwheel: false,
-  clickableIcons: false,
-  gestureHandling: "cooperative",
+const MAP_STYLE: maplibregl.StyleSpecification = {
+  version: 8,
+  sources: {
+    "carto-light": {
+      type: "raster",
+      tiles: [
+        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+        "https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+      ],
+      tileSize: 256,
+      attribution: "© OpenStreetMap, © CARTO",
+    },
+  },
+  layers: [{ id: "carto-light", type: "raster", source: "carto-light" }],
 };
 
 export default function CatalogMap({ properties }: { properties: DbProperty[] }) {
-  const { isLoaded } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-  });
-  const mapRef = useRef<google.maps.Map | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
   const [activeId, setActiveId] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(true);
+  const [mapReady, setMapReady] = useState(false);
 
-  const onLoad = useCallback((map: google.maps.Map) => {
+  // ---- Init map ----
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+
+    const map = new maplibregl.Map({
+      container: containerRef.current,
+      style: MAP_STYLE,
+      center: IRKUTSK_CENTER,
+      zoom: 11,
+      attributionControl: { compact: true },
+    });
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    map.scrollZoom.disable();
+
+    map.on("load", () => setMapReady(true));
     mapRef.current = map;
+
+    return () => {
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current.clear();
+      map.remove();
+      mapRef.current = null;
+    };
   }, []);
-  const onUnmount = useCallback(() => {
-    mapRef.current = null;
-  }, []);
+
+  // ---- Sync markers ----
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    // Clear existing
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current.clear();
+
+    const points: Coords[] = [];
+
+    properties.forEach((p) => {
+      const c = getCoords(p);
+      if (!c) return;
+      points.push(c);
+
+      const price = Number(p.price);
+      const compact =
+        price >= 1_000_000
+          ? `${(price / 1_000_000).toFixed(price >= 10_000_000 ? 0 : 1)}M`
+          : price >= 1_000
+          ? `${Math.round(price / 1000)}k`
+          : `${price}`;
+
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = `price-pin${activeId === p.id ? " is-active" : ""}`;
+      el.textContent = `${compact} ₽`;
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        focusProperty(p);
+      });
+
+      const marker = new maplibregl.Marker({ element: el, anchor: "bottom" })
+        .setLngLat([c.lng, c.lat])
+        .addTo(map);
+      markersRef.current.set(p.id, marker);
+    });
+
+    // Fit bounds
+    if (points.length >= 2) {
+      const bounds = new maplibregl.LngLatBounds();
+      points.forEach((c) => bounds.extend([c.lng, c.lat]));
+      map.fitBounds(bounds, { padding: 80, maxZoom: 14, duration: 600 });
+    } else if (points.length === 1) {
+      map.flyTo({ center: [points[0].lng, points[0].lat], zoom: 14, duration: 600 });
+    } else {
+      map.flyTo({ center: IRKUTSK_CENTER, zoom: 11, duration: 600 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [properties, mapReady]);
+
+  // ---- Reflect active state on existing markers without re-creating ----
+  useEffect(() => {
+    markersRef.current.forEach((marker, id) => {
+      const el = marker.getElement();
+      el.classList.toggle("is-active", id === activeId);
+    });
+  }, [activeId]);
 
   useEffect(() => {
     if (activeId && !properties.find((p) => p.id === activeId)) {
       setActiveId(null);
     }
   }, [properties, activeId]);
-
-  // Auto-fit bounds when properties change
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !isLoaded) return;
-    const points = properties.map(getCoords).filter(Boolean) as Coords[];
-    if (points.length >= 2) {
-      const bounds = new google.maps.LatLngBounds();
-      points.forEach((c) => bounds.extend(c));
-      map.fitBounds(bounds, 80);
-    } else if (points.length === 1) {
-      map.panTo(points[0]);
-      map.setZoom(14);
-    } else {
-      map.panTo(IRKUTSK_CENTER);
-      map.setZoom(11);
-    }
-  }, [properties, isLoaded]);
 
   const activeProperty = useMemo(
     () => properties.find((p) => p.id === activeId) || null,
@@ -96,8 +146,7 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
     setActiveId(p.id);
     const map = mapRef.current;
     if (map && c) {
-      map.panTo(c);
-      map.setZoom(Math.max(map.getZoom() ?? 13, 13));
+      map.flyTo({ center: [c.lng, c.lat], zoom: Math.max(map.getZoom(), 13), duration: 500 });
     }
   };
 
@@ -120,50 +169,7 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
       </aside>
 
       <div className="flex-1 relative bg-muted">
-        {!isLoaded ? (
-          <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
-            Загрузка карты…
-          </div>
-        ) : (
-          <GoogleMap
-            mapContainerClassName="absolute inset-0"
-            center={IRKUTSK_CENTER}
-            zoom={11}
-            options={MAP_OPTIONS}
-            onLoad={onLoad}
-            onUnmount={onUnmount}
-          >
-            {properties.map((p) => {
-              const c = getCoords(p);
-              if (!c) return null;
-              const price = Number(p.price);
-              const compact =
-                price >= 1_000_000 ? `${(price / 1_000_000).toFixed(price >= 10_000_000 ? 0 : 1)}M`
-                : price >= 1_000 ? `${Math.round(price / 1000)}k`
-                : `${price}`;
-              const isActive = activeId === p.id;
-              return (
-                <OverlayView
-                  key={p.id}
-                  position={c}
-                  mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-                  getPixelPositionOffset={(w, h) => ({ x: -w / 2, y: -h })}
-                >
-                  <button
-                    type="button"
-                    className={`price-pin ${isActive ? "is-active" : ""}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      focusProperty(p);
-                    }}
-                  >
-                    {compact} ₽
-                  </button>
-                </OverlayView>
-              );
-            })}
-          </GoogleMap>
-        )}
+        <div ref={containerRef} className="absolute inset-0" />
 
         {activeProperty && (
           <div className="hidden lg:block absolute bottom-4 left-4 w-[320px] z-10 animate-fade-in-up">
@@ -220,9 +226,10 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
           padding: 4px 8px;
           cursor: pointer;
           white-space: nowrap;
-          transform: translateY(0);
           transition: transform 160ms ease, background 160ms ease, color 160ms ease;
           line-height: 1;
+          border-radius: 4px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.12);
         }
         .price-pin:hover {
           background: hsl(220, 25%, 10%);
@@ -238,6 +245,7 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
         }
         .scrollbar-none::-webkit-scrollbar { display: none; }
         .scrollbar-none { scrollbar-width: none; }
+        .maplibregl-ctrl-attrib { font-size: 10px; }
       `}</style>
     </div>
   );
