@@ -197,7 +197,12 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
 
           {!listOpen && activeProperty && (
             <div className="bg-card border-t border-border p-3 animate-fade-in-up">
-              <ActiveCard p={activeProperty} onClose={() => setActiveId(null)} compact />
+              <ActiveCard
+                p={activeProperty}
+                onClose={() => setActiveId(null)}
+                onStreetView={() => setStreetViewFor(activeProperty)}
+                compact
+              />
             </div>
           )}
 
