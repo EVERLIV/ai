@@ -1,38 +1,33 @@
-import { useEffect, useRef } from "react";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
+import { useCallback, useRef } from "react";
+import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
 import { MapPin } from "lucide-react";
 
-const IRKUTSK_CENTER: [number, number] = [104.2807, 52.2869];
+const IRKUTSK_CENTER = { lat: 52.2869, lng: 104.2807 };
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string;
 
-const GRAY_STYLE: mapboxgl.Style = {
-  version: 8,
-  sources: {
-    "raster-tiles": {
-      type: "raster",
-      tiles: [
-        "https://cartodb-basemaps-a.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png",
-        "https://cartodb-basemaps-b.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png",
-        "https://cartodb-basemaps-c.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png",
-      ],
-      tileSize: 256,
-      attribution: "© OpenStreetMap, © CARTO",
-    },
-    labels: {
-      type: "raster",
-      tiles: [
-        "https://cartodb-basemaps-a.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png",
-        "https://cartodb-basemaps-b.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png",
-        "https://cartodb-basemaps-c.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png",
-      ],
-      tileSize: 256,
-    },
-  },
-  layers: [
-    { id: "bg", type: "background", paint: { "background-color": "#f5f3ef" } },
-    { id: "tiles", type: "raster", source: "raster-tiles" },
-    { id: "tile-labels", type: "raster", source: "labels" },
-  ],
+const MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { elementType: "geometry", stylers: [{ color: "#f5f3ef" }] },
+  { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#6b6b6b" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#f5f3ef" }] },
+  { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#8a8a8a" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#dfe7ec" }] },
+];
+
+const MAP_OPTIONS: google.maps.MapOptions = {
+  styles: MAP_STYLES,
+  disableDefaultUI: false,
+  zoomControl: true,
+  streetViewControl: false,
+  mapTypeControl: false,
+  fullscreenControl: false,
+  scrollwheel: false,
+  clickableIcons: false,
+  gestureHandling: "cooperative",
 };
 
 interface PropertyMapProps {
@@ -44,70 +39,54 @@ interface PropertyMapProps {
 }
 
 export default function PropertyMap({ address, district, lat, lng, height = 320 }: PropertyMapProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   const hasCoords = typeof lat === "number" && typeof lng === "number" && !Number.isNaN(lat) && !Number.isNaN(lng);
+  const center = hasCoords ? { lat: lat!, lng: lng! } : IRKUTSK_CENTER;
 
-  // Init map (no Mapbox token needed — using CARTO raster tiles)
-  useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
-    // mapbox-gl requires SOME accessToken string; raster style ignores it
-    mapboxgl.accessToken = "no-token-needed";
-    const map = new mapboxgl.Map({
-      container: containerRef.current,
-      style: GRAY_STYLE,
-      center: hasCoords ? [lng!, lat!] : IRKUTSK_CENTER,
-      zoom: hasCoords ? 15 : 11,
-      attributionControl: true,
-      scrollZoom: false,
-      doubleClickZoom: true,
-      touchZoomRotate: true,
-    });
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+  const onLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
-
-    return () => {
-      markerRef.current?.remove();
-      markerRef.current = null;
-      map.remove();
-      mapRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Place / update marker when coords change
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !hasCoords) return;
-
-    const place = () => {
-      if (markerRef.current) {
-        markerRef.current.setLngLat([lng!, lat!]);
-      } else {
-        const el = document.createElement("div");
-        el.className = "property-pin-wrap";
-        el.innerHTML = `
-          <div class="property-pin-pulse"></div>
-          <div class="property-pin"></div>
-        `;
-        markerRef.current = new mapboxgl.Marker({ element: el, anchor: "center" })
-          .setLngLat([lng!, lat!])
-          .addTo(map);
-      }
-      map.easeTo({ center: [lng!, lat!], zoom: 15, duration: 600 });
-    };
-
-    if (map.isStyleLoaded()) place();
-    else map.once("load", place);
-  }, [lat, lng, hasCoords]);
+  const onUnmount = useCallback(() => {
+    mapRef.current = null;
+  }, []);
 
   return (
     <div className="relative bg-muted overflow-hidden" style={{ height }}>
-      <div ref={containerRef} className="absolute inset-0" />
-      {!hasCoords && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-xs text-muted-foreground bg-background/60 backdrop-blur-sm">
+      {isLoaded ? (
+        <GoogleMap
+          mapContainerClassName="absolute inset-0"
+          center={center}
+          zoom={hasCoords ? 15 : 11}
+          options={MAP_OPTIONS}
+          onLoad={onLoad}
+          onUnmount={onUnmount}
+        >
+          {hasCoords && (
+            <OverlayView
+              position={center}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+              getPixelPositionOffset={(w, h) => ({ x: -w / 2, y: -h / 2 })}
+            >
+              <div className="property-pin-wrap">
+                <div className="property-pin-pulse" />
+                <div className="property-pin" />
+              </div>
+            </OverlayView>
+          )}
+        </GoogleMap>
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+          Загрузка карты…
+        </div>
+      )}
+
+      {!hasCoords && isLoaded && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-xs text-muted-foreground bg-background/60 backdrop-blur-sm pointer-events-none">
           <MapPin className="w-5 h-5 text-primary" />
           <span>Координаты для этого объекта не указаны</span>
           <span className="text-[10px] opacity-70">{address}{district && ` · ${district}`}</span>

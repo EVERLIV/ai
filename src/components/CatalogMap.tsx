@@ -1,42 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
 import { Link } from "react-router-dom";
 import type { DbProperty } from "@/hooks/useProperties";
 import { MapPin, Maximize2, X, List } from "lucide-react";
 import { getPropertyCover } from "@/lib/propertyImages";
 
-const IRKUTSK_CENTER: [number, number] = [104.2807, 52.2869];
-
-const GRAY_STYLE: mapboxgl.Style = {
-  version: 8,
-  sources: {
-    "raster-tiles": {
-      type: "raster",
-      tiles: [
-        "https://cartodb-basemaps-a.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png",
-        "https://cartodb-basemaps-b.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png",
-        "https://cartodb-basemaps-c.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png",
-      ],
-      tileSize: 256,
-      attribution: "© OpenStreetMap, © CARTO",
-    },
-    labels: {
-      type: "raster",
-      tiles: [
-        "https://cartodb-basemaps-a.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png",
-        "https://cartodb-basemaps-b.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png",
-        "https://cartodb-basemaps-c.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png",
-      ],
-      tileSize: 256,
-    },
-  },
-  layers: [
-    { id: "bg", type: "background", paint: { "background-color": "#f5f3ef" } },
-    { id: "tiles", type: "raster", source: "raster-tiles" },
-    { id: "tile-labels", type: "raster", source: "labels" },
-  ],
-};
+const IRKUTSK_CENTER = { lat: 52.2869, lng: 104.2807 };
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string;
 
 type Coords = { lng: number; lat: number };
 
@@ -49,35 +19,47 @@ function getCoords(p: DbProperty): Coords | null {
   return null;
 }
 
+// Subtle light gray map style (Google Maps native)
+const MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { elementType: "geometry", stylers: [{ color: "#f5f3ef" }] },
+  { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#6b6b6b" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#f5f3ef" }] },
+  { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#8a8a8a" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#dfe7ec" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#7d97a6" }] },
+];
+
+const MAP_OPTIONS: google.maps.MapOptions = {
+  styles: MAP_STYLES,
+  disableDefaultUI: false,
+  zoomControl: true,
+  streetViewControl: false,
+  mapTypeControl: false,
+  fullscreenControl: false,
+  scrollwheel: false,
+  clickableIcons: false,
+  gestureHandling: "cooperative",
+};
+
 export default function CatalogMap({ properties }: { properties: DbProperty[] }) {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+  });
+  const mapRef = useRef<google.maps.Map | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(true);
-  const markersRef = useRef<Record<string, mapboxgl.Marker>>({});
 
-  // Init map (no Mapbox token needed — using CARTO raster tiles)
-  useEffect(() => {
-    if (!mapContainer.current || mapRef.current) return;
-    mapboxgl.accessToken = "no-token-needed";
-    const map = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: GRAY_STYLE,
-      center: IRKUTSK_CENTER,
-      zoom: 11,
-      attributionControl: true,
-      scrollZoom: false,
-      doubleClickZoom: true,
-      touchZoomRotate: true,
-    });
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+  const onLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
-
-    return () => {
-      map.remove();
-      mapRef.current = null;
-      markersRef.current = {};
-    };
+  }, []);
+  const onUnmount = useCallback(() => {
+    mapRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -86,67 +68,23 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
     }
   }, [properties, activeId]);
 
-  // Sync markers + auto-fit
+  // Auto-fit bounds when properties change
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
-
-    const visibleIds = new Set(properties.map((p) => p.id));
-    Object.keys(markersRef.current).forEach((id) => {
-      if (!visibleIds.has(id)) {
-        markersRef.current[id]?.remove();
-        delete markersRef.current[id];
-      }
-    });
-
-    const bounds = new mapboxgl.LngLatBounds();
-    let hasPoints = 0;
-
-    properties.forEach((p) => {
-      const c = getCoords(p);
-      if (!c) return;
-      bounds.extend([c.lng, c.lat]);
-      hasPoints++;
-
-      if (markersRef.current[p.id]) {
-        const el = markersRef.current[p.id].getElement();
-        el.classList.toggle("is-active", activeId === p.id);
-        return;
-      }
-
-      const el = document.createElement("button");
-      el.type = "button";
-      el.className = `price-pin ${activeId === p.id ? "is-active" : ""}`;
-      const price = Number(p.price);
-      const compact =
-        price >= 1_000_000 ? `${(price / 1_000_000).toFixed(price >= 10_000_000 ? 0 : 1)}M`
-        : price >= 1_000 ? `${Math.round(price / 1000)}k`
-        : `${price}`;
-      el.textContent = `${compact} ₽`;
-      el.addEventListener("click", (e) => {
-        e.stopPropagation();
-        setActiveId(p.id);
-        map.easeTo({ center: [c.lng, c.lat], duration: 400 });
-      });
-
-      const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
-        .setLngLat([c.lng, c.lat])
-        .addTo(map);
-      markersRef.current[p.id] = marker;
-    });
-
-    if (hasPoints >= 2) {
-      try {
-        map.fitBounds(bounds, { padding: 80, maxZoom: 14, duration: 600 });
-      } catch { }
-    } else if (hasPoints === 1) {
-      const only = properties.find((p) => getCoords(p));
-      const c = only ? getCoords(only) : null;
-      if (c) map.easeTo({ center: [c.lng, c.lat], zoom: 14, duration: 600 });
+    if (!map || !isLoaded) return;
+    const points = properties.map(getCoords).filter(Boolean) as Coords[];
+    if (points.length >= 2) {
+      const bounds = new google.maps.LatLngBounds();
+      points.forEach((c) => bounds.extend(c));
+      map.fitBounds(bounds, 80);
+    } else if (points.length === 1) {
+      map.panTo(points[0]);
+      map.setZoom(14);
     } else {
-      map.easeTo({ center: IRKUTSK_CENTER, zoom: 11, duration: 600 });
+      map.panTo(IRKUTSK_CENTER);
+      map.setZoom(11);
     }
-  }, [properties, activeId]);
+  }, [properties, isLoaded]);
 
   const activeProperty = useMemo(
     () => properties.find((p) => p.id === activeId) || null,
@@ -154,14 +92,13 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
   );
 
   const focusProperty = (p: DbProperty) => {
-    const map = mapRef.current;
     const c = getCoords(p);
-    if (!map || !c) {
-      setActiveId(p.id);
-      return;
-    }
     setActiveId(p.id);
-    map.easeTo({ center: [c.lng, c.lat], zoom: Math.max(map.getZoom(), 13), duration: 500 });
+    const map = mapRef.current;
+    if (map && c) {
+      map.panTo(c);
+      map.setZoom(Math.max(map.getZoom() ?? 13, 13));
+    }
   };
 
   const withCoords = properties.filter(getCoords).length;
@@ -183,7 +120,50 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
       </aside>
 
       <div className="flex-1 relative bg-muted">
-        <div ref={mapContainer} className="absolute inset-0" />
+        {!isLoaded ? (
+          <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+            Загрузка карты…
+          </div>
+        ) : (
+          <GoogleMap
+            mapContainerClassName="absolute inset-0"
+            center={IRKUTSK_CENTER}
+            zoom={11}
+            options={MAP_OPTIONS}
+            onLoad={onLoad}
+            onUnmount={onUnmount}
+          >
+            {properties.map((p) => {
+              const c = getCoords(p);
+              if (!c) return null;
+              const price = Number(p.price);
+              const compact =
+                price >= 1_000_000 ? `${(price / 1_000_000).toFixed(price >= 10_000_000 ? 0 : 1)}M`
+                : price >= 1_000 ? `${Math.round(price / 1000)}k`
+                : `${price}`;
+              const isActive = activeId === p.id;
+              return (
+                <OverlayView
+                  key={p.id}
+                  position={c}
+                  mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+                  getPixelPositionOffset={(w, h) => ({ x: -w / 2, y: -h })}
+                >
+                  <button
+                    type="button"
+                    className={`price-pin ${isActive ? "is-active" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      focusProperty(p);
+                    }}
+                  >
+                    {compact} ₽
+                  </button>
+                </OverlayView>
+              );
+            })}
+          </GoogleMap>
+        )}
 
         {activeProperty && (
           <div className="hidden lg:block absolute bottom-4 left-4 w-[320px] z-10 animate-fade-in-up">
@@ -196,9 +176,7 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
             onClick={() => setListOpen((v) => !v)}
             className="w-full bg-card border-t border-border px-4 py-2 flex items-center justify-between text-xs"
           >
-            <span className="font-medium text-foreground">
-              {properties.length} объектов
-            </span>
+            <span className="font-medium text-foreground">{properties.length} объектов</span>
             <span className="flex items-center gap-1 text-primary font-medium">
               <List className="w-3.5 h-3.5" />
               {listOpen ? "Скрыть" : "Список"}
