@@ -5,20 +5,10 @@ import { Link } from "react-router-dom";
 import type { DbProperty } from "@/hooks/useProperties";
 import { MapPin, Maximize2, X, List, Eye } from "lucide-react";
 import { getPropertyCover } from "@/lib/propertyImages";
+import { getCoords, hasStreetView, type Coords } from "@/lib/propertyGeo";
 import StreetViewModal from "./StreetViewModal";
 
 const IRKUTSK_CENTER: [number, number] = [104.2807, 52.2869];
-
-type Coords = { lng: number; lat: number };
-
-function getCoords(p: DbProperty): Coords | null {
-  const lat = (p as any).lat;
-  const lng = (p as any).lng;
-  if (typeof lat === "number" && typeof lng === "number" && !Number.isNaN(lat) && !Number.isNaN(lng)) {
-    return { lat, lng };
-  }
-  return null;
-}
 
 const MAP_STYLE: maplibregl.StyleSpecification = {
   version: 8,
@@ -329,6 +319,7 @@ function ActiveCard({
   onStreetView: () => void;
   compact?: boolean;
 }) {
+  const showStreetView = hasStreetView(p);
   return (
     <div className="bg-card border border-border overflow-hidden">
       <div className="flex">
@@ -364,12 +355,14 @@ function ActiveCard({
             </button>
           </div>
           <div className="mt-2 flex gap-1.5">
-            <button
-              onClick={onStreetView}
-              className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-muted text-foreground text-[11px] font-semibold hover:bg-muted/70 transition-colors"
-            >
-              <Eye className="w-3 h-3" /> Улица
-            </button>
+            {showStreetView && (
+              <button
+                onClick={onStreetView}
+                className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-muted text-foreground text-[11px] font-semibold hover:bg-muted/70 transition-colors"
+              >
+                <Eye className="w-3 h-3" /> Улица
+              </button>
+            )}
             <Link
               to={`/property/${p.id}`}
               className="flex-1 inline-flex justify-center px-3 py-1.5 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity"
