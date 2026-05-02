@@ -3,8 +3,9 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Link } from "react-router-dom";
 import type { DbProperty } from "@/hooks/useProperties";
-import { MapPin, Maximize2, X, List } from "lucide-react";
+import { MapPin, Maximize2, X, List, Eye } from "lucide-react";
 import { getPropertyCover } from "@/lib/propertyImages";
+import StreetViewModal from "./StreetViewModal";
 
 const IRKUTSK_CENTER: [number, number] = [104.2807, 52.2869];
 
