@@ -1,39 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useProperties, type DbProperty } from "@/hooks/useProperties";
 import { List, Map as MapIcon, MapPin, ArrowRight, Eye, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getPropertyCover } from "@/lib/propertyImages";
 import { getCoords, hasStreetView, type Coords } from "@/lib/propertyGeo";
+import { loadYandexMaps, IRKUTSK_CENTER_LNGLAT } from "@/lib/yandexMaps";
 import StreetViewModal from "./StreetViewModal";
-
-const IRKUTSK_CENTER: [number, number] = [104.2807, 52.2869];
-
-function formatPrice(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(value >= 10_000_000 ? 0 : 1)}M`;
-  if (value >= 1_000) return `${Math.round(value / 1_000)}k`;
-  return `${value}`;
-}
-
-const MAP_STYLE: maplibregl.StyleSpecification = {
-  version: 8,
-  sources: {
-    "carto-light": {
-      type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-        "https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-      ],
-      tileSize: 256,
-      attribution: "© OpenStreetMap, © CARTO",
-    },
-  },
-  layers: [{ id: "carto-light", type: "raster", source: "carto-light" }],
-};
 
 export default function MapSection() {
   const { ref, isVisible } = useScrollReveal();
@@ -43,16 +16,15 @@ export default function MapSection() {
   const [streetViewFor, setStreetViewFor] = useState<DbProperty | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
+  const mapRef = useRef<any>(null);
+  const ymapsRef = useRef<any>(null);
+  const markersRef = useRef<Map<string, { marker: any; el: HTMLElement }>>(new Map());
   const [mapReady, setMapReady] = useState(false);
 
   const { data: properties = [] } = useProperties();
 
   const filtered = useMemo(
-    () => (activeDistrict === "Все"
-      ? properties
-      : properties.filter((p) => p.district === activeDistrict)),
+    () => (activeDistrict === "Все" ? properties : properties.filter((p) => p.district === activeDistrict)),
     [properties, activeDistrict]
   );
 
@@ -71,28 +43,40 @@ export default function MapSection() {
     [filtered, activeId]
   );
 
-  // ---- Init MapLibre ----
+  // ---- Init Yandex Map ----
   useEffect(() => {
     if (view !== "map" || !containerRef.current || mapRef.current) return;
+    let cancelled = false;
+    let map: any = null;
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: MAP_STYLE,
-      center: IRKUTSK_CENTER,
-      zoom: 11,
-      attributionControl: { compact: true },
-    });
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-    map.scrollZoom.disable();
+    loadYandexMaps()
+      .then((ymaps3) => {
+        if (cancelled || !containerRef.current) return;
+        ymapsRef.current = ymaps3;
+        const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapControls } = ymaps3;
+        const { YMapZoomControl } = ymaps3.controls ?? {};
 
-    map.on("load", () => setMapReady(true));
-    mapRef.current = map;
+        map = new YMap(containerRef.current, {
+          location: { center: IRKUTSK_CENTER_LNGLAT, zoom: 11 },
+        });
+        map.addChild(new YMapDefaultSchemeLayer({}));
+        map.addChild(new YMapDefaultFeaturesLayer({}));
+        if (YMapZoomControl) {
+          const controls = new YMapControls({ position: "right" });
+          controls.addChild(new YMapZoomControl({}));
+          map.addChild(controls);
+        }
+        mapRef.current = map;
+        setMapReady(true);
+      })
+      .catch((e) => console.error("Yandex Maps load failed:", e));
 
     return () => {
-      markersRef.current.forEach((m) => m.remove());
+      cancelled = true;
       markersRef.current.clear();
-      map.remove();
+      try { map?.destroy?.(); } catch {}
       mapRef.current = null;
+      ymapsRef.current = null;
       setMapReady(false);
     };
   }, [view]);
@@ -100,9 +84,13 @@ export default function MapSection() {
   // ---- Sync markers ----
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapReady) return;
+    const ymaps3 = ymapsRef.current;
+    if (!map || !ymaps3 || !mapReady) return;
+    const { YMapMarker } = ymaps3;
 
-    markersRef.current.forEach((m) => m.remove());
+    markersRef.current.forEach(({ marker }) => {
+      try { map.removeChild(marker); } catch {}
+    });
     markersRef.current.clear();
 
     const points: Coords[] = [];
@@ -114,48 +102,49 @@ export default function MapSection() {
       const el = document.createElement("button");
       el.type = "button";
       el.className = `ms-pin${activeId === p.id ? " is-active" : ""}`;
-      el.setAttribute("aria-label", `${p.address} — ${formatPrice(Number(p.price) || 0)} ₽`);
+      el.setAttribute("aria-label", p.address);
       el.innerHTML = `
         <span class="ms-pin__dot">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-            <circle cx="12" cy="10" r="3"/>
-          </svg>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
         </span>
       `;
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         setActiveId(p.id);
-        map.flyTo({ center: [c.lng, c.lat], zoom: Math.max(map.getZoom(), 14), duration: 500 });
+        map.update({ location: { center: [c.lng, c.lat], zoom: 14, duration: 400 } });
       });
 
-      const marker = new maplibregl.Marker({ element: el, anchor: "bottom" })
-        .setLngLat([c.lng, c.lat])
-        .addTo(map);
-      markersRef.current.set(p.id, marker);
+      const marker = new YMapMarker({ coordinates: [c.lng, c.lat] }, el);
+      map.addChild(marker);
+      markersRef.current.set(p.id, { marker, el });
     });
 
     if (points.length >= 2) {
-      const bounds = new maplibregl.LngLatBounds();
-      points.forEach((c) => bounds.extend([c.lng, c.lat]));
-      map.fitBounds(bounds, { padding: 60, maxZoom: 13, duration: 600 });
+      const lngs = points.map((p) => p.lng);
+      const lats = points.map((p) => p.lat);
+      const bounds: [[number, number], [number, number]] = [
+        [Math.min(...lngs), Math.min(...lats)],
+        [Math.max(...lngs), Math.max(...lats)],
+      ];
+      try {
+        map.update({ location: { bounds, duration: 500 } });
+      } catch {
+        map.update({ location: { center: [points[0].lng, points[0].lat], zoom: 12 } });
+      }
     } else if (points.length === 1) {
-      map.flyTo({ center: [points[0].lng, points[0].lat], zoom: 14, duration: 600 });
+      map.update({ location: { center: [points[0].lng, points[0].lat], zoom: 14, duration: 500 } });
     } else {
-      map.flyTo({ center: IRKUTSK_CENTER, zoom: 11, duration: 600 });
+      map.update({ location: { center: IRKUTSK_CENTER_LNGLAT, zoom: 11, duration: 500 } });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [withCoords, mapReady]);
 
-  // Reflect active state without recreating
   useEffect(() => {
-    markersRef.current.forEach((marker, id) => {
-      const el = marker.getElement();
+    markersRef.current.forEach(({ el }, id) => {
       el.classList.toggle("is-active", id === activeId);
     });
   }, [activeId]);
 
-  // Reset active if filtered out
   useEffect(() => {
     if (activeId && !filtered.find((p) => p.id === activeId)) setActiveId(null);
   }, [filtered, activeId]);
@@ -323,10 +312,12 @@ export default function MapSection() {
           padding: 0;
           cursor: pointer;
           display: flex;
-          align-items: center;
+          align-items: flex-end;
           justify-content: center;
+          width: 30px;
+          height: 38px;
+          transform: translate(-50%, -100%);
           transition: transform 180ms cubic-bezier(.2,.8,.2,1);
-          transform-origin: bottom center;
         }
         .ms-pin__dot {
           width: 30px;
@@ -341,36 +332,21 @@ export default function MapSection() {
           border: 2px solid #fff;
           box-shadow: 0 4px 10px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.15);
         }
-        .ms-pin__dot > svg {
-          transform: rotate(45deg);
-        }
-        .ms-pin:hover {
-          transform: translateY(-2px) scale(1.06);
-          z-index: 5;
-        }
-        .ms-pin.is-active {
-          z-index: 10;
-          transform: translateY(-3px) scale(1.18);
-        }
+        .ms-pin__dot > svg { transform: rotate(45deg); }
+        .ms-pin:hover { transform: translate(-50%, -100%) scale(1.08); z-index: 5; }
+        .ms-pin.is-active { z-index: 10; transform: translate(-50%, -100%) scale(1.18); }
         .ms-pin.is-active .ms-pin__dot {
           background: hsl(220, 25%, 10%);
           box-shadow: 0 6px 16px rgba(0,0,0,0.35), 0 0 0 4px hsl(0, 72%, 51% / 0.25);
         }
-        .maplibregl-ctrl-attrib { font-size: 10px; }
       `}</style>
     </section>
   );
 }
 
 function PropertyCard({
-  p,
-  onClose,
-  onStreetView,
-}: {
-  p: DbProperty;
-  onClose: () => void;
-  onStreetView: () => void;
-}) {
+  p, onClose, onStreetView,
+}: { p: DbProperty; onClose: () => void; onStreetView: () => void }) {
   const showStreetView = hasStreetView(p);
   return (
     <div className="bg-card rounded-xl shadow-card-hover overflow-hidden border border-border">

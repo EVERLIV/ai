@@ -1,28 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
 import { Eye, MapPin } from "lucide-react";
 import StreetViewModal from "./StreetViewModal";
-
-const IRKUTSK_CENTER: [number, number] = [104.2807, 52.2869];
-
-const MAP_STYLE: maplibregl.StyleSpecification = {
-  version: 8,
-  sources: {
-    "carto-light": {
-      type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-        "https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-      ],
-      tileSize: 256,
-      attribution: "© OpenStreetMap, © CARTO",
-    },
-  },
-  layers: [{ id: "carto-light", type: "raster", source: "carto-light" }],
-};
+import { loadYandexMaps, IRKUTSK_CENTER_LNGLAT } from "@/lib/yandexMaps";
 
 interface PropertyMapProps {
   address: string;
@@ -34,7 +13,7 @@ interface PropertyMapProps {
 
 export default function PropertyMap({ address, district, lat, lng, height = 320 }: PropertyMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
+  const mapRef = useRef<any>(null);
   const [streetOpen, setStreetOpen] = useState(false);
 
   const hasCoords =
@@ -43,38 +22,52 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
     !Number.isNaN(lat) &&
     !Number.isNaN(lng) &&
     !(lat === 0 && lng === 0);
-  const center: [number, number] = hasCoords ? [lng!, lat!] : IRKUTSK_CENTER;
+  const center: [number, number] = hasCoords ? [lng!, lat!] : IRKUTSK_CENTER_LNGLAT;
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    let cancelled = false;
+    let map: any = null;
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: MAP_STYLE,
-      center,
-      zoom: hasCoords ? 15 : 11,
-      attributionControl: { compact: true },
-    });
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-    map.scrollZoom.disable();
+    loadYandexMaps()
+      .then((ymaps3) => {
+        if (cancelled || !containerRef.current) return;
+        const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapMarker, YMapControls } = ymaps3;
+        const { YMapZoomControl } = ymaps3.controls ?? {};
 
-    if (hasCoords) {
-      const el = document.createElement("div");
-      el.className = "pm-pin";
-      el.innerHTML = `
-        <span class="pm-pin__dot">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-            <circle cx="12" cy="10" r="3"/>
-          </svg>
-        </span>
-      `;
-      new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat(center).addTo(map);
-    }
+        map = new YMap(containerRef.current, {
+          location: { center, zoom: hasCoords ? 16 : 11 },
+          behaviors: ["drag", "pinchZoom", "mouseRotate", "mouseTilt"],
+        });
+        map.addChild(new YMapDefaultSchemeLayer({}));
+        map.addChild(new YMapDefaultFeaturesLayer({}));
 
-    mapRef.current = map;
+        if (YMapZoomControl) {
+          const controls = new YMapControls({ position: "right" });
+          controls.addChild(new YMapZoomControl({}));
+          map.addChild(controls);
+        }
+
+        if (hasCoords) {
+          const el = document.createElement("div");
+          el.className = "pm-pin";
+          el.innerHTML = `
+            <span class="pm-pin__dot">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </span>
+          `;
+          map.addChild(new YMapMarker({ coordinates: center }, el));
+        }
+
+        mapRef.current = map;
+      })
+      .catch((e) => console.error("Yandex Maps load failed:", e));
+
     return () => {
-      map.remove();
+      cancelled = true;
+      try { map?.destroy?.(); } catch {}
       mapRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -117,6 +110,7 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
           display: flex;
           align-items: flex-end;
           justify-content: center;
+          transform: translate(-50%, -100%);
           pointer-events: none;
         }
         .pm-pin__dot {
@@ -132,10 +126,8 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
           transform: rotate(-45deg);
           border: 2px solid #fff;
           box-shadow: 0 4px 10px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.15);
-          z-index: 2;
         }
         .pm-pin__dot > svg { transform: rotate(45deg); }
-        .maplibregl-ctrl-attrib { font-size: 10px; }
       `}</style>
     </div>
   );
