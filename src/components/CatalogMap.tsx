@@ -1,74 +1,67 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
 import { Link } from "react-router-dom";
 import type { DbProperty } from "@/hooks/useProperties";
 import { MapPin, Maximize2, X, List, Eye } from "lucide-react";
 import { getPropertyCover } from "@/lib/propertyImages";
 import { getCoords, hasStreetView, type Coords } from "@/lib/propertyGeo";
+import { loadYandexMaps, IRKUTSK_CENTER_LNGLAT } from "@/lib/yandexMaps";
 import StreetViewModal from "./StreetViewModal";
-
-const IRKUTSK_CENTER: [number, number] = [104.2807, 52.2869];
-
-const MAP_STYLE: maplibregl.StyleSpecification = {
-  version: 8,
-  sources: {
-    "carto-light": {
-      type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-        "https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-      ],
-      tileSize: 256,
-      attribution: "© OpenStreetMap, © CARTO",
-    },
-  },
-  layers: [{ id: "carto-light", type: "raster", source: "carto-light" }],
-};
 
 export default function CatalogMap({ properties }: { properties: DbProperty[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
+  const mapRef = useRef<any>(null);
+  const ymapsRef = useRef<any>(null);
+  const markersRef = useRef<Map<string, { marker: any; el: HTMLElement }>>(new Map());
   const [activeId, setActiveId] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(true);
   const [mapReady, setMapReady] = useState(false);
   const [streetViewFor, setStreetViewFor] = useState<DbProperty | null>(null);
 
-  // ---- Init map ----
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    let cancelled = false;
+    let map: any = null;
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: MAP_STYLE,
-      center: IRKUTSK_CENTER,
-      zoom: 11,
-      attributionControl: { compact: true },
-    });
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-    map.scrollZoom.disable();
+    loadYandexMaps()
+      .then((ymaps3) => {
+        if (cancelled || !containerRef.current) return;
+        ymapsRef.current = ymaps3;
+        const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapControls } = ymaps3;
+        const { YMapZoomControl } = ymaps3.controls ?? {};
 
-    map.on("load", () => setMapReady(true));
-    mapRef.current = map;
+        map = new YMap(containerRef.current, {
+          location: { center: IRKUTSK_CENTER_LNGLAT, zoom: 11 },
+        });
+        map.addChild(new YMapDefaultSchemeLayer({}));
+        map.addChild(new YMapDefaultFeaturesLayer({}));
+        if (YMapZoomControl) {
+          const controls = new YMapControls({ position: "right" });
+          controls.addChild(new YMapZoomControl({}));
+          map.addChild(controls);
+        }
+        mapRef.current = map;
+        setMapReady(true);
+      })
+      .catch((e) => console.error("Yandex Maps load failed:", e));
 
     return () => {
-      markersRef.current.forEach((m) => m.remove());
+      cancelled = true;
       markersRef.current.clear();
-      map.remove();
+      try { map?.destroy?.(); } catch {}
       mapRef.current = null;
+      ymapsRef.current = null;
     };
   }, []);
 
-  // ---- Sync markers ----
+  // Sync markers
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapReady) return;
+    const ymaps3 = ymapsRef.current;
+    if (!map || !ymaps3 || !mapReady) return;
+    const { YMapMarker } = ymaps3;
 
-    // Clear existing
-    markersRef.current.forEach((m) => m.remove());
+    markersRef.current.forEach(({ marker }) => {
+      try { map.removeChild(marker); } catch {}
+    });
     markersRef.current.clear();
 
     const points: Coords[] = [];
@@ -78,54 +71,54 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
       if (!c) return;
       points.push(c);
 
-      const price = Number(p.price);
-      const compact =
-        price >= 1_000_000
-          ? `${(price / 1_000_000).toFixed(price >= 10_000_000 ? 0 : 1)}M`
-          : price >= 1_000
-          ? `${Math.round(price / 1000)}k`
-          : `${price}`;
-
       const el = document.createElement("button");
       el.type = "button";
-      el.className = `price-pin${activeId === p.id ? " is-active" : ""}`;
-      el.textContent = `${compact} ₽`;
+      el.className = `cm-pin${activeId === p.id ? " is-active" : ""}`;
+      el.setAttribute("aria-label", p.address);
+      el.innerHTML = `
+        <span class="cm-pin__dot">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        </span>
+      `;
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         focusProperty(p);
       });
 
-      const marker = new maplibregl.Marker({ element: el, anchor: "bottom" })
-        .setLngLat([c.lng, c.lat])
-        .addTo(map);
-      markersRef.current.set(p.id, marker);
+      const marker = new YMapMarker({ coordinates: [c.lng, c.lat] }, el);
+      map.addChild(marker);
+      markersRef.current.set(p.id, { marker, el });
     });
 
-    // Fit bounds
     if (points.length >= 2) {
-      const bounds = new maplibregl.LngLatBounds();
-      points.forEach((c) => bounds.extend([c.lng, c.lat]));
-      map.fitBounds(bounds, { padding: 80, maxZoom: 14, duration: 600 });
+      const lngs = points.map((p) => p.lng);
+      const lats = points.map((p) => p.lat);
+      const bounds: [[number, number], [number, number]] = [
+        [Math.min(...lngs), Math.min(...lats)],
+        [Math.max(...lngs), Math.max(...lats)],
+      ];
+      try {
+        map.update({ location: { bounds, duration: 500 } });
+      } catch {
+        map.update({ location: { center: [points[0].lng, points[0].lat], zoom: 12 } });
+      }
     } else if (points.length === 1) {
-      map.flyTo({ center: [points[0].lng, points[0].lat], zoom: 14, duration: 600 });
+      map.update({ location: { center: [points[0].lng, points[0].lat], zoom: 14, duration: 500 } });
     } else {
-      map.flyTo({ center: IRKUTSK_CENTER, zoom: 11, duration: 600 });
+      map.update({ location: { center: IRKUTSK_CENTER_LNGLAT, zoom: 11, duration: 500 } });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [properties, mapReady]);
 
-  // ---- Reflect active state on existing markers without re-creating ----
+  // Active state toggle
   useEffect(() => {
-    markersRef.current.forEach((marker, id) => {
-      const el = marker.getElement();
+    markersRef.current.forEach(({ el }, id) => {
       el.classList.toggle("is-active", id === activeId);
     });
   }, [activeId]);
 
   useEffect(() => {
-    if (activeId && !properties.find((p) => p.id === activeId)) {
-      setActiveId(null);
-    }
+    if (activeId && !properties.find((p) => p.id === activeId)) setActiveId(null);
   }, [properties, activeId]);
 
   const activeProperty = useMemo(
@@ -138,7 +131,7 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
     setActiveId(p.id);
     const map = mapRef.current;
     if (map && c) {
-      map.flyTo({ center: [c.lng, c.lat], zoom: Math.max(map.getZoom(), 13), duration: 500 });
+      map.update({ location: { center: [c.lng, c.lat], zoom: 14, duration: 400 } });
     }
   };
 
@@ -230,36 +223,41 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
       })()}
 
       <style>{`
-        .price-pin {
-          font-family: 'Inter', system-ui, sans-serif;
-          font-size: 11px;
-          font-weight: 700;
-          color: hsl(220, 25%, 10%);
-          background: #fff;
-          border: 1px solid hsl(220, 25%, 10%);
-          padding: 4px 8px;
+        .cm-pin {
+          background: transparent;
+          border: 0;
+          padding: 0;
           cursor: pointer;
-          white-space: nowrap;
-          transition: transform 160ms ease, background 160ms ease, color 160ms ease;
-          line-height: 1;
-          border-radius: 4px;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          width: 30px;
+          height: 38px;
+          transform: translate(-50%, -100%);
+          transition: transform 160ms ease;
         }
-        .price-pin:hover {
-          background: hsl(220, 25%, 10%);
-          color: #fff;
-          z-index: 5;
-        }
-        .price-pin.is-active {
+        .cm-pin__dot {
+          width: 30px;
+          height: 30px;
+          border-radius: 50% 50% 50% 0;
           background: hsl(0, 72%, 51%);
           color: #fff;
-          border-color: hsl(0, 72%, 51%);
-          z-index: 10;
-          transform: translateY(-2px) scale(1.05);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transform: rotate(-45deg);
+          border: 2px solid #fff;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.15);
+        }
+        .cm-pin__dot > svg { transform: rotate(45deg); }
+        .cm-pin:hover { transform: translate(-50%, -100%) scale(1.08); z-index: 5; }
+        .cm-pin.is-active { z-index: 10; transform: translate(-50%, -100%) scale(1.18); }
+        .cm-pin.is-active .cm-pin__dot {
+          background: hsl(220, 25%, 10%);
+          box-shadow: 0 6px 16px rgba(0,0,0,0.35), 0 0 0 4px hsl(0, 72%, 51% / 0.25);
         }
         .scrollbar-none::-webkit-scrollbar { display: none; }
         .scrollbar-none { scrollbar-width: none; }
-        .maplibregl-ctrl-attrib { font-size: 10px; }
       `}</style>
     </div>
   );
@@ -275,12 +273,7 @@ function MapListItem({ p, active, onClick }: { p: DbProperty; active: boolean; o
       }`}
     >
       <div className="w-20 h-20 shrink-0 bg-muted overflow-hidden">
-        <img
-          src={getPropertyCover(p.cover_photo, p.type)}
-          alt={p.address}
-          loading="lazy"
-          className="w-full h-full object-cover"
-        />
+        <img src={getPropertyCover(p.cover_photo, p.type)} alt={p.address} loading="lazy" className="w-full h-full object-cover" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
@@ -288,9 +281,7 @@ function MapListItem({ p, active, onClick }: { p: DbProperty; active: boolean; o
             {p.deal_type}
           </span>
           <span className="text-[10px] text-muted-foreground">{p.type}</span>
-          {!hasCoords && (
-            <span className="text-[9px] text-muted-foreground/70 italic">без координат</span>
-          )}
+          {!hasCoords && <span className="text-[9px] text-muted-foreground/70 italic">без координат</span>}
         </div>
         <div className="font-display text-sm font-bold text-foreground truncate">
           {Number(p.price).toLocaleString("ru-RU")} ₽
@@ -309,27 +300,14 @@ function MapListItem({ p, active, onClick }: { p: DbProperty; active: boolean; o
 }
 
 function ActiveCard({
-  p,
-  onClose,
-  onStreetView,
-  compact = false,
-}: {
-  p: DbProperty;
-  onClose: () => void;
-  onStreetView: () => void;
-  compact?: boolean;
-}) {
+  p, onClose, onStreetView, compact = false,
+}: { p: DbProperty; onClose: () => void; onStreetView: () => void; compact?: boolean }) {
   const showStreetView = hasStreetView(p);
   return (
     <div className="bg-card border border-border overflow-hidden">
       <div className="flex">
         <div className={`${compact ? "w-24 h-24" : "w-28 h-28"} shrink-0 bg-muted overflow-hidden`}>
-          <img
-            src={getPropertyCover(p.cover_photo, p.type)}
-            alt={p.address}
-            loading="lazy"
-            className="w-full h-full object-cover"
-          />
+          <img src={getPropertyCover(p.cover_photo, p.type)} alt={p.address} loading="lazy" className="w-full h-full object-cover" />
         </div>
         <div className="flex-1 min-w-0 p-3">
           <div className="flex items-start justify-between gap-2">
@@ -356,17 +334,11 @@ function ActiveCard({
           </div>
           <div className="mt-2 flex gap-1.5">
             {showStreetView && (
-              <button
-                onClick={onStreetView}
-                className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-muted text-foreground text-[11px] font-semibold hover:bg-muted/70 transition-colors"
-              >
+              <button onClick={onStreetView} className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-muted text-foreground text-[11px] font-semibold hover:bg-muted/70 transition-colors">
                 <Eye className="w-3 h-3" /> Улица
               </button>
             )}
-            <Link
-              to={`/property/${p.id}`}
-              className="flex-1 inline-flex justify-center px-3 py-1.5 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity"
-            >
+            <Link to={`/property/${p.id}`} className="flex-1 inline-flex justify-center px-3 py-1.5 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity">
               Карточка
             </Link>
           </div>
@@ -380,12 +352,7 @@ function MobileCard({ p }: { p: DbProperty }) {
   return (
     <>
       <div className="h-28 bg-muted overflow-hidden">
-        <img
-          src={getPropertyCover(p.cover_photo, p.type)}
-          alt={p.address}
-          loading="lazy"
-          className="w-full h-full object-cover"
-        />
+        <img src={getPropertyCover(p.cover_photo, p.type)} alt={p.address} loading="lazy" className="w-full h-full object-cover" />
       </div>
       <div className="p-2.5">
         <div className="flex items-center gap-1.5 mb-0.5">
