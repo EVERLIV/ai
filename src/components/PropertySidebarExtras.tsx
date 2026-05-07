@@ -56,13 +56,13 @@ export default function PropertySidebarExtras({ property }: Props) {
   return (
     <>
       {/* Входная группа — короткая строка-заголовок */}
-      <div className="bg-card rounded-2xl shadow-card p-4 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-          <DoorOpen className="w-4.5 h-4.5" style={{ width: 18, height: 18 }} />
+      <div className="bg-card rounded-2xl shadow-card px-3 py-2.5 flex items-center gap-2.5">
+        <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <DoorOpen className="w-3.5 h-3.5" />
         </div>
-        <div className="min-w-0">
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Входная группа</div>
-          <div className="text-sm font-semibold text-foreground">{ex.entrance_group}</div>
+        <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Вход</span>
+          <span className="text-xs font-semibold text-foreground">{ex.entrance_group}</span>
         </div>
       </div>
 
