@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProperties, type DbProperty } from "@/hooks/useProperties";
 import PropertyImage from "@/components/PropertyImage";
-import RequestPriceDialog from "@/components/RequestPriceDialog";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
@@ -86,10 +85,10 @@ export default function PropertyGrid() {
                             <div className="text-sm text-muted-foreground mt-0.5">{p.area} м²</div>
                           </>
                         ) : (
-                          <div className="space-y-1.5">
-                            <div className="text-sm text-muted-foreground">{p.area} м²</div>
-                            <RequestPriceDialog propertyId={p.id} propertyAddress={p.address} />
-                          </div>
+                          <>
+                            <div className="text-lg font-bold text-muted-foreground">Уточнить у менеджера</div>
+                            <div className="text-sm text-muted-foreground mt-0.5">{p.area} м²</div>
+                          </>
                         )}
                       </div>
                       <button
