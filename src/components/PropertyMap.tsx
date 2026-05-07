@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Eye, MapPin } from "lucide-react";
 import StreetViewModal from "./StreetViewModal";
 import { loadYandexMaps, IRKUTSK_CENTER_LNGLAT } from "@/lib/yandexMaps";
+import YandexMapFallback from "./YandexMapFallback";
 
 interface PropertyMapProps {
   address: string;
@@ -15,6 +16,7 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const [streetOpen, setStreetOpen] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
 
   const hasCoords =
     typeof lat === "number" &&
@@ -31,6 +33,7 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
     loadYandexMaps()
       .then((ymaps3) => {
         if (cancelled || !containerRef.current) return;
+        setMapFailed(false);
         const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapMarker, YMapControls } = ymaps3;
         const { YMapZoomControl } = ymaps3.controls ?? {};
 
@@ -63,7 +66,10 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
 
         mapRef.current = map;
       })
-      .catch((e) => console.error("Yandex Maps load failed:", e));
+      .catch((e) => {
+        console.error("Yandex Maps load failed:", e);
+        if (!cancelled) setMapFailed(true);
+      });
 
     return () => {
       cancelled = true;
@@ -76,6 +82,15 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
   return (
     <div className="relative bg-muted overflow-hidden rounded-xl" style={{ height }}>
       <div ref={containerRef} className="absolute inset-0" />
+
+      {mapFailed && (
+        <YandexMapFallback
+          center={center}
+          points={hasCoords ? [center] : []}
+          zoom={hasCoords ? 16 : 11}
+          label={`Карта: ${address}`}
+        />
+      )}
 
       {hasCoords && (
         <button

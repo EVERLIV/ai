@@ -6,6 +6,7 @@ import { getPropertyCover } from "@/lib/propertyImages";
 import { getCoords, hasStreetView, type Coords } from "@/lib/propertyGeo";
 import { loadYandexMaps, IRKUTSK_CENTER_LNGLAT } from "@/lib/yandexMaps";
 import StreetViewModal from "./StreetViewModal";
+import YandexMapFallback from "./YandexMapFallback";
 
 export default function CatalogMap({ properties }: { properties: DbProperty[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -15,6 +16,7 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
   const [activeId, setActiveId] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(true);
   const [mapReady, setMapReady] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
   const [streetViewFor, setStreetViewFor] = useState<DbProperty | null>(null);
 
   useEffect(() => {
@@ -24,6 +26,7 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
     loadYandexMaps()
       .then((ymaps3) => {
         if (cancelled || !containerRef.current) return;
+        setMapFailed(false);
         ymapsRef.current = ymaps3;
         const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapControls } = ymaps3;
         const { YMapZoomControl } = ymaps3.controls ?? {};
@@ -41,7 +44,10 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
         mapRef.current = map;
         setMapReady(true);
       })
-      .catch((e) => console.error("Yandex Maps load failed:", e));
+      .catch((e) => {
+        console.error("Yandex Maps load failed:", e);
+        if (!cancelled) setMapFailed(true);
+      });
 
     return () => {
       cancelled = true;
@@ -136,6 +142,10 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
   };
 
   const withCoords = properties.filter(getCoords).length;
+  const fallbackPoints = properties
+    .map((p) => getCoords(p))
+    .filter((c): c is Coords => c !== null)
+    .map((c) => [c.lng, c.lat] as [number, number]);
 
   return (
     <div className="relative flex h-[calc(100vh-180px)] min-h-[520px] bg-card overflow-hidden">
@@ -155,6 +165,15 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
 
       <div className="flex-1 relative bg-muted">
         <div ref={containerRef} className="absolute inset-0" />
+
+        {mapFailed && (
+          <YandexMapFallback
+            center={fallbackPoints[0] ?? IRKUTSK_CENTER_LNGLAT}
+            points={fallbackPoints}
+            zoom={fallbackPoints.length > 1 ? 9 : 14}
+            label="Карта каталога объектов"
+          />
+        )}
 
         {activeProperty && (
           <div className="hidden lg:block absolute bottom-4 left-4 w-[320px] z-10 animate-fade-in-up">

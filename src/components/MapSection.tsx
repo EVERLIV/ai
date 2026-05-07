@@ -7,6 +7,7 @@ import { getPropertyCover } from "@/lib/propertyImages";
 import { getCoords, hasStreetView, type Coords } from "@/lib/propertyGeo";
 import { loadYandexMaps, IRKUTSK_CENTER_LNGLAT } from "@/lib/yandexMaps";
 import StreetViewModal from "./StreetViewModal";
+import YandexMapFallback from "./YandexMapFallback";
 
 export default function MapSection() {
   const { ref, isVisible } = useScrollReveal();
@@ -20,6 +21,7 @@ export default function MapSection() {
   const ymapsRef = useRef<any>(null);
   const markersRef = useRef<Map<string, { marker: any; el: HTMLElement }>>(new Map());
   const [mapReady, setMapReady] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
 
   const { data: properties = [] } = useProperties();
 
@@ -52,6 +54,7 @@ export default function MapSection() {
     loadYandexMaps()
       .then((ymaps3) => {
         if (cancelled || !containerRef.current) return;
+        setMapFailed(false);
         ymapsRef.current = ymaps3;
         const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapControls } = ymaps3;
         const { YMapZoomControl } = ymaps3.controls ?? {};
@@ -69,7 +72,10 @@ export default function MapSection() {
         mapRef.current = map;
         setMapReady(true);
       })
-      .catch((e) => console.error("Yandex Maps load failed:", e));
+      .catch((e) => {
+        console.error("Yandex Maps load failed:", e);
+        if (!cancelled) setMapFailed(true);
+      });
 
     return () => {
       cancelled = true;
@@ -149,6 +155,14 @@ export default function MapSection() {
     if (activeId && !filtered.find((p) => p.id === activeId)) setActiveId(null);
   }, [filtered, activeId]);
 
+  const fallbackPoints = useMemo(
+    () => withCoords.map((p) => {
+      const c = getCoords(p)!;
+      return [c.lng, c.lat] as [number, number];
+    }),
+    [withCoords]
+  );
+
   return (
     <section ref={ref} className="py-10 sm:py-16 bg-surface-warm">
       <div className={`container mx-auto px-3 sm:px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
@@ -189,6 +203,15 @@ export default function MapSection() {
             {view === "map" ? (
               <>
                 <div ref={containerRef} className="absolute inset-0" />
+
+                {mapFailed && (
+                  <YandexMapFallback
+                    center={fallbackPoints[0] ?? IRKUTSK_CENTER_LNGLAT}
+                    points={fallbackPoints}
+                    zoom={fallbackPoints.length > 1 ? 9 : 14}
+                    label="Карта объектов Иркутска"
+                  />
+                )}
 
                 {activeProperty && (
                   <div className="absolute left-3 right-3 bottom-3 sm:right-auto sm:max-w-[340px] z-[5] animate-fade-in-up">
