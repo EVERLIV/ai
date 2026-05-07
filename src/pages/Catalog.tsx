@@ -10,10 +10,17 @@ import AIPropertyWizard from "@/components/AIPropertyWizard";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   SlidersHorizontal, X, ChevronDown, MapPin, Maximize2, LayoutGrid, List,
-  Building2, Store, Warehouse, TreePine, Factory, ArrowUpDown, Eye, Calendar,
+  ArrowUpDown, Eye, Calendar,
   Sparkles, Send, Phone, PhoneOff, Mic, PanelLeftClose, PanelLeft,
   Search, ChevronUp, Map as MapIcon,
 } from "lucide-react";
+import {
+  Buildings as PhBuildings,
+  Storefront as PhStorefront,
+  Warehouse as PhWarehouse,
+  Tree as PhTree,
+  Factory as PhFactory,
+} from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import CatalogMap from "@/components/CatalogMap";
 import PropertyImage from "@/components/PropertyImage";
@@ -30,7 +37,7 @@ const SORT_OPTIONS = [
 ];
 
 const typeIcons: Record<string, React.ElementType> = {
-  "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine, "Производство": Factory,
+  "Офис": PhBuildings, "Торговая": PhStorefront, "Склад": PhWarehouse, "Земля": PhTree, "Производство": PhFactory,
 };
 
 const ELEVENLABS_AGENT_ID = "agent_7301kmyt4jxxf8etgj0av5x43qb4";
@@ -342,7 +349,7 @@ export default function Catalog() {
         <Section title="Тип объекта">
           <div className="flex flex-wrap gap-1.5">
             {TYPES.map((t) => {
-              const Icon = typeIcons[t] || Building2;
+              const Icon = typeIcons[t] || PhBuildings;
               const checked = selectedTypes.includes(t);
               return (
                 <button
@@ -351,7 +358,7 @@ export default function Catalog() {
                   className={`chip ${checked ? "is-active" : ""}`}
                   type="button"
                 >
-                  <Icon className="w-3 h-3" />
+                  <Icon className="w-3.5 h-3.5" weight="duotone" />
                   <span>{t}</span>
                 </button>
               );
@@ -519,7 +526,7 @@ export default function Catalog() {
                 ) : filtered.length === 0 ? (
                   <div className="text-center py-16">
                     <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
-                      <Building2 className="w-7 h-7 text-muted-foreground" />
+                      <PhBuildings className="w-7 h-7 text-muted-foreground" weight="duotone" />
                     </div>
                     <h3 className="font-display text-base font-semibold text-foreground mb-1">Объекты не найдены</h3>
                     <p className="text-xs text-muted-foreground mb-3">Попробуйте изменить параметры фильтрации</p>
