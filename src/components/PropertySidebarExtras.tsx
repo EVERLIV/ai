@@ -106,34 +106,29 @@ export default function PropertySidebarExtras({ property }: Props) {
       </Block>
 
       {/* Агент */}
-      <div className="bg-card rounded-2xl shadow-card p-4">
-        <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-3">Агент</div>
-        <div className="flex items-start gap-3">
+      <div className="bg-card rounded-2xl shadow-card p-3">
+        <div className="flex items-center gap-2.5">
           <img
             src={consultantAvatar}
             alt={ex.agent_name}
-            className="w-12 h-12 rounded-full object-cover ring-2 ring-primary/20 shrink-0"
+            className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20 shrink-0"
           />
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <div className="font-semibold text-foreground truncate">{ex.agent_name}</div>
-              {ex.agent_verified && (
-                <BadgeCheck className="w-4 h-4 text-primary shrink-0" />
-              )}
+            <div className="flex items-center gap-1">
+              <div className="text-sm font-semibold text-foreground truncate">{ex.agent_name}</div>
+              {ex.agent_verified && <BadgeCheck className="w-3.5 h-3.5 text-primary shrink-0" />}
             </div>
-            <div className="text-xs text-muted-foreground">
-              {ex.agent_company} · {ex.agent_objects_count} объектов
-            </div>
-            <div className="flex items-center gap-3 mt-2 text-xs">
-              <span className="inline-flex items-center gap-1 text-foreground">
-                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+              <span className="inline-flex items-center gap-0.5 text-foreground">
+                <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
                 <span className="font-semibold">{ex.agent_rating.toFixed(1)}</span>
-                <span className="text-muted-foreground">/ 5</span>
               </span>
-              <span className="inline-flex items-center gap-1 text-muted-foreground">
-                <Clock3 className="w-3.5 h-3.5" />
-                ~{ex.agent_response_min} мин
+              <span>·</span>
+              <span className="inline-flex items-center gap-0.5">
+                <Clock3 className="w-3 h-3" />~{ex.agent_response_min} мин
               </span>
+              <span>·</span>
+              <span>{ex.agent_objects_count} об.</span>
             </div>
           </div>
         </div>
