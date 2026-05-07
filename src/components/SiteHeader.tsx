@@ -19,12 +19,17 @@ export default function SiteHeader() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border">
       <div className="container mx-auto flex items-center justify-between h-16 px-4 lg:px-8">
         {/* Logo */}
-        <a href="#" className="flex items-center gap-2 shrink-0">
-          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">А</span>
+        <a href="#" className="flex items-center gap-2.5 shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-base tracking-tight">А</span>
           </div>
-          <span className="font-display text-lg font-semibold tracking-tight text-foreground">
-            АРЕНДА<span className="text-primary">СИТИ</span>
+          <span className="flex flex-col leading-none">
+            <span className="font-sans text-[17px] font-bold tracking-tight text-foreground">
+              АРЕНДА<span className="text-primary">СИТИ</span>
+            </span>
+            <span className="text-[10px] font-medium tracking-wide text-muted-foreground mt-0.5 uppercase">
+              Коммерческая недвижимость и реклама
+            </span>
           </span>
         </a>
 
