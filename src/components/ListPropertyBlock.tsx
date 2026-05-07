@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Building2, KeyRound, ShieldCheck, TrendingUp, Sparkles, ArrowRight, CheckCircle2, Send, User, Phone as PhoneIcon, Mail } from "lucide-react";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { Input } from "@/components/ui/input";
