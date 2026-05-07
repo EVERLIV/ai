@@ -20,12 +20,17 @@ export default function SiteFooter() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">А</span>
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-base tracking-tight">А</span>
               </div>
-              <span className="font-display text-lg font-semibold text-background">
-                АРЕНДА<span className="text-primary">СИТИ</span>
+              <span className="flex flex-col leading-none">
+                <span className="font-sans text-[17px] font-bold tracking-tight text-background">
+                  АРЕНДА<span className="text-primary">СИТИ</span>
+                </span>
+                <span className="text-[10px] font-medium tracking-wide text-background/60 mt-0.5 uppercase">
+                  Коммерческая недвижимость и реклама
+                </span>
               </span>
             </div>
             <p className="text-sm leading-relaxed">
@@ -47,7 +52,7 @@ export default function SiteFooter() {
           ))}
         </div>
 
-        <div className="border-t border-background/10 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs">© 2025 АрендаСити Иркутск. Все права защищены.</p>
           <div className="flex gap-4 text-xs">
             <a href="#" className="hover:text-background transition-colors">Политика конфиденциальности</a>
