@@ -71,7 +71,7 @@ export default function PropertyDetail() {
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
 
-      <div className="sticky top-[100px] z-30 mt-[100px] bg-card/85 backdrop-blur-xl border-b border-border">
+      <div className="sticky top-16 z-30 mt-[100px] bg-card/85 backdrop-blur-xl border-b border-border">
         <div className="container mx-auto px-3 lg:px-8 h-10 lg:h-11 flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
