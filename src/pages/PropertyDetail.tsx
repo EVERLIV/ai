@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useProperty } from "@/hooks/useProperties";
 import {
-  ArrowLeft, Heart, Share2, MapPin, Clock, Eye,
+  ArrowLeft, Heart, Share2, MapPin, Clock, Eye, Phone, Mail,
   Building2, Ruler, Layers, Car, Paintbrush, LayoutGrid, FileText,
   Shield, Calendar, ChevronLeft, ChevronRight, Store, Warehouse, TreePine,
 } from "lucide-react";
