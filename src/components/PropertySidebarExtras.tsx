@@ -147,10 +147,10 @@ function Block({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-card rounded-2xl shadow-card p-4">
-      <div className="flex items-center gap-2 mb-2.5">
-        {Icon && <Icon className="w-4 h-4 text-primary" />}
-        <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{title}</div>
+    <div className="bg-card rounded-2xl shadow-card p-3">
+      <div className="flex items-center gap-1.5 mb-1.5">
+        {Icon && <Icon className="w-3.5 h-3.5 text-primary" />}
+        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{title}</div>
       </div>
       <div className="divide-y divide-border/60">{children}</div>
     </div>
@@ -169,13 +169,13 @@ function Row({
   accent?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
-      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-        {Icon && <Icon className="w-3.5 h-3.5" />}
+    <div className="flex items-center justify-between gap-3 py-1.5 first:pt-0 last:pb-0">
+      <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        {Icon && <Icon className="w-3 h-3" />}
         {label}
       </span>
       <span
-        className={`text-sm text-right ${
+        className={`text-xs text-right ${
           accent ? "text-emerald-600 font-medium" : "text-foreground font-medium"
         }`}
       >
