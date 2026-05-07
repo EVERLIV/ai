@@ -56,13 +56,13 @@ export default function PropertySidebarExtras({ property }: Props) {
   return (
     <>
       {/* Входная группа — короткая строка-заголовок */}
-      <div className="bg-card rounded-2xl shadow-card p-4 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-          <DoorOpen className="w-4.5 h-4.5" style={{ width: 18, height: 18 }} />
+      <div className="bg-card rounded-2xl shadow-card px-3 py-2.5 flex items-center gap-2.5">
+        <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <DoorOpen className="w-3.5 h-3.5" />
         </div>
-        <div className="min-w-0">
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Входная группа</div>
-          <div className="text-sm font-semibold text-foreground">{ex.entrance_group}</div>
+        <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Вход</span>
+          <span className="text-xs font-semibold text-foreground">{ex.entrance_group}</span>
         </div>
       </div>
 
@@ -106,34 +106,29 @@ export default function PropertySidebarExtras({ property }: Props) {
       </Block>
 
       {/* Агент */}
-      <div className="bg-card rounded-2xl shadow-card p-4">
-        <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-3">Агент</div>
-        <div className="flex items-start gap-3">
+      <div className="bg-card rounded-2xl shadow-card p-3">
+        <div className="flex items-center gap-2.5">
           <img
             src={consultantAvatar}
             alt={ex.agent_name}
-            className="w-12 h-12 rounded-full object-cover ring-2 ring-primary/20 shrink-0"
+            className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20 shrink-0"
           />
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <div className="font-semibold text-foreground truncate">{ex.agent_name}</div>
-              {ex.agent_verified && (
-                <BadgeCheck className="w-4 h-4 text-primary shrink-0" />
-              )}
+            <div className="flex items-center gap-1">
+              <div className="text-sm font-semibold text-foreground truncate">{ex.agent_name}</div>
+              {ex.agent_verified && <BadgeCheck className="w-3.5 h-3.5 text-primary shrink-0" />}
             </div>
-            <div className="text-xs text-muted-foreground">
-              {ex.agent_company} · {ex.agent_objects_count} объектов
-            </div>
-            <div className="flex items-center gap-3 mt-2 text-xs">
-              <span className="inline-flex items-center gap-1 text-foreground">
-                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+              <span className="inline-flex items-center gap-0.5 text-foreground">
+                <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
                 <span className="font-semibold">{ex.agent_rating.toFixed(1)}</span>
-                <span className="text-muted-foreground">/ 5</span>
               </span>
-              <span className="inline-flex items-center gap-1 text-muted-foreground">
-                <Clock3 className="w-3.5 h-3.5" />
-                ~{ex.agent_response_min} мин
+              <span>·</span>
+              <span className="inline-flex items-center gap-0.5">
+                <Clock3 className="w-3 h-3" />~{ex.agent_response_min} мин
               </span>
+              <span>·</span>
+              <span>{ex.agent_objects_count} об.</span>
             </div>
           </div>
         </div>
@@ -152,10 +147,10 @@ function Block({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-card rounded-2xl shadow-card p-4">
-      <div className="flex items-center gap-2 mb-2.5">
-        {Icon && <Icon className="w-4 h-4 text-primary" />}
-        <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{title}</div>
+    <div className="bg-card rounded-2xl shadow-card p-3">
+      <div className="flex items-center gap-1.5 mb-1.5">
+        {Icon && <Icon className="w-3.5 h-3.5 text-primary" />}
+        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{title}</div>
       </div>
       <div className="divide-y divide-border/60">{children}</div>
     </div>
@@ -174,13 +169,13 @@ function Row({
   accent?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
-      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-        {Icon && <Icon className="w-3.5 h-3.5" />}
+    <div className="flex items-center justify-between gap-3 py-1.5 first:pt-0 last:pb-0">
+      <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        {Icon && <Icon className="w-3 h-3" />}
         {label}
       </span>
       <span
-        className={`text-sm text-right ${
+        className={`text-xs text-right ${
           accent ? "text-emerald-600 font-medium" : "text-foreground font-medium"
         }`}
       >

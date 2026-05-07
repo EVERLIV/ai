@@ -261,7 +261,7 @@ export default function PropertyDetail() {
           </div>
 
           <aside className="hidden lg:block w-[360px] shrink-0">
-            <div className="sticky top-20 space-y-4 max-h-[calc(100vh-6rem)] overflow-y-auto pr-1 -mr-1 scrollbar-thin">
+            <div className="sticky top-20 space-y-3">
               <PropertyPriceBlock property={property} />
               <PropertySidebarExtras property={property} />
             </div>
@@ -289,58 +289,58 @@ export default function PropertyDetail() {
 
 function PropertyPriceBlock({ property }: { property: any }) {
   return (
-    <div id="contact-form" className="bg-card rounded-2xl shadow-card p-6 scroll-mt-24 space-y-5">
+    <div id="contact-form" className="bg-card rounded-2xl shadow-card p-4 scroll-mt-24 space-y-3">
       {Number(property.price) > 0 ? (
         <div>
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
             {property.deal_type === "Аренда" ? "Аренда" : "Продажа"}
           </div>
-          <div className="text-3xl font-bold text-foreground leading-none">
+          <div className="text-2xl font-bold text-foreground leading-none">
             {Number(property.price).toLocaleString("ru-RU")} ₽
-            {property.deal_type === "Аренда" && <span className="text-base font-normal text-muted-foreground">/мес</span>}
+            {property.deal_type === "Аренда" && <span className="text-sm font-normal text-muted-foreground">/мес</span>}
           </div>
-          <div className="text-sm text-muted-foreground mt-2">
+          <div className="text-xs text-muted-foreground mt-1.5">
             {Number(property.price_per_m2).toLocaleString("ru-RU")} ₽/м² · {property.area} м²
           </div>
         </div>
       ) : (
         <div>
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">Цена</div>
-          <div className="text-2xl font-bold text-foreground leading-none">По запросу</div>
-          <div className="text-sm text-muted-foreground mt-2">{property.area} м² · {property.type}</div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Цена</div>
+          <div className="text-xl font-bold text-foreground leading-none">По запросу</div>
+          <div className="text-xs text-muted-foreground mt-1.5">{property.area} м² · {property.type}</div>
         </div>
       )}
 
-      {/* CTAs — stacked, full width */}
-      <div className="space-y-2">
+      {/* CTAs — компактно: основные две рядом, "Предложить цену" — текстовая ссылка */}
+      <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("open-consultant-chat"))}
-          className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-opacity text-sm font-semibold"
+          className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity text-sm font-semibold"
         >
           <MessageSquareText className="w-4 h-4" />
           Написать
         </button>
         <a
           href="tel:+73952551234"
-          className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-foreground text-background hover:opacity-90 transition-opacity text-sm font-semibold"
+          className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-foreground text-background hover:opacity-90 transition-opacity text-sm font-semibold"
         >
           <Phone className="w-4 h-4" />
           Позвонить
         </a>
-        <RequestPriceDialog
-          propertyId={property.id}
-          propertyAddress={property.address}
-          trigger={
-            <button
-              type="button"
-              className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-muted/60 hover:bg-muted text-foreground transition-colors text-sm font-medium"
-            >
-              <Tag className="w-4 h-4 text-primary" />
-              Предложить цену
-            </button>
-          }
-        />
       </div>
+      <RequestPriceDialog
+        propertyId={property.id}
+        propertyAddress={property.address}
+        trigger={
+          <button
+            type="button"
+            className="w-full inline-flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors -mt-1"
+          >
+            <Tag className="w-3.5 h-3.5" />
+            Предложить свою цену
+          </button>
+        }
+      />
     </div>
   );
 }
