@@ -1,9 +1,9 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useProperty } from "@/hooks/useProperties";
 import {
-  ArrowLeft, Heart, Share2, MapPin, Clock, Eye, Phone, Mail,
+  ArrowLeft, Heart, Share2, MapPin, Clock, Eye,
   Building2, Ruler, Layers, Car, Paintbrush, LayoutGrid, FileText,
-  Shield, Calendar, ChevronLeft, ChevronRight, User, Store, Warehouse, TreePine,
+  Shield, Calendar, ChevronLeft, ChevronRight, Store, Warehouse, TreePine,
 } from "lucide-react";
 import { useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
@@ -24,7 +24,7 @@ export default function PropertyDetail() {
   const { data: property, isLoading } = useProperty(id);
   const [saved, setSaved] = useState(false);
   const [activePhoto, setActivePhoto] = useState(0);
-  const [contactForm, setContactForm] = useState({ name: "", phone: "", message: "" });
+  
 
   if (isLoading) {
     return (
