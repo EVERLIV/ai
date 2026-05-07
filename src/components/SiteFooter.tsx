@@ -52,7 +52,7 @@ export default function SiteFooter() {
           ))}
         </div>
 
-        <div className="border-t border-background/10 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs">© 2025 АрендаСити Иркутск. Все права защищены.</p>
           <div className="flex gap-4 text-xs">
             <a href="#" className="hover:text-background transition-colors">Политика конфиденциальности</a>
