@@ -81,6 +81,27 @@ const ADDRESS_SUGGESTIONS = [
   "Усолье-Сибирское, ул. Ленина,", "Братск, ул. Мира,",
 ];
 
+interface PropertyExtras {
+  entrance_group?: string;
+  utilities_included?: string;
+  vat?: string;
+  indexation?: string;
+  min_term?: string;
+  pedestrian_traffic?: number;
+  metro_minutes?: string;
+  transport_hub?: string;
+  contract_form?: string;
+  sublease?: string;
+  landlord_type?: string;
+  purpose?: string;
+  agent_name?: string;
+  agent_company?: string;
+  agent_objects_count?: number;
+  agent_rating?: number;
+  agent_response_min?: number;
+  agent_verified?: boolean;
+}
+
 interface PropertyForm {
   type: string;
   class: string;
@@ -103,7 +124,29 @@ interface PropertyForm {
   manager_id: string;
   client_id: string;
   is_active: boolean;
+  extras: PropertyExtras;
 }
+
+const emptyExtras: PropertyExtras = {
+  entrance_group: "Отдельный",
+  utilities_included: "включены",
+  vat: "не облагается",
+  indexation: "раз в год",
+  min_term: "от 1 мес.",
+  pedestrian_traffic: 3,
+  metro_minutes: "",
+  transport_hub: "",
+  contract_form: "Краткосрочный",
+  sublease: "По согласованию",
+  landlord_type: "Юр. лицо",
+  purpose: "",
+  agent_name: "Анастасия Романова",
+  agent_company: "АРЕНДА СИТИ",
+  agent_objects_count: 47,
+  agent_rating: 4.9,
+  agent_response_min: 12,
+  agent_verified: true,
+};
 
 const emptyForm: PropertyForm = {
   type: "Офис", class: "B", area: 0, price: 0, price_per_m2: 0,
@@ -112,6 +155,7 @@ const emptyForm: PropertyForm = {
   deal_type: "Аренда", deposit: "1 месяц", contract_term: "от 1 года",
   description: "", features: [], manager_id: "", client_id: "",
   is_active: true,
+  extras: { ...emptyExtras },
 };
 
 export default function Dashboard() {
