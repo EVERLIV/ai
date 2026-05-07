@@ -117,21 +117,44 @@ export default function SiteHeader() {
           <nav className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => {
               const active = isActive(item.href);
+              const hasMenu = !!item.submenu?.length;
               return (
-                <Link
-                  key={item.label}
-                  to={item.href}
-                  className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-300 group ${
-                    active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {item.label}
-                  <span
-                    className={`absolute left-3 right-3 -bottom-0.5 h-0.5 bg-primary rounded-full origin-left transition-transform duration-300 ${
-                      active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                <div key={item.label} className="relative group">
+                  <Link
+                    to={item.href}
+                    className={`relative flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-300 ${
+                      active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                     }`}
-                  />
-                </Link>
+                  >
+                    {item.label}
+                    {hasMenu && <ChevronDown className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-180" />}
+                    <span
+                      className={`absolute left-3 right-3 -bottom-0.5 h-0.5 bg-primary rounded-full origin-left transition-transform duration-300 ${
+                        active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                      }`}
+                    />
+                  </Link>
+
+                  {hasMenu && (
+                    <div className="absolute left-0 top-full pt-2 w-80 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-50">
+                      <div className="bg-card rounded-xl shadow-[0_20px_50px_-20px_hsl(0_0%_0%/0.25)] border border-border p-2">
+                        {item.submenu!.map((s) => (
+                          <Link
+                            key={s.href}
+                            to={s.href}
+                            className="block p-3 rounded-lg hover:bg-muted transition-colors group/sub"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="text-sm font-semibold text-foreground">{s.label}</div>
+                              <ArrowRight className="w-3.5 h-3.5 text-muted-foreground transition-transform group-hover/sub:translate-x-0.5 group-hover/sub:text-primary" />
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-0.5 leading-snug">{s.desc}</div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </nav>
