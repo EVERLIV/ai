@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Sparkles, Building2, Store, Warehouse, TreePine, Factory,
-  ArrowRight, RotateCcw, MapPin, Check, Wand2, Loader2,
-  Coffee, ShoppingBag, Briefcase, Utensils, Dumbbell, Stethoscope,
-  GraduationCap, Wrench, Truck, Car, Wifi, Snowflake, ShieldCheck, Zap,
-  ChevronLeft, ChevronRight,
+  Sparkles, ArrowRight, RotateCcw, MapPin, Check, Wand2, Loader2,
+  ChevronLeft, ChevronRight, Send,
 } from "lucide-react";
+import {
+  Buildings, Storefront, Warehouse, Factory, Tree,
+  Coffee, ShoppingBag, Briefcase, ForkKnife, Barbell, Stethoscope,
+  GraduationCap, Wrench, Truck, Car, WifiHigh, Snowflake, ShieldCheck, Lightning,
+} from "@phosphor-icons/react";
 import type { DbProperty } from "@/hooks/useProperties";
 
 type Deal = "Аренда" | "Продажа" | "Любое";
@@ -16,19 +18,19 @@ type Deal = "Аренда" | "Продажа" | "Любое";
 const DEALS: Deal[] = ["Аренда", "Продажа", "Любое"];
 
 const TYPES = [
-  { label: "Офис", icon: Building2 },
-  { label: "Торговая", icon: Store },
+  { label: "Офис", icon: Buildings },
+  { label: "Торговая", icon: Storefront },
   { label: "Склад", icon: Warehouse },
   { label: "Производство", icon: Factory },
-  { label: "Земля", icon: TreePine },
+  { label: "Земля", icon: Tree },
 ];
 
 const ACTIVITIES = [
-  { label: "Кафе / Ресторан", icon: Utensils },
+  { label: "Кафе / Ресторан", icon: ForkKnife },
   { label: "Кофейня", icon: Coffee },
   { label: "Магазин", icon: ShoppingBag },
   { label: "Офис компании", icon: Briefcase },
-  { label: "Фитнес / Студия", icon: Dumbbell },
+  { label: "Фитнес / Студия", icon: Barbell },
   { label: "Медцентр / Клиника", icon: Stethoscope },
   { label: "Образование", icon: GraduationCap },
   { label: "Услуги / Сервис", icon: Wrench },
@@ -40,10 +42,10 @@ const CONDITIONS = ["Любое", "С отделкой", "Под отделку"
 
 const FEATURES = [
   { label: "Парковка", icon: Car },
-  { label: "Wi-Fi", icon: Wifi },
+  { label: "Wi-Fi", icon: WifiHigh },
   { label: "Кондиционер", icon: Snowflake },
   { label: "Охрана", icon: ShieldCheck },
-  { label: "Высокая мощность", icon: Zap },
+  { label: "Высокая мощность", icon: Lightning },
 ];
 
 const STEPS = [

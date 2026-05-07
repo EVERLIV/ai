@@ -24,6 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import CatalogMap from "@/components/CatalogMap";
 import PropertyImage from "@/components/PropertyImage";
+import RequestPriceDialog from "@/components/RequestPriceDialog";
 
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
 const DEALS = ["Все", "Аренда", "Продажа"];
@@ -576,11 +577,17 @@ function GridCard({ property: p }: { property: DbProperty }) {
       </div>
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
-          <div>
-            <div className="font-display text-lg font-bold text-foreground group-hover:text-primary transition-colors">
-              {Number(p.price).toLocaleString("ru-RU")} ₽{p.deal_type === "Аренда" && <span className="text-xs font-normal text-muted-foreground">/мес</span>}
-            </div>
-            <div className="text-xs text-muted-foreground">{Number(p.price_per_m2).toLocaleString("ru-RU")} ₽/м²</div>
+          <div className="min-w-0">
+            {Number(p.price) > 0 ? (
+              <>
+                <div className="font-display text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                  {Number(p.price).toLocaleString("ru-RU")} ₽{p.deal_type === "Аренда" && <span className="text-xs font-normal text-muted-foreground">/мес</span>}
+                </div>
+                <div className="text-xs text-muted-foreground">{Number(p.price_per_m2).toLocaleString("ru-RU")} ₽/м²</div>
+              </>
+            ) : (
+              <RequestPriceDialog propertyId={p.id} propertyAddress={p.address} />
+            )}
           </div>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
@@ -624,14 +631,23 @@ function ListCard({ property: p }: { property: DbProperty }) {
       </div>
       <div className="flex-1 p-4 flex flex-col justify-between">
         <div>
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-display text-lg font-bold text-foreground group-hover:text-primary transition-colors">
-                {Number(p.price).toLocaleString("ru-RU")} ₽{p.deal_type === "Аренда" && <span className="text-xs font-normal text-muted-foreground">/мес</span>}
-              </div>
-              <div className="text-xs text-muted-foreground">{Number(p.price_per_m2).toLocaleString("ru-RU")} ₽/м² · {p.type} {p.class !== "-" ? `класса ${p.class}` : ""}</div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              {Number(p.price) > 0 ? (
+                <>
+                  <div className="font-display text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                    {Number(p.price).toLocaleString("ru-RU")} ₽{p.deal_type === "Аренда" && <span className="text-xs font-normal text-muted-foreground">/мес</span>}
+                  </div>
+                  <div className="text-xs text-muted-foreground">{Number(p.price_per_m2).toLocaleString("ru-RU")} ₽/м² · {p.type} {p.class !== "-" ? `класса ${p.class}` : ""}</div>
+                </>
+              ) : (
+                <div className="space-y-1">
+                  <div className="text-xs text-muted-foreground">{p.type} {p.class !== "-" ? `класса ${p.class}` : ""}</div>
+                  <RequestPriceDialog propertyId={p.id} propertyAddress={p.address} />
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
               <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{p.views_count || 0}</span>
             </div>
           </div>
