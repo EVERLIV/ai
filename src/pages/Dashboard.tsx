@@ -81,6 +81,27 @@ const ADDRESS_SUGGESTIONS = [
   "Усолье-Сибирское, ул. Ленина,", "Братск, ул. Мира,",
 ];
 
+interface PropertyExtras {
+  entrance_group?: string;
+  utilities_included?: string;
+  vat?: string;
+  indexation?: string;
+  min_term?: string;
+  pedestrian_traffic?: number;
+  metro_minutes?: string;
+  transport_hub?: string;
+  contract_form?: string;
+  sublease?: string;
+  landlord_type?: string;
+  purpose?: string;
+  agent_name?: string;
+  agent_company?: string;
+  agent_objects_count?: number;
+  agent_rating?: number;
+  agent_response_min?: number;
+  agent_verified?: boolean;
+}
+
 interface PropertyForm {
   type: string;
   class: string;
@@ -103,7 +124,29 @@ interface PropertyForm {
   manager_id: string;
   client_id: string;
   is_active: boolean;
+  extras: PropertyExtras;
 }
+
+const emptyExtras: PropertyExtras = {
+  entrance_group: "Отдельный",
+  utilities_included: "включены",
+  vat: "не облагается",
+  indexation: "раз в год",
+  min_term: "от 1 мес.",
+  pedestrian_traffic: 3,
+  metro_minutes: "",
+  transport_hub: "",
+  contract_form: "Краткосрочный",
+  sublease: "По согласованию",
+  landlord_type: "Юр. лицо",
+  purpose: "",
+  agent_name: "Анастасия Романова",
+  agent_company: "АРЕНДА СИТИ",
+  agent_objects_count: 47,
+  agent_rating: 4.9,
+  agent_response_min: 12,
+  agent_verified: true,
+};
 
 const emptyForm: PropertyForm = {
   type: "Офис", class: "B", area: 0, price: 0, price_per_m2: 0,
@@ -112,6 +155,7 @@ const emptyForm: PropertyForm = {
   deal_type: "Аренда", deposit: "1 месяц", contract_term: "от 1 года",
   description: "", features: [], manager_id: "", client_id: "",
   is_active: true,
+  extras: { ...emptyExtras },
 };
 
 export default function Dashboard() {
@@ -260,6 +304,7 @@ export default function Dashboard() {
         manager_id: formData.manager_id || null,
         client_id: formData.client_id || null,
         is_active: formData.is_active,
+        extras: formData.extras || {},
       };
 
       setUploading(true);
@@ -332,6 +377,7 @@ export default function Dashboard() {
       features: prop.features || [],
       manager_id: prop.manager_id || "", client_id: prop.client_id || "",
       is_active: prop.is_active,
+      extras: { ...emptyExtras, ...(prop.extras || {}) },
     });
     const existing = prop.photos || [];
     setExistingPhotos(existing);
@@ -671,7 +717,150 @@ export default function Dashboard() {
                       </div>
                     </fieldset>
 
-                    {/* Section: Фото */}
+                    {/* Section: Расширенные параметры (sidebar extras) */}
+                    <fieldset className="border border-border rounded-lg p-3 space-y-3">
+                      <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Расширенные параметры (сайдбар)</legend>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div>
+                          <Label className="text-xs mb-1 block">Входная группа</Label>
+                          <Select value={form.extras.entrance_group || "Отдельный"} onValueChange={(v) => updateField("extras", { ...form.extras, entrance_group: v })}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Отдельный">Отдельный</SelectItem>
+                              <SelectItem value="Общий">Общий</SelectItem>
+                              <SelectItem value="С улицы">С улицы</SelectItem>
+                              <SelectItem value="Со двора">Со двора</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">Коммунальные</Label>
+                          <Select value={form.extras.utilities_included || "включены"} onValueChange={(v) => updateField("extras", { ...form.extras, utilities_included: v })}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="включены">Включены</SelectItem>
+                              <SelectItem value="отдельно">Отдельно</SelectItem>
+                              <SelectItem value="по счётчикам">По счётчикам</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">НДС</Label>
+                          <Select value={form.extras.vat || "не облагается"} onValueChange={(v) => updateField("extras", { ...form.extras, vat: v })}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="не облагается">Не облагается</SelectItem>
+                              <SelectItem value="20%">20%</SelectItem>
+                              <SelectItem value="включён">Включён</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">Индексация</Label>
+                          <Input className="h-8 text-xs" placeholder="раз в год" value={form.extras.indexation || ""} onChange={(e) => updateField("extras", { ...form.extras, indexation: e.target.value })} />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div>
+                          <Label className="text-xs mb-1 block">Мин. срок</Label>
+                          <Input className="h-8 text-xs" placeholder="от 1 мес." value={form.extras.min_term || ""} onChange={(e) => updateField("extras", { ...form.extras, min_term: e.target.value })} />
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">Пеш. трафик</Label>
+                          <Select value={String(form.extras.pedestrian_traffic ?? 3)} onValueChange={(v) => updateField("extras", { ...form.extras, pedestrian_traffic: Number(v) })}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">1 — Низкий</SelectItem>
+                              <SelectItem value="2">2 — Средний</SelectItem>
+                              <SelectItem value="3">3 — Высокий</SelectItem>
+                              <SelectItem value="4">4 — Очень высокий</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">До метро/центра</Label>
+                          <Input className="h-8 text-xs" placeholder="5 мин." value={form.extras.metro_minutes || ""} onChange={(e) => updateField("extras", { ...form.extras, metro_minutes: e.target.value })} />
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">Транспортный узел</Label>
+                          <Input className="h-8 text-xs" placeholder="250 м" value={form.extras.transport_hub || ""} onChange={(e) => updateField("extras", { ...form.extras, transport_hub: e.target.value })} />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div>
+                          <Label className="text-xs mb-1 block">Форма договора</Label>
+                          <Select value={form.extras.contract_form || "Краткосрочный"} onValueChange={(v) => updateField("extras", { ...form.extras, contract_form: v })}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Краткосрочный">Краткосрочный</SelectItem>
+                              <SelectItem value="Долгосрочный">Долгосрочный</SelectItem>
+                              <SelectItem value="Бессрочный">Бессрочный</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">Арендодатель</Label>
+                          <Select value={form.extras.landlord_type || "Юр. лицо"} onValueChange={(v) => updateField("extras", { ...form.extras, landlord_type: v })}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Юр. лицо">Юр. лицо</SelectItem>
+                              <SelectItem value="ИП">ИП</SelectItem>
+                              <SelectItem value="Физ. лицо">Физ. лицо</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">Субаренда</Label>
+                          <Select value={form.extras.sublease || "По согласованию"} onValueChange={(v) => updateField("extras", { ...form.extras, sublease: v })}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Разрешена">Разрешена</SelectItem>
+                              <SelectItem value="Запрещена">Запрещена</SelectItem>
+                              <SelectItem value="По согласованию">По согласованию</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs mb-1 block">Назначение</Label>
+                          <Input className="h-8 text-xs" placeholder="Офис, услуги" value={form.extras.purpose || ""} onChange={(e) => updateField("extras", { ...form.extras, purpose: e.target.value })} />
+                        </div>
+                      </div>
+
+                      <div className="border-t border-border pt-2 mt-2">
+                        <div className="text-[11px] font-semibold text-muted-foreground mb-2">Карточка агента</div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          <div>
+                            <Label className="text-xs mb-1 block">Имя</Label>
+                            <Input className="h-8 text-xs" value={form.extras.agent_name || ""} onChange={(e) => updateField("extras", { ...form.extras, agent_name: e.target.value })} />
+                          </div>
+                          <div>
+                            <Label className="text-xs mb-1 block">Компания</Label>
+                            <Input className="h-8 text-xs" value={form.extras.agent_company || ""} onChange={(e) => updateField("extras", { ...form.extras, agent_company: e.target.value })} />
+                          </div>
+                          <div>
+                            <Label className="text-xs mb-1 block">Кол-во объектов</Label>
+                            <Input className="h-8 text-xs" type="number" value={form.extras.agent_objects_count ?? 0} onChange={(e) => updateField("extras", { ...form.extras, agent_objects_count: Number(e.target.value) })} />
+                          </div>
+                          <div>
+                            <Label className="text-xs mb-1 block">Рейтинг (0–5)</Label>
+                            <Input className="h-8 text-xs" type="number" step="0.1" min="0" max="5" value={form.extras.agent_rating ?? 0} onChange={(e) => updateField("extras", { ...form.extras, agent_rating: Number(e.target.value) })} />
+                          </div>
+                          <div>
+                            <Label className="text-xs mb-1 block">Ответ ~ мин</Label>
+                            <Input className="h-8 text-xs" type="number" value={form.extras.agent_response_min ?? 0} onChange={(e) => updateField("extras", { ...form.extras, agent_response_min: Number(e.target.value) })} />
+                          </div>
+                          <label className="flex items-center gap-2 text-xs mt-5 cursor-pointer">
+                            <Checkbox className="h-4 w-4" checked={!!form.extras.agent_verified} onCheckedChange={(v) => updateField("extras", { ...form.extras, agent_verified: !!v })} />
+                            <span>Верифицирован</span>
+                          </label>
+                        </div>
+                      </div>
+                    </fieldset>
+
+
                     <fieldset className="border border-border rounded-lg p-3 space-y-2">
                       <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Фото ({totalPhotos}/15)</legend>
                       <input ref={fileInputRef} type="file" multiple accept="image/*" onChange={handleFileSelect} className="hidden" />
