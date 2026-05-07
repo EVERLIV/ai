@@ -4,6 +4,7 @@ import {
   ArrowLeft, Heart, Share2, MapPin, Clock, Eye, Phone, Mail,
   Building2, Ruler, Layers, Car, Paintbrush, LayoutGrid, FileText,
   Shield, Calendar, ChevronLeft, ChevronRight, Store, Warehouse, TreePine,
+  MessageSquareText, Tag, Download,
 } from "lucide-react";
 import { useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
