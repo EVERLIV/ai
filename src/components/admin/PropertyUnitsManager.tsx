@@ -107,7 +107,19 @@ export default function PropertyUnitsManager({ propertyId }: Props) {
             <tbody className="divide-y divide-border">
               {units.map((u) => (
                 <tr key={u.id} className="hover:bg-muted/20">
-                  <td className="px-2 py-1.5">{u.name}</td>
+                  <td className="px-2 py-1.5">
+                    <div className="flex items-center gap-2">
+                      {u.photos?.[0] ? (
+                        <img src={u.photos[0]} alt="" className="w-8 h-8 rounded object-cover border border-border" />
+                      ) : (
+                        <div className="w-8 h-8 rounded bg-muted flex items-center justify-center"><ImageIcon className="w-3.5 h-3.5 text-muted-foreground" /></div>
+                      )}
+                      <span>{u.name}</span>
+                      {u.photos && u.photos.length > 0 && (
+                        <span className="text-[10px] text-muted-foreground">×{u.photos.length}</span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-2 py-1.5">{u.floor || "—"}</td>
                   <td className="px-2 py-1.5 text-muted-foreground">{u.purpose || "—"}</td>
                   <td className="px-2 py-1.5 text-right tabular-nums">{Number(u.area).toLocaleString("ru-RU")}</td>
