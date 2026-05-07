@@ -24,7 +24,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import CatalogMap from "@/components/CatalogMap";
 import PropertyImage from "@/components/PropertyImage";
-import RequestPriceDialog from "@/components/RequestPriceDialog";
 
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
 const DEALS = ["Все", "Аренда", "Продажа"];
@@ -586,7 +585,7 @@ function GridCard({ property: p }: { property: DbProperty }) {
                 <div className="text-xs text-muted-foreground">{Number(p.price_per_m2).toLocaleString("ru-RU")} ₽/м²</div>
               </>
             ) : (
-              <RequestPriceDialog propertyId={p.id} propertyAddress={p.address} />
+              <div className="font-display text-lg font-bold text-muted-foreground">Уточнить у менеджера</div>
             )}
           </div>
         </div>
@@ -641,10 +640,10 @@ function ListCard({ property: p }: { property: DbProperty }) {
                   <div className="text-xs text-muted-foreground">{Number(p.price_per_m2).toLocaleString("ru-RU")} ₽/м² · {p.type} {p.class !== "-" ? `класса ${p.class}` : ""}</div>
                 </>
               ) : (
-                <div className="space-y-1">
+                <>
+                  <div className="font-display text-lg font-bold text-muted-foreground">Уточнить у менеджера</div>
                   <div className="text-xs text-muted-foreground">{p.type} {p.class !== "-" ? `класса ${p.class}` : ""}</div>
-                  <RequestPriceDialog propertyId={p.id} propertyAddress={p.address} />
-                </div>
+                </>
               )}
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
