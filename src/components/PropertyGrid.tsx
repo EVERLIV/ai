@@ -62,9 +62,13 @@ export default function PropertyGrid({ filters }: { filters?: PropertyFilters })
               </div>
             ))}
           </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground">
+            По вашим фильтрам объектов не найдено. Попробуйте изменить параметры.
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.slice(0, 12).map((p) => {
+            {filtered.slice(0, 12).map((p) => {
               const Icon = typeIcons[p.type] || Building2;
               return (
                 <div
