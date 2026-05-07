@@ -176,13 +176,6 @@ export default function SiteHeader() {
               Позвонить
             </a>
             <Link
-              to="/list-property"
-              className="group relative flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-semibold text-gold-dark border-2 border-gold/70 bg-gold/5 hover:bg-gold hover:text-primary-foreground hover:border-gold transition-all duration-300 hover:shadow-[0_8px_24px_-8px_hsl(var(--gold)/0.55)]"
-            >
-              <Sparkles className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-12" />
-              Разместить объект
-            </Link>
-            <Link
               to="/auth"
               className="group flex items-center gap-1.5 h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold shadow-[0_4px_14px_-4px_hsl(var(--primary)/0.5)] hover:shadow-[0_8px_22px_-4px_hsl(var(--primary)/0.55)] hover:-translate-y-0.5 transition-all duration-300"
             >
