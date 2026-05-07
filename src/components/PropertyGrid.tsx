@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProperties, type DbProperty } from "@/hooks/useProperties";
 import PropertyImage from "@/components/PropertyImage";
+import RequestPriceDialog from "@/components/RequestPriceDialog";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
