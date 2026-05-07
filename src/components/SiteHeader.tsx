@@ -214,6 +214,14 @@ export default function SiteHeader() {
               Войти <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
+          <Link
+            to="/list-property"
+            onClick={() => setMobileOpen(false)}
+            className="mt-2 flex items-center justify-center gap-1.5 h-11 rounded-lg border-2 border-gold/70 bg-gold/5 text-gold-dark text-sm font-semibold hover:bg-gold hover:text-primary-foreground transition-all"
+          >
+            <Sparkles className="w-4 h-4" />
+            Разместить объект
+          </Link>
 
           <div className="flex items-center justify-center gap-2 pt-3">
             {socials.map(({ Icon, href, label }) => (
