@@ -177,10 +177,12 @@ export default function PropertyDetail() {
                     </button>
                   </>
                 )}
-                <span className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium">{property.type}</span>
-                {property.class !== "-" && (
-                  <span className="absolute top-4 left-[calc(4rem+1rem)] px-3 py-1.5 rounded-full bg-card text-foreground text-xs font-medium shadow-card">Класс {property.class}</span>
-                )}
+                <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                  <span className="px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium">{property.type}</span>
+                  {property.class !== "-" && (
+                    <span className="px-3 py-1.5 rounded-full bg-card text-foreground text-xs font-medium shadow-card">Класс {property.class}</span>
+                  )}
+                </div>
                 <span className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-card/80 backdrop-blur text-foreground text-xs font-medium">
                   {activePhoto + 1} / {photosCount}
                 </span>
