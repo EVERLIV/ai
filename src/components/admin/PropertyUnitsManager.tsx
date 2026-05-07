@@ -21,9 +21,38 @@ export default function PropertyUnitsManager({ propertyId }: Props) {
   const remove = useDeleteUnit(propertyId);
   const { toast } = useToast();
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [uploading, setUploading] = useState(false);
 
-  const startNew = () => setDraft({ name: "", floor: "", area: 0, price: 0, price_per_m2: 0, purpose: "Своб. назначения", status: "available", sort_order: units.length });
-  const startEdit = (u: PropertyUnit) => setDraft(u);
+  const startNew = () => setDraft({ name: "", floor: "", area: 0, price: 0, price_per_m2: 0, purpose: "Своб. назначения", status: "available", sort_order: units.length, photos: [] });
+  const startEdit = (u: PropertyUnit) => setDraft({ ...u, photos: u.photos || [] });
+
+  const handleUpload = async (files: FileList | null) => {
+    if (!files || !draft) return;
+    setUploading(true);
+    try {
+      const urls: string[] = [...(draft.photos || [])];
+      for (const file of Array.from(files)) {
+        const ext = file.name.split(".").pop();
+        const path = `${propertyId}/units/${crypto.randomUUID()}.${ext}`;
+        const { error } = await supabase.storage.from("property-photos").upload(path, file);
+        if (error) throw error;
+        const { data } = supabase.storage.from("property-photos").getPublicUrl(path);
+        urls.push(data.publicUrl);
+      }
+      setDraft({ ...draft, photos: urls });
+    } catch (e: any) {
+      toast({ title: "Ошибка загрузки", description: e.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removePhoto = (i: number) => {
+    if (!draft) return;
+    const photos = [...(draft.photos || [])];
+    photos.splice(i, 1);
+    setDraft({ ...draft, photos });
+  };
 
   const save = async () => {
     if (!draft) return;
