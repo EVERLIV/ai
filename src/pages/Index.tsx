@@ -10,6 +10,7 @@ import FeaturesSection from "@/components/FeaturesSection";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import OwnerSection from "@/components/OwnerSection";
 import AboutSection from "@/components/AboutSection";
+import ListPropertyBlock from "@/components/ListPropertyBlock";
 import SiteFooter from "@/components/SiteFooter";
 
 export default function Index() {
@@ -28,6 +29,7 @@ export default function Index() {
       <AnalyticsDashboard />
       <AboutSection />
       <OwnerSection />
+      <ListPropertyBlock />
       <SiteFooter />
       <AIAssistant open={aiOpen} onToggle={() => setAiOpen(!aiOpen)} />
     </div>

@@ -5,11 +5,19 @@ import {
   Send, MessageCircle, Instagram, ArrowRight, ChevronDown, Sparkles,
 } from "lucide-react";
 
-const navItems = [
+const navItems: { label: string; href: string; submenu?: { label: string; desc: string; href: string }[] }[] = [
   { label: "Офисы", href: "/offices" },
   { label: "Торговля", href: "/retail" },
   { label: "Склады", href: "/warehouses" },
-  { label: "Каталог", href: "/catalog" },
+  {
+    label: "Каталог",
+    href: "/catalog",
+    submenu: [
+      { label: "Все объекты", desc: "Полный каталог коммерческой недвижимости", href: "/catalog" },
+      { label: "Передать в управление", desc: "Полный цикл: арендаторы, договоры, платежи", href: "/list-property?mode=management" },
+      { label: "Сдать через АрендаСити", desc: "Размещение объекта и поток заявок", href: "/list-property?mode=rent" },
+    ],
+  },
   { label: "Реклама", href: "/ads" },
   { label: "О нас", href: "/#about" },
   { label: "Контакты", href: "/#contacts" },
@@ -109,21 +117,44 @@ export default function SiteHeader() {
           <nav className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => {
               const active = isActive(item.href);
+              const hasMenu = !!item.submenu?.length;
               return (
-                <Link
-                  key={item.label}
-                  to={item.href}
-                  className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-300 group ${
-                    active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {item.label}
-                  <span
-                    className={`absolute left-3 right-3 -bottom-0.5 h-0.5 bg-primary rounded-full origin-left transition-transform duration-300 ${
-                      active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                <div key={item.label} className="relative group">
+                  <Link
+                    to={item.href}
+                    className={`relative flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-300 ${
+                      active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                     }`}
-                  />
-                </Link>
+                  >
+                    {item.label}
+                    {hasMenu && <ChevronDown className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-180" />}
+                    <span
+                      className={`absolute left-3 right-3 -bottom-0.5 h-0.5 bg-primary rounded-full origin-left transition-transform duration-300 ${
+                        active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                      }`}
+                    />
+                  </Link>
+
+                  {hasMenu && (
+                    <div className="absolute left-0 top-full pt-2 w-80 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-50">
+                      <div className="bg-card rounded-xl shadow-[0_20px_50px_-20px_hsl(0_0%_0%/0.25)] border border-border p-2">
+                        {item.submenu!.map((s) => (
+                          <Link
+                            key={s.href}
+                            to={s.href}
+                            className="block p-3 rounded-lg hover:bg-muted transition-colors group/sub"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="text-sm font-semibold text-foreground">{s.label}</div>
+                              <ArrowRight className="w-3.5 h-3.5 text-muted-foreground transition-transform group-hover/sub:translate-x-0.5 group-hover/sub:text-primary" />
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-0.5 leading-snug">{s.desc}</div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </nav>
@@ -144,13 +175,6 @@ export default function SiteHeader() {
               <Phone className="w-3.5 h-3.5 text-primary" />
               Позвонить
             </a>
-            <Link
-              to="/list-property"
-              className="group relative flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-semibold text-gold-dark border-2 border-gold/70 bg-gold/5 hover:bg-gold hover:text-primary-foreground hover:border-gold transition-all duration-300 hover:shadow-[0_8px_24px_-8px_hsl(var(--gold)/0.55)]"
-            >
-              <Sparkles className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-12" />
-              Разместить объект
-            </Link>
             <Link
               to="/auth"
               className="group flex items-center gap-1.5 h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold shadow-[0_4px_14px_-4px_hsl(var(--primary)/0.5)] hover:shadow-[0_8px_22px_-4px_hsl(var(--primary)/0.55)] hover:-translate-y-0.5 transition-all duration-300"
