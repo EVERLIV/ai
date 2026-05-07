@@ -482,7 +482,7 @@ export default function Catalog() {
               <div className="flex-1 overflow-hidden">{sidebarContent}</div>
               <div className="px-4 py-3 border-t border-border/40 shrink-0">
                 <button onClick={() => setMobileSidebar(false)}
-                  className="w-full py-2.5 rounded-lg bg-gradient-to-r from-primary to-gold text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
+                  className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
                   Показать {filtered.length} объектов
                 </button>
               </div>
