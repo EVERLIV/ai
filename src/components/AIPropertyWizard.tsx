@@ -170,7 +170,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
   // ── Header ──
   const Header = (
     <div className="flex items-center gap-2 px-3 pt-3 pb-2">
-      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-gold flex items-center justify-center shadow-sm">
+      <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-sm">
         <Wand2 className="w-3.5 h-3.5 text-primary-foreground" />
       </div>
       <div className="flex-1 min-w-0">
@@ -194,7 +194,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
       {STEPS.map((_, i) => (
         <div key={i}
           className={`h-1 flex-1 rounded-full transition-all duration-500 ${
-            (showResult || step > i) ? "bg-gradient-to-r from-primary to-gold" :
+            (showResult || step > i) ? "bg-primary" :
             step === i ? "bg-primary/40" : "bg-muted"
           }`}
         />
@@ -205,7 +205,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
   // ── Result view ──
   if (showResult) {
     return (
-      <div className="bg-gradient-to-br from-primary/5 via-transparent to-gold/5 min-w-0 overflow-hidden">
+      <div className="bg-primary/5 min-w-0 overflow-hidden">
         {Header}
         {Progress}
         <div className="px-3 pb-3 space-y-2 min-w-0">
@@ -255,7 +255,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
                           </div>
                         </div>
                         <div className="shrink-0 text-center">
-                          <div className="text-[14px] font-bold bg-gradient-to-br from-primary to-gold bg-clip-text text-transparent leading-none">
+                          <div className="text-[14px] font-bold bg-primary bg-clip-text text-transparent leading-none">
                             {pick.fit_score}
                           </div>
                           <div className="text-[8px] text-muted-foreground uppercase tracking-wider">match</div>
@@ -285,7 +285,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
                           Подробнее
                         </Link>
                         <Link to={`/?focus=${p.id}#map`}
-                          className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 text-[10px] font-medium bg-gradient-to-r from-primary to-gold text-primary-foreground hover:opacity-90 transition-opacity">
+                          className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 text-[10px] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
                           На карте <ArrowRight className="w-2.5 h-2.5" />
                         </Link>
                       </div>
@@ -307,7 +307,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
 
   // ── Steps ──
   return (
-    <div className="bg-gradient-to-br from-primary/5 via-transparent to-gold/5 min-w-0 overflow-hidden">
+    <div className="bg-primary/5 min-w-0 overflow-hidden">
       {Header}
       {Progress}
 
@@ -537,7 +537,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
             </button>
           ) : (
             <button onClick={runAI}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium bg-gradient-to-r from-primary to-gold text-primary-foreground hover:opacity-90 transition-opacity">
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
               ИИ-подбор <Sparkles className="w-3 h-3" />
             </button>
           )}
