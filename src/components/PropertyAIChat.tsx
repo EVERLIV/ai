@@ -152,7 +152,7 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed right-3 sm:right-5 top-1/2 -translate-y-1/2 z-50 w-[calc(100vw-1.5rem)] sm:w-[380px] max-w-[380px] h-[min(600px,90vh)] bg-card border border-border rounded-2xl shadow-elegant flex flex-col overflow-hidden animate-in slide-in-from-right-4 duration-200">
+        <div className="fixed z-50 bg-card border-border shadow-elegant flex flex-col overflow-hidden animate-in duration-200 inset-0 sm:inset-auto sm:right-5 sm:top-1/2 sm:-translate-y-1/2 sm:w-[380px] sm:h-[min(600px,90vh)] sm:border sm:rounded-2xl slide-in-from-right-4">
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/30 shrink-0">
             <div className="relative">
