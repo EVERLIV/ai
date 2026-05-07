@@ -47,6 +47,12 @@ export default function ListPropertyBlock({ variant = "section" }: Props) {
   const [sent, setSent] = useState(false);
   const { toast } = useToast();
   const { ref, isVisible } = useScrollReveal();
+  const { search } = useLocation();
+
+  useEffect(() => {
+    const m = new URLSearchParams(search).get("mode");
+    if (m === "rent" || m === "management") setMode(m);
+  }, [search]);
 
   const data = benefits[mode];
 
