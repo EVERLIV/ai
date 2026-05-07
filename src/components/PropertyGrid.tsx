@@ -37,7 +37,7 @@ export default function PropertyGrid({ filters }: { filters?: PropertyFilters })
   };
 
   return (
-    <section ref={ref} id="Офисы" className="py-16">
+    <section ref={ref} id="property-results" className="py-16 scroll-mt-20">
       <div className={`container mx-auto px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
         <div className="flex items-end justify-between mb-8">
           <div>
