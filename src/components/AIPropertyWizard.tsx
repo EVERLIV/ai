@@ -255,7 +255,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
                           </div>
                         </div>
                         <div className="shrink-0 text-center">
-                          <div className="text-[14px] font-bold bg-primary bg-clip-text text-transparent leading-none">
+                          <div className="text-[14px] font-bold text-primary leading-none">
                             {pick.fit_score}
                           </div>
                           <div className="text-[8px] text-muted-foreground uppercase tracking-wider">match</div>
