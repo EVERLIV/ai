@@ -29,6 +29,7 @@ export default function Index() {
       <AnalyticsDashboard />
       <AboutSection />
       <OwnerSection />
+      <ListPropertyBlock />
       <SiteFooter />
       <AIAssistant open={aiOpen} onToggle={() => setAiOpen(!aiOpen)} />
     </div>
