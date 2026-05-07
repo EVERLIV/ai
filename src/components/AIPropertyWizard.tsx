@@ -207,7 +207,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
   // ── Result view ──
   if (showResult) {
     return (
-      <div className="bg-primary/5 min-w-0 overflow-hidden">
+      <div className="bg-muted/40 min-w-0 overflow-hidden">
         {Header}
         {Progress}
         <div className="px-3 pb-3 space-y-2 min-w-0">
@@ -227,7 +227,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
           ) : (
             <>
               {/* AI summary */}
-              <div className="bg-primary/5 p-2.5">
+              <div className="bg-muted/40 p-2.5">
                 <div className="flex items-start gap-1.5">
                   <Sparkles className="w-3 h-3 text-primary shrink-0 mt-0.5" />
                   <div className="text-[10.5px] text-foreground/90 leading-relaxed">{result.summary}</div>
@@ -273,7 +273,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
                       {pick.highlights?.length > 0 && (
                         <div className="flex flex-wrap gap-1">
                           {pick.highlights.map((h, i) => (
-                            <span key={i} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] bg-primary/10 text-primary font-medium">
+                            <span key={i} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] bg-foreground/[0.06] text-primary border border-primary/20 font-medium">
                               <Check className="w-2 h-2" /> {h}
                             </span>
                           ))}
@@ -309,7 +309,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
 
   // ── Steps ──
   return (
-    <div className="bg-primary/5 min-w-0 overflow-hidden">
+    <div className="bg-muted/40 min-w-0 overflow-hidden">
       {Header}
       {Progress}
 
@@ -323,7 +323,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
                 <button key={d} onClick={() => { setDeal(d); next(); }}
                   className={`px-2 py-2 text-[11px] font-medium transition-all ${
                     deal === d
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-foreground/[0.06] text-primary border border-primary/20"
                       : "bg-muted text-foreground hover:bg-muted/70 hover:text-primary"
                   }`}>
                   {d}
@@ -343,7 +343,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
                   onClick={() => { setType(label); next(); }}
                   className={`inline-flex items-center gap-1 px-2 py-1.5 text-[11px] transition-all ${
                     type === label
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-foreground/[0.06] text-primary border border-primary/20"
                       : "bg-muted text-foreground hover:bg-muted/70 hover:text-primary"
                   }`}>
                   <Icon className="w-3 h-3" /> {label}
@@ -366,7 +366,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
                 <button key={label} onClick={() => setActivity(label)}
                   className={`inline-flex items-center gap-1 px-2 py-1.5 text-[11px] transition-all ${
                     activity === label
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-foreground/[0.06] text-primary border border-primary/20"
                       : "bg-muted text-foreground hover:bg-muted/70 hover:text-primary"
                   }`}>
                   <Icon className="w-3 h-3" /> {label}
@@ -385,7 +385,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
                 <button key={d} onClick={() => setDistrict(d)}
                   className={`px-2 py-1 text-[11px] transition-all ${
                     district === d
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-foreground/[0.06] text-primary border border-primary/20"
                       : "bg-muted text-foreground hover:bg-muted/70 hover:text-primary"
                   }`}>
                   {d}
@@ -466,7 +466,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
                   <button key={c} onClick={() => setPropertyClass(c)}
                     className={`px-2 py-1 text-[11px] transition-all ${
                       propertyClass === c
-                        ? "bg-primary/10 text-primary"
+                        ? "bg-foreground/[0.06] text-primary border border-primary/20"
                         : "bg-muted text-foreground hover:bg-muted/70 hover:text-primary"
                     }`}>
                     {c}
@@ -481,7 +481,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
                   <button key={c} onClick={() => setCondition(c)}
                     className={`px-2 py-1 text-[11px] transition-all ${
                       condition === c
-                        ? "bg-primary/10 text-primary"
+                        ? "bg-foreground/[0.06] text-primary border border-primary/20"
                         : "bg-muted text-foreground hover:bg-muted/70 hover:text-primary"
                     }`}>
                     {c}
@@ -504,7 +504,7 @@ export default function AIPropertyWizard({ properties }: { properties: DbPropert
                     <button key={label} onClick={() => toggleFeature(label)}
                       className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] transition-all ${
                         active
-                          ? "bg-primary/10 text-primary"
+                          ? "bg-foreground/[0.06] text-primary border border-primary/20"
                           : "bg-muted text-foreground hover:bg-muted/70 hover:text-primary"
                       }`}>
                       <Icon className="w-3 h-3" /> {label}
