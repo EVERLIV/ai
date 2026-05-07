@@ -3,7 +3,7 @@ import { useProperty } from "@/hooks/useProperties";
 import {
   ArrowLeft, Heart, Share2, MapPin, Clock, Eye, Phone, Mail,
   Building2, Ruler, Layers, Car, Paintbrush, LayoutGrid, FileText,
-  Shield, Calendar, ChevronLeft, ChevronRight, User, Store, Warehouse, TreePine,
+  Shield, Calendar, ChevronLeft, ChevronRight, Store, Warehouse, TreePine,
 } from "lucide-react";
 import { useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
@@ -12,6 +12,7 @@ import NearbyPropertiesSlider from "@/components/NearbyPropertiesSlider";
 import PropertyMap from "@/components/PropertyMap";
 import { getDefaultPropertyImage } from "@/lib/propertyImages";
 import RequestPriceDialog from "@/components/RequestPriceDialog";
+import PropertyAIChat from "@/components/PropertyAIChat";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
@@ -23,7 +24,7 @@ export default function PropertyDetail() {
   const { data: property, isLoading } = useProperty(id);
   const [saved, setSaved] = useState(false);
   const [activePhoto, setActivePhoto] = useState(0);
-  const [contactForm, setContactForm] = useState({ name: "", phone: "", message: "" });
+  
 
   if (isLoading) {
     return (
@@ -257,13 +258,13 @@ export default function PropertyDetail() {
           <aside className="hidden lg:block w-[360px] shrink-0">
             <div className="sticky top-20 space-y-5">
               <PropertyPriceBlock property={property} />
-              <PropertyContactCard contactForm={contactForm} setContactForm={setContactForm} />
+              <PropertyAIChat propertyId={property.id} propertyAddress={property.address} />
             </div>
           </aside>
         </div>
 
         <div className="lg:hidden mt-6">
-          <PropertyContactCard contactForm={contactForm} setContactForm={setContactForm} />
+          <PropertyAIChat propertyId={property.id} propertyAddress={property.address} />
         </div>
 
         <NearbyPropertiesSlider
@@ -314,48 +315,3 @@ function PropertyPriceBlock({ property }: { property: any }) {
   );
 }
 
-function PropertyContactCard({
-  contactForm,
-  setContactForm,
-}: {
-  contactForm: { name: string; phone: string; message: string };
-  setContactForm: React.Dispatch<React.SetStateAction<{ name: string; phone: string; message: string }>>;
-}) {
-  return (
-    <div className="bg-card rounded-2xl shadow-card p-6">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center">
-          <User className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <div className="text-sm font-semibold text-foreground">Аренда Сити</div>
-          <div className="text-xs text-muted-foreground">АрендаСити Иркутск</div>
-        </div>
-      </div>
-      <div className="flex gap-2 mb-5">
-        <a href="tel:+73952551234"
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
-          <Phone className="w-4 h-4" /> Позвонить
-        </a>
-        <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors">
-          <Mail className="w-4 h-4" /> Написать
-        </button>
-      </div>
-      <form onSubmit={(e) => e.preventDefault()} className="space-y-3">
-        <input type="text" placeholder="Ваше имя" value={contactForm.name}
-          onChange={(e) => setContactForm((p) => ({ ...p, name: e.target.value }))}
-          className="w-full px-4 py-2.5 rounded-xl bg-muted text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
-        <input type="tel" placeholder="Телефон" value={contactForm.phone}
-          onChange={(e) => setContactForm((p) => ({ ...p, phone: e.target.value }))}
-          className="w-full px-4 py-2.5 rounded-xl bg-muted text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
-        <textarea placeholder="Сообщение" rows={3} value={contactForm.message}
-          onChange={(e) => setContactForm((p) => ({ ...p, message: e.target.value }))}
-          className="w-full px-4 py-2.5 rounded-xl bg-muted text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
-        <button type="submit"
-          className="w-full py-2.5 rounded-xl bg-gold text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
-          Отправить заявку
-        </button>
-      </form>
-    </div>
-  );
-}
