@@ -261,7 +261,7 @@ export default function PropertyDetail() {
           </div>
 
           <aside className="hidden lg:block w-[360px] shrink-0">
-            <div className="sticky top-20 space-y-4 max-h-[calc(100vh-6rem)] overflow-y-auto pr-1 -mr-1 scrollbar-thin">
+            <div className="sticky top-20 space-y-3">
               <PropertyPriceBlock property={property} />
               <PropertySidebarExtras property={property} />
             </div>
