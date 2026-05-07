@@ -258,14 +258,11 @@ export default function PropertyDetail() {
           <aside className="hidden lg:block w-[360px] shrink-0">
             <div className="sticky top-20 space-y-5">
               <PropertyPriceBlock property={property} />
-              <PropertyAIChat propertyId={property.id} propertyAddress={property.address} />
             </div>
           </aside>
         </div>
 
-        <div className="lg:hidden mt-6">
-          <PropertyAIChat propertyId={property.id} propertyAddress={property.address} />
-        </div>
+        <PropertyAIChat propertyId={property.id} propertyAddress={property.address} />
 
         <NearbyPropertiesSlider
           district={property.district}
