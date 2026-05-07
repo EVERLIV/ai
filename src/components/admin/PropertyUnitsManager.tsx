@@ -160,11 +160,35 @@ export default function PropertyUnitsManager({ propertyId }: Props) {
             <Input className="h-8 text-xs" type="number" placeholder="Площадь м²" value={draft.area || ""} onChange={(e) => setDraft({ ...draft, area: Number(e.target.value) })} />
             <Input className="h-8 text-xs col-span-2" type="number" placeholder="Цена ₽" value={draft.price || ""} onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })} />
           </div>
+
+          {/* Photos */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-muted-foreground">Фотографии помещения ({(draft.photos || []).length})</span>
+              <label className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline cursor-pointer">
+                <Upload className="w-3 h-3" /> {uploading ? "Загрузка…" : "Добавить фото"}
+                <input type="file" accept="image/*" multiple className="hidden" disabled={uploading} onChange={(e) => { handleUpload(e.target.files); e.target.value = ""; }} />
+              </label>
+            </div>
+            {(draft.photos || []).length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {(draft.photos || []).map((p, i) => (
+                  <div key={i} className="relative group">
+                    <img src={p} alt="" className="w-16 h-16 object-cover rounded border border-border" />
+                    <button type="button" onClick={() => removePhoto(i)} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="flex items-center justify-end gap-2">
             <Button type="button" size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setDraft(null)}>
               <X className="w-3.5 h-3.5 mr-1" /> Отмена
             </Button>
-            <Button type="button" size="sm" className="h-7 text-xs" onClick={save} disabled={upsert.isPending}>
+            <Button type="button" size="sm" className="h-7 text-xs" onClick={save} disabled={upsert.isPending || uploading}>
               <Save className="w-3.5 h-3.5 mr-1" /> Сохранить
             </Button>
           </div>
