@@ -5,11 +5,19 @@ import {
   Send, MessageCircle, Instagram, ArrowRight, ChevronDown, Sparkles,
 } from "lucide-react";
 
-const navItems = [
+const navItems: { label: string; href: string; submenu?: { label: string; desc: string; href: string }[] }[] = [
   { label: "Офисы", href: "/offices" },
   { label: "Торговля", href: "/retail" },
   { label: "Склады", href: "/warehouses" },
-  { label: "Каталог", href: "/catalog" },
+  {
+    label: "Каталог",
+    href: "/catalog",
+    submenu: [
+      { label: "Все объекты", desc: "Полный каталог коммерческой недвижимости", href: "/catalog" },
+      { label: "Передать в управление", desc: "Полный цикл: арендаторы, договоры, платежи", href: "/list-property?mode=management" },
+      { label: "Сдать через АрендаСити", desc: "Размещение объекта и поток заявок", href: "/list-property?mode=rent" },
+    ],
+  },
   { label: "Реклама", href: "/ads" },
   { label: "О нас", href: "/#about" },
   { label: "Контакты", href: "/#contacts" },
