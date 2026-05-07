@@ -14,6 +14,7 @@ import PropertyMap from "@/components/PropertyMap";
 import { getDefaultPropertyImage } from "@/lib/propertyImages";
 import RequestPriceDialog from "@/components/RequestPriceDialog";
 import PropertyAIChat from "@/components/PropertyAIChat";
+import PropertyUnitsTable from "@/components/PropertyUnitsTable";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
@@ -211,6 +212,8 @@ export default function PropertyDetail() {
               <h2 className="font-display text-xl font-semibold text-foreground mb-3">Описание</h2>
               <p className="text-sm text-muted-foreground leading-relaxed">{property.description}</p>
             </section>
+
+            <PropertyUnitsTable propertyId={property.id} />
 
             <section className="mb-8">
               <h2 className="font-display text-xl font-semibold text-foreground mb-4">Характеристики</h2>
