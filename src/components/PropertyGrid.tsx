@@ -1,20 +1,35 @@
 import { Heart, ArrowRight, MapPin, Building2, Store, Warehouse, TreePine } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProperties, type DbProperty } from "@/hooks/useProperties";
 import PropertyImage from "@/components/PropertyImage";
+import type { PropertyFilters } from "@/components/SearchFilters";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
 };
 
-export default function PropertyGrid() {
+export default function PropertyGrid({ filters }: { filters?: PropertyFilters }) {
   const { ref, isVisible } = useScrollReveal();
   const [saved, setSaved] = useState<string[]>([]);
   const navigate = useNavigate();
   const { data: properties = [], isLoading } = useProperties();
+
+  const filtered = useMemo(() => {
+    if (!filters) return properties;
+    return properties.filter((p) => {
+      if (filters.type !== "Все" && !(p.type ?? "").toLowerCase().includes(filters.type.toLowerCase())) return false;
+      const area = Number(p.area) || 0;
+      if (area < filters.areaMin || area > filters.areaMax) return false;
+      const price = Number(p.price) || 0;
+      if (price > 0 && (price < filters.priceMin || price > filters.priceMax)) return false;
+      if (filters.district !== "Все" && p.district !== filters.district) return false;
+      if (filters.cls !== "Все" && p.class !== filters.cls) return false;
+      return true;
+    });
+  }, [properties, filters]);
 
   const toggleSave = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
