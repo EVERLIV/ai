@@ -349,7 +349,7 @@ export default function Catalog() {
         <Section title="Тип объекта">
           <div className="flex flex-wrap gap-1.5">
             {TYPES.map((t) => {
-              const Icon = typeIcons[t] || Building2;
+              const Icon = typeIcons[t] || PhBuildings;
               const checked = selectedTypes.includes(t);
               return (
                 <button
@@ -526,7 +526,7 @@ export default function Catalog() {
                 ) : filtered.length === 0 ? (
                   <div className="text-center py-16">
                     <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
-                      <Building2 className="w-7 h-7 text-muted-foreground" />
+                      <PhBuildings className="w-7 h-7 text-muted-foreground" weight="duotone" />
                     </div>
                     <h3 className="font-display text-base font-semibold text-foreground mb-1">Объекты не найдены</h3>
                     <p className="text-xs text-muted-foreground mb-3">Попробуйте изменить параметры фильтрации</p>
