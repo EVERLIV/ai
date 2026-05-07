@@ -10,10 +10,17 @@ import AIPropertyWizard from "@/components/AIPropertyWizard";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   SlidersHorizontal, X, ChevronDown, MapPin, Maximize2, LayoutGrid, List,
-  Building2, Store, Warehouse, TreePine, Factory, ArrowUpDown, Eye, Calendar,
+  ArrowUpDown, Eye, Calendar,
   Sparkles, Send, Phone, PhoneOff, Mic, PanelLeftClose, PanelLeft,
   Search, ChevronUp, Map as MapIcon,
 } from "lucide-react";
+import {
+  Buildings as PhBuildings,
+  Storefront as PhStorefront,
+  Warehouse as PhWarehouse,
+  Tree as PhTree,
+  Factory as PhFactory,
+} from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import CatalogMap from "@/components/CatalogMap";
 import PropertyImage from "@/components/PropertyImage";
@@ -30,7 +37,7 @@ const SORT_OPTIONS = [
 ];
 
 const typeIcons: Record<string, React.ElementType> = {
-  "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine, "Производство": Factory,
+  "Офис": PhBuildings, "Торговая": PhStorefront, "Склад": PhWarehouse, "Земля": PhTree, "Производство": PhFactory,
 };
 
 const ELEVENLABS_AGENT_ID = "agent_7301kmyt4jxxf8etgj0av5x43qb4";
@@ -351,7 +358,7 @@ export default function Catalog() {
                   className={`chip ${checked ? "is-active" : ""}`}
                   type="button"
                 >
-                  <Icon className="w-3 h-3" />
+                  <Icon className="w-3.5 h-3.5" weight="duotone" />
                   <span>{t}</span>
                 </button>
               );
