@@ -1,4 +1,4 @@
-import { AlertCircle, ExternalLink } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 interface YandexMapFallbackProps {
   center: [number, number];
@@ -27,8 +27,6 @@ export default function YandexMapFallback({
     pt: pointParam,
   });
   const src = `https://yandex.ru/map-widget/v1/?${params.toString()}`;
-  const openUrl = `https://yandex.ru/maps/?${params.toString()}`;
-
   return (
     <div className={`${className} bg-muted`}>
       <iframe
@@ -45,14 +43,6 @@ export default function YandexMapFallback({
           <span>JS API Яндекс Карт не ответил, открыт резервный виджет.</span>
         </div>
       </div>
-      <a
-        href={openUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="absolute right-3 top-3 z-[4] inline-flex items-center gap-1.5 border border-border bg-card/95 px-3 py-2 text-[11px] font-semibold text-foreground backdrop-blur transition-opacity hover:opacity-90"
-      >
-        Открыть <ExternalLink className="h-3 w-3" />
-      </a>
     </div>
   );
 }
