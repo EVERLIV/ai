@@ -11,6 +11,7 @@ import SiteFooter from "@/components/SiteFooter";
 import NearbyPropertiesSlider from "@/components/NearbyPropertiesSlider";
 import PropertyMap from "@/components/PropertyMap";
 import { getDefaultPropertyImage } from "@/lib/propertyImages";
+import RequestPriceDialog from "@/components/RequestPriceDialog";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
@@ -283,13 +284,27 @@ export default function PropertyDetail() {
 function PropertyPriceBlock({ property }: { property: any }) {
   return (
     <div id="contact-form" className="bg-card rounded-2xl shadow-card p-6 scroll-mt-24">
-      <div className="text-3xl font-bold text-foreground">
-        {Number(property.price).toLocaleString("ru-RU")} ₽
-        {property.deal_type === "Аренда" && <span className="text-base font-normal text-muted-foreground">/мес</span>}
-      </div>
-      <div className="text-sm text-muted-foreground mt-1">
-        {Number(property.price_per_m2).toLocaleString("ru-RU")} ₽/м² · {property.area} м²
-      </div>
+      {Number(property.price) > 0 ? (
+        <>
+          <div className="text-3xl font-bold text-foreground">
+            {Number(property.price).toLocaleString("ru-RU")} ₽
+            {property.deal_type === "Аренда" && <span className="text-base font-normal text-muted-foreground">/мес</span>}
+          </div>
+          <div className="text-sm text-muted-foreground mt-1">
+            {Number(property.price_per_m2).toLocaleString("ru-RU")} ₽/м² · {property.area} м²
+          </div>
+        </>
+      ) : (
+        <div className="space-y-3">
+          <div className="text-xl font-semibold text-foreground">Цена по запросу</div>
+          <div className="text-sm text-muted-foreground">{property.area} м² · {property.type}</div>
+          <RequestPriceDialog
+            propertyId={property.id}
+            propertyAddress={property.address}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity w-full"
+          />
+        </div>
+      )}
       <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
         <MapPin className="w-4 h-4 text-primary shrink-0" /> {property.address}
       </div>
