@@ -377,6 +377,7 @@ export default function Dashboard() {
       features: prop.features || [],
       manager_id: prop.manager_id || "", client_id: prop.client_id || "",
       is_active: prop.is_active,
+      extras: { ...emptyExtras, ...(prop.extras || {}) },
     });
     const existing = prop.photos || [];
     setExistingPhotos(existing);
