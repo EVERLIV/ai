@@ -23,6 +23,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import AdPlacementsManager from "@/components/admin/AdPlacementsManager";
 import AdPlacementsTab from "@/components/admin/AdPlacementsTab";
+import PropertyUnitsManager from "@/components/admin/PropertyUnitsManager";
 
 // ====== Predefined options ======
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
@@ -721,6 +722,16 @@ export default function Dashboard() {
                         </>
                       )}
                     </fieldset>
+
+                    {/* Section: Помещения внутри объекта */}
+                    {editId && (
+                      <fieldset className="border border-border rounded-lg p-3">
+                        <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">
+                          Помещения внутри объекта
+                        </legend>
+                        <PropertyUnitsManager propertyId={editId} />
+                      </fieldset>
+                    )}
 
                     {/* Section: Реклама — только для уже сохранённых объектов */}
                     {editId && (

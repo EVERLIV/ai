@@ -4,6 +4,7 @@ import {
   ArrowLeft, Heart, Share2, MapPin, Clock, Eye, Phone, Mail,
   Building2, Ruler, Layers, Car, Paintbrush, LayoutGrid, FileText,
   Shield, Calendar, ChevronLeft, ChevronRight, Store, Warehouse, TreePine,
+  MessageSquareText, Tag, Download,
 } from "lucide-react";
 import { useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
@@ -13,6 +14,7 @@ import PropertyMap from "@/components/PropertyMap";
 import { getDefaultPropertyImage } from "@/lib/propertyImages";
 import RequestPriceDialog from "@/components/RequestPriceDialog";
 import PropertyAIChat from "@/components/PropertyAIChat";
+import PropertyUnitsTable from "@/components/PropertyUnitsTable";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
@@ -211,6 +213,8 @@ export default function PropertyDetail() {
               <p className="text-sm text-muted-foreground leading-relaxed">{property.description}</p>
             </section>
 
+            <PropertyUnitsTable propertyId={property.id} />
+
             <section className="mb-8">
               <h2 className="font-display text-xl font-semibold text-foreground mb-4">Характеристики</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -282,30 +286,83 @@ export default function PropertyDetail() {
 }
 
 function PropertyPriceBlock({ property }: { property: any }) {
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({ title: property.address, url: window.location.href }).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText(window.location.href);
+    }
+  };
+
   return (
-    <div id="contact-form" className="bg-card rounded-2xl shadow-card p-6 scroll-mt-24">
+    <div id="contact-form" className="bg-card rounded-2xl shadow-card p-6 scroll-mt-24 space-y-4">
       {Number(property.price) > 0 ? (
         <>
-          <div className="text-3xl font-bold text-foreground">
-            {Number(property.price).toLocaleString("ru-RU")} ₽
-            {property.deal_type === "Аренда" && <span className="text-base font-normal text-muted-foreground">/мес</span>}
-          </div>
-          <div className="text-sm text-muted-foreground mt-1">
-            {Number(property.price_per_m2).toLocaleString("ru-RU")} ₽/м² · {property.area} м²
+          <div>
+            <div className="text-3xl font-bold text-foreground">
+              {Number(property.price).toLocaleString("ru-RU")} ₽
+              {property.deal_type === "Аренда" && <span className="text-base font-normal text-muted-foreground">/мес</span>}
+            </div>
+            <div className="text-sm text-muted-foreground mt-1">
+              {Number(property.price_per_m2).toLocaleString("ru-RU")} ₽/м² · {property.area} м²
+            </div>
           </div>
         </>
       ) : (
-        <div className="space-y-3">
+        <div>
           <div className="text-xl font-semibold text-foreground">Цена по запросу</div>
-          <div className="text-sm text-muted-foreground">{property.area} м² · {property.type}</div>
-          <RequestPriceDialog
-            propertyId={property.id}
-            propertyAddress={property.address}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity w-full"
-          />
+          <div className="text-sm text-muted-foreground mt-1">{property.area} м² · {property.type}</div>
         </div>
       )}
-      <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
+
+      {/* Primary CTAs */}
+      <div className="grid grid-cols-3 gap-2">
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("open-consultant-chat"))}
+          className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-opacity text-xs font-semibold"
+        >
+          <MessageSquareText className="w-4 h-4" />
+          Написать
+        </button>
+        <a
+          href="tel:+73952551234"
+          className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl bg-foreground text-background hover:opacity-90 transition-opacity text-xs font-semibold"
+        >
+          <Phone className="w-4 h-4" />
+          Позвонить
+        </a>
+        <RequestPriceDialog
+          propertyId={property.id}
+          propertyAddress={property.address}
+          trigger={
+            <button
+              type="button"
+              className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl border border-border bg-card hover:bg-muted/50 text-foreground transition-colors text-xs font-semibold w-full"
+            >
+              <Tag className="w-4 h-4 text-primary" />
+              Предложить цену
+            </button>
+          }
+        />
+      </div>
+
+      {/* Secondary actions */}
+      <div className="flex items-center justify-between pt-2 border-t border-border text-xs">
+        <button
+          onClick={() => window.print()}
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors py-1"
+        >
+          <Download className="w-3.5 h-3.5" /> Скачать PDF
+        </button>
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors py-1"
+        >
+          <Share2 className="w-3.5 h-3.5" /> Поделиться
+        </button>
+      </div>
+
+      <div className="flex items-center gap-2 pt-2 text-sm text-muted-foreground border-t border-border">
         <MapPin className="w-4 h-4 text-primary shrink-0" /> {property.address}
       </div>
     </div>

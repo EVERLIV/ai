@@ -502,6 +502,54 @@ export type Database = {
           },
         ]
       }
+      property_units: {
+        Row: {
+          area: number
+          created_at: string
+          description: string | null
+          floor: string | null
+          id: string
+          name: string
+          price: number
+          price_per_m2: number
+          property_id: string
+          purpose: string | null
+          sort_order: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          area?: number
+          created_at?: string
+          description?: string | null
+          floor?: string | null
+          id?: string
+          name?: string
+          price?: number
+          price_per_m2?: number
+          property_id: string
+          purpose?: string | null
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          area?: number
+          created_at?: string
+          description?: string | null
+          floor?: string | null
+          id?: string
+          name?: string
+          price?: number
+          price_per_m2?: number
+          property_id?: string
+          purpose?: string | null
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

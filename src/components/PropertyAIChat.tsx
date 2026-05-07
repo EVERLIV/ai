@@ -27,6 +27,13 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Listen for global open event (from "Написать" CTA)
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener("open-consultant-chat", handler);
+    return () => window.removeEventListener("open-consultant-chat", handler);
+  }, []);
+
   // When user opens chat: show "consultant connecting" then greeting
   useEffect(() => {
     if (!open) return;
