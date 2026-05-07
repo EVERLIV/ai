@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Search, Menu, X, Phone, Mail, MapPin,
-  Send, MessageCircle, Instagram, ArrowRight, ChevronDown,
+  Send, MessageCircle, Instagram, ArrowRight, ChevronDown, Sparkles,
 } from "lucide-react";
 
 const navItems = [
