@@ -1,0 +1,1 @@
+ALTER TABLE public.property_units ADD COLUMN IF NOT EXISTS photos text[] NOT NULL DEFAULT '{}';

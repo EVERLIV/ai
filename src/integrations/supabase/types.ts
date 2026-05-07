@@ -510,6 +510,7 @@ export type Database = {
           floor: string | null
           id: string
           name: string
+          photos: string[]
           price: number
           price_per_m2: number
           property_id: string
@@ -525,6 +526,7 @@ export type Database = {
           floor?: string | null
           id?: string
           name?: string
+          photos?: string[]
           price?: number
           price_per_m2?: number
           property_id: string
@@ -540,6 +542,7 @@ export type Database = {
           floor?: string | null
           id?: string
           name?: string
+          photos?: string[]
           price?: number
           price_per_m2?: number
           property_id?: string

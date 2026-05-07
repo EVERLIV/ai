@@ -41,6 +41,7 @@ export function useUpsertUnit(propertyId: string) {
           status: unit.status || "available",
           description: unit.description || "",
           sort_order: Number(unit.sort_order || 0),
+          photos: unit.photos || [],
         };
         const { error } = await supabase.from("property_units").insert(payload);
         if (error) throw error;
