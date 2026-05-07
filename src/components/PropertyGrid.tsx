@@ -75,12 +75,21 @@ export default function PropertyGrid() {
 
                   <div className="p-5">
                     <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <div className="text-xl font-bold text-foreground">
-                          {Number(p.price).toLocaleString("ru-RU")} ₽
-                          {p.deal_type === "Аренда" && <span className="text-sm font-normal text-muted-foreground">/мес</span>}
-                        </div>
-                        <div className="text-sm text-muted-foreground mt-0.5">{p.area} м²</div>
+                      <div className="min-w-0">
+                        {Number(p.price) > 0 ? (
+                          <>
+                            <div className="text-xl font-bold text-foreground">
+                              {Number(p.price).toLocaleString("ru-RU")} ₽
+                              {p.deal_type === "Аренда" && <span className="text-sm font-normal text-muted-foreground">/мес</span>}
+                            </div>
+                            <div className="text-sm text-muted-foreground mt-0.5">{p.area} м²</div>
+                          </>
+                        ) : (
+                          <div className="space-y-1.5">
+                            <div className="text-sm text-muted-foreground">{p.area} м²</div>
+                            <RequestPriceDialog propertyId={p.id} propertyAddress={p.address} />
+                          </div>
+                        )}
                       </div>
                       <button
                         onClick={(e) => toggleSave(p.id, e)}
