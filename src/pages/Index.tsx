@@ -1,7 +1,7 @@
 import { useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import HeroSection from "@/components/HeroSection";
-import SearchFilters from "@/components/SearchFilters";
+import SearchFilters, { defaultFilters, type PropertyFilters } from "@/components/SearchFilters";
 import PropertyGrid from "@/components/PropertyGrid";
 import RentSection from "@/components/RentSection";
 import AIAssistant from "@/components/AIAssistant";
@@ -14,13 +14,14 @@ import SiteFooter from "@/components/SiteFooter";
 
 export default function Index() {
   const [aiOpen, setAiOpen] = useState(false);
+  const [filters, setFilters] = useState<PropertyFilters>(defaultFilters);
 
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <HeroSection />
-      <SearchFilters onAIClick={() => setAiOpen(true)} />
-      <PropertyGrid />
+      <SearchFilters onAIClick={() => setAiOpen(true)} filters={filters} onChange={setFilters} />
+      <PropertyGrid filters={filters} />
       <RentSection />
       <MapSection />
       <FeaturesSection />
@@ -32,3 +33,4 @@ export default function Index() {
     </div>
   );
 }
+

@@ -1,20 +1,35 @@
 import { Heart, ArrowRight, MapPin, Building2, Store, Warehouse, TreePine } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProperties, type DbProperty } from "@/hooks/useProperties";
 import PropertyImage from "@/components/PropertyImage";
+import type { PropertyFilters } from "@/components/SearchFilters";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
 };
 
-export default function PropertyGrid() {
+export default function PropertyGrid({ filters }: { filters?: PropertyFilters }) {
   const { ref, isVisible } = useScrollReveal();
   const [saved, setSaved] = useState<string[]>([]);
   const navigate = useNavigate();
   const { data: properties = [], isLoading } = useProperties();
+
+  const filtered = useMemo(() => {
+    if (!filters) return properties;
+    return properties.filter((p) => {
+      if (filters.type !== "Все" && !(p.type ?? "").toLowerCase().includes(filters.type.toLowerCase())) return false;
+      const area = Number(p.area) || 0;
+      if (area < filters.areaMin || area > filters.areaMax) return false;
+      const price = Number(p.price) || 0;
+      if (price > 0 && (price < filters.priceMin || price > filters.priceMax)) return false;
+      if (filters.district !== "Все" && p.district !== filters.district) return false;
+      if (filters.cls !== "Все" && p.class !== filters.cls) return false;
+      return true;
+    });
+  }, [properties, filters]);
 
   const toggleSave = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -22,7 +37,7 @@ export default function PropertyGrid() {
   };
 
   return (
-    <section ref={ref} id="Офисы" className="py-16">
+    <section ref={ref} id="property-results" className="py-16 scroll-mt-20">
       <div className={`container mx-auto px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
         <div className="flex items-end justify-between mb-8">
           <div>
@@ -47,9 +62,13 @@ export default function PropertyGrid() {
               </div>
             ))}
           </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground">
+            По вашим фильтрам объектов не найдено. Попробуйте изменить параметры.
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.slice(0, 12).map((p) => {
+            {filtered.slice(0, 12).map((p) => {
               const Icon = typeIcons[p.type] || Building2;
               return (
                 <div
