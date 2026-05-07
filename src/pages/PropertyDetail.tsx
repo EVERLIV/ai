@@ -331,6 +331,7 @@ function PropertyPriceBlock({ property }: { property: any }) {
       <RequestPriceDialog
         propertyId={property.id}
         propertyAddress={property.address}
+        basePrice={Number(property.price) || undefined}
         trigger={
           <button
             type="button"
