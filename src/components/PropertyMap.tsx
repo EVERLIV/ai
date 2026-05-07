@@ -92,16 +92,6 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
         />
       )}
 
-      {hasCoords && (
-        <button
-          type="button"
-          onClick={() => setStreetOpen(true)}
-          className="absolute bottom-3 left-3 z-[5] inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-foreground text-background text-xs font-semibold shadow-card-hover hover:opacity-90 transition-opacity"
-        >
-          <Eye className="w-3.5 h-3.5" /> Вид с улицы
-        </button>
-      )}
-
       {!hasCoords && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-xs text-muted-foreground bg-background/60 backdrop-blur-sm pointer-events-none">
           <MapPin className="w-5 h-5 text-primary" />
