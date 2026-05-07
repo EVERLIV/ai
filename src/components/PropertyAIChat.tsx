@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
-import { Send, Sparkles, Loader2, RotateCcw, Phone } from "lucide-react";
+import { Send, Loader2, X, MessageCircle, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -19,30 +20,35 @@ interface Props {
 
 export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
   const { toast } = useToast();
-  const [messages, setMessages] = useState<Msg[]>([
-    {
-      role: "assistant",
-      content: propertyAddress
-        ? `Здравствуйте! Я ИИ-консультант **АРЕНДА СИТИ**. Помогу с вопросами по объекту _${propertyAddress}_ и подбором других вариантов. Что вас интересует?`
-        : "Здравствуйте! Я ИИ-консультант **АРЕНДА СИТИ**. Помогу подобрать офис, склад, торговое помещение или землю. Что вас интересует?",
-    },
-  ]);
+  const [open, setOpen] = useState(false);
+  const [connecting, setConnecting] = useState(true);
+  const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // When user opens chat: show "consultant connecting" then greeting
+  useEffect(() => {
+    if (!open) return;
+    if (messages.length > 0) return;
+    setConnecting(true);
+    const t1 = setTimeout(() => {
+      setConnecting(false);
+      setMessages([
+        {
+          role: "assistant",
+          content: propertyAddress
+            ? `Здравствуйте! Меня зовут **Анастасия**, я ваш консультант **АРЕНДА СИТИ**. Помогу с вопросами по объекту _${propertyAddress}_ и подберу другие подходящие варианты. Что вас интересует?`
+            : "Здравствуйте! Меня зовут **Анастасия**, я ваш консультант **АРЕНДА СИТИ**. Помогу подобрать офис, склад, торговое помещение или землю. Что вас интересует?",
+        },
+      ]);
+    }, 1500);
+    return () => clearTimeout(t1);
+  }, [open, messages.length, propertyAddress]);
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, loading]);
-
-  const reset = () => {
-    setMessages([
-      {
-        role: "assistant",
-        content: "Начнём заново. Чем помочь?",
-      },
-    ]);
-  };
+  }, [messages, loading, connecting, open]);
 
   const send = async (text: string) => {
     const trimmed = text.trim();
@@ -58,7 +64,7 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
       assistantSoFar += chunk;
       setMessages((prev) => {
         const last = prev[prev.length - 1];
-        if (last?.role === "assistant" && last.content !== "" && prev.length > next.length) {
+        if (last?.role === "assistant" && prev.length > next.length) {
           return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
         }
         return [...next, { role: "assistant", content: assistantSoFar }];
@@ -83,7 +89,7 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
         if (resp.status === 429) {
           toast({ title: "Слишком много запросов", description: "Попробуйте через минуту.", variant: "destructive" });
         } else if (resp.status === 402) {
-          toast({ title: "Сервис временно недоступен", description: "Закончились кредиты ИИ.", variant: "destructive" });
+          toast({ title: "Сервис временно недоступен", description: "Попробуйте позже.", variant: "destructive" });
         } else {
           toast({ title: "Ошибка", description: "Не удалось получить ответ.", variant: "destructive" });
         }
@@ -126,102 +132,137 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
   };
 
   return (
-    <div className="bg-card border border-border flex flex-col h-[520px] overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/30 shrink-0">
-        <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
-          <Sparkles className="w-4 h-4 text-primary-foreground" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold text-foreground">ИИ-консультант</div>
-          <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> онлайн · АРЕНДА СИТИ
-          </div>
-        </div>
+    <>
+      {/* Floating launcher: square tab, right-middle */}
+      {!open && (
         <button
-          onClick={reset}
-          title="Начать заново"
-          className="p-1.5 text-muted-foreground hover:text-primary transition-colors"
+          onClick={() => setOpen(true)}
+          aria-label="Консультация"
+          className="fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-primary text-primary-foreground shadow-elegant hover:opacity-95 transition-all flex flex-col items-center justify-center gap-2 w-14 py-5 rounded-l-xl"
         >
-          <RotateCcw className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5 min-h-0">
-        {messages.map((m, i) => (
-          <div
-            key={i}
-            className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+          <MessageCircle className="w-5 h-5" />
+          <span
+            className="text-[11px] font-semibold tracking-wide uppercase"
+            style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
           >
-            <div
-              className={`max-w-[85%] px-3 py-2 text-[13px] leading-relaxed ${
-                m.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-foreground"
-              }`}
-            >
-              {m.role === "assistant" ? (
-                <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-strong:text-foreground">
-                  <ReactMarkdown>{m.content || "…"}</ReactMarkdown>
-                </div>
-              ) : (
-                <div className="whitespace-pre-wrap">{m.content}</div>
-              )}
-            </div>
-          </div>
-        ))}
-        {loading && messages[messages.length - 1]?.role === "user" && (
-          <div className="flex justify-start">
-            <div className="bg-muted px-3 py-2 text-[13px] text-muted-foreground inline-flex items-center gap-2">
-              <Loader2 className="w-3 h-3 animate-spin" /> печатает…
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Starters */}
-      {messages.length <= 1 && (
-        <div className="px-3 pb-2 flex flex-wrap gap-1.5 shrink-0">
-          {STARTERS.map((s) => (
-            <button
-              key={s}
-              onClick={() => send(s)}
-              className="text-[11px] px-2.5 py-1 border border-border text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
-            >
-              {s}
-            </button>
-          ))}
-        </div>
+            Консультация
+          </span>
+        </button>
       )}
 
-      {/* Input */}
-      <form
-        onSubmit={(e) => { e.preventDefault(); send(input); }}
-        className="border-t border-border p-2.5 flex items-center gap-2 shrink-0 bg-card"
-      >
-        <a
-          href="tel:+73952000000"
-          title="Позвонить"
-          className="p-2 text-muted-foreground hover:text-primary transition-colors"
-        >
-          <Phone className="w-4 h-4" />
-        </a>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Напишите сообщение…"
-          disabled={loading}
-          className="flex-1 px-3 py-2 bg-muted text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
-        />
-        <button
-          type="submit"
-          disabled={loading || !input.trim()}
-          className="p-2 bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40"
-        >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-        </button>
-      </form>
-    </div>
+      {/* Chat panel */}
+      {open && (
+        <div className="fixed right-3 sm:right-5 top-1/2 -translate-y-1/2 z-50 w-[calc(100vw-1.5rem)] sm:w-[380px] max-w-[380px] h-[min(600px,90vh)] bg-card border border-border rounded-2xl shadow-elegant flex flex-col overflow-hidden animate-in slide-in-from-right-4 duration-200">
+          {/* Header */}
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/30 shrink-0">
+            <div className="relative">
+              <img
+                src={consultantAvatar}
+                alt="Анастасия"
+                width={40}
+                height={40}
+                loading="lazy"
+                className="w-10 h-10 rounded-full object-cover"
+              />
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-card" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-foreground">Анастасия</div>
+              <div className="text-[11px] text-muted-foreground">Ваш консультант · АРЕНДА СИТИ</div>
+            </div>
+            <button
+              onClick={() => setOpen(false)}
+              title="Свернуть"
+              className="p-1.5 text-muted-foreground hover:text-primary transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5 min-h-0 bg-background/40">
+            {connecting && (
+              <div className="flex justify-start">
+                <div className="bg-muted px-3 py-2 rounded-lg text-[13px] text-muted-foreground inline-flex items-center gap-2">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Консультант подключается…
+                </div>
+              </div>
+            )}
+            {messages.map((m, i) => (
+              <div
+                key={i}
+                className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[85%] px-3 py-2 rounded-lg text-[13px] leading-relaxed ${
+                    m.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-foreground"
+                  }`}
+                >
+                  {m.role === "assistant" ? (
+                    <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-strong:text-foreground">
+                      <ReactMarkdown>{m.content || "…"}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div className="whitespace-pre-wrap">{m.content}</div>
+                  )}
+                </div>
+              </div>
+            ))}
+            {loading && messages[messages.length - 1]?.role === "user" && (
+              <div className="flex justify-start">
+                <div className="bg-muted px-3 py-2 rounded-lg text-[13px] text-muted-foreground inline-flex items-center gap-2">
+                  <Loader2 className="w-3 h-3 animate-spin" /> печатает…
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Starters */}
+          {!connecting && messages.length <= 1 && (
+            <div className="px-3 pb-2 flex flex-wrap gap-1.5 shrink-0">
+              {STARTERS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => send(s)}
+                  className="text-[11px] px-2.5 py-1 rounded-full border border-border text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Input */}
+          <form
+            onSubmit={(e) => { e.preventDefault(); send(input); }}
+            className="border-t border-border p-2.5 flex items-center gap-2 shrink-0 bg-card"
+          >
+            <a
+              href="tel:+73952000000"
+              title="Позвонить"
+              className="p-2 rounded-lg text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Phone className="w-4 h-4" />
+            </a>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Напишите сообщение…"
+              disabled={loading || connecting}
+              className="flex-1 px-3 py-2 rounded-lg bg-muted text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+            />
+            <button
+              type="submit"
+              disabled={loading || connecting || !input.trim()}
+              className="p-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            </button>
+          </form>
+        </div>
+      )}
+    </>
   );
 }
