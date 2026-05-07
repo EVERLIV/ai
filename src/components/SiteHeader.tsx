@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Search, Menu, X, Phone, Mail, MapPin,
-  Send, MessageCircle, Instagram, ArrowRight, ChevronDown,
+  Send, MessageCircle, Instagram, ArrowRight, ChevronDown, Sparkles,
 } from "lucide-react";
 
 const navItems = [
@@ -145,6 +145,13 @@ export default function SiteHeader() {
               Позвонить
             </a>
             <Link
+              to="/list-property"
+              className="group relative flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-semibold text-gold-dark border-2 border-gold/70 bg-gold/5 hover:bg-gold hover:text-primary-foreground hover:border-gold transition-all duration-300 hover:shadow-[0_8px_24px_-8px_hsl(var(--gold)/0.55)]"
+            >
+              <Sparkles className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-12" />
+              Разместить объект
+            </Link>
+            <Link
               to="/auth"
               className="group flex items-center gap-1.5 h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold shadow-[0_4px_14px_-4px_hsl(var(--primary)/0.5)] hover:shadow-[0_8px_22px_-4px_hsl(var(--primary)/0.55)] hover:-translate-y-0.5 transition-all duration-300"
             >
@@ -207,6 +214,14 @@ export default function SiteHeader() {
               Войти <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
+          <Link
+            to="/list-property"
+            onClick={() => setMobileOpen(false)}
+            className="mt-2 flex items-center justify-center gap-1.5 h-11 rounded-lg border-2 border-gold/70 bg-gold/5 text-gold-dark text-sm font-semibold hover:bg-gold hover:text-primary-foreground transition-all"
+          >
+            <Sparkles className="w-4 h-4" />
+            Разместить объект
+          </Link>
 
           <div className="flex items-center justify-center gap-2 pt-3">
             {socials.map(({ Icon, href, label }) => (

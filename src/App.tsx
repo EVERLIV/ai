@@ -17,6 +17,7 @@ import RetailPage from "./pages/RetailPage.tsx";
 import WarehousesPage from "./pages/WarehousesPage.tsx";
 import AdsCatalog from "./pages/AdsCatalog.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import ListProperty from "./pages/ListProperty.tsx";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => {
                 <Route path="/retail" element={<RetailPage />} />
                 <Route path="/warehouses" element={<WarehousesPage />} />
                 <Route path="/ads" element={<AdsCatalog />} />
+                <Route path="/list-property" element={<ListProperty />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
