@@ -88,7 +88,7 @@ export default function RequestPriceDialog({ propertyId, propertyAddress, basePr
 
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setSent(false); }}>
-      <DialogTrigger asChild onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+      <DialogTrigger asChild>
         {trigger ?? defaultTrigger}
       </DialogTrigger>
       <DialogContent className="max-w-md p-0 overflow-hidden" onClick={(e) => e.stopPropagation()}>
