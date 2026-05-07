@@ -15,6 +15,7 @@ import { getDefaultPropertyImage } from "@/lib/propertyImages";
 import RequestPriceDialog from "@/components/RequestPriceDialog";
 import PropertyAIChat from "@/components/PropertyAIChat";
 import PropertyUnitsTable from "@/components/PropertyUnitsTable";
+import PropertySidebarExtras from "@/components/PropertySidebarExtras";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
