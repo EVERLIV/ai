@@ -17,6 +17,7 @@ import RetailPage from "./pages/RetailPage.tsx";
 import WarehousesPage from "./pages/WarehousesPage.tsx";
 import AdsCatalog from "./pages/AdsCatalog.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import ListProperty from "./pages/ListProperty.tsx";
 
 const queryClient = new QueryClient();
 
