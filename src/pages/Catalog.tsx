@@ -400,7 +400,16 @@ export default function Catalog() {
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
 
-      <div className="pt-16 flex-1 flex flex-col">
+      <div className="pt-[100px] flex-1 flex flex-col">
+        {/* Breadcrumbs */}
+        <div className="border-b border-border/40 bg-card/60">
+          <div className="px-3 lg:px-6 h-9 flex items-center gap-1.5 text-[11px] lg:text-xs text-muted-foreground whitespace-nowrap overflow-hidden">
+            <Link to="/" className="hover:text-foreground transition-colors shrink-0">Главная</Link>
+            <span className="shrink-0 opacity-50">/</span>
+            <span className="text-foreground truncate">Каталог объектов</span>
+          </div>
+        </div>
+
         {/* Top bar — minimal, без градиентного фона и без заголовка */}
         <div className="border-b border-border/40">
           <div className="px-3 lg:px-6 py-2.5 lg:py-3 flex items-center gap-2 lg:gap-4">
