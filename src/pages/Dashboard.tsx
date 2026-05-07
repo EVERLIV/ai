@@ -304,6 +304,7 @@ export default function Dashboard() {
         manager_id: formData.manager_id || null,
         client_id: formData.client_id || null,
         is_active: formData.is_active,
+        extras: formData.extras || {},
       };
 
       setUploading(true);
