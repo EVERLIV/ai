@@ -15,6 +15,7 @@ import { getDefaultPropertyImage } from "@/lib/propertyImages";
 import RequestPriceDialog from "@/components/RequestPriceDialog";
 import PropertyAIChat from "@/components/PropertyAIChat";
 import PropertyUnitsTable from "@/components/PropertyUnitsTable";
+import PropertySidebarExtras from "@/components/PropertySidebarExtras";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
@@ -260,8 +261,9 @@ export default function PropertyDetail() {
           </div>
 
           <aside className="hidden lg:block w-[360px] shrink-0">
-            <div className="sticky top-20 space-y-5">
+            <div className="sticky top-20 space-y-4 max-h-[calc(100vh-6rem)] overflow-y-auto pr-1 -mr-1 scrollbar-thin">
               <PropertyPriceBlock property={property} />
+              <PropertySidebarExtras property={property} />
             </div>
           </aside>
         </div>

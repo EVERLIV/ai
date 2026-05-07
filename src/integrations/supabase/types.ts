@@ -400,6 +400,7 @@ export type Database = {
           deposit: string | null
           description: string | null
           district: string
+          extras: Json
           features: string[] | null
           floor: string | null
           id: string
@@ -433,6 +434,7 @@ export type Database = {
           deposit?: string | null
           description?: string | null
           district?: string
+          extras?: Json
           features?: string[] | null
           floor?: string | null
           id?: string
@@ -466,6 +468,7 @@ export type Database = {
           deposit?: string | null
           description?: string | null
           district?: string
+          extras?: Json
           features?: string[] | null
           floor?: string | null
           id?: string
