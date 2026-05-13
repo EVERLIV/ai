@@ -165,7 +165,7 @@ function SidebarAIChat() {
     setInput("");
     setLoading(true);
     setTimeout(() => {
-      setMessages((p) => [...p, { role: "assistant", text: "Для полного ИИ подключите Lovable Cloud. Сейчас работаю в демо-режиме. Уточните ваш запрос!" }]);
+      setMessages((p) => [...p, { role: "assistant", text: "ИИ работает в демо-режиме. Уточните ваш запрос!" }]);
       setLoading(false);
     }, 1200);
   };

@@ -123,7 +123,7 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
         {
           role: "assistant",
           content:
-            "Для подключения реального ИИ-ассистента необходимо активировать Lovable Cloud. Пока что я работаю в демо-режиме. Расскажите подробнее о вашем запросе!",
+            "ИИ-ассистент работает в демо-режиме. Расскажите подробнее о вашем запросе!",
         },
       ]);
       setLoading(false);
