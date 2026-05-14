@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import NewsSidebar from "@/components/NewsSidebar";
+import PropertyAIChat from "@/components/PropertyAIChat";
 import { useNewsPosts, type NewsPost } from "@/hooks/useNews";
 
 const CATEGORIES = ["Все", "Рынок", "Советы", "Новости компании", "Законы"];
@@ -199,29 +201,38 @@ export default function NewsPage() {
         </section>
 
         <section className="container mx-auto px-3 lg:px-8 py-10">
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
+            {/* Main content */}
+            <div className="flex-1 min-w-0">
+              {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <SkeletonCard />
+                  <SkeletonCard />
+                  <SkeletonCard />
+                </div>
+              ) : posts.length === 0 ? (
+                <div className="text-center py-20 text-muted-foreground">
+                  <p className="text-lg font-medium mb-1">Нет публикаций</p>
+                  <p className="text-sm">По выбранной категории пока нет статей</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {featured && <FeaturedCard post={featured} />}
+                  {rest.map(post => (
+                    <CompactCard key={post.id} post={post} />
+                  ))}
+                </div>
+              )}
             </div>
-          ) : posts.length === 0 ? (
-            <div className="text-center py-20 text-muted-foreground">
-              <p className="text-lg font-medium mb-1">Нет публикаций</p>
-              <p className="text-sm">По выбранной категории пока нет статей</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {featured && <FeaturedCard post={featured} />}
-              {rest.map(post => (
-                <CompactCard key={post.id} post={post} />
-              ))}
-            </div>
-          )}
+
+            {/* Sidebar */}
+            <NewsSidebar />
+          </div>
         </section>
       </main>
 
       <SiteFooter />
+      <PropertyAIChat />
     </div>
   );
 }

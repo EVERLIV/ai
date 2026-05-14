@@ -4,6 +4,8 @@ import ReactMarkdown from "react-markdown";
 import { Newspaper, Eye, Calendar, User, ArrowLeft } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import NewsSidebar from "@/components/NewsSidebar";
+import PropertyAIChat from "@/components/PropertyAIChat";
 import { useNewsPost, useNewsPosts, type NewsPost } from "@/hooks/useNews";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -153,62 +155,70 @@ export default function NewsPostPage() {
             <Link to="/news" className="text-primary text-sm hover:underline">Вернуться к новостям</Link>
           </div>
         ) : (
-          <article className="container mx-auto px-3 lg:px-8 py-10 max-w-3xl">
-            <div className="h-64 bg-muted flex items-center justify-center mb-8 overflow-hidden">
-              {post.cover_url
-                ? <img src={post.cover_url} alt={post.title} className="w-full h-full object-cover" />
-                : <Newspaper className="w-16 h-16 text-muted-foreground/30" />
-              }
+          <div className="container mx-auto px-3 lg:px-8 py-10">
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+              {/* Article */}
+              <article className="flex-1 min-w-0">
+                <div className="h-64 bg-muted flex items-center justify-center mb-8 overflow-hidden">
+                  {post.cover_url
+                    ? <img src={post.cover_url} alt={post.title} className="w-full h-full object-cover" />
+                    : <Newspaper className="w-16 h-16 text-muted-foreground/30" />
+                  }
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 mb-4 text-sm text-muted-foreground">
+                  <span className={`inline-block text-[11px] font-medium px-2 py-0.5 ${catColor}`}>{post.category}</span>
+                  <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{formatDate(post.published_at || post.created_at)}</span>
+                  <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" />{post.author_name}</span>
+                  <span className="flex items-center gap-1 ml-auto"><Eye className="w-3.5 h-3.5" />{post.views}</span>
+                </div>
+
+                <h1 className="font-display text-3xl font-bold leading-snug mb-4">{post.title}</h1>
+
+                {post.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {post.tags.map(tag => (
+                      <span key={tag} className="text-xs px-2 py-0.5 bg-muted text-muted-foreground">#{tag}</span>
+                    ))}
+                  </div>
+                )}
+
+                {post.excerpt && !post.content && (
+                  <p className="text-muted-foreground text-lg leading-relaxed">{post.excerpt}</p>
+                )}
+
+                {post.content && (
+                  <div className="prose prose-sm max-w-none prose-headings:font-display prose-headings:font-bold prose-a:text-primary">
+                    <ReactMarkdown>{post.content}</ReactMarkdown>
+                  </div>
+                )}
+
+                {/* Related */}
+                {related.length > 0 && (
+                  <div className="mt-10 pt-8 border-t border-border">
+                    <h2 className="font-display text-lg font-bold mb-4">Читать также</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {related.map(p => (
+                        <Link key={p.id} to={`/news/${p.slug}`} className="group block border border-border bg-card hover:-translate-y-0.5 transition-all p-4">
+                          <span className={`inline-block text-[11px] font-medium px-2 py-0.5 mb-2 ${CATEGORY_COLORS[p.category] ?? "bg-muted text-muted-foreground"}`}>{p.category}</span>
+                          <p className="text-sm font-semibold leading-snug group-hover:text-primary transition-colors line-clamp-3">{p.title}</p>
+                          <span className="text-xs text-muted-foreground mt-1 block">{formatDate(p.published_at || p.created_at)}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </article>
+
+              {/* Sidebar */}
+              <NewsSidebar />
             </div>
-
-            <div className="flex flex-wrap items-center gap-3 mb-4 text-sm text-muted-foreground">
-              <span className={`inline-block text-[11px] font-medium px-2 py-0.5 ${catColor}`}>{post.category}</span>
-              <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{formatDate(post.published_at || post.created_at)}</span>
-              <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" />{post.author_name}</span>
-              <span className="flex items-center gap-1 ml-auto"><Eye className="w-3.5 h-3.5" />{post.views}</span>
-            </div>
-
-            <h1 className="font-display text-3xl font-bold leading-snug mb-4">{post.title}</h1>
-
-            {post.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-6">
-                {post.tags.map(tag => (
-                  <span key={tag} className="text-xs px-2 py-0.5 bg-muted text-muted-foreground">#{tag}</span>
-                ))}
-              </div>
-            )}
-
-            {post.excerpt && !post.content && (
-              <p className="text-muted-foreground text-lg leading-relaxed">{post.excerpt}</p>
-            )}
-
-            {post.content && (
-              <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-display prose-headings:font-bold prose-a:text-primary">
-                <ReactMarkdown>{post.content}</ReactMarkdown>
-              </div>
-            )}
-          </article>
-        )}
-
-        {related.length > 0 && (
-          <section className="border-t border-border bg-muted/30">
-            <div className="container mx-auto px-3 lg:px-8 py-10 max-w-3xl">
-              <h2 className="font-display text-xl font-bold mb-5">Читать также</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {related.map(p => (
-                  <Link key={p.id} to={`/news/${p.slug}`} className="group block border border-border bg-card hover:-translate-y-0.5 transition-all p-4">
-                    <span className={`inline-block text-[11px] font-medium px-2 py-0.5 mb-2 ${CATEGORY_COLORS[p.category] ?? "bg-muted text-muted-foreground"}`}>{p.category}</span>
-                    <p className="text-sm font-semibold leading-snug group-hover:text-primary transition-colors line-clamp-3">{p.title}</p>
-                    <span className="text-xs text-muted-foreground mt-1 block">{formatDate(p.published_at || p.created_at)}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
+          </div>
         )}
       </main>
 
       <SiteFooter />
+      <PropertyAIChat />
     </div>
   );
 }
