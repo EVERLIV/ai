@@ -6,7 +6,7 @@ import {
   Shield, Calendar, ChevronLeft, ChevronRight, Store, Warehouse, TreePine,
   MessageSquareText, Tag, Download,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import NearbyPropertiesSlider from "@/components/NearbyPropertiesSlider";
@@ -27,6 +27,15 @@ export default function PropertyDetail() {
   const { data: property, isLoading } = useProperty(id);
   const [saved, setSaved] = useState(false);
   const [activePhoto, setActivePhoto] = useState(0);
+  const [scrollPct, setScrollPct] = useState(0);
+  useEffect(() => {
+    const onScroll = () => {
+      const docH = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollPct(docH > 0 ? Math.min(100, (window.scrollY / docH) * 100) : 0);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   
 
   if (isLoading) {
@@ -71,7 +80,7 @@ export default function PropertyDetail() {
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
 
-      <div className="sticky top-16 z-30 mt-[100px] bg-card/85 backdrop-blur-xl border-b border-border">
+      <div className="sticky top-[98px] z-30 mt-[98px] bg-card/90 backdrop-blur-xl shadow-[0_1px_0_0_hsl(var(--border)/0.5)]">
         <div className="container mx-auto px-3 lg:px-8 h-10 lg:h-11 flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
@@ -106,6 +115,10 @@ export default function PropertyDetail() {
               <Share2 className="w-4 h-4" />
             </button>
           </div>
+        </div>
+        {/* Scroll indicator */}
+        <div className="h-px bg-border/30">
+          <div className="h-full bg-foreground/20 transition-[width] duration-100" style={{ width: `${scrollPct}%` }} />
         </div>
       </div>
 
