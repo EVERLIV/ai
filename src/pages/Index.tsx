@@ -10,6 +10,7 @@ import OwnerSection from "@/components/OwnerSection";
 import AboutSection from "@/components/AboutSection";
 import ListPropertyBlock from "@/components/ListPropertyBlock";
 import NewsSection from "@/components/NewsSection";
+import PopularPropertiesSlider from "@/components/PopularPropertiesSlider";
 import ConsultationWidget from "@/components/ConsultationWidget";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -23,6 +24,7 @@ export default function Index() {
       <NewsSection />
       <SearchFilters onAIClick={() => {}} filters={filters} onChange={setFilters} />
       <PropertyGrid filters={filters} />
+      <PopularPropertiesSlider />
       <RentSection />
       <MapSection />
       <FeaturesSection />
