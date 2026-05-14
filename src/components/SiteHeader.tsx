@@ -20,6 +20,7 @@ const navItems: { label: string; href: string; submenu?: { label: string; desc: 
   },
   { label: "Реклама", href: "/ads" },
   { label: "О нас", href: "/#about" },
+  { label: "Новости", href: "/news" },
   { label: "Контакты", href: "/#contacts" },
 ];
 

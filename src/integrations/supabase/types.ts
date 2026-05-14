@@ -274,6 +274,42 @@ export type Database = {
         }
         Relationships: []
       }
+      news_posts: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          published_at: string | null
+          title: string
+          slug: string
+          excerpt: string | null
+          content: string | null
+          cover_url: string | null
+          category: string
+          tags: string[]
+          status: string
+          author_name: string
+          views: number
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          published_at?: string | null
+          title: string
+          slug: string
+          excerpt?: string | null
+          content?: string | null
+          cover_url?: string | null
+          category?: string
+          tags?: string[]
+          status?: string
+          author_name?: string
+          views?: number
+        }
+        Update: Partial<Database["public"]["Tables"]["news_posts"]["Insert"]>
+        Relationships: []
+      }
       objects: {
         Row: {
           address: string

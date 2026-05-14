@@ -18,6 +18,8 @@ import WarehousesPage from "./pages/WarehousesPage.tsx";
 import AdsCatalog from "./pages/AdsCatalog.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ListProperty from "./pages/ListProperty.tsx";
+import NewsPage from "./pages/NewsPage.tsx";
+import NewsPostPage from "./pages/NewsPostPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +51,8 @@ const App = () => {
                 <Route path="/warehouses" element={<WarehousesPage />} />
                 <Route path="/ads" element={<AdsCatalog />} />
                 <Route path="/list-property" element={<ListProperty />} />
+                <Route path="/news" element={<NewsPage />} />
+                <Route path="/news/:slug" element={<NewsPostPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

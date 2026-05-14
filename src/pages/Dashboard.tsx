@@ -24,6 +24,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMe
 import AdPlacementsManager from "@/components/admin/AdPlacementsManager";
 import AdPlacementsTab from "@/components/admin/AdPlacementsTab";
 import PropertyUnitsManager from "@/components/admin/PropertyUnitsManager";
+import NewsAdminPanel from "@/components/NewsAdminPanel";
 
 // ====== Predefined options ======
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
@@ -502,6 +503,7 @@ export default function Dashboard() {
             <TabsTrigger value="properties"><Home className="w-4 h-4 mr-1" /> Объекты</TabsTrigger>
             <TabsTrigger value="ads"><Megaphone className="w-4 h-4 mr-1" /> Реклама</TabsTrigger>
             <TabsTrigger value="users"><Users className="w-4 h-4 mr-1" /> Пользователи</TabsTrigger>
+            <TabsTrigger value="news">Новости</TabsTrigger>
           </TabsList>
 
           {/* Properties Tab */}
@@ -1081,6 +1083,14 @@ export default function Dashboard() {
                     ))}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="news">
+            <Card>
+              <CardContent className="p-4">
+                <NewsAdminPanel />
               </CardContent>
             </Card>
           </TabsContent>
