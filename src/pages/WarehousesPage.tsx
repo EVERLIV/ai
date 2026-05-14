@@ -3,6 +3,8 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import CategoryPropertySlider from "@/components/CategoryPropertySlider";
 import CategoryContactForm from "@/components/CategoryContactForm";
+import NewsSidebar from "@/components/NewsSidebar";
+import PropertyAIChat from "@/components/PropertyAIChat";
 import heroImg from "@/assets/hero-warehouses.jpg";
 import { Warehouse, Truck, Shield, Ruler, CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -84,54 +86,41 @@ export default function WarehousesPage() {
         </div>
       </section>
 
-      {/* SEO Text */}
-      <section className="py-16 bg-muted/20">
+      {/* Main + Sidebar */}
+      <section className="py-12 bg-muted/20">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto space-y-8">
-            <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
-              Складские помещения в Иркутске — аренда и продажа
-            </h2>
-            <div className="prose prose-lg text-muted-foreground max-w-none space-y-4">
-              <p>
-                Иркутск занимает стратегическое положение на пересечении Транссибирской магистрали 
-                и федеральных автодорог, что делает город важным логистическим хабом Восточной Сибири. 
-                Складской рынок региона предлагает объекты различных классов — от современных 
-                логистических комплексов класса A до производственных баз и ангаров.
-              </p>
-              <p>
-                Основные складские зоны расположены в промышленных районах Иркутска, Ангарска и Шелехова. 
-                Ставки аренды варьируются от 200 до 800 ₽/м² в месяц в зависимости от класса, 
-                температурного режима и расположения объекта. Отапливаемые склады с рампами и 
-                погрузочными доками наиболее востребованы предприятиями торговли и производства.
-              </p>
-              <p>
-                «АрендаСити» специализируется на подборе складских и производственных помещений 
-                для бизнеса любого масштаба. Мы учитываем требования к температурному режиму, 
-                грузоподъёмности полов, высоте потолков и транспортной доступности.
-              </p>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              {features.map((f) => (
-                <div key={f} className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-                  <span className="text-foreground">{f}</span>
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
+            <div className="flex-1 min-w-0 space-y-10">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-display font-bold text-foreground">
+                  Складские помещения в Иркутске — аренда и продажа
+                </h2>
+                <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+                  <p>Иркутск занимает стратегическое положение на пересечении Транссибирской магистрали и федеральных автодорог, что делает город важным логистическим хабом Восточной Сибири. Складской рынок предлагает объекты от современных логистических комплексов класса A до производственных баз и ангаров.</p>
+                  <p>Основные складские зоны расположены в промышленных районах Иркутска, Ангарска и Шелехова. Ставки аренды варьируются от 200 до 800 ₽/м² в месяц в зависимости от класса и температурного режима.</p>
+                  <p>АрендаСити специализируется на подборе складских помещений с учётом требований к температурному режиму, грузоподъёмности полов, высоте потолков и транспортной доступности.</p>
                 </div>
-              ))}
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {features.map((f) => (
+                    <div key={f} className="flex items-start gap-2.5">
+                      <CheckCircle className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                      <span className="text-sm text-foreground">{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <CategoryPropertySlider type="Склад" title="Складские помещения в каталоге" />
+              <div id="contact-form">
+                <CategoryContactForm category="склад" />
+              </div>
             </div>
+            <NewsSidebar />
           </div>
         </div>
       </section>
 
-      {/* Property Slider */}
-      <CategoryPropertySlider type="Склад" title="Складские помещения в каталоге" />
-
-      {/* Contact Form */}
-      <div id="contact-form">
-        <CategoryContactForm category="склад" />
-      </div>
-
       <SiteFooter />
+      <PropertyAIChat />
     </div>
   );
 }

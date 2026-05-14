@@ -3,6 +3,8 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import CategoryPropertySlider from "@/components/CategoryPropertySlider";
 import CategoryContactForm from "@/components/CategoryContactForm";
+import NewsSidebar from "@/components/NewsSidebar";
+import PropertyAIChat from "@/components/PropertyAIChat";
 import heroImg from "@/assets/hero-offices.jpg";
 import { Building2, MapPin, Shield, Clock, Users, CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -84,53 +86,47 @@ export default function OfficesPage() {
         </div>
       </section>
 
-      {/* SEO Text */}
-      <section className="py-16 bg-muted/20">
+      {/* Main + Sidebar */}
+      <section className="py-12 bg-muted/20">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto space-y-8">
-            <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
-              Офисные помещения в аренду в Иркутске — полный обзор рынка
-            </h2>
-            <div className="prose prose-lg text-muted-foreground max-w-none space-y-4">
-              <p>
-                Рынок офисной недвижимости Иркутска — один из наиболее динамичных в Восточной Сибири. Город располагает 
-                современными бизнес-центрами классов A и B+, сосредоточенными преимущественно в Кировском и Октябрьском 
-                районах. Средняя ставка аренды офисных помещений составляет от 600 до 1 500 ₽/м² в месяц в зависимости 
-                от класса здания и расположения.
-              </p>
-              <p>
-                Бизнес-центры Иркутска предлагают полную инфраструктуру: круглосуточную охрану, систему кондиционирования, 
-                скоростной интернет, конференц-залы и зоны отдыха. Многие объекты расположены вблизи ключевых транспортных 
-                развязок, что обеспечивает удобный доступ для сотрудников и клиентов.
-              </p>
-              <p>
-                Для малого бизнеса и стартапов доступны компактные офисы от 15 м² в коворкинг-пространствах и бизнес-центрах 
-                класса C. Крупные компании могут арендовать целые этажи площадью до 5 000 м² с индивидуальной планировкой 
-                и отдельным входом.
-              </p>
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
+            <div className="flex-1 min-w-0 space-y-10">
+              {/* SEO Text */}
+              <div className="space-y-6">
+                <h2 className="text-2xl font-display font-bold text-foreground">
+                  Офисные помещения в аренду в Иркутске — полный обзор рынка
+                </h2>
+                <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+                  <p>Рынок офисной недвижимости Иркутска — один из наиболее динамичных в Восточной Сибири. Город располагает современными бизнес-центрами классов A и B+, сосредоточенными преимущественно в Кировском и Октябрьском районах. Средняя ставка аренды офисных помещений составляет от 600 до 1 500 ₽/м² в месяц.</p>
+                  <p>Бизнес-центры Иркутска предлагают полную инфраструктуру: круглосуточную охрану, систему кондиционирования, скоростной интернет, конференц-залы и зоны отдыха.</p>
+                  <p>Для малого бизнеса доступны компактные офисы от 15 м² в коворкинг-пространствах. Крупные компании могут арендовать целые этажи площадью до 5 000 м².</p>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {features.map((f) => (
+                    <div key={f} className="flex items-start gap-2.5">
+                      <CheckCircle className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                      <span className="text-sm text-foreground">{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Property Slider */}
+              <CategoryPropertySlider type="Офис" title="Офисные помещения в каталоге" />
+
+              {/* Contact Form */}
+              <div id="contact-form">
+                <CategoryContactForm category="офис" />
+              </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
-              {features.map((f) => (
-                <div key={f} className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-                  <span className="text-foreground">{f}</span>
-                </div>
-              ))}
-            </div>
+            <NewsSidebar />
           </div>
         </div>
       </section>
 
-      {/* Property Slider */}
-      <CategoryPropertySlider type="Офис" title="Офисные помещения в каталоге" />
-
-      {/* Contact Form */}
-      <div id="contact-form">
-        <CategoryContactForm category="офис" />
-      </div>
-
       <SiteFooter />
+      <PropertyAIChat />
     </div>
   );
 }
