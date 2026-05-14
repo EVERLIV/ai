@@ -229,7 +229,7 @@ export default function PropertyDetail() {
             </div>
 
             {/* Meta: date, views, ID — under gallery */}
-            <div className="flex items-center gap-4 mb-5 text-xs text-muted-foreground border-b border-border pb-4">
+            <div className="flex items-center gap-4 mb-5 text-xs text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5" />
                 {property.published_date ? new Date(property.published_date).toLocaleDateString("ru-RU") : "—"}
