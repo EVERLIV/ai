@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,8 @@ export default function Auth() {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { search } = useLocation();
+  const redirectTo = new URLSearchParams(search).get("redirect") || "/dashboard";
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -25,7 +27,7 @@ export default function Auth() {
     if (error) {
       toast({ title: "Ошибка входа", description: error.message, variant: "destructive" });
     } else {
-      navigate("/dashboard");
+      navigate(redirectTo);
     }
   };
 

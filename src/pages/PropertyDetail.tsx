@@ -7,6 +7,7 @@ import {
   MessageSquareText, Tag, Download,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import NearbyPropertiesSlider from "@/components/NearbyPropertiesSlider";
@@ -25,8 +26,17 @@ export default function PropertyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: property, isLoading } = useProperty(id);
+  const { user } = useAuth();
   const [saved, setSaved] = useState(false);
   const [activePhoto, setActivePhoto] = useState(0);
+
+  const handleSave = () => {
+    if (!user) {
+      navigate("/auth?redirect=" + encodeURIComponent(window.location.pathname));
+      return;
+    }
+    setSaved((v) => !v);
+  };
   const [scrollPct, setScrollPct] = useState(0);
   useEffect(() => {
     const onScroll = () => {
@@ -100,7 +110,7 @@ export default function PropertyDetail() {
 
           <div className="shrink-0 hidden lg:flex items-center gap-1">
             <button
-              onClick={() => setSaved(!saved)}
+              onClick={handleSave}
               aria-label="Сохранить"
               className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
                 saved ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -142,7 +152,7 @@ export default function PropertyDetail() {
             <span className="text-[10px] font-medium">Написать</span>
           </a>
           <button
-            onClick={() => setSaved(!saved)}
+            onClick={handleSave}
             aria-label="Сохранить"
             aria-pressed={saved}
             className={`flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl active:scale-95 transition-all ${
@@ -175,7 +185,7 @@ export default function PropertyDetail() {
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 min-w-0">
             {/* Gallery */}
-            <div className="rounded-2xl overflow-hidden mb-6">
+            <div className="mb-6">
               <div className="relative bg-muted aspect-[16/9] overflow-hidden">
                 <img
                   src={photos.length > 0 ? photos[activePhoto] : getDefaultPropertyImage(property.type)}
