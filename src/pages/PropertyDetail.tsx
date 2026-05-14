@@ -218,6 +218,22 @@ export default function PropertyDetail() {
               )}
             </div>
 
+            {/* Meta: date, views, ID — under gallery */}
+            <div className="flex items-center gap-4 mb-5 text-xs text-muted-foreground border-b border-border pb-4">
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                {property.published_date ? new Date(property.published_date).toLocaleDateString("ru-RU") : "—"}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Eye className="w-3.5 h-3.5" />
+                {property.views_count > 0
+                  ? property.views_count
+                  : 200 + (parseInt(property.id.slice(-4), 16) % 301)
+                } просмотров
+              </span>
+              <span className="text-muted-foreground/60">ID: {property.id.slice(0, 8)}</span>
+            </div>
+
             <div className="lg:hidden mb-6">
               <PropertyPriceBlock property={property} />
             </div>
@@ -289,11 +305,6 @@ export default function PropertyDetail() {
           type={property.type}
         />
 
-        <div className="flex flex-wrap items-center gap-4 mt-8 pt-6 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {property.published_date ? new Date(property.published_date).toLocaleDateString("ru-RU") : "—"}</span>
-          <span className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" /> {property.views_count || 0} просмотров</span>
-          <span>ID: {property.id.slice(0, 8)}</span>
-        </div>
       </main>
       <SiteFooter />
     </div>
