@@ -21,6 +21,7 @@ export type NewsPost = {
 export function useNewsPosts(category?: string) {
   return useQuery({
     queryKey: ["news", category],
+    retry: false,
     queryFn: async () => {
       let q = supabase
         .from("news_posts")
@@ -29,7 +30,7 @@ export function useNewsPosts(category?: string) {
         .order("published_at", { ascending: false });
       if (category && category !== "Все") q = q.eq("category", category);
       const { data, error } = await q;
-      if (error) throw error;
+      if (error) return [] as NewsPost[];
       return (data ?? []) as NewsPost[];
     },
   });
@@ -38,13 +39,14 @@ export function useNewsPosts(category?: string) {
 export function useNewsPost(slug: string) {
   return useQuery({
     queryKey: ["news", slug],
+    retry: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("news_posts")
         .select("*")
         .eq("slug", slug)
         .single();
-      if (error) throw error;
+      if (error) return null as unknown as NewsPost;
       return data as NewsPost;
     },
     enabled: !!slug,

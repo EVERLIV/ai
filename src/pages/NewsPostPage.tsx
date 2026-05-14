@@ -101,12 +101,12 @@ export default function NewsPostPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const { data: dbPost, isLoading, isError } = useNewsPost(slug ?? "");
+  const { data: dbPost, isLoading } = useNewsPost(slug ?? "");
   const { data: dbAllPosts } = useNewsPosts();
 
-  // Fallback to local data when Supabase table doesn't exist yet
   const localPost = LOCAL_POSTS.find(p => p.slug === slug);
-  const post = dbPost ?? (!isLoading && isError ? localPost : undefined) ?? (isLoading ? undefined : localPost);
+  // dbPost is null when Supabase returned error (no table yet), undefined while loading
+  const post = (dbPost ?? undefined) || (!isLoading ? localPost : undefined);
   const allPosts = (dbAllPosts && dbAllPosts.length > 0) ? dbAllPosts : LOCAL_POSTS;
 
   useEffect(() => {
