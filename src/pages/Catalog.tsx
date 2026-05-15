@@ -12,7 +12,7 @@ import {
   SlidersHorizontal, X, ChevronDown, MapPin, Maximize2, LayoutGrid, List,
   ArrowUpDown, Eye, Calendar,
   Sparkles, Send, Phone, PhoneOff, Mic, PanelLeftClose, PanelLeft,
-  Search, ChevronUp, Map as MapIcon,
+  Search, ChevronUp, Map as MapIcon, Banknote, Ruler, Tag, Building, Settings2,
 } from "lucide-react";
 import {
   Buildings as PhBuildings,
@@ -117,10 +117,10 @@ function SelectFilter({ label, value, options, onChange }: {
 function Section({ title, defaultOpen = false, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="pb-2">
+    <div>
       <button
         onClick={() => setOpen(!open)}
-        className="group w-full flex items-center justify-between py-2 text-[11px] font-semibold text-foreground uppercase tracking-[0.1em] transition-colors"
+        className="group w-full flex items-center justify-between py-1.5 text-[11px] font-semibold text-foreground uppercase tracking-[0.1em] transition-colors"
       >
         <span className="section-title group-hover:text-primary transition-colors">{title}</span>
         <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-all duration-300 group-hover:text-primary ${open ? "rotate-180" : ""}`} />
@@ -308,7 +308,7 @@ export default function Catalog() {
 
   // Init state from URL
   const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
 
   const [dealType, setDealType] = useState(() => searchParams.get("deal") || "Все");
@@ -449,299 +449,361 @@ export default function Catalog() {
   const formatPrice = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}к` : String(v);
   const formatArea = (v: number) => `${v} м²`;
 
+  // Иконка-заголовок секции с тултипом (используется и при открытом, и при свёрнутом)
+  const SectionIcon = ({ icon: Icon, label, active }: { icon: React.ElementType; label: string; active?: boolean }) =>
+    sidebarOpen ? (
+      <div className="flex items-center gap-2 mb-2.5">
+        <Icon className={`w-3.5 h-3.5 shrink-0 ${active ? "text-primary" : "text-muted-foreground"}`} />
+        <p className={`text-[10px] font-semibold uppercase tracking-widest ${active ? "text-primary" : "text-muted-foreground"}`}>{label}</p>
+      </div>
+    ) : (
+      <div className="relative group/tip flex justify-center py-2.5">
+        <div className={`w-8 h-8 flex items-center justify-center transition-colors ${active ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+          <Icon className="w-4 h-4" />
+        </div>
+        <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 px-2 py-1 bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
+          {label}
+        </div>
+      </div>
+    );
+
   // Sidebar content (shared between desktop & mobile)
   const sidebarContent = (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
-        {/* Search */}
-        <div className="input-underline relative">
-          <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Поиск по адресу, районе..."
-            className="w-full pl-6 pr-2 py-2 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none transition-colors" />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-              <X className="w-3 h-3" />
-            </button>
-          )}
-        </div>
+    <div className="divide-y divide-border/30">
 
-        {/* Deal type */}
-        <Section title="Тип сделки">
+      {/* Поиск */}
+      <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-2.5 flex justify-center"}>
+        {sidebarOpen ? (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Search className="w-3.5 h-3.5 shrink-0" />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Адрес, район..."
+              className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} className="hover:text-foreground transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="relative group/tip">
+            <div className={`w-8 h-8 flex items-center justify-center ${searchQuery ? "text-primary" : "text-muted-foreground hover:text-foreground"} transition-colors`}>
+              <Search className="w-4 h-4" />
+            </div>
+            <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 px-2 py-1 bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
+              Поиск
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Тип сделки */}
+      <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-1"}>
+        <SectionIcon icon={Tag} label="Тип сделки" active={dealType !== "Все"} />
+        {sidebarOpen && (
           <div className="flex gap-1">
             {DEALS.map((d) => (
-              <button
-                key={d}
-                onClick={() => setDealType(d)}
-                className={`flex-1 px-2 py-2 text-[11px] font-medium transition-all duration-300 ${
-                  dealType === d ? "tab-active-gradient" : "text-muted-foreground tab-hover-gradient hover:text-foreground"
-                }`}
-              >
+              <button key={d} onClick={() => setDealType(d)}
+                className={`flex-1 py-1.5 text-[11px] font-medium transition-all ${dealType === d ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
                 {d}
               </button>
             ))}
           </div>
-        </Section>
+        )}
+      </div>
 
-        {/* Property types as chip pills */}
-        <Section title="Тип объекта">
+      {/* Тип объекта */}
+      <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-1"}>
+        <SectionIcon icon={Building} label="Тип объекта" active={selectedTypes.length > 0} />
+        {sidebarOpen && (
           <div className="flex flex-wrap gap-1.5">
             {TYPES.map((t) => {
               const Icon = typeIcons[t] || PhBuildings;
-              const checked = selectedTypes.includes(t);
+              const active = selectedTypes.includes(t);
               return (
-                <button key={t} onClick={() => toggleType(t)} className={`chip ${checked ? "is-active" : ""}`} type="button">
+                <button key={t} onClick={() => toggleType(t)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium transition-all border ${
+                    active ? "bg-primary text-primary-foreground border-primary" : "border-border/60 text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                  }`}>
                   <Icon className="w-3.5 h-3.5" weight="duotone" />
-                  <span>{t}</span>
+                  {t}
                 </button>
               );
             })}
           </div>
-        </Section>
+        )}
+      </div>
 
-        {/* Location */}
-        <Section title="Локация">
-          <SelectFilter label="Район / Город" value={district} options={districts} onChange={setDistrict} />
-        </Section>
+      {/* Локация */}
+      <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-1"}>
+        <SectionIcon icon={MapPin} label="Район" active={district !== "Все"} />
+        {sidebarOpen && (
+          <div className="relative">
+            <select value={district} onChange={(e) => setDistrict(e.target.value)}
+              className="w-full appearance-none bg-transparent text-xs text-foreground pr-5 focus:outline-none cursor-pointer">
+              {districts.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+            <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+          </div>
+        )}
+      </div>
 
-        {/* Price slider */}
-        <Section title="Цена, ₽/мес">
-          <RangeSlider
-            min={0} max={500000} step={5000}
+      {/* Цена */}
+      <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-1"}>
+        <SectionIcon icon={Banknote} label="Цена, ₽/мес" active={isPriceFiltered} />
+        {sidebarOpen && (
+          <RangeSlider min={0} max={500000} step={5000}
             valueMin={priceMin} valueMax={priceMax}
             onChangeMin={setPriceMin} onChangeMax={setPriceMax}
             format={formatPrice}
           />
-        </Section>
+        )}
+      </div>
 
-        {/* Area slider */}
-        <Section title="Площадь, м²">
-          <RangeSlider
-            min={0} max={10000} step={10}
+      {/* Площадь */}
+      <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-1"}>
+        <SectionIcon icon={Ruler} label="Площадь, м²" active={isAreaFiltered} />
+        {sidebarOpen && (
+          <RangeSlider min={0} max={10000} step={10}
             valueMin={areaMin} valueMax={areaMax}
             onChangeMin={setAreaMin} onChangeMax={setAreaMax}
             format={formatArea}
           />
-        </Section>
+        )}
+      </div>
 
-        {/* Class & Condition */}
-        <Section title="Параметры" defaultOpen={false}>
-          <SelectFilter label="Класс" value={propertyClass} options={CLASSES} onChange={setPropertyClass} />
-          <SelectFilter label="Состояние" value={condition} options={conditions} onChange={setCondition} />
-        </Section>
-
-        {/* Ceiling, Parking, Layout */}
-        <Section title="Дополнительно" defaultOpen={false}>
-          <div>
-            <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Высота потолков</label>
-            <div className="flex gap-1.5 flex-wrap">
-              {CEILING_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setCeilingMin(ceilingMin === opt.value ? 0 : opt.value)}
-                  className={`px-2.5 py-1 text-[11px] font-medium transition-all border ${
-                    ceilingMin === opt.value ? "bg-primary text-primary-foreground border-primary" : "bg-transparent border-border text-muted-foreground hover:border-primary hover:text-foreground"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+      {/* Параметры + Дополнительно */}
+      <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-1"}>
+        <SectionIcon icon={Settings2} label="Параметры" active={propertyClass !== "Все" || condition !== "Все" || ceilingMin > 0 || parkingOnly || selectedLayouts.length > 0} />
+        {sidebarOpen && (
+          <>
+            <div className="space-y-2.5 mb-3">
+              <SelectFilter label="Класс" value={propertyClass} options={CLASSES} onChange={setPropertyClass} />
+              <SelectFilter label="Состояние" value={condition} options={conditions} onChange={setCondition} />
             </div>
-          </div>
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <Checkbox
-              checked={parkingOnly}
-              onCheckedChange={(v) => setParkingOnly(!!v)}
-              className="w-3.5 h-3.5"
-            />
-            <span className="text-xs text-foreground">Есть парковка</span>
-          </label>
-          {layouts.length > 0 && (
-            <div>
-              <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Планировка</label>
-              <div className="space-y-1.5">
-                {layouts.map((l) => (
-                  <label key={l} className="flex items-center gap-2 cursor-pointer select-none">
-                    <Checkbox
-                      checked={selectedLayouts.includes(l)}
-                      onCheckedChange={() => toggleLayout(l)}
-                      className="w-3.5 h-3.5"
-                    />
-                    <span className="text-xs text-foreground">{l}</span>
-                  </label>
-                ))}
+            <div className="space-y-2.5">
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-2">Высота потолков</p>
+                <div className="flex gap-1.5">
+                  {CEILING_OPTIONS.map((opt) => (
+                    <button key={opt.value} onClick={() => setCeilingMin(ceilingMin === opt.value ? 0 : opt.value)}
+                      className={`px-2 py-1 text-[11px] transition-all border ${
+                        ceilingMin === opt.value ? "bg-primary text-primary-foreground border-primary" : "border-border/60 text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                      }`}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <Checkbox checked={parkingOnly} onCheckedChange={(v) => setParkingOnly(!!v)} className="w-3.5 h-3.5" />
+                <span className="text-xs text-foreground">Есть парковка</span>
+              </label>
+              {layouts.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground mb-1.5">Планировка</p>
+                  <div className="space-y-1.5">
+                    {layouts.map((l) => (
+                      <label key={l} className="flex items-center gap-2 cursor-pointer select-none">
+                        <Checkbox checked={selectedLayouts.includes(l)} onCheckedChange={() => toggleLayout(l)} className="w-3.5 h-3.5" />
+                        <span className="text-xs text-foreground">{l}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Сброс */}
+      {activeFiltersCount > 0 && (
+        <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-2.5 flex justify-center"}>
+          {sidebarOpen ? (
+            <button onClick={resetFilters}
+              className="w-full flex items-center justify-center gap-1.5 py-2 text-xs text-destructive hover:text-destructive/80 transition-colors">
+              <X className="w-3 h-3" /> Сбросить фильтры ({activeFiltersCount})
+            </button>
+          ) : (
+            <div className="relative group/tip">
+              <button onClick={resetFilters} className="w-8 h-8 flex items-center justify-center text-destructive hover:text-destructive/80 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+              <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 px-2 py-1 bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
+                Сбросить ({activeFiltersCount})
               </div>
             </div>
           )}
-        </Section>
-
-        {/* Reset */}
-        {activeFiltersCount > 0 && (
-          <button onClick={resetFilters} className="w-full flex items-center justify-center gap-1.5 text-xs text-destructive hover:text-destructive/80 py-2 transition-colors">
-            <X className="w-3 h-3" /> Сбросить все ({activeFiltersCount})
-          </button>
-        )}
-
-      </div>
+        </div>
+      )}
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
       <SiteHeader />
 
       <div className="pt-[100px] flex-1 flex flex-col">
-        {/* Breadcrumbs */}
-        <div className="border-b border-border/40 bg-card/60">
-          <div className="px-3 lg:px-6 h-9 flex items-center gap-1.5 text-[11px] lg:text-xs text-muted-foreground whitespace-nowrap overflow-hidden">
-            <Link to="/" className="hover:text-foreground transition-colors shrink-0">Главная</Link>
-            <span className="shrink-0 opacity-50">/</span>
-            <span className="text-foreground truncate">Каталог объектов</span>
+
+        {/* Хлебные крошки */}
+        <div>
+          <div className="px-6 lg:px-12 xl:px-20 h-9 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Link to="/" className="hover:text-foreground transition-colors">Главная</Link>
+            <span className="opacity-40">/</span>
+            <span className="text-foreground">Каталог объектов</span>
           </div>
         </div>
 
-        {/* Top bar */}
-        <div className="border-b border-border/40">
-          <div className="px-3 lg:px-6 py-2.5 lg:py-3 flex items-center gap-2 lg:gap-4">
-            {/* Toggle sidebar desktop */}
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="hidden lg:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
-              {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
-            </button>
-            {/* Toggle sidebar mobile */}
-            <button onClick={() => setMobileSidebar(true)}
-              className="lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-foreground border border-border hover:border-primary hover:text-primary transition-colors">
-              <SlidersHorizontal className="w-3.5 h-3.5" /> Фильтры
-              {activeFiltersCount > 0 && <span className="count-badge">{activeFiltersCount}</span>}
+        {/* Топ-бар */}
+        <div className="sticky top-[100px] z-20 bg-background border-b border-border/30">
+          <div className="px-6 lg:px-12 xl:px-20 h-12 flex items-center gap-0">
+
+            {/* Кнопка фильтров — десктоп */}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className={`hidden lg:inline-flex items-center gap-2 h-8 px-3 mr-4 text-xs font-medium border transition-colors shrink-0 ${
+                sidebarOpen
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+              }`}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Фильтры
+              {activeFiltersCount > 0 && (
+                <span className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[9px] font-bold rounded-sm ${
+                  sidebarOpen ? "bg-background text-foreground" : "bg-primary text-primary-foreground"
+                }`}>{activeFiltersCount}</span>
+              )}
             </button>
 
-            {/* Result count */}
-            <div className="flex-1 min-w-0 text-xs text-muted-foreground truncate">
+            {/* Кнопка фильтров — мобайл */}
+            <button
+              onClick={() => setMobileSidebar(true)}
+              className="lg:hidden inline-flex items-center gap-2 h-8 px-3 mr-4 text-xs font-medium border border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-colors"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Фильтры
+              {activeFiltersCount > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[9px] font-bold rounded-sm bg-primary text-primary-foreground">{activeFiltersCount}</span>
+              )}
+            </button>
+
+            {/* Разделитель */}
+            <div className="hidden lg:block w-px h-5 bg-border/60 mr-4 shrink-0" />
+
+            {/* Счётчик */}
+            <div className="text-xs text-muted-foreground mr-auto">
               {isLoading ? (
                 <span className="inline-flex gap-1 items-center">
-                  <span className="w-1 h-1 bg-primary animate-bounce" />
-                  <span className="w-1 h-1 bg-primary animate-bounce [animation-delay:120ms]" />
-                  <span className="w-1 h-1 bg-primary animate-bounce [animation-delay:240ms]" />
+                  <span className="w-1 h-1 bg-muted-foreground animate-bounce" />
+                  <span className="w-1 h-1 bg-muted-foreground animate-bounce [animation-delay:120ms]" />
+                  <span className="w-1 h-1 bg-muted-foreground animate-bounce [animation-delay:240ms]" />
                 </span>
-              ) : (
-                <>Найдено <strong className="text-foreground">{filtered.length}</strong> объектов</>
-              )}
+              ) : <><strong className="text-foreground font-semibold">{filtered.length}</strong> объектов</>}
             </div>
 
-            <div className="flex items-center gap-2 lg:gap-3">
-              <div className="input-underline relative hidden sm:block">
-                <ArrowUpDown className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                <select value={sort} onChange={(e) => setSort(e.target.value)}
-                  className="appearance-none pl-5 pr-5 py-1.5 bg-transparent text-[11px] font-medium text-foreground border-0 border-b border-border focus:outline-none cursor-pointer">
-                  {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              </div>
-              <div className="flex">
-                <button onClick={() => setViewMode("grid")}
-                  className={`p-1.5 transition-all duration-300 ${viewMode === "grid" ? "tab-active-gradient" : "text-muted-foreground hover:text-foreground"}`}
-                  aria-label="Grid view">
-                  <LayoutGrid className="w-4 h-4" />
+            {/* Сортировка — таблетки */}
+            <div className="hidden sm:flex items-center gap-0 mr-4">
+              {SORT_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  onClick={() => setSort(o.value)}
+                  className={`h-7 px-3 text-[11px] font-medium transition-all whitespace-nowrap ${
+                    sort === o.value
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  }`}
+                >
+                  {o.label}
                 </button>
-                <button onClick={() => setViewMode("list")}
-                  className={`p-1.5 transition-all duration-300 ${viewMode === "list" ? "tab-active-gradient" : "text-muted-foreground hover:text-foreground"}`}
-                  aria-label="List view">
-                  <List className="w-4 h-4" />
+              ))}
+            </div>
+
+            {/* Вид: сетка / список / карта */}
+            <div className="flex items-center border border-border/40 shrink-0">
+              {([
+                { mode: "grid" as const, icon: LayoutGrid, label: "Сетка" },
+                { mode: "list" as const, icon: List, label: "Список" },
+                { mode: "map" as const, icon: MapIcon, label: "Карта" },
+              ]).map(({ mode, icon: Icon, label }, i) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  title={label}
+                  className={`w-8 h-8 flex items-center justify-center transition-colors ${
+                    viewMode === mode ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  } ${i > 0 ? "border-l border-border/40" : ""}`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => setViewMode("map")}
-                  className={`p-1.5 transition-all duration-300 ${viewMode === "map" ? "tab-active-gradient" : "text-muted-foreground hover:text-foreground"}`}
-                  aria-label="Map view">
-                  <MapIcon className="w-4 h-4" />
-                </button>
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* Active filter chips row */}
+          {/* Активные чипсы фильтров */}
           {activeChips.length > 0 && (
-            <div className="px-3 lg:px-6 pb-2 flex flex-wrap gap-1.5 items-center">
+            <div className="px-6 lg:px-12 xl:px-20 pb-2 flex flex-wrap gap-1.5 items-center">
               {activeChips.map((c, i) => <Chip key={i} label={c.label} onRemove={c.onRemove} />)}
-              <button onClick={resetFilters} className="text-[10px] text-muted-foreground hover:text-destructive transition-colors ml-1">
+              <button onClick={resetFilters} className="text-[10px] text-muted-foreground hover:text-destructive transition-colors">
                 Сбросить всё
               </button>
             </div>
           )}
         </div>
 
-        {/* Main content area with sidebar */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Desktop sidebar */}
+        {/* Контент: сайдбар + карточки + правый сайдбар */}
+        <div className="flex-1 flex min-h-0">
+
+          {/* Левый сайдбар */}
           <aside
-            className="hidden lg:flex shrink-0 flex-col overflow-hidden"
+            className="hidden lg:block shrink-0 overflow-y-auto"
             style={{
-              width: sidebarOpen ? "272px" : "0px",
-              opacity: sidebarOpen ? 1 : 0,
-              transition: "width 300ms cubic-bezier(0.4,0,0.2,1), opacity 200ms ease",
-              pointerEvents: sidebarOpen ? "auto" : "none",
+              width: sidebarOpen ? "240px" : "44px",
+              borderRight: "1px solid hsl(var(--border) / 0.3)",
+              transition: "width 280ms cubic-bezier(0.4,0,0.2,1)",
             }}
           >
-            <div className="w-64 xl:w-[272px] flex-1 overflow-hidden flex flex-col">
-              {sidebarContent}
-            </div>
+            <div style={{ width: sidebarOpen ? 240 : 44, overflow: "hidden" }}>{sidebarContent}</div>
           </aside>
 
-          {/* Mobile sidebar overlay */}
+          {/* Мобильный сайдбар */}
           {mobileSidebar && (
-            <aside className="fixed inset-0 z-50 bg-background flex flex-col lg:hidden animate-fade-in-up">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 shrink-0">
-                <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-semibold text-foreground">Фильтры</span>
-                  {activeFiltersCount > 0 && <span className="count-badge">{activeFiltersCount}</span>}
-                </div>
-                <button onClick={() => setMobileSidebar(false)}
-                  className="p-2 -mr-2 rounded-lg text-foreground hover:bg-muted transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
+            <div className="fixed inset-0 z-50 bg-background flex flex-col lg:hidden">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-border/40 shrink-0">
+                <span className="text-sm font-semibold">Фильтры {activeFiltersCount > 0 && <span className="count-badge ml-1">{activeFiltersCount}</span>}</span>
+                <button onClick={() => setMobileSidebar(false)}><X className="w-5 h-5" /></button>
               </div>
-              <div className="flex-1 overflow-hidden">{sidebarContent}</div>
-              <div className="px-4 py-3 border-t border-border/40 shrink-0">
+              <div className="flex-1 overflow-y-auto">{sidebarContent}</div>
+              <div className="px-5 py-3 border-t border-border/40 shrink-0">
                 <button onClick={() => setMobileSidebar(false)}
-                  className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
+                  className="w-full py-2.5 bg-primary text-primary-foreground text-sm font-medium">
                   Показать {filtered.length} объектов
                 </button>
               </div>
-            </aside>
+            </div>
           )}
 
-          {/* Results */}
+          {/* Результаты */}
           <div className="flex-1 overflow-y-auto min-w-0">
             {viewMode === "map" ? (
               <CatalogMap properties={filtered} />
             ) : (
-              <div className="px-4 lg:px-6 py-3 lg:py-4">
-                {/* Mobile sort row */}
-                <div className="flex items-center justify-end mb-3 sm:hidden">
-                  <div className="relative">
-                    <select value={sort} onChange={(e) => setSort(e.target.value)}
-                      className="appearance-none pl-6 pr-5 py-1.5 bg-transparent text-[11px] font-medium text-foreground border-0 border-b border-border focus:outline-none focus:border-primary">
-                      {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                    <ArrowUpDown className="absolute left-1 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
-                  </div>
-                </div>
-
+              <div className="px-6 py-5">
                 {isLoading ? (
-                  viewMode === "grid" ? (
-                    <div className={`grid gap-4 sm:grid-cols-2 ${sidebarOpen ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>
-                      {Array.from({ length: 6 }).map((_, i) => <GridCardSkeleton key={i} />)}
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {Array.from({ length: 5 }).map((_, i) => <ListCardSkeleton key={i} />)}
-                    </div>
-                  )
+                  <div className={`grid gap-4 sm:grid-cols-2 ${sidebarOpen ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>
+                    {Array.from({ length: 6 }).map((_, i) => <GridCardSkeleton key={i} />)}
+                  </div>
                 ) : filtered.length === 0 ? (
-                  <div className="text-center py-16">
-                    <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
+                  <div className="text-center py-20">
+                    <div className="w-14 h-14 bg-muted flex items-center justify-center mx-auto mb-4">
                       <PhBuildings className="w-7 h-7 text-muted-foreground" weight="duotone" />
                     </div>
-                    <h3 className="font-display text-base font-semibold text-foreground mb-1">Объекты не найдены</h3>
-                    <p className="text-xs text-muted-foreground mb-3">Попробуйте изменить параметры фильтрации</p>
+                    <h3 className="font-display text-base font-semibold mb-1">Объекты не найдены</h3>
+                    <p className="text-xs text-muted-foreground mb-4">Попробуйте изменить параметры фильтрации</p>
                     <button onClick={resetFilters} className="text-xs text-primary font-medium hover:underline">Сбросить фильтры</button>
                   </div>
                 ) : viewMode === "grid" ? (
@@ -757,8 +819,8 @@ export default function Catalog() {
             )}
           </div>
 
-          {/* News sidebar — right column, desktop only */}
-          <div className="hidden xl:block shrink-0 w-[280px] overflow-y-auto border-l border-border/40">
+          {/* Правый сайдбар */}
+          <div className="hidden xl:flex shrink-0 w-[280px] flex-col overflow-y-auto overflow-x-hidden border-l border-border/30 pl-5 pr-5 py-5">
             <NewsSidebar />
           </div>
         </div>
@@ -779,7 +841,7 @@ export default function Catalog() {
 function GridCard({ property: p }: { property: DbProperty }) {
   return (
     <Link to={`/property/${p.id}`}
-      className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-card-hover transition-all duration-300">
+      className="group bg-card overflow-hidden hover:shadow-md transition-shadow duration-200 border border-border/50">
       <div className="relative h-44 bg-muted overflow-hidden">
         <PropertyImage src={p.cover_photo} alt={p.address} imgClassName="transition-transform duration-500 group-hover:scale-[1.03]" />
         <div className="absolute top-3 left-3 flex gap-1.5">
@@ -834,7 +896,7 @@ function GridCard({ property: p }: { property: DbProperty }) {
 function ListCard({ property: p }: { property: DbProperty }) {
   return (
     <Link to={`/property/${p.id}`}
-      className="group flex bg-card rounded-xl border border-border overflow-hidden hover:shadow-card-hover transition-all duration-300">
+      className="group flex bg-card overflow-hidden hover:shadow-md transition-shadow duration-200 border border-border/50">
       <div className="relative w-48 shrink-0 bg-muted hidden sm:block overflow-hidden">
         <PropertyImage src={p.cover_photo} alt={p.address} imgClassName="transition-transform duration-500 group-hover:scale-[1.03]" />
         <div className="absolute top-2 left-2 flex gap-1">
@@ -890,7 +952,7 @@ function ListCard({ property: p }: { property: DbProperty }) {
 
 function GridCardSkeleton() {
   return (
-    <div className="bg-card rounded-2xl border border-border overflow-hidden">
+    <div className="bg-card overflow-hidden border border-border/50">
       <div className="relative h-44 overflow-hidden">
         <Skeleton className="absolute inset-0 rounded-none" />
         <div className="absolute top-3 left-3 flex gap-1.5">
@@ -919,7 +981,7 @@ function GridCardSkeleton() {
           <Skeleton className="h-4 w-16 rounded-md" />
           <Skeleton className="h-4 w-12 rounded-md" />
         </div>
-        <div className="pt-3 border-t border-border flex items-center justify-between">
+        <div className="pt-3 flex items-center justify-between">
           <Skeleton className="h-3 w-20" />
           <Skeleton className="h-3 w-16" />
         </div>
@@ -930,7 +992,7 @@ function GridCardSkeleton() {
 
 function ListCardSkeleton() {
   return (
-    <div className="flex bg-card rounded-xl border border-border overflow-hidden">
+    <div className="flex bg-card overflow-hidden border border-border/50">
       <div className="relative w-48 shrink-0 hidden sm:block">
         <Skeleton className="absolute inset-0 rounded-none" />
       </div>
@@ -964,3 +1026,4 @@ function ListCardSkeleton() {
     </div>
   );
 }
+

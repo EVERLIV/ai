@@ -120,71 +120,68 @@ export default function AboutPage() {
                   })}
                 </div>
 
-                {/* Director quote */}
-                <div className="relative overflow-hidden bg-foreground min-h-[360px]">
-                  <img
-                    src={managerPhoto}
-                    alt="Анастасия Зорина"
-                    className="absolute inset-0 w-full h-full object-cover opacity-80"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-foreground/90 via-foreground/60 to-transparent" />
-                  <div className="relative flex flex-col justify-end h-full p-8 lg:p-12 text-background max-w-2xl">
-                    <Quote className="w-10 h-10 text-primary mb-4 -ml-1" />
-                    <blockquote className="font-display text-xl lg:text-2xl leading-snug font-medium mb-6">
-                      «Мы не сдаём квадратные метры — мы помогаем бизнесу расти.
-                      Каждый объект подбираем под задачу клиента, а не наоборот.»
-                    </blockquote>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-px bg-primary" />
-                      <div>
-                        <div className="text-sm font-semibold">Анастасия Зорина</div>
-                        <div className="text-xs text-background/60">Директор АрендаСити</div>
+                {/* Director + Values 50/50 */}
+                <div className="flex flex-col lg:flex-row gap-0 bg-foreground overflow-hidden">
+                  {/* Фото — левая половина */}
+                  <div className="lg:w-1/2 shrink-0">
+                    <img
+                      src={managerPhoto}
+                      alt="Анастасия Зорина"
+                      className="w-full h-72 lg:h-full object-cover object-top"
+                    />
+                  </div>
+
+                  {/* Правая половина: цитата + принципы */}
+                  <div className="lg:w-1/2 flex flex-col justify-between p-8 lg:p-12 text-background">
+                    {/* Цитата */}
+                    <div className="mb-8">
+                      <Quote className="w-8 h-8 text-primary mb-4 -ml-1" />
+                      <blockquote className="font-display text-lg lg:text-xl leading-snug font-medium mb-5">
+                        «Мы не сдаём квадратные метры — мы помогаем бизнесу расти.
+                        Каждый объект подбираем под задачу клиента, а не наоборот.»
+                      </blockquote>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-px bg-primary" />
+                        <div>
+                          <div className="text-sm font-semibold">Анастасия Зорина</div>
+                          <div className="text-xs text-background/50">Директор АрендаСити</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* История */}
+                    <div>
+                      <h2 className="text-[10px] font-bold uppercase tracking-widest text-background/40 mb-5">История компании</h2>
+                      <div className="space-y-0">
+                        {timeline.map((item, i) => (
+                          <div key={item.year} className="flex gap-4 pb-5 last:pb-0">
+                            <div className="flex flex-col items-center shrink-0">
+                              <div className={`w-8 h-8 flex items-center justify-center text-[11px] font-bold shrink-0 ${i === timeline.length - 1 ? "bg-primary text-primary-foreground" : "bg-background/10 text-background"}`}>
+                                {item.year.slice(2)}
+                              </div>
+                              {i < timeline.length - 1 && <div className="w-px flex-1 bg-background/10 mt-1" />}
+                            </div>
+                            <div className="pt-1 pb-1">
+                              <div className="text-[11px] font-bold text-primary mb-0.5">{item.year}</div>
+                              <p className="text-xs text-background/60 leading-relaxed">{item.text}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Values */}
-                <div>
-                  <h2 className="font-display text-2xl font-bold text-foreground mb-6">Наши принципы</h2>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    {values.map((v) => (
-                      <div key={v.title} className="bg-muted/40 p-5">
-                        <div className="flex items-center gap-2 mb-2">
-                          <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                          <span className="font-semibold text-foreground text-sm">{v.title}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{v.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Timeline */}
-                <div>
-                  <h2 className="font-display text-2xl font-bold text-foreground mb-6">История компании</h2>
-                  <div className="space-y-0">
-                    {timeline.map((item, i) => (
-                      <div key={item.year} className="flex gap-5 pb-6 ml-5">
-                        <div className={`shrink-0 -ml-5 w-10 h-10 flex items-center justify-center text-xs font-bold ${i === timeline.length - 1 ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
-                          {item.year.slice(2)}
-                        </div>
-                        <div className="pt-1.5">
-                          <div className="text-xs font-semibold text-primary mb-0.5">{item.year}</div>
-                          <p className="text-sm text-muted-foreground leading-relaxed">{item.text}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
 
                 {/* Team */}
                 <div>
                   <h2 className="font-display text-2xl font-bold text-foreground mb-6">Команда</h2>
                   <div className="grid sm:grid-cols-2 gap-5">
                     {team.map((m) => (
-                      <div key={m.name} className="bg-muted/40 p-5 flex gap-4">
-                        <img src={m.img} alt={m.name} className="w-16 h-16 object-cover shrink-0" />
+                      <div key={m.name} className="bg-muted/40 p-5 flex gap-4 items-start">
+                        <div className="w-24 h-24 shrink-0 overflow-hidden">
+                          <img src={m.img} alt={m.name} className="w-full h-full object-cover object-top" />
+                        </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <span className="font-semibold text-sm text-foreground">{m.name}</span>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, ArrowRight, Building2, ShieldCheck, Heart, FileText } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, ArrowLeft, Building2, ShieldCheck, Heart, FileText } from "lucide-react";
 import heroImg from "@/assets/hero-commercial.jpg";
 
 const BENEFITS = [
@@ -80,15 +80,21 @@ export default function Auth() {
     <div className="min-h-screen bg-background flex">
       {/* Left: form */}
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-12 max-w-lg mx-auto w-full">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 mb-10">
-          <div className="w-8 h-8 bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">А</span>
-          </div>
-          <span className="font-display text-lg font-bold text-foreground">
-            АРЕНДА<span className="text-primary">СИТИ</span>
-          </span>
-        </Link>
+        {/* Logo + back */}
+        <div className="flex items-center justify-between mb-10">
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-primary flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-sm">А</span>
+            </div>
+            <span className="font-display text-lg font-bold text-foreground">
+              АРЕНДА<span className="text-primary">СИТИ</span>
+            </span>
+          </Link>
+          <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="w-3.5 h-3.5" />
+            На сайт
+          </Link>
+        </div>
 
         {/* Tabs */}
         <div className="flex gap-6 mb-8">

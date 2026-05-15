@@ -23,6 +23,8 @@ import NewsPostPage from "./pages/NewsPostPage.tsx";
 import AboutPage from "./pages/AboutPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
 import ContactsPage from "./pages/ContactsPage.tsx";
+import InstallPrompt from "@/components/InstallPrompt";
+import CookieBanner from "@/components/CookieBanner";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +52,8 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <InstallPrompt />
+              <CookieBanner />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/catalog" element={<Catalog />} />

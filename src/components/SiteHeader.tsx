@@ -185,9 +185,10 @@ export default function SiteHeader() {
 
           {/* Desktop nav */}
           <nav className="hidden lg:flex items-center">
-            {navItems.map((item) => {
+            {navItems.map((item, idx) => {
               const active = isActive(item.href);
               const hasMenu = !!item.submenu?.length;
+              const isLast = idx === navItems.length - 1;
               return (
                 <div key={item.label} className="relative group/nav">
                   <Link
@@ -205,7 +206,7 @@ export default function SiteHeader() {
                   </Link>
 
                   {hasMenu && (
-                    <div className="absolute left-0 top-full pt-2 w-80 opacity-0 invisible -translate-y-2 group-hover/nav:opacity-100 group-hover/nav:visible group-hover/nav:translate-y-0 transition-all duration-200 ease-out z-50">
+                    <div className={`absolute top-full pt-2 w-80 opacity-0 invisible -translate-y-2 group-hover/nav:opacity-100 group-hover/nav:visible group-hover/nav:translate-y-0 transition-all duration-200 ease-out z-50 ${isLast ? "right-0" : "left-0"}`}>
                       <div className="bg-card border-0 shadow-[0_8px_30px_rgba(0,0,0,0.10)] overflow-hidden">
                         <div className="py-1">
                           {item.submenu!.map((s, idx) => {
