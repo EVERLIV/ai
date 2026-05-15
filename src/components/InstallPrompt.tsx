@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Download, Smartphone } from "lucide-react";
+import { X, Download } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -12,7 +12,6 @@ export default function InstallPrompt() {
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
-    // Не показывать если уже установлено или уже отклонили
     if (
       window.matchMedia("(display-mode: standalone)").matches ||
       localStorage.getItem("pwa_install_dismissed")
@@ -21,7 +20,6 @@ export default function InstallPrompt() {
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      // Показать через 3 сек после загрузки
       setTimeout(() => setShow(true), 3000);
     };
 
@@ -34,9 +32,7 @@ export default function InstallPrompt() {
     setInstalling(true);
     await deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") {
-      setShow(false);
-    }
+    if (outcome === "accepted") setShow(false);
     setInstalling(false);
     setDeferredPrompt(null);
   };
@@ -49,37 +45,37 @@ export default function InstallPrompt() {
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] w-full max-w-sm px-4 animate-fade-in-up">
-      <div className="bg-card border border-border shadow-xl flex items-center gap-3 p-4">
+    <div className="fixed top-0 left-0 right-0 z-[9999] bg-foreground text-background animate-fade-in-down">
+      <div className="max-w-screen-xl mx-auto px-4 h-10 flex items-center gap-3">
         {/* Иконка */}
-        <div className="w-10 h-10 bg-primary flex items-center justify-center shrink-0">
-          <Smartphone className="w-5 h-5 text-primary-foreground" />
+        <div className="w-5 h-5 bg-primary flex items-center justify-center shrink-0">
+          <span className="text-primary-foreground font-bold text-[10px]">А</span>
         </div>
 
         {/* Текст */}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground leading-tight">Установить приложение</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Быстрый доступ к каталогу без браузера</p>
-        </div>
+        <p className="text-xs flex-1 min-w-0 truncate">
+          <span className="font-semibold">АрендаСити</span>
+          <span className="text-background/60 ml-2 hidden sm:inline">— установите приложение для быстрого доступа к каталогу</span>
+        </p>
 
-        {/* Кнопки */}
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={handleInstall}
-            disabled={installing}
-            className="inline-flex items-center gap-1.5 h-8 px-3 bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
-          >
-            <Download className="w-3.5 h-3.5" />
-            {installing ? "..." : "Установить"}
-          </button>
-          <button
-            onClick={handleDismiss}
-            className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Закрыть"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Кнопка установить */}
+        <button
+          onClick={handleInstall}
+          disabled={installing}
+          className="inline-flex items-center gap-1.5 h-6 px-3 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-60 shrink-0"
+        >
+          <Download className="w-3 h-3" />
+          {installing ? "..." : "Установить"}
+        </button>
+
+        {/* Закрыть */}
+        <button
+          onClick={handleDismiss}
+          className="w-6 h-6 flex items-center justify-center text-background/50 hover:text-background transition-colors shrink-0"
+          aria-label="Закрыть"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
       </div>
     </div>
   );
