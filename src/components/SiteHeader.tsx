@@ -33,7 +33,7 @@ const navItems: NavItem[] = [
       { label: "О нас", desc: "История, команда и ценности АрендаСити", href: "/about", icon: Info },
       { label: "Новости", desc: "Аналитика и события рынка недвижимости", href: "/news", icon: Newspaper },
       { label: "Реклама", desc: "Размещение рекламных конструкций", href: "/ads", icon: Megaphone },
-      { label: "Контакты", desc: "Адрес, телефон, режим работы", href: "/#contacts", icon: BookOpen },
+      { label: "Контакты", desc: "Адрес, телефон, режим работы", href: "/contacts", icon: BookOpen },
     ],
   },
 ];

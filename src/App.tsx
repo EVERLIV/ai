@@ -22,6 +22,7 @@ import NewsPage from "./pages/NewsPage.tsx";
 import NewsPostPage from "./pages/NewsPostPage.tsx";
 import AboutPage from "./pages/AboutPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
+import ContactsPage from "./pages/ContactsPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,7 @@ const App = () => {
                 <Route path="/news/:slug" element={<NewsPostPage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/account" element={<AccountPage />} />
+                <Route path="/contacts" element={<ContactsPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
