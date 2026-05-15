@@ -96,22 +96,19 @@ export default function CategoryPropertySlider({ type, title = "Объекты �
                 </div>
               </div>
               <div className="p-4 space-y-2">
-                <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span className="truncate">{p.address}</span>
+                <div className="flex items-start gap-1.5 text-muted-foreground text-sm">
+                  <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                  <span className="line-clamp-2 leading-snug">{p.address}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-lg text-foreground">
+                <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                  <Maximize className="w-3.5 h-3.5 shrink-0" />
+                  <span className="shrink-0">{p.area} м²</span>
+                  {p.district && <><span className="opacity-40">·</span><span className="truncate">{p.district}</span></>}
+                </div>
+                <div className="pt-1">
+                  <span className="font-bold text-base text-foreground whitespace-nowrap">
                     {fmt(p.price)} ₽{p.deal_type !== "Продажа" && <span className="text-sm font-normal text-muted-foreground">/мес</span>}
                   </span>
-                  <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                    <Maximize className="w-3.5 h-3.5" />
-                    {p.area} м²
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="px-2 py-0.5 rounded bg-secondary">{p.class}</span>
-                  <span>{p.district}</span>
                 </div>
               </div>
             </Link>
