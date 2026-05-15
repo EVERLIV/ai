@@ -307,87 +307,124 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
           : "translate-y-full opacity-0 pointer-events-none md:translate-y-[-40%] md:opacity-0"
         }
       `}>
-        {/* Header — мессенджер стиль */}
-        <div className="flex items-center gap-3 px-4 shrink-0 bg-card border-b border-border"
-          style={{ paddingTop: "max(12px, env(safe-area-inset-top))", paddingBottom: "12px" }}>
-          <button
-            onClick={() => setOpen(false)}
-            className="shrink-0 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors -ml-1"
-          >
+        {/* ── Header (Telegram-style) ── */}
+        <div
+          className="shrink-0 flex items-center gap-3 px-3 bg-card border-b border-border"
+          style={{ paddingTop: "max(10px, env(safe-area-inset-top))", paddingBottom: "10px" }}
+        >
+          {/* Назад */}
+          <button onClick={() => setOpen(false)}
+            className="shrink-0 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
             <X className="w-5 h-5" />
           </button>
+
+          {/* Аватар — всегда фиксирован */}
           <div className="relative shrink-0">
-            <img src={consultantAvatar} alt="Анастасия" className="w-10 h-10 object-cover object-top" />
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-card" />
+            <img src={consultantAvatar} alt="Анастасия"
+              className="w-10 h-10 rounded-full object-cover object-top border-2 border-emerald-500" />
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-card rounded-full" />
           </div>
+
+          {/* Имя + статус */}
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-foreground leading-tight">Анастасия</div>
-            <div className="text-[11px] text-muted-foreground">
+            <div className="text-sm font-semibold text-foreground leading-tight truncate">
+              Анастасия · АРЕНДА СИТИ
+            </div>
+            <div className="text-[11px] mt-0.5 h-4">
               {isTyping ? (
-                <span className="inline-flex items-center gap-1 text-emerald-600">
-                  печатает
-                  <span className="inline-flex gap-0.5 ml-1">
-                    <span className="w-1 h-1 bg-emerald-500 animate-[dot-pulse_1.4s_0s_infinite]" />
-                    <span className="w-1 h-1 bg-emerald-500 animate-[dot-pulse_1.4s_0.2s_infinite]" />
-                    <span className="w-1 h-1 bg-emerald-500 animate-[dot-pulse_1.4s_0.4s_infinite]" />
+                <span className="inline-flex items-center gap-1.5 text-emerald-600">
+                  <span className="inline-flex gap-0.5">
+                    <span className="w-1 h-1 rounded-full bg-emerald-500 animate-[dot-pulse_1.4s_0s_infinite]" />
+                    <span className="w-1 h-1 rounded-full bg-emerald-500 animate-[dot-pulse_1.4s_0.2s_infinite]" />
+                    <span className="w-1 h-1 rounded-full bg-emerald-500 animate-[dot-pulse_1.4s_0.4s_infinite]" />
                   </span>
+                  печатает…
                 </span>
-              ) : <span className="text-emerald-600">онлайн</span>}
+              ) : (
+                <span className="text-emerald-600">онлайн</span>
+              )}
             </div>
           </div>
+
+          {/* Звонок */}
           <a href="tel:+73952551234"
-            className="shrink-0 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
-          >
-            <Phone className="w-4 h-4" />
+            className="shrink-0 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors">
+            <Phone className="w-4.5 h-4.5" />
           </a>
         </div>
 
-        {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-3 min-h-0"
-          style={{ background: "hsl(var(--muted) / 0.3)" }}>
-          {messages.map((m, i) => (
-            <div key={i} className={`flex items-end gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-              {m.role === "assistant" && (
-                <img src={consultantAvatar} alt="" className="w-7 h-7 object-cover object-top shrink-0 self-end" />
-              )}
-              <div className={`max-w-[78%] px-3.5 py-2.5 text-sm leading-relaxed shadow-sm ${
-                m.role === "user"
-                  ? "bg-primary text-primary-foreground rounded-2xl rounded-br-sm"
-                  : "bg-card text-foreground rounded-2xl rounded-bl-sm"
-              }`}>
-                {m.role === "assistant" ? renderContent(m, i) : <div className="whitespace-pre-wrap">{m.content}</div>}
+        {/* ── Messages ── */}
+        <div ref={scrollRef}
+          className="flex-1 overflow-y-auto min-h-0 py-3 px-3 space-y-1"
+          style={{ background: "hsl(var(--muted)/0.25)" }}>
+
+          {messages.map((m, i) => {
+            const isUser = m.role === "user";
+            // Показывать аватар только у первого сообщения ассистента в группе
+            const prevIsAssistant = i > 0 && messages[i - 1].role === "assistant";
+            const showAvatar = !isUser && !prevIsAssistant;
+            const nextIsAssistant = i < messages.length - 1 && messages[i + 1].role === "assistant";
+            const isLastInGroup = isUser || !nextIsAssistant;
+
+            return (
+              <div key={i} className={`flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
+                {/* Аватар ассистента — только у последнего в группе */}
+                {!isUser && (
+                  <div className="w-8 shrink-0 self-end">
+                    {isLastInGroup && (
+                      <img src={consultantAvatar} alt=""
+                        className="w-7 h-7 rounded-full object-cover object-top" />
+                    )}
+                  </div>
+                )}
+
+                {/* Пузырь */}
+                <div className={`max-w-[75%] px-3.5 py-2 text-[13px] leading-relaxed shadow-sm ${
+                  isUser
+                    ? "bg-primary text-primary-foreground rounded-2xl rounded-br-none"
+                    : "bg-card text-foreground rounded-2xl rounded-bl-none"
+                }`}>
+                  {isUser
+                    ? <div className="whitespace-pre-wrap">{m.content}</div>
+                    : renderContent(m, i)
+                  }
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
+
+          {/* Индикатор загрузки */}
           {loading && !messages.some((m) => m.typing) && (
-            <div className="flex items-end gap-2">
-              <img src={consultantAvatar} alt="" className="w-7 h-7 object-cover object-top shrink-0" />
-              <div className="bg-card px-4 py-3 rounded-2xl rounded-bl-sm inline-flex items-center gap-1 shadow-sm">
-                <span className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-[dot-pulse_1.4s_0s_infinite]" />
-                <span className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-[dot-pulse_1.4s_0.2s_infinite]" />
-                <span className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-[dot-pulse_1.4s_0.4s_infinite]" />
+            <div className="flex items-end gap-2 justify-start">
+              <div className="w-8 shrink-0 self-end">
+                <img src={consultantAvatar} alt="" className="w-7 h-7 rounded-full object-cover object-top" />
+              </div>
+              <div className="bg-card px-4 py-3 rounded-2xl rounded-bl-none inline-flex items-center gap-1 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-[dot-pulse_1.4s_0s_infinite]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-[dot-pulse_1.4s_0.2s_infinite]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-[dot-pulse_1.4s_0.4s_infinite]" />
               </div>
             </div>
           )}
         </div>
 
-        {/* Starters */}
+        {/* ── Starters ── */}
         {showStarters && (
-          <div className="px-3 py-2 flex flex-wrap gap-1.5 shrink-0 border-t border-border/40 bg-card">
+          <div className="shrink-0 px-3 py-2 flex flex-wrap gap-1.5 bg-card border-t border-border/40">
             {STARTERS.map((s) => (
               <button key={s} onClick={() => send(s)}
-                className="text-[11px] px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors">
+                className="text-[11px] px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors">
                 {s}
               </button>
             ))}
           </div>
         )}
 
-        {/* Input */}
+        {/* ── Input (Telegram-style) ── */}
         <form
           onSubmit={(e) => { e.preventDefault(); send(input); }}
-          className="shrink-0 bg-card border-t border-border px-3 py-2 flex items-center gap-2"
-          style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
+          className="shrink-0 bg-card border-t border-border flex items-center gap-2 px-3"
+          style={{ paddingTop: "8px", paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
         >
           <input
             value={input}
@@ -398,12 +435,12 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
               "Сообщение…"
             }
             disabled={loading || isTyping}
-            className="flex-1 px-4 py-2.5 bg-muted rounded-full text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 bg-muted rounded-full text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none disabled:opacity-50 min-w-0"
           />
           <button
             type="submit"
             disabled={loading || isTyping || !input.trim()}
-            className="w-10 h-10 flex items-center justify-center bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-opacity disabled:opacity-30 shrink-0"
+            className="shrink-0 w-10 h-10 flex items-center justify-center bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-opacity disabled:opacity-30"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
