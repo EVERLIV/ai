@@ -60,6 +60,20 @@ export default function SiteFooter() {
           </div>
         </div>
       </div>
+      {/* Made by */}
+      <div className="border-t border-background/10 py-2.5">
+        <p className="text-center text-[11px] text-background/40">
+          Создано в{" "}
+          <a
+            href="https://2a-digital.com"
+            target="_blank"
+            rel="noreferrer"
+            className="text-background/60 hover:text-background transition-colors font-medium"
+          >
+            2А Цифровые Решения
+          </a>
+        </p>
+      </div>
     </footer>
   );
 }

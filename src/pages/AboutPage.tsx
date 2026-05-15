@@ -111,7 +111,7 @@ export default function AboutPage() {
                   {stats.map((s) => {
                     const Icon = s.icon;
                     return (
-                      <div key={s.label} className="bg-card border border-border p-5 text-center">
+                      <div key={s.label} className="bg-muted/40 p-5 text-center">
                         <Icon className="w-5 h-5 text-primary mx-auto mb-2" />
                         <div className="font-display text-3xl font-bold text-foreground">{s.value}</div>
                         <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
@@ -149,7 +149,7 @@ export default function AboutPage() {
                   <h2 className="font-display text-2xl font-bold text-foreground mb-6">Наши принципы</h2>
                   <div className="grid sm:grid-cols-2 gap-4">
                     {values.map((v) => (
-                      <div key={v.title} className="bg-card border border-border p-5">
+                      <div key={v.title} className="bg-muted/40 p-5">
                         <div className="flex items-center gap-2 mb-2">
                           <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
                           <span className="font-semibold text-foreground text-sm">{v.title}</span>
@@ -165,8 +165,8 @@ export default function AboutPage() {
                   <h2 className="font-display text-2xl font-bold text-foreground mb-6">История компании</h2>
                   <div className="space-y-0">
                     {timeline.map((item, i) => (
-                      <div key={item.year} className={`flex gap-5 pb-6 ${i < timeline.length - 1 ? "border-l-2 border-border ml-5" : "ml-5"}`}>
-                        <div className={`shrink-0 -ml-5 w-10 h-10 bg-card border-2 flex items-center justify-center text-xs font-bold text-foreground ${i === timeline.length - 1 ? "border-primary text-primary" : "border-border"}`}>
+                      <div key={item.year} className="flex gap-5 pb-6 ml-5">
+                        <div className={`shrink-0 -ml-5 w-10 h-10 flex items-center justify-center text-xs font-bold ${i === timeline.length - 1 ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
                           {item.year.slice(2)}
                         </div>
                         <div className="pt-1.5">
@@ -183,7 +183,7 @@ export default function AboutPage() {
                   <h2 className="font-display text-2xl font-bold text-foreground mb-6">Команда</h2>
                   <div className="grid sm:grid-cols-2 gap-5">
                     {team.map((m) => (
-                      <div key={m.name} className="bg-card border border-border p-5 flex gap-4">
+                      <div key={m.name} className="bg-muted/40 p-5 flex gap-4">
                         <img src={m.img} alt={m.name} className="w-16 h-16 object-cover shrink-0" />
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5 mb-0.5">
@@ -207,7 +207,7 @@ export default function AboutPage() {
                   <h2 className="font-display text-2xl font-bold text-foreground mb-6">Наши услуги</h2>
                   <div className="grid sm:grid-cols-2 gap-2.5">
                     {services.map((s) => (
-                      <div key={s} className="flex items-center gap-2.5 py-2.5 border-b border-border last:border-0 sm:last:border-0">
+                      <div key={s} className="flex items-center gap-2.5 py-2.5">
                         <Building2 className="w-4 h-4 text-primary shrink-0" />
                         <span className="text-sm text-foreground">{s}</span>
                       </div>
@@ -216,7 +216,7 @@ export default function AboutPage() {
                 </div>
 
                 {/* Contacts */}
-                <div id="contacts" className="bg-muted/40 border border-border p-8">
+                <div id="contacts" className="bg-muted/40 p-8">
                   <h2 className="font-display text-2xl font-bold text-foreground mb-6">Контакты</h2>
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div className="space-y-4">

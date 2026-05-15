@@ -77,14 +77,18 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
       if (!c) return;
       points.push(c);
 
+      const price = Number(p.price);
+      const priceLabel = price > 0
+        ? (price >= 1000000 ? (price / 1000000).toFixed(1) + " млн ₽" : (price / 1000).toFixed(0) + "к ₽")
+        : p.type;
+
       const el = document.createElement("button");
       el.type = "button";
       el.className = `cm-pin${activeId === p.id ? " is-active" : ""}`;
       el.setAttribute("aria-label", p.address);
       el.innerHTML = `
-        <span class="cm-pin__dot">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-        </span>
+        <span class="cm-pin__label">${priceLabel}</span>
+        <span class="cm-pin__tail"></span>
       `;
       el.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -164,7 +168,7 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
       </aside>
 
       <div className="flex-1 relative bg-muted">
-        <div ref={containerRef} className="absolute inset-0" />
+        <div ref={containerRef} className="absolute inset-0" style={{ filter: "grayscale(0.6) contrast(0.92) brightness(1.08)" }} />
 
         {mapFailed && (
           <YandexMapFallback
@@ -248,32 +252,43 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
           padding: 0;
           cursor: pointer;
           display: flex;
-          align-items: flex-end;
-          justify-content: center;
-          width: 30px;
-          height: 38px;
+          flex-direction: column;
+          align-items: center;
           transform: translate(-50%, -100%);
-          transition: transform 160ms ease;
+          transition: transform 160ms ease, z-index 0s;
+          position: relative;
         }
-        .cm-pin__dot {
-          width: 30px;
-          height: 30px;
-          border-radius: 50% 50% 50% 0;
+        .cm-pin__label {
+          display: block;
           background: hsl(0, 72%, 51%);
           color: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transform: rotate(-45deg);
-          border: 2px solid #fff;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.15);
+          font-size: 11px;
+          font-weight: 700;
+          font-family: inherit;
+          letter-spacing: 0.01em;
+          padding: 4px 8px;
+          white-space: nowrap;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+          border-radius: 0;
+          line-height: 1.4;
         }
-        .cm-pin__dot > svg { transform: rotate(45deg); }
-        .cm-pin:hover { transform: translate(-50%, -100%) scale(1.08); z-index: 5; }
-        .cm-pin.is-active { z-index: 10; transform: translate(-50%, -100%) scale(1.18); }
-        .cm-pin.is-active .cm-pin__dot {
+        .cm-pin__tail {
+          display: block;
+          width: 0;
+          height: 0;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 6px solid hsl(0, 72%, 51%);
+        }
+        .cm-pin:hover { transform: translate(-50%, -100%) scale(1.06); z-index: 5; }
+        .cm-pin:hover .cm-pin__label { box-shadow: 0 4px 14px rgba(0,0,0,0.28); }
+        .cm-pin.is-active { z-index: 10; transform: translate(-50%, -100%) scale(1.12); }
+        .cm-pin.is-active .cm-pin__label {
           background: hsl(220, 25%, 10%);
-          box-shadow: 0 6px 16px rgba(0,0,0,0.35), 0 0 0 4px hsl(0, 72%, 51% / 0.25);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+        }
+        .cm-pin.is-active .cm-pin__tail {
+          border-top-color: hsl(220, 25%, 10%);
         }
         .scrollbar-none::-webkit-scrollbar { display: none; }
         .scrollbar-none { scrollbar-width: none; }

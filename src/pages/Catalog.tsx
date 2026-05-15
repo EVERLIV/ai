@@ -1,12 +1,12 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useProperties, type DbProperty } from "@/hooks/useProperties";
 import { useConversation } from "@elevenlabs/react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import AIPropertyWizard from "@/components/AIPropertyWizard";
+import NewsSidebar from "@/components/NewsSidebar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   SlidersHorizontal, X, ChevronDown, MapPin, Maximize2, LayoutGrid, List,
@@ -35,6 +35,11 @@ const SORT_OPTIONS = [
   { label: "Площадь ↑", value: "area_asc" },
   { label: "Площадь ↓", value: "area_desc" },
 ];
+const CEILING_OPTIONS = [
+  { label: "от 3 м", value: 3 },
+  { label: "от 4 м", value: 4 },
+  { label: "от 5 м", value: 5 },
+];
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": PhBuildings, "Торговая": PhStorefront, "Склад": PhWarehouse, "Земля": PhTree, "Производство": PhFactory,
@@ -42,24 +47,49 @@ const typeIcons: Record<string, React.ElementType> = {
 
 const ELEVENLABS_AGENT_ID = "agent_7301kmyt4jxxf8etgj0av5x43qb4";
 
-// ─── Compact range input ───
-function RangeInput({ label, min, max, onMinChange, onMaxChange, suffix }: {
-  label: string; min: string; max: string; onMinChange: (v: string) => void; onMaxChange: (v: string) => void; suffix?: string;
+// ─── Double Range Slider ───
+function RangeSlider({ min, max, valueMin, valueMax, step, onChangeMin, onChangeMax, format }: {
+  min: number; max: number; valueMin: number; valueMax: number; step: number;
+  onChangeMin: (v: number) => void; onChangeMax: (v: number) => void;
+  format: (v: number) => string;
 }) {
+  const pct = (v: number) => ((v - min) / (max - min)) * 100;
+  const left = pct(valueMin);
+  const right = pct(valueMax);
+  const THUMB = 7; // half of thumb width px
   return (
-    <div>
-      <label className="text-[11px] font-medium text-muted-foreground mb-1 block">{label}</label>
-      <div className="flex gap-1.5">
-        <div className="relative flex-1">
-          <input type="number" placeholder="от" value={min} onChange={(e) => onMinChange(e.target.value)}
-            className="w-full px-0 py-1.5 pr-7 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none focus:border-primary transition-colors" />
-          {suffix && <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{suffix}</span>}
-        </div>
-        <div className="relative flex-1">
-          <input type="number" placeholder="до" value={max} onChange={(e) => onMaxChange(e.target.value)}
-            className="w-full px-0 py-1.5 pr-7 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none focus:border-primary transition-colors" />
-          {suffix && <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{suffix}</span>}
-        </div>
+    <div className="px-2">
+      <div className="relative h-5 flex items-center">
+        {/* Track */}
+        <div className="absolute inset-x-0 h-0.5 bg-border" />
+        <div
+          className="absolute h-0.5 bg-primary"
+          style={{
+            left: `calc(${left}% + ${THUMB * (1 - left / 50)}px)`,
+            right: `calc(${100 - right}% + ${THUMB * (right / 50 - 1)}px)`,
+          }}
+        />
+        <input
+          type="range" min={min} max={max} step={step} value={valueMin}
+          onChange={(e) => { const v = Number(e.target.value); if (v <= valueMax) onChangeMin(v); }}
+          className="range-thumb absolute inset-0 w-full opacity-0 cursor-pointer h-full"
+          style={{ zIndex: valueMin > max - step ? 5 : 3 }}
+        />
+        <input
+          type="range" min={min} max={max} step={step} value={valueMax}
+          onChange={(e) => { const v = Number(e.target.value); if (v >= valueMin) onChangeMax(v); }}
+          className="range-thumb absolute inset-0 w-full opacity-0 cursor-pointer h-full"
+          style={{ zIndex: 4 }}
+        />
+        {/* Thumb dots */}
+        <div className="absolute w-3.5 h-3.5 bg-background border-2 border-primary pointer-events-none"
+          style={{ left: `calc(${left}% - ${THUMB}px)` }} />
+        <div className="absolute w-3.5 h-3.5 bg-background border-2 border-primary pointer-events-none"
+          style={{ left: `calc(${right}% - ${THUMB}px)` }} />
+      </div>
+      <div className="flex justify-between mt-1.5 text-[10px] text-muted-foreground">
+        <span>{format(valueMin)}</span>
+        <span>{format(valueMax)}</span>
       </div>
     </div>
   );
@@ -83,8 +113,8 @@ function SelectFilter({ label, value, options, onChange }: {
   );
 }
 
-// ─── Collapsible section with smooth grid animation ───
-function Section({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
+// ─── Collapsible section ───
+function Section({ title, defaultOpen = false, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="pb-2">
@@ -93,9 +123,7 @@ function Section({ title, defaultOpen = true, children }: { title: string; defau
         className="group w-full flex items-center justify-between py-2 text-[11px] font-semibold text-foreground uppercase tracking-[0.1em] transition-colors"
       >
         <span className="section-title group-hover:text-primary transition-colors">{title}</span>
-        <ChevronDown
-          className={`w-3.5 h-3.5 text-muted-foreground transition-all duration-300 group-hover:text-primary ${open ? "rotate-180" : ""}`}
-        />
+        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-all duration-300 group-hover:text-primary ${open ? "rotate-180" : ""}`} />
       </button>
       <div className={`collapse-grid ${open ? "is-open" : ""}`}>
         <div className="collapse-inner">
@@ -103,6 +131,18 @@ function Section({ title, defaultOpen = true, children }: { title: string; defau
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Active filter chip ───
+function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-medium">
+      {label}
+      <button onClick={onRemove} className="hover:text-primary/70 transition-colors ml-0.5">
+        <X className="w-2.5 h-2.5" />
+      </button>
+    </span>
   );
 }
 
@@ -251,59 +291,134 @@ function SidebarAIChat() {
   );
 }
 
+// ─── useDebounce ───
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+
 // ─── Main Catalog ───
 export default function Catalog() {
   const { data: properties = [], isLoading } = useProperties();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Init state from URL
   const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebar, setMobileSidebar] = useState(false);
-  const [dealType, setDealType] = useState("Все");
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [district, setDistrict] = useState("Все");
-  const [propertyClass, setPropertyClass] = useState("Все");
-  const [condition, setCondition] = useState("Все");
-  const [priceMin, setPriceMin] = useState("");
-  const [priceMax, setPriceMax] = useState("");
-  const [areaMin, setAreaMin] = useState("");
-  const [areaMax, setAreaMax] = useState("");
-  const [sort, setSort] = useState("date");
-  const [searchQuery, setSearchQuery] = useState("");
 
-  const districts = useMemo(() => ["Все", ...Array.from(new Set(properties.map((p) => p.district)))], [properties]);
+  const [dealType, setDealType] = useState(() => searchParams.get("deal") || "Все");
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(() => {
+    const t = searchParams.get("types");
+    return t ? t.split(",").filter(Boolean) : [];
+  });
+  const [district, setDistrict] = useState(() => searchParams.get("district") || "Все");
+  const [propertyClass, setPropertyClass] = useState(() => searchParams.get("cls") || "Все");
+  const [condition, setCondition] = useState(() => searchParams.get("cond") || "Все");
+  const [sort, setSort] = useState(() => searchParams.get("sort") || "date");
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") || "");
+
+  // Range sliders: price 0–500000, area 0–10000
+  const [priceMin, setPriceMin] = useState(() => Number(searchParams.get("priceMin") || 0));
+  const [priceMax, setPriceMax] = useState(() => Number(searchParams.get("priceMax") || 500000));
+  const [areaMin, setAreaMin] = useState(() => Number(searchParams.get("areaMin") || 0));
+  const [areaMax, setAreaMax] = useState(() => Number(searchParams.get("areaMax") || 10000));
+
+  // New filters
+  const [ceilingMin, setCeilingMin] = useState(() => Number(searchParams.get("ceil") || 0));
+  const [parkingOnly, setParkingOnly] = useState(() => searchParams.get("parking") === "1");
+  const [selectedLayouts, setSelectedLayouts] = useState<string[]>(() => {
+    const l = searchParams.get("layouts");
+    return l ? l.split(",").filter(Boolean) : [];
+  });
+
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
+  const districts = useMemo(() => ["Все", ...Array.from(new Set(properties.map((p) => p.district).filter(Boolean)))], [properties]);
   const conditions = useMemo(() => ["Все", ...Array.from(new Set(properties.map((p) => p.condition).filter(Boolean) as string[]))], [properties]);
+  const layouts = useMemo(() => Array.from(new Set(properties.map((p) => (p as any).layout).filter(Boolean) as string[])), [properties]);
+
+  // Sync filters → URL
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (dealType !== "Все") params.deal = dealType;
+    if (selectedTypes.length > 0) params.types = selectedTypes.join(",");
+    if (district !== "Все") params.district = district;
+    if (propertyClass !== "Все") params.cls = propertyClass;
+    if (condition !== "Все") params.cond = condition;
+    if (sort !== "date") params.sort = sort;
+    if (debouncedSearch) params.q = debouncedSearch;
+    if (priceMin > 0) params.priceMin = String(priceMin);
+    if (priceMax < 500000) params.priceMax = String(priceMax);
+    if (areaMin > 0) params.areaMin = String(areaMin);
+    if (areaMax < 10000) params.areaMax = String(areaMax);
+    if (ceilingMin > 0) params.ceil = String(ceilingMin);
+    if (parkingOnly) params.parking = "1";
+    if (selectedLayouts.length > 0) params.layouts = selectedLayouts.join(",");
+    setSearchParams(params, { replace: true });
+  }, [dealType, selectedTypes, district, propertyClass, condition, sort, debouncedSearch, priceMin, priceMax, areaMin, areaMax, ceilingMin, parkingOnly, selectedLayouts]);
 
   const toggleType = (t: string) => {
     setSelectedTypes((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]);
   };
 
+  const toggleLayout = (l: string) => {
+    setSelectedLayouts((prev) => prev.includes(l) ? prev.filter((x) => x !== l) : [...prev, l]);
+  };
+
+  const isPriceFiltered = priceMin > 0 || priceMax < 500000;
+  const isAreaFiltered = areaMin > 0 || areaMax < 10000;
+
   const activeFiltersCount = [
-    dealType !== "Все", selectedTypes.length > 0, district !== "Все",
-    propertyClass !== "Все", condition !== "Все",
-    priceMin, priceMax, areaMin, areaMax, searchQuery,
+    dealType !== "Все",
+    selectedTypes.length > 0,
+    district !== "Все",
+    propertyClass !== "Все",
+    condition !== "Все",
+    isPriceFiltered,
+    isAreaFiltered,
+    debouncedSearch,
+    ceilingMin > 0,
+    parkingOnly,
+    selectedLayouts.length > 0,
   ].filter(Boolean).length;
 
   const resetFilters = () => {
     setDealType("Все"); setSelectedTypes([]); setDistrict("Все");
     setPropertyClass("Все"); setCondition("Все");
-    setPriceMin(""); setPriceMax(""); setAreaMin(""); setAreaMax("");
-    setSearchQuery("");
+    setPriceMin(0); setPriceMax(500000); setAreaMin(0); setAreaMax(10000);
+    setSearchQuery(""); setCeilingMin(0); setParkingOnly(false); setSelectedLayouts([]);
   };
 
   const filtered = useMemo(() => {
     let result = [...properties];
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter((p) => p.address.toLowerCase().includes(q) || p.district.toLowerCase().includes(q) || p.type.toLowerCase().includes(q));
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
+      result = result.filter((p) =>
+        p.address.toLowerCase().includes(q) ||
+        p.district.toLowerCase().includes(q) ||
+        p.type.toLowerCase().includes(q) ||
+        (p.description || "").toLowerCase().includes(q)
+      );
     }
     if (dealType !== "Все") result = result.filter((p) => p.deal_type === dealType);
     if (selectedTypes.length > 0) result = result.filter((p) => selectedTypes.includes(p.type));
     if (district !== "Все") result = result.filter((p) => p.district === district);
     if (propertyClass !== "Все") result = result.filter((p) => p.class === propertyClass);
     if (condition !== "Все") result = result.filter((p) => p.condition === condition);
-    if (priceMin) result = result.filter((p) => Number(p.price) >= Number(priceMin));
-    if (priceMax) result = result.filter((p) => Number(p.price) <= Number(priceMax));
-    if (areaMin) result = result.filter((p) => Number(p.area) >= Number(areaMin));
-    if (areaMax) result = result.filter((p) => Number(p.area) <= Number(areaMax));
+    if (isPriceFiltered) {
+      if (priceMin > 0) result = result.filter((p) => Number(p.price) >= priceMin || Number(p.price) === 0);
+      if (priceMax < 500000) result = result.filter((p) => Number(p.price) <= priceMax || Number(p.price) === 0);
+    }
+    if (areaMin > 0) result = result.filter((p) => Number(p.area) >= areaMin);
+    if (areaMax < 10000) result = result.filter((p) => Number(p.area) <= areaMax);
+    if (ceilingMin > 0) result = result.filter((p) => Number(p.ceiling_height) >= ceilingMin);
+    if (parkingOnly) result = result.filter((p) => p.parking && p.parking !== "Нет" && p.parking !== "-");
+    if (selectedLayouts.length > 0) result = result.filter((p) => selectedLayouts.includes((p as any).layout));
 
     switch (sort) {
       case "price_asc": result.sort((a, b) => Number(a.price) - Number(b.price)); break;
@@ -312,7 +427,27 @@ export default function Catalog() {
       case "area_desc": result.sort((a, b) => Number(b.area) - Number(a.area)); break;
     }
     return result;
-  }, [properties, dealType, selectedTypes, district, propertyClass, condition, priceMin, priceMax, areaMin, areaMax, sort, searchQuery]);
+  }, [properties, dealType, selectedTypes, district, propertyClass, condition, priceMin, priceMax, areaMin, areaMax, sort, debouncedSearch, ceilingMin, parkingOnly, selectedLayouts, isPriceFiltered]);
+
+  // Active filter chips data
+  const activeChips = useMemo(() => {
+    const chips: { label: string; onRemove: () => void }[] = [];
+    if (dealType !== "Все") chips.push({ label: dealType, onRemove: () => setDealType("Все") });
+    selectedTypes.forEach((t) => chips.push({ label: t, onRemove: () => toggleType(t) }));
+    if (district !== "Все") chips.push({ label: district, onRemove: () => setDistrict("Все") });
+    if (propertyClass !== "Все") chips.push({ label: `Класс ${propertyClass}`, onRemove: () => setPropertyClass("Все") });
+    if (condition !== "Все") chips.push({ label: condition, onRemove: () => setCondition("Все") });
+    if (isPriceFiltered) chips.push({ label: `${priceMin > 0 ? `от ${(priceMin / 1000).toFixed(0)}к` : ""}${priceMax < 500000 ? ` до ${(priceMax / 1000).toFixed(0)}к ₽` : " ₽"}`.trim(), onRemove: () => { setPriceMin(0); setPriceMax(500000); } });
+    if (isAreaFiltered) chips.push({ label: `${areaMin > 0 ? `от ${areaMin}` : ""}${areaMax < 10000 ? ` до ${areaMax} м²` : " м²"}`.trim(), onRemove: () => { setAreaMin(0); setAreaMax(10000); } });
+    if (ceilingMin > 0) chips.push({ label: `Потолки от ${ceilingMin} м`, onRemove: () => setCeilingMin(0) });
+    if (parkingOnly) chips.push({ label: "Парковка", onRemove: () => setParkingOnly(false) });
+    selectedLayouts.forEach((l) => chips.push({ label: l, onRemove: () => toggleLayout(l) }));
+    if (debouncedSearch) chips.push({ label: `"${debouncedSearch}"`, onRemove: () => setSearchQuery("") });
+    return chips;
+  }, [dealType, selectedTypes, district, propertyClass, condition, isPriceFiltered, isAreaFiltered, priceMin, priceMax, areaMin, areaMax, ceilingMin, parkingOnly, selectedLayouts, debouncedSearch]);
+
+  const formatPrice = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}к` : String(v);
+  const formatArea = (v: number) => `${v} м²`;
 
   // Sidebar content (shared between desktop & mobile)
   const sidebarContent = (
@@ -322,8 +457,13 @@ export default function Catalog() {
         <div className="input-underline relative">
           <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Поиск по адресу, району..."
+            placeholder="Поиск по адресу, районе..."
             className="w-full pl-6 pr-2 py-2 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none transition-colors" />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
 
         {/* Deal type */}
@@ -334,9 +474,7 @@ export default function Catalog() {
                 key={d}
                 onClick={() => setDealType(d)}
                 className={`flex-1 px-2 py-2 text-[11px] font-medium transition-all duration-300 ${
-                  dealType === d
-                    ? "tab-active-gradient"
-                    : "text-muted-foreground tab-hover-gradient hover:text-foreground"
+                  dealType === d ? "tab-active-gradient" : "text-muted-foreground tab-hover-gradient hover:text-foreground"
                 }`}
               >
                 {d}
@@ -352,12 +490,7 @@ export default function Catalog() {
               const Icon = typeIcons[t] || PhBuildings;
               const checked = selectedTypes.includes(t);
               return (
-                <button
-                  key={t}
-                  onClick={() => toggleType(t)}
-                  className={`chip ${checked ? "is-active" : ""}`}
-                  type="button"
-                >
+                <button key={t} onClick={() => toggleType(t)} className={`chip ${checked ? "is-active" : ""}`} type="button">
                   <Icon className="w-3.5 h-3.5" weight="duotone" />
                   <span>{t}</span>
                 </button>
@@ -371,10 +504,24 @@ export default function Catalog() {
           <SelectFilter label="Район / Город" value={district} options={districts} onChange={setDistrict} />
         </Section>
 
-        {/* Price & Area */}
-        <Section title="Цена и площадь">
-          <RangeInput label="Цена, ₽" min={priceMin} max={priceMax} onMinChange={setPriceMin} onMaxChange={setPriceMax} suffix="₽" />
-          <RangeInput label="Площадь, м²" min={areaMin} max={areaMax} onMinChange={setAreaMin} onMaxChange={setAreaMax} suffix="м²" />
+        {/* Price slider */}
+        <Section title="Цена, ₽/мес">
+          <RangeSlider
+            min={0} max={500000} step={5000}
+            valueMin={priceMin} valueMax={priceMax}
+            onChangeMin={setPriceMin} onChangeMax={setPriceMax}
+            format={formatPrice}
+          />
+        </Section>
+
+        {/* Area slider */}
+        <Section title="Площадь, м²">
+          <RangeSlider
+            min={0} max={10000} step={10}
+            valueMin={areaMin} valueMax={areaMax}
+            onChangeMin={setAreaMin} onChangeMax={setAreaMax}
+            format={formatArea}
+          />
         </Section>
 
         {/* Class & Condition */}
@@ -383,15 +530,59 @@ export default function Catalog() {
           <SelectFilter label="Состояние" value={condition} options={conditions} onChange={setCondition} />
         </Section>
 
+        {/* Ceiling, Parking, Layout */}
+        <Section title="Дополнительно" defaultOpen={false}>
+          <div>
+            <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Высота потолков</label>
+            <div className="flex gap-1.5 flex-wrap">
+              {CEILING_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setCeilingMin(ceilingMin === opt.value ? 0 : opt.value)}
+                  className={`px-2.5 py-1 text-[11px] font-medium transition-all border ${
+                    ceilingMin === opt.value ? "bg-primary text-primary-foreground border-primary" : "bg-transparent border-border text-muted-foreground hover:border-primary hover:text-foreground"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <Checkbox
+              checked={parkingOnly}
+              onCheckedChange={(v) => setParkingOnly(!!v)}
+              className="w-3.5 h-3.5"
+            />
+            <span className="text-xs text-foreground">Есть парковка</span>
+          </label>
+          {layouts.length > 0 && (
+            <div>
+              <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Планировка</label>
+              <div className="space-y-1.5">
+                {layouts.map((l) => (
+                  <label key={l} className="flex items-center gap-2 cursor-pointer select-none">
+                    <Checkbox
+                      checked={selectedLayouts.includes(l)}
+                      onCheckedChange={() => toggleLayout(l)}
+                      className="w-3.5 h-3.5"
+                    />
+                    <span className="text-xs text-foreground">{l}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </Section>
+
         {/* Reset */}
         {activeFiltersCount > 0 && (
           <button onClick={resetFilters} className="w-full flex items-center justify-center gap-1.5 text-xs text-destructive hover:text-destructive/80 py-2 transition-colors">
-            <X className="w-3 h-3" /> Сбросить ({activeFiltersCount})
+            <X className="w-3 h-3" /> Сбросить все ({activeFiltersCount})
           </button>
         )}
 
-        {/* AI Wizard — встроен под фильтрами */}
-        <AIPropertyWizard properties={properties} />
       </div>
     </div>
   );
@@ -410,7 +601,7 @@ export default function Catalog() {
           </div>
         </div>
 
-        {/* Top bar — minimal, без градиентного фона и без заголовка */}
+        {/* Top bar */}
         <div className="border-b border-border/40">
           <div className="px-3 lg:px-6 py-2.5 lg:py-3 flex items-center gap-2 lg:gap-4">
             {/* Toggle sidebar desktop */}
@@ -424,7 +615,7 @@ export default function Catalog() {
               {activeFiltersCount > 0 && <span className="count-badge">{activeFiltersCount}</span>}
             </button>
 
-            {/* Result count inline (заменяет заголовок) */}
+            {/* Result count */}
             <div className="flex-1 min-w-0 text-xs text-muted-foreground truncate">
               {isLoading ? (
                 <span className="inline-flex gap-1 items-center">
@@ -446,42 +637,54 @@ export default function Catalog() {
                 </select>
               </div>
               <div className="flex">
-                <button
-                  onClick={() => setViewMode("grid")}
+                <button onClick={() => setViewMode("grid")}
                   className={`p-1.5 transition-all duration-300 ${viewMode === "grid" ? "tab-active-gradient" : "text-muted-foreground hover:text-foreground"}`}
-                  aria-label="Grid view"
-                >
+                  aria-label="Grid view">
                   <LayoutGrid className="w-4 h-4" />
                 </button>
-                <button
-                  onClick={() => setViewMode("list")}
+                <button onClick={() => setViewMode("list")}
                   className={`p-1.5 transition-all duration-300 ${viewMode === "list" ? "tab-active-gradient" : "text-muted-foreground hover:text-foreground"}`}
-                  aria-label="List view"
-                >
+                  aria-label="List view">
                   <List className="w-4 h-4" />
                 </button>
-                <button
-                  onClick={() => setViewMode("map")}
+                <button onClick={() => setViewMode("map")}
                   className={`p-1.5 transition-all duration-300 ${viewMode === "map" ? "tab-active-gradient" : "text-muted-foreground hover:text-foreground"}`}
-                  aria-label="Map view"
-                >
+                  aria-label="Map view">
                   <MapIcon className="w-4 h-4" />
                 </button>
               </div>
             </div>
           </div>
+
+          {/* Active filter chips row */}
+          {activeChips.length > 0 && (
+            <div className="px-3 lg:px-6 pb-2 flex flex-wrap gap-1.5 items-center">
+              {activeChips.map((c, i) => <Chip key={i} label={c.label} onRemove={c.onRemove} />)}
+              <button onClick={resetFilters} className="text-[10px] text-muted-foreground hover:text-destructive transition-colors ml-1">
+                Сбросить всё
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Main content area with sidebar */}
         <div className="flex-1 flex overflow-hidden">
           {/* Desktop sidebar */}
-          {sidebarOpen && (
-            <aside className="hidden lg:flex w-64 xl:w-72 shrink-0 flex-col overflow-hidden">
+          <aside
+            className="hidden lg:flex shrink-0 flex-col overflow-hidden"
+            style={{
+              width: sidebarOpen ? "272px" : "0px",
+              opacity: sidebarOpen ? 1 : 0,
+              transition: "width 300ms cubic-bezier(0.4,0,0.2,1), opacity 200ms ease",
+              pointerEvents: sidebarOpen ? "auto" : "none",
+            }}
+          >
+            <div className="w-64 xl:w-[272px] flex-1 overflow-hidden flex flex-col">
               {sidebarContent}
-            </aside>
-          )}
+            </div>
+          </aside>
 
-          {/* Mobile sidebar overlay — на весь экран */}
+          {/* Mobile sidebar overlay */}
           {mobileSidebar && (
             <aside className="fixed inset-0 z-50 bg-background flex flex-col lg:hidden animate-fade-in-up">
               <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 shrink-0">
@@ -506,7 +709,7 @@ export default function Catalog() {
           )}
 
           {/* Results */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-w-0">
             {viewMode === "map" ? (
               <CatalogMap properties={filtered} />
             ) : (
@@ -553,9 +756,20 @@ export default function Catalog() {
               </div>
             )}
           </div>
+
+          {/* News sidebar — right column, desktop only */}
+          <div className="hidden xl:block shrink-0 w-[280px] overflow-y-auto border-l border-border/40">
+            <NewsSidebar />
+          </div>
         </div>
       </div>
       <SiteFooter />
+
+      <style>{`
+        .range-thumb { -webkit-appearance: none; pointer-events: all; }
+        .range-thumb::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; pointer-events: all; cursor: pointer; }
+        .range-thumb::-moz-range-thumb { width: 14px; height: 14px; pointer-events: all; cursor: pointer; border: none; background: transparent; }
+      `}</style>
     </div>
   );
 }
@@ -567,17 +781,11 @@ function GridCard({ property: p }: { property: DbProperty }) {
     <Link to={`/property/${p.id}`}
       className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-card-hover transition-all duration-300">
       <div className="relative h-44 bg-muted overflow-hidden">
-        <PropertyImage
-          src={p.cover_photo}
-          alt={p.address}
-          imgClassName="transition-transform duration-500 group-hover:scale-[1.03]"
-        />
+        <PropertyImage src={p.cover_photo} alt={p.address} imgClassName="transition-transform duration-500 group-hover:scale-[1.03]" />
         <div className="absolute top-3 left-3 flex gap-1.5">
           <span className="px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">{p.deal_type}</span>
           <span className="px-2 py-0.5 rounded-md bg-card/90 backdrop-blur text-foreground text-[10px] font-semibold">{p.type}</span>
-          {p.class !== "-" && (
-            <span className="px-2 py-0.5 rounded-md bg-accent/90 text-accent-foreground text-[10px] font-semibold">Класс {p.class}</span>
-          )}
+          {p.class !== "-" && <span className="px-2 py-0.5 rounded-md bg-accent/90 text-accent-foreground text-[10px] font-semibold">Класс {p.class}</span>}
         </div>
         <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-md bg-card/80 backdrop-blur text-[10px] text-muted-foreground">
           <Eye className="w-3 h-3" /> {p.views_count || 0}
@@ -628,11 +836,7 @@ function ListCard({ property: p }: { property: DbProperty }) {
     <Link to={`/property/${p.id}`}
       className="group flex bg-card rounded-xl border border-border overflow-hidden hover:shadow-card-hover transition-all duration-300">
       <div className="relative w-48 shrink-0 bg-muted hidden sm:block overflow-hidden">
-        <PropertyImage
-          src={p.cover_photo}
-          alt={p.address}
-          imgClassName="transition-transform duration-500 group-hover:scale-[1.03]"
-        />
+        <PropertyImage src={p.cover_photo} alt={p.address} imgClassName="transition-transform duration-500 group-hover:scale-[1.03]" />
         <div className="absolute top-2 left-2 flex gap-1">
           <span className="px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">{p.deal_type}</span>
         </div>

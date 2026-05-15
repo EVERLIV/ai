@@ -27,15 +27,23 @@ export default function PropertyDetail() {
   const navigate = useNavigate();
   const { data: property, isLoading } = useProperty(id);
   const { user } = useAuth();
-  const [saved, setSaved] = useState(false);
   const [activePhoto, setActivePhoto] = useState(0);
+
+  const getSaved = (): string[] => JSON.parse(localStorage.getItem("saved_properties") || "[]");
+  const [saved, setSaved] = useState(() => id ? getSaved().includes(id) : false);
 
   const handleSave = () => {
     if (!user) {
       navigate("/auth?redirect=" + encodeURIComponent(window.location.pathname));
       return;
     }
-    setSaved((v) => !v);
+    if (!id) return;
+    const current = getSaved();
+    const next = current.includes(id)
+      ? current.filter((x) => x !== id)
+      : [...current, id];
+    localStorage.setItem("saved_properties", JSON.stringify(next));
+    setSaved(next.includes(id));
   };
   const [scrollPct, setScrollPct] = useState(0);
   useEffect(() => {
@@ -277,7 +285,7 @@ export default function PropertyDetail() {
               <h2 className="font-display text-xl font-semibold text-foreground mb-4">Удобства и оснащение</h2>
               <div className="flex flex-wrap gap-2">
                 {(property.features || []).map((f) => (
-                  <span key={f} className="px-3.5 py-2 rounded-full bg-card shadow-card text-sm text-foreground border border-border">{f}</span>
+                  <span key={f} className="px-3.5 py-2 bg-muted text-sm text-foreground">{f}</span>
                 ))}
               </div>
             </section>

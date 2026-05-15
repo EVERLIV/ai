@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Phone, Mail, MapPin,
   Send, MessageCircle, Instagram, ArrowRight, ChevronDown, Sparkles, User,
+  Heart, FileText, LogOut,
 } from "lucide-react";
+import AIWizardModal from "@/components/AIWizardModal";
+import { useAuth } from "@/hooks/useAuth";
 
 const navItems: { label: string; href: string; submenu?: { label: string; desc: string; href: string }[] }[] = [
   { label: "Офисы", href: "/offices" },
@@ -34,7 +37,23 @@ export default function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [scrollPct, setScrollPct] = useState(0);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
   const { pathname, hash } = useLocation();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  // Close account dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
+        setAccountOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => {
@@ -96,22 +115,70 @@ export default function SiteHeader() {
               ))}
             </div>
 
+            {/* ИИ-подбор */}
+            <button
+              onClick={() => setWizardOpen(true)}
+              className="hidden xl:flex items-center gap-1.5 h-7 px-3 border border-primary/40 text-primary text-[11px] font-semibold hover:bg-primary/5 transition-colors whitespace-nowrap"
+            >
+              <Sparkles className="w-3 h-3" />
+              ИИ-подбор
+            </button>
+
             {/* Разместить объект */}
             <Link
               to="/list-property"
-              className="flex items-center h-7 px-3 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity whitespace-nowrap"
+              className="hidden sm:flex items-center h-7 px-3 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity whitespace-nowrap"
             >
               + Разместить за 0 ₽
             </Link>
 
-            {/* Войти */}
-            <Link
-              to="/auth"
-              className="flex items-center gap-1.5 h-7 px-3 border border-border text-[11px] font-medium text-foreground hover:bg-muted transition-colors whitespace-nowrap"
-            >
-              <User className="w-3 h-3" />
-              Войти
-            </Link>
+            {/* Auth */}
+            {user ? (
+              <div ref={accountRef} className="relative">
+                <button
+                  onClick={() => setAccountOpen(!accountOpen)}
+                  className="flex items-center gap-1.5 h-7 px-2 border border-border text-[11px] font-medium text-foreground hover:bg-muted transition-colors"
+                >
+                  <div className="w-5 h-5 bg-primary flex items-center justify-center text-primary-foreground text-[9px] font-bold shrink-0">
+                    {(user.user_metadata?.full_name?.[0] || user.email?.[0] || "U").toUpperCase()}
+                  </div>
+                  <span className="hidden lg:block truncate max-w-[100px]">{user.user_metadata?.full_name?.split(" ")[0] || user.email?.split("@")[0]}</span>
+                  <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${accountOpen ? "rotate-180" : ""}`} />
+                </button>
+                {accountOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-border shadow-[0_8px_24px_-4px_rgba(0,0,0,0.12)] z-50">
+                    <div className="px-3 py-2.5 border-b border-border">
+                      <div className="text-[11px] font-semibold text-foreground truncate">{user.user_metadata?.full_name || "Аккаунт"}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">{user.email}</div>
+                    </div>
+                    {[
+                      { icon: Heart, label: "Избранное", tab: "favorites" },
+                      { icon: FileText, label: "Мои заявки", tab: "requests" },
+                      { icon: User, label: "Мои данные", tab: "profile" },
+                    ].map(({ icon: Icon, label, tab }) => (
+                      <button key={tab} onClick={() => { setAccountOpen(false); navigate(`/account#${tab}`); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-foreground hover:bg-muted transition-colors">
+                        <Icon className="w-3.5 h-3.5 text-muted-foreground" /> {label}
+                      </button>
+                    ))}
+                    <div className="border-t border-border">
+                      <button onClick={() => { setAccountOpen(false); signOut(); navigate("/"); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-destructive hover:bg-muted transition-colors">
+                        <LogOut className="w-3.5 h-3.5" /> Выйти
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                to="/auth"
+                className="flex items-center gap-1.5 h-7 px-3 border border-border text-[11px] font-medium text-foreground hover:bg-muted transition-colors whitespace-nowrap"
+              >
+                <User className="w-3 h-3" />
+                Войти
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -264,6 +331,7 @@ export default function SiteHeader() {
           </div>
         </div>
       </div>
+      <AIWizardModal open={wizardOpen} onClose={() => setWizardOpen(false)} />
     </header>
   );
 }

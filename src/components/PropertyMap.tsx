@@ -54,12 +54,8 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
           const el = document.createElement("div");
           el.className = "pm-pin";
           el.innerHTML = `
-            <span class="pm-pin__dot">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
-            </span>
+            <span class="pm-pin__label">${address.split(",")[0]}</span>
+            <span class="pm-pin__tail"></span>
           `;
           map.addChild(new YMapMarker({ coordinates: center }, el));
         }
@@ -86,7 +82,7 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
   return (
     <div className="space-y-3">
       <div className="relative bg-muted overflow-hidden rounded-xl" style={{ height }}>
-        <div ref={containerRef} className="absolute inset-0" />
+        <div ref={containerRef} className="absolute inset-0" style={{ filter: "grayscale(0.6) contrast(0.92) brightness(1.08)" }} />
 
         {mapFailed && (
           <YandexMapFallback
@@ -137,30 +133,32 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
 
       <style>{`
         .pm-pin {
-          position: relative;
-          width: 32px;
-          height: 40px;
           display: flex;
-          align-items: flex-end;
-          justify-content: center;
+          flex-direction: column;
+          align-items: center;
           transform: translate(-50%, -100%);
           pointer-events: none;
         }
-        .pm-pin__dot {
-          position: relative;
-          width: 32px;
-          height: 32px;
-          border-radius: 50% 50% 50% 0;
+        .pm-pin__label {
+          display: block;
           background: hsl(0, 72%, 51%);
           color: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transform: rotate(-45deg);
-          border: 2px solid #fff;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.15);
+          font-size: 11px;
+          font-weight: 700;
+          font-family: inherit;
+          padding: 4px 8px;
+          white-space: nowrap;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+          line-height: 1.4;
         }
-        .pm-pin__dot > svg { transform: rotate(45deg); }
+        .pm-pin__tail {
+          display: block;
+          width: 0;
+          height: 0;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 6px solid hsl(0, 72%, 51%);
+        }
       `}</style>
     </div>
   );

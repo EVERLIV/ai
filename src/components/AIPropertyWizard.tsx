@@ -64,7 +64,7 @@ type AIResponse = {
   picks: AIPick[];
 };
 
-export default function AIPropertyWizard({ properties }: { properties: DbProperty[] }) {
+export default function AIPropertyWizard({ properties, onClose }: { properties: DbProperty[]; onClose?: () => void }) {
   const { toast } = useToast();
   const [step, setStep] = useState(0);
 

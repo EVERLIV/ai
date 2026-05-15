@@ -16,7 +16,7 @@ const news = [
     tag: "Рынок",
     date: "14 мая 2026",
     title: "БЦ «Вернадский» получил разрешение на строительство",
-    excerpt: "Группа «Абсолют» получила РНС на деловой центр класса А у метро «Университет» — 45,5 тыс. кв. м и 10 млрд рублей инвестиций.",
+    excerpt: "Группа «Абсолют» получила разрешение на строительство делового центра класса А у метро «Университет». Общая площадь объекта составит 45,5 тыс. кв. м, объём инвестиций — 10 млрд рублей. Ввод в эксплуатацию запланирован на 2027 год.",
     href: "/news/bts-vernadskiy-razreshenie-na-stroitelstvo",
     cover: "https://cre.ru/media/files/20260514_034452_617.jpeg",
   },
@@ -25,7 +25,7 @@ const news = [
     tag: "Рынок",
     date: "14 мая 2026",
     title: "Wildberries ведёт переговоры об офисе у Павелецкого вокзала",
-    excerpt: "RWB рассматривает покупку или аренду бывшего офиса банка «Открытие» в Vivaldi Plaza площадью 24,4 тыс. кв. м.",
+    excerpt: "RWB рассматривает покупку или долгосрочную аренду бывшего офиса банка «Открытие» в бизнес-центре Vivaldi Plaza площадью 24,4 тыс. кв. м. Сделка может стать одной из крупнейших на рынке офисной недвижимости Москвы в этом году.",
     href: "/news/wildberries-office-paveletsky",
     cover: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80",
   },
@@ -34,7 +34,7 @@ const news = [
     tag: "Новости компании",
     date: "14 мая 2026",
     title: "«Атол» перенёс серверные мощности в дата-центр MOS5",
-    excerpt: "Компания арендовала стойки с энергопотреблением 13 кВт у IXcellerate и зарезервировала ёмкость под дальнейшее развитие.",
+    excerpt: "Компания арендовала стойки с энергопотреблением 13 кВт у IXcellerate и зарезервировала дополнительную ёмкость под дальнейшее расширение инфраструктуры. Переезд позволил сократить операционные расходы на 18%.",
     href: "/news/atol-datacenter-mos5-ixcellerate",
     cover: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&q=80",
   },
@@ -42,19 +42,10 @@ const news = [
     id: 5,
     tag: "Рынок",
     date: "13 мая 2026",
-    title: "«Северные Врата»: два склада выходят на финальный этап",
-    excerpt: "Строительная готовность первых двух блоков индустриального парка достигла 80% — в мае начнётся заливка 7 тыс. кубометров промышленных полов.",
+    title: "«Северные Врата»: два склада выходят на финальный этап строительства",
+    excerpt: "Строительная готовность первых двух блоков индустриального парка достигла 80% — в мае начнётся заливка 7 тыс. кубометров промышленных полов. Первые арендаторы смогут въехать уже в третьем квартале 2026 года.",
     href: "/news/severnye-vrata-finalnyy-etap-stroitelstva",
     cover: "https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&q=80",
-  },
-  {
-    id: 6,
-    tag: "Советы",
-    date: "12 мая 2026",
-    title: "Как выбрать склад для e-commerce: 7 ключевых параметров",
-    excerpt: "На что обратить внимание при аренде складского помещения: высота потолков, пандусы, температурный режим и сертификация.",
-    href: "/news",
-    cover: null,
   },
 ];
 
@@ -132,9 +123,9 @@ export default function NewsSection() {
             <Link
               key={item.id}
               to={item.href}
-              className="group flex items-start gap-3 bg-background border border-border p-4 hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300"
+              className="group flex gap-4 bg-background border border-border p-4 hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300"
             >
-              <div className="shrink-0 w-16 h-16 bg-muted overflow-hidden">
+              <div className="shrink-0 w-20 h-20 bg-muted overflow-hidden">
                 {item.cover ? (
                   <img src={item.cover} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 ) : (
@@ -154,9 +145,12 @@ export default function NewsSection() {
                 <h3 className="text-sm font-semibold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2">
                   {item.title}
                 </h3>
-                <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
+                <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-3">
                   {item.excerpt}
                 </p>
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary mt-auto pt-0.5">
+                  Читать <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                </span>
               </div>
             </Link>
           ))}
