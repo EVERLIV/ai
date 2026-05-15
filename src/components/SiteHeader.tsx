@@ -78,7 +78,7 @@ export default function SiteHeader() {
     <header className="fixed top-0 left-0 right-0 z-50">
 
       {/* ── TOP BAR (Avito-style) ─────────────────────── */}
-      <div className="bg-background border-b border-border/50">
+      <div className="hidden md:block bg-background border-b border-border/50">
         <div className="container mx-auto px-4 lg:px-8 h-10 flex items-center justify-between gap-4 text-[12px]">
 
           {/* Left: contacts */}

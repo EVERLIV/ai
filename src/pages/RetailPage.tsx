@@ -31,7 +31,7 @@ export default function RetailPage() {
       <SiteHeader />
 
       {/* Hero */}
-      <section className="relative pt-16">
+      <section className="relative pt-14 md:pt-[98px]">
         <div className="relative h-[480px] sm:h-[540px] overflow-hidden">
           <img src={heroImg} alt="Торговые площади в Иркутске" width={1920} height={1080} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/50 to-transparent" />

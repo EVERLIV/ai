@@ -124,7 +124,7 @@ export default function NewsPostPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
 
-      <div className="sticky top-[98px] z-30 mt-[98px] bg-card/90 backdrop-blur-xl shadow-[0_1px_0_0_hsl(var(--border)/0.5)]">
+      <div className="sticky top-[56px] md:top-[98px] z-30 mt-[56px] md:mt-[98px] bg-card/90 backdrop-blur-xl shadow-[0_1px_0_0_hsl(var(--border)/0.5)]">
         <div className="container mx-auto px-3 lg:px-8 h-10 lg:h-11 flex items-center gap-3">
           <nav className="flex-1 min-w-0 flex items-center gap-1.5 text-[11px] lg:text-xs text-muted-foreground whitespace-nowrap overflow-hidden">
             <Link to="/" className="hover:text-foreground transition-colors shrink-0">Главная</Link>
