@@ -207,9 +207,7 @@ export default function SiteHeader() {
 
                   {hasMenu && (
                     <div className="absolute left-0 top-full pt-2 w-80 opacity-0 invisible -translate-y-2 group-hover/nav:opacity-100 group-hover/nav:visible group-hover/nav:translate-y-0 transition-all duration-200 ease-out z-50">
-                      {/* Arrow */}
-                      <div className="absolute top-1.5 left-6 w-3 h-3 bg-card border-l border-t border-border rotate-45 z-10" />
-                      <div className="bg-card shadow-[0_20px_50px_-12px_rgba(0,0,0,0.18)] border border-border/60 overflow-hidden">
+                      <div className="bg-card shadow-[0_20px_50px_-12px_rgba(0,0,0,0.18)] overflow-hidden">
                         <div className="py-1">
                           {item.submenu!.map((s, idx) => {
                             const Icon = s.icon;
