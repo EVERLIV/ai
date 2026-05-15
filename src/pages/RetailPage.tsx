@@ -89,7 +89,7 @@ export default function RetailPage() {
       {/* Main + Sidebar */}
       <section className="py-12 bg-muted/20">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col lg:flex-row gap-8 items-start">
+          <div className="flex flex-col lg:flex-row gap-8">
             <div className="flex-1 min-w-0 space-y-10">
               <div className="space-y-6">
                 <h2 className="text-2xl font-display font-bold text-foreground">
@@ -114,7 +114,7 @@ export default function RetailPage() {
                 <CategoryContactForm category="торговое помещение" />
               </div>
             </div>
-            <NewsSidebar />
+            <div className="hidden lg:block lg:w-[280px] xl:w-[300px] shrink-0 sticky top-[110px] self-start"><NewsSidebar /></div>
           </div>
         </div>
       </section>

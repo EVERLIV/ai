@@ -201,7 +201,7 @@ export default function NewsPage() {
         </section>
 
         <section className="container mx-auto px-3 lg:px-8 py-10">
-          <div className="flex flex-col lg:flex-row gap-8 items-start">
+          <div className="flex flex-col lg:flex-row gap-8">
             {/* Main content */}
             <div className="flex-1 min-w-0">
               {isLoading ? (
@@ -226,7 +226,7 @@ export default function NewsPage() {
             </div>
 
             {/* Sidebar */}
-            <NewsSidebar />
+            <div className="hidden lg:block lg:w-[280px] xl:w-[300px] shrink-0 sticky top-[110px] self-start"><NewsSidebar /></div>
           </div>
         </section>
       </main>

@@ -156,7 +156,7 @@ export default function NewsPostPage() {
           </div>
         ) : (
           <div className="container mx-auto px-3 lg:px-8 py-10">
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
+            <div className="flex flex-col lg:flex-row gap-8">
               {/* Article */}
               <article className="flex-1 min-w-0">
                 <div className="h-64 bg-muted flex items-center justify-center mb-8 overflow-hidden">
@@ -211,7 +211,7 @@ export default function NewsPostPage() {
               </article>
 
               {/* Sidebar */}
-              <NewsSidebar />
+              <div className="hidden lg:block lg:w-[280px] xl:w-[300px] shrink-0 sticky top-[110px] self-start"><NewsSidebar /></div>
             </div>
           </div>
         )}

@@ -101,7 +101,7 @@ export default function AboutPage() {
         {/* Main content + Sidebar */}
         <section className="py-12">
           <div className="container mx-auto px-4 lg:px-8">
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
+            <div className="flex flex-col lg:flex-row gap-8">
 
               {/* Left: main content */}
               <div className="flex-1 min-w-0 space-y-12">
@@ -266,7 +266,7 @@ export default function AboutPage() {
               </div>
 
               {/* Sidebar */}
-              <NewsSidebar />
+              <div className="hidden lg:block lg:w-[280px] xl:w-[300px] shrink-0 sticky top-[110px] self-start"><NewsSidebar /></div>
             </div>
           </div>
         </section>
