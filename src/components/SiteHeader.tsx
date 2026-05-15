@@ -209,27 +209,26 @@ export default function SiteHeader() {
                     <div className="absolute left-0 top-full pt-2 w-80 opacity-0 invisible -translate-y-2 group-hover/nav:opacity-100 group-hover/nav:visible group-hover/nav:translate-y-0 transition-all duration-200 ease-out z-50">
                       {/* Arrow */}
                       <div className="absolute top-1.5 left-6 w-3 h-3 bg-card border-l border-t border-border rotate-45 z-10" />
-                      <div className="bg-card shadow-[0_20px_50px_-12px_rgba(0,0,0,0.2)] border border-border overflow-hidden">
-                        <div className="p-1.5">
+                      <div className="bg-card shadow-[0_20px_50px_-12px_rgba(0,0,0,0.18)] border border-border/60 overflow-hidden">
+                        <div className="py-1">
                           {item.submenu!.map((s, idx) => {
                             const Icon = s.icon;
                             return (
                               <Link
                                 key={s.href}
                                 to={s.href}
-                                className="group/item flex items-center gap-3 p-3 hover:bg-muted transition-all duration-150 relative overflow-hidden"
-                                style={{ transitionDelay: `${idx * 20}ms` }}
+                                className="group/item flex items-center gap-3 px-4 py-3 hover:bg-muted/60 transition-colors duration-150 relative"
+                                style={{ transitionDelay: `${idx * 15}ms` }}
                               >
-                                {/* Hover accent */}
-                                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary scale-y-0 group-hover/item:scale-y-100 transition-transform duration-200 origin-center" />
-                                <div className="w-9 h-9 bg-muted group-hover/item:bg-primary/10 flex items-center justify-center shrink-0 transition-colors duration-200">
-                                  <Icon className="w-4 h-4 text-muted-foreground group-hover/item:text-primary transition-colors duration-200" />
-                                </div>
+                                {/* Left accent line */}
+                                <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-primary scale-y-0 group-hover/item:scale-y-100 transition-transform duration-200 origin-center" />
+                                {/* Icon — no box */}
+                                <Icon className="w-4 h-4 text-muted-foreground group-hover/item:text-primary transition-colors duration-150 shrink-0" />
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-sm font-semibold text-foreground group-hover/item:text-primary transition-colors duration-200">{s.label}</div>
-                                  <div className="text-xs text-muted-foreground mt-0.5 leading-snug truncate">{s.desc}</div>
+                                  <div className="text-sm font-medium text-foreground group-hover/item:text-primary transition-colors duration-150 leading-tight">{s.label}</div>
+                                  <div className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{s.desc}</div>
                                 </div>
-                                <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground shrink-0 opacity-0 -translate-x-1 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all duration-200" />
+                                <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 opacity-0 group-hover/item:opacity-100 group-hover/item:text-primary transition-all duration-150" />
                               </Link>
                             );
                           })}
