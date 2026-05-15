@@ -360,29 +360,21 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
 
           {messages.map((m, i) => {
             const isUser = m.role === "user";
-            // Показывать аватар только у первого сообщения ассистента в группе
-            const prevIsAssistant = i > 0 && messages[i - 1].role === "assistant";
-            const showAvatar = !isUser && !prevIsAssistant;
-            const nextIsAssistant = i < messages.length - 1 && messages[i + 1].role === "assistant";
-            const isLastInGroup = isUser || !nextIsAssistant;
+            const prev = messages[i - 1];
+            const next = messages[i + 1];
+            const isFirstInGroup = !prev || prev.role !== m.role;
+            const isLastInGroup = !next || next.role !== m.role;
 
             return (
-              <div key={i} className={`flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
-                {/* Аватар ассистента — только у последнего в группе */}
-                {!isUser && (
-                  <div className="w-8 shrink-0 self-end">
-                    {isLastInGroup && (
-                      <img src={consultantAvatar} alt=""
-                        className="w-7 h-7 rounded-full object-cover object-top" />
-                    )}
-                  </div>
-                )}
-
-                {/* Пузырь */}
-                <div className={`max-w-[75%] px-3.5 py-2 text-[13px] leading-relaxed shadow-sm ${
+              <div key={i} className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                style={{ marginTop: isFirstInGroup && i > 0 ? "10px" : "2px" }}>
+                <div className={`max-w-[75%] px-3.5 py-2 text-[13px] leading-relaxed ${
                   isUser
-                    ? "bg-primary text-primary-foreground rounded-2xl rounded-br-none"
-                    : "bg-card text-foreground rounded-2xl rounded-bl-none"
+                    ? "bg-primary/15 text-foreground"
+                    : "bg-muted text-foreground"
+                } ${isUser
+                    ? isFirstInGroup ? "rounded-2xl rounded-tr-sm" : isLastInGroup ? "rounded-2xl rounded-br-sm" : "rounded-lg"
+                    : isFirstInGroup ? "rounded-2xl rounded-tl-sm" : isLastInGroup ? "rounded-2xl rounded-bl-sm" : "rounded-lg"
                 }`}>
                   {isUser
                     ? <div className="whitespace-pre-wrap">{m.content}</div>
@@ -395,11 +387,8 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
 
           {/* Индикатор загрузки */}
           {loading && !messages.some((m) => m.typing) && (
-            <div className="flex items-end gap-2 justify-start">
-              <div className="w-8 shrink-0 self-end">
-                <img src={consultantAvatar} alt="" className="w-7 h-7 rounded-full object-cover object-top" />
-              </div>
-              <div className="bg-card px-4 py-3 rounded-2xl rounded-bl-none inline-flex items-center gap-1 shadow-sm">
+            <div className="flex justify-start" style={{ marginTop: "2px" }}>
+              <div className="bg-muted px-4 py-3 rounded-2xl rounded-bl-sm inline-flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-[dot-pulse_1.4s_0s_infinite]" />
                 <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-[dot-pulse_1.4s_0.2s_infinite]" />
                 <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-[dot-pulse_1.4s_0.4s_infinite]" />
