@@ -46,7 +46,7 @@ function RangeInput({ label, valMin, valMax, placeholder, suffix, onMin, onMax }
   const [focusMax, setFocusMax] = useState(false);
   const focused = focusMin || focusMax;
   return (
-    <div className="flex-1 min-w-0">
+    <div className="w-full sm:flex-1 sm:min-w-0">
       <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">{label}</div>
       <div className={`flex items-center bg-background border transition-all duration-150 ${focused ? "border-primary/60 shadow-[0_0_0_2px_hsl(var(--primary)/0.12)]" : "border-border hover:border-border/80"}`}>
         <input
@@ -74,7 +74,7 @@ function SelectInput({ label, value, options, onChange }: {
 }) {
   const [focused, setFocused] = useState(false);
   return (
-    <div className="flex-1 min-w-0">
+    <div className="w-full sm:flex-1 sm:min-w-0">
       <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">{label}</div>
       <div className={`relative bg-background border transition-all duration-150 ${focused ? "border-primary/60 shadow-[0_0_0_2px_hsl(var(--primary)/0.12)]" : "border-border hover:border-border/80"}`}>
         <select
@@ -127,7 +127,7 @@ export default function SearchFilters({ filters, onChange }: Props) {
         </div>
 
         {/* Filter row */}
-        <div className="flex flex-wrap lg:flex-nowrap gap-2 items-end">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap lg:flex-nowrap gap-2 items-stretch sm:items-end">
 
           <RangeInput
             label="Площадь, м²"
@@ -152,7 +152,7 @@ export default function SearchFilters({ filters, onChange }: Props) {
             onChange={(v) => set({ district: v })}
           />
 
-          <div className="w-24 shrink-0">
+          <div className="w-full sm:w-24 sm:shrink-0">
             <SelectInput
               label="Класс"
               value={f.cls}
@@ -162,10 +162,10 @@ export default function SearchFilters({ filters, onChange }: Props) {
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-1.5 shrink-0 self-end">
+          <div className="flex gap-1.5 w-full sm:w-auto sm:shrink-0 sm:self-end">
             <button
               onClick={scrollToResults}
-              className="h-9 px-5 flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 active:scale-[0.97] transition-all duration-150"
+              className="flex-1 sm:flex-none h-9 px-5 flex items-center justify-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 active:scale-[0.97] transition-all duration-150"
             >
               <Search className="w-3.5 h-3.5" />
               Найти
