@@ -27,7 +27,7 @@ const features = [
 
 export default function OfficesPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <SiteHeader />
 
       {/* Hero */}

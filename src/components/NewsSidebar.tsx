@@ -3,7 +3,7 @@ import { ArrowRight, Sparkles, Phone } from "lucide-react";
 
 export default function NewsSidebar() {
   return (
-    <aside className="w-full space-y-5 min-w-0 overflow-hidden">
+    <aside className="w-full lg:w-[280px] lg:shrink-0 space-y-5 overflow-hidden min-w-0">
 
       {/* ── BANNER: New construction ── */}
       <div className="relative overflow-hidden text-background" style={{ minHeight: 280 }}>
