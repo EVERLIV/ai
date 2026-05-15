@@ -158,34 +158,28 @@ export default function ContactsPage() {
 
               {/* Left: departments */}
               <div className="flex-1 min-w-0">
-                <h2 className="font-display text-2xl font-bold text-foreground mb-6">Отделы</h2>
-                <div className="space-y-0 border border-border">
+                <h2 className="font-display text-xl font-bold text-foreground mb-4">Отделы</h2>
+                <div className="divide-y divide-border">
                   {departments.map((d, i) => {
                     const Icon = d.icon;
                     return (
-                      <div key={i} className="flex gap-4 p-4 border-b border-border last:border-0 group hover:bg-muted/30 transition-colors">
-                        <div className="w-9 h-9 bg-primary/8 flex items-center justify-center shrink-0">
-                          <Icon className="w-4 h-4 text-primary" />
-                        </div>
+                      <div key={i} className="flex gap-3 py-4 hover:bg-muted/20 transition-colors -mx-1 px-1">
+                        <Icon className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-semibold text-foreground mb-0.5">{d.name}</div>
-                          <div className="text-xs text-muted-foreground mb-2 leading-relaxed">{d.desc}</div>
-                          <div className="flex flex-wrap gap-x-4 gap-y-1">
+                          <div className="text-sm font-semibold text-foreground mb-1">{d.name}</div>
+                          <div className="flex flex-wrap gap-x-4 gap-y-0.5 mb-1">
                             <a href={`tel:${d.phone.replace(/\D/g, "")}`}
-                              className="flex items-center gap-1.5 text-xs text-foreground hover:text-primary transition-colors">
-                              <Phone className="w-3 h-3 text-muted-foreground" />
+                              className="flex items-center gap-1 text-xs text-foreground hover:text-primary transition-colors">
+                              <Phone className="w-3 h-3 text-muted-foreground shrink-0" />
                               {d.phone}
                             </a>
                             <a href={`mailto:${d.email}`}
-                              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
-                              <Mail className="w-3 h-3" />
+                              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
+                              <Mail className="w-3 h-3 shrink-0" />
                               {d.email}
                             </a>
                           </div>
-                          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60 mt-1.5">
-                            <Clock className="w-3 h-3" />
-                            {d.hours}
-                          </div>
+                          <div className="text-[11px] text-muted-foreground/60">{d.hours}</div>
                         </div>
                       </div>
                     );
@@ -197,7 +191,7 @@ export default function ContactsPage() {
               <div className="lg:w-[420px] shrink-0">
                 <h2 className="font-display text-2xl font-bold text-foreground mb-6">Оставить заявку</h2>
                 {sent ? (
-                  <div className="border border-border p-8 text-center">
+                  <div className="bg-muted/30 p-8 text-center">
                     <CheckCircle2 className="w-10 h-10 text-primary mx-auto mb-4" />
                     <div className="text-base font-semibold text-foreground mb-2">Заявка отправлена</div>
                     <p className="text-sm text-muted-foreground mb-5">
@@ -209,7 +203,7 @@ export default function ContactsPage() {
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="border border-border p-5 space-y-3.5">
+                  <form onSubmit={handleSubmit} className="space-y-3.5">
                     <div>
                       <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Имя *</label>
                       <input required value={form.name} onChange={(e) => set("name", e.target.value)}
@@ -274,26 +268,22 @@ export default function ContactsPage() {
         <section>
           <div className="container mx-auto px-4 lg:px-8 py-8">
             <h2 className="font-display text-2xl font-bold text-foreground mb-6">Офисы</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border border-border">
+            <div className="divide-y divide-border sm:divide-y-0 sm:grid sm:grid-cols-3 sm:divide-x">
               {offices.map((o, i) => (
-                <div key={i} className={`p-6 ${i < offices.length - 1 ? "border-b sm:border-b-0 sm:border-r border-border" : ""}`}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <MapPin className="w-4 h-4 text-primary shrink-0" />
+                <div key={i} className="py-4 sm:px-6 sm:py-0">
+                  <div className="flex items-center gap-2 mb-2">
                     <span className="font-semibold text-foreground">{o.city}</span>
                     {o.main && (
                       <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary font-semibold uppercase tracking-wide">Главный</span>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3 leading-relaxed">{o.address}</p>
+                  <p className="text-xs text-muted-foreground mb-2">{o.address}</p>
                   <a href={`tel:${o.phone.replace(/\D/g, "")}`}
-                    className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors mb-2">
-                    <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors mb-1">
+                    <Phone className="w-3.5 h-3.5 shrink-0" />
                     {o.phone}
                   </a>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
-                    <Clock className="w-3.5 h-3.5 shrink-0" />
-                    {o.hours}
-                  </div>
+                  <div className="text-[11px] text-muted-foreground/60">{o.hours}</div>
                 </div>
               ))}
             </div>
