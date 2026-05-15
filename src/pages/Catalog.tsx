@@ -449,9 +449,12 @@ export default function Catalog() {
   const formatPrice = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}к` : String(v);
   const formatArea = (v: number) => `${v} м²`;
 
-  // Иконка-заголовок секции с тултипом (используется и при открытом, и при свёрнутом)
+  // На мобильном всегда показываем полный вид, на десктопе — зависит от sidebarOpen
+  const showFull = sidebarOpen || mobileSidebar;
+
+  // Иконка-заголовок секции с тултипом
   const SectionIcon = ({ icon: Icon, label, active }: { icon: React.ElementType; label: string; active?: boolean }) =>
-    sidebarOpen ? (
+    showFull ? (
       <div className="flex items-center gap-2 mb-2.5">
         <Icon className={`w-3.5 h-3.5 shrink-0 ${active ? "text-primary" : "text-muted-foreground"}`} />
         <p className={`text-[10px] font-semibold uppercase tracking-widest ${active ? "text-primary" : "text-muted-foreground"}`}>{label}</p>
@@ -472,8 +475,8 @@ export default function Catalog() {
     <div className="divide-y divide-border/30">
 
       {/* Поиск */}
-      <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-2.5 flex justify-center"}>
-        {sidebarOpen ? (
+      <div className={showFull ? "px-4 py-3" : "px-1.5 py-2.5 flex justify-center"}>
+        {showFull ? (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Search className="w-3.5 h-3.5 shrink-0" />
             <input
@@ -501,9 +504,9 @@ export default function Catalog() {
       </div>
 
       {/* Тип сделки */}
-      <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-1"}>
+      <div className={showFull ? "px-4 py-3" : "px-1.5 py-1"}>
         <SectionIcon icon={Tag} label="Тип сделки" active={dealType !== "Все"} />
-        {sidebarOpen && (
+        {showFull && (
           <div className="flex gap-1">
             {DEALS.map((d) => (
               <button key={d} onClick={() => setDealType(d)}
@@ -516,9 +519,9 @@ export default function Catalog() {
       </div>
 
       {/* Тип объекта */}
-      <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-1"}>
+      <div className={showFull ? "px-4 py-3" : "px-1.5 py-1"}>
         <SectionIcon icon={Building} label="Тип объекта" active={selectedTypes.length > 0} />
-        {sidebarOpen && (
+        {showFull && (
           <div className="flex flex-wrap gap-1.5">
             {TYPES.map((t) => {
               const Icon = typeIcons[t] || PhBuildings;
@@ -538,9 +541,9 @@ export default function Catalog() {
       </div>
 
       {/* Локация */}
-      <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-1"}>
+      <div className={showFull ? "px-4 py-3" : "px-1.5 py-1"}>
         <SectionIcon icon={MapPin} label="Район" active={district !== "Все"} />
-        {sidebarOpen && (
+        {showFull && (
           <div className="relative">
             <select value={district} onChange={(e) => setDistrict(e.target.value)}
               className="w-full appearance-none bg-transparent text-xs text-foreground pr-5 focus:outline-none cursor-pointer">
@@ -552,9 +555,9 @@ export default function Catalog() {
       </div>
 
       {/* Цена */}
-      <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-1"}>
+      <div className={showFull ? "px-4 py-3" : "px-1.5 py-1"}>
         <SectionIcon icon={Banknote} label="Цена, ₽/мес" active={isPriceFiltered} />
-        {sidebarOpen && (
+        {showFull && (
           <RangeSlider min={0} max={500000} step={5000}
             valueMin={priceMin} valueMax={priceMax}
             onChangeMin={setPriceMin} onChangeMax={setPriceMax}
@@ -564,9 +567,9 @@ export default function Catalog() {
       </div>
 
       {/* Площадь */}
-      <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-1"}>
+      <div className={showFull ? "px-4 py-3" : "px-1.5 py-1"}>
         <SectionIcon icon={Ruler} label="Площадь, м²" active={isAreaFiltered} />
-        {sidebarOpen && (
+        {showFull && (
           <RangeSlider min={0} max={10000} step={10}
             valueMin={areaMin} valueMax={areaMax}
             onChangeMin={setAreaMin} onChangeMax={setAreaMax}
@@ -576,9 +579,9 @@ export default function Catalog() {
       </div>
 
       {/* Параметры + Дополнительно */}
-      <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-1"}>
+      <div className={showFull ? "px-4 py-3" : "px-1.5 py-1"}>
         <SectionIcon icon={Settings2} label="Параметры" active={propertyClass !== "Все" || condition !== "Все" || ceilingMin > 0 || parkingOnly || selectedLayouts.length > 0} />
-        {sidebarOpen && (
+        {showFull && (
           <>
             <div className="space-y-2.5 mb-3">
               <SelectFilter label="Класс" value={propertyClass} options={CLASSES} onChange={setPropertyClass} />
@@ -622,8 +625,8 @@ export default function Catalog() {
 
       {/* Сброс */}
       {activeFiltersCount > 0 && (
-        <div className={sidebarOpen ? "px-4 py-3" : "px-1.5 py-2.5 flex justify-center"}>
-          {sidebarOpen ? (
+        <div className={showFull ? "px-4 py-3" : "px-1.5 py-2.5 flex justify-center"}>
+          {showFull ? (
             <button onClick={resetFilters}
               className="w-full flex items-center justify-center gap-1.5 py-2 text-xs text-destructive hover:text-destructive/80 transition-colors">
               <X className="w-3 h-3" /> Сбросить фильтры ({activeFiltersCount})
