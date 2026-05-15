@@ -4,7 +4,7 @@ import {
   ArrowLeft, Heart, Share2, MapPin, Clock, Eye, Phone, Mail,
   Building2, Ruler, Layers, Car, Paintbrush, LayoutGrid, FileText,
   Shield, Calendar, ChevronLeft, ChevronRight, Store, Warehouse, TreePine,
-  MessageSquareText, Tag, Download,
+  MessageSquareText, Tag, Download, X, Send, ChevronDown,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,6 +28,18 @@ export default function PropertyDetail() {
   const { data: property, isLoading } = useProperty(id);
   const { user } = useAuth();
   const [activePhoto, setActivePhoto] = useState(0);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [contactForm, setContactForm] = useState({ name: "", phone: "", message: "" });
+  const [contactSent, setContactSent] = useState(false);
+  const [contactLoading, setContactLoading] = useState(false);
+
+  const SUBJECTS = ["Аренда офисного помещения", "Аренда торговой площади", "Аренда склада", "Другое"];
+
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setContactLoading(true);
+    setTimeout(() => { setContactLoading(false); setContactSent(true); }, 1200);
+  };
 
   const getSaved = (): string[] => JSON.parse(localStorage.getItem("saved_properties") || "[]");
   const [saved, setSaved] = useState(() => id ? getSaved().includes(id) : false);
@@ -88,6 +100,79 @@ export default function PropertyDetail() {
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
 
+      {/* ── Попап формы заявки ── */}
+      {contactOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setContactOpen(false)} />
+          <div className="relative bg-card w-full sm:max-w-md sm:rounded-none shadow-2xl animate-fade-in-up">
+            {/* Шапка */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Оставить заявку</h3>
+                <p className="text-[11px] text-muted-foreground mt-0.5 truncate max-w-[260px]">{property?.address}</p>
+              </div>
+              <button onClick={() => setContactOpen(false)}
+                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Тело */}
+            <div className="px-5 py-5">
+              {contactSent ? (
+                <div className="text-center py-6">
+                  <div className="w-12 h-12 bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                    <Send className="w-6 h-6 text-primary" />
+                  </div>
+                  <p className="text-sm font-semibold text-foreground mb-1">Заявка отправлена!</p>
+                  <p className="text-xs text-muted-foreground mb-4">Свяжемся с вами в течение часа в рабочее время.</p>
+                  <button onClick={() => { setContactOpen(false); setContactSent(false); setContactForm({ name: "", phone: "", message: "" }); }}
+                    className="text-xs text-primary hover:underline">Закрыть</button>
+                </div>
+              ) : (
+                <form onSubmit={handleContactSubmit} className="space-y-3">
+                  <div>
+                    <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Имя *</label>
+                    <input required value={contactForm.name} onChange={(e) => setContactForm((f) => ({ ...f, name: e.target.value }))}
+                      placeholder="Иван Иванов"
+                      className="w-full h-10 px-3 bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary transition-colors" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Телефон *</label>
+                    <input required type="tel" value={contactForm.phone} onChange={(e) => setContactForm((f) => ({ ...f, phone: e.target.value }))}
+                      placeholder="+7 (999) 000-00-00"
+                      className="w-full h-10 px-3 bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary transition-colors" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Сообщение</label>
+                    <textarea value={contactForm.message} onChange={(e) => setContactForm((f) => ({ ...f, message: e.target.value }))}
+                      placeholder="Уточните ваш запрос..."
+                      rows={3}
+                      className="w-full px-3 py-2.5 bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary transition-colors resize-none" />
+                  </div>
+                  <button type="submit" disabled={contactLoading}
+                    className="w-full h-11 flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60">
+                    {contactLoading ? (
+                      <span className="flex gap-1">
+                        <span className="w-1.5 h-1.5 bg-primary-foreground animate-bounce" />
+                        <span className="w-1.5 h-1.5 bg-primary-foreground animate-bounce [animation-delay:150ms]" />
+                        <span className="w-1.5 h-1.5 bg-primary-foreground animate-bounce [animation-delay:300ms]" />
+                      </span>
+                    ) : <><Send className="w-4 h-4" /> Отправить заявку</>}
+                  </button>
+                  <p className="text-[11px] text-muted-foreground/60 text-center">
+                    Ответим в течение часа в рабочее время
+                  </p>
+                </form>
+              )}
+            </div>
+
+            {/* Безопасный отступ для iOS */}
+            <div style={{ height: "env(safe-area-inset-bottom)" }} />
+          </div>
+        </div>
+      )}
+
       <div className="mt-[56px] md:mt-[98px] border-b border-border/40">
         <div className="container mx-auto px-3 lg:px-8 h-10 lg:h-11 flex items-center gap-3">
           <button
@@ -137,14 +222,14 @@ export default function PropertyDetail() {
             <Phone className="w-6 h-6" strokeWidth={2.2} />
             <span className="text-[10px] font-medium">Звонок</span>
           </a>
-          <a
-            href="#contact-form"
+          <button
+            onClick={() => { setContactOpen(true); setContactSent(false); }}
             aria-label="Написать"
             className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-foreground hover:bg-muted active:scale-95 transition-all"
           >
             <Mail className="w-6 h-6" strokeWidth={2.2} />
             <span className="text-[10px] font-medium">Написать</span>
-          </a>
+          </button>
           <button
             onClick={handleSave}
             aria-label="Сохранить"

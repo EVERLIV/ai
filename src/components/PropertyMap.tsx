@@ -39,7 +39,7 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
 
         map = new YMap(containerRef.current, {
           location: { center, zoom: hasCoords ? 16 : 11 },
-          behaviors: ["drag", "pinchZoom", "mouseRotate", "mouseTilt"],
+          behaviors: ["drag", "pinchZoom"],
         });
         map.addChild(new YMapDefaultSchemeLayer({}));
         map.addChild(new YMapDefaultFeaturesLayer({}));
