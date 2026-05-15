@@ -26,12 +26,19 @@ import AccountPage from "./pages/AccountPage.tsx";
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [unlocked, setUnlocked] = useState(
-    () => localStorage.getItem("site_unlocked") === "true"
-  );
+  const [unlocked, setUnlocked] = useState(() => {
+    // v2: новый пароль — сбрасываем старые сессии
+    if (localStorage.getItem("site_unlock_v") !== "2") {
+      localStorage.removeItem("site_unlocked");
+    }
+    return localStorage.getItem("site_unlocked") === "true";
+  });
 
   if (!unlocked) {
-    return <Gate onUnlock={() => setUnlocked(true)} />;
+    return <Gate onUnlock={() => {
+      localStorage.setItem("site_unlock_v", "2");
+      setUnlocked(true);
+    }} />;
   }
 
   return (
