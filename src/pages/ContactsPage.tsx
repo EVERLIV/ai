@@ -268,7 +268,7 @@ export default function ContactsPage() {
         <section>
           <div className="container mx-auto px-4 lg:px-8 py-8">
             <h2 className="font-display text-2xl font-bold text-foreground mb-6">Офисы</h2>
-            <div className="divide-y divide-border sm:divide-y-0 sm:grid sm:grid-cols-3 sm:divide-x">
+            <div className="divide-y divide-border sm:divide-y-0 sm:grid sm:grid-cols-3 sm:gap-8">
               {offices.map((o, i) => (
                 <div key={i} className="py-4 sm:px-6 sm:py-0">
                   <div className="flex items-center gap-2 mb-2">
