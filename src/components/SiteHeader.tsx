@@ -4,7 +4,7 @@ import {
   Phone, Mail, MapPin,
   Send, MessageCircle, Instagram, ChevronDown, Sparkles, User,
   Heart, FileText, LogOut, LayoutGrid, Settings, Building2,
-  ArrowUpRight, Newspaper, Info, Megaphone, BookOpen,
+  ArrowUpRight, Newspaper, Info, BookOpen,
 } from "lucide-react";
 import AIWizardModal from "@/components/AIWizardModal";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,7 +32,6 @@ const navItems: NavItem[] = [
     submenu: [
       { label: "О нас", desc: "История, команда и ценности АрендаСити", href: "/about", icon: Info },
       { label: "Новости", desc: "Аналитика и события рынка недвижимости", href: "/news", icon: Newspaper },
-      { label: "Реклама", desc: "Размещение рекламных конструкций", href: "/ads", icon: Megaphone },
       { label: "Контакты", desc: "Адрес, телефон, режим работы", href: "/contacts", icon: BookOpen },
     ],
   },
