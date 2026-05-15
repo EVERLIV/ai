@@ -297,7 +297,7 @@ export default function SiteHeader() {
                   {/* Submenu */}
                   {hasMenu && (
                     <div className={`overflow-hidden transition-[max-height,opacity] duration-200 ${expanded ? "max-h-64 opacity-100" : "max-h-0 opacity-0"}`}>
-                      <div className="pl-4 pb-1 space-y-px border-l-2 border-border ml-4 mt-0.5">
+                      <div className="pl-4 pb-1 space-y-px ml-2 mt-0.5">
                         {item.submenu!.map((s) => {
                           const Icon = s.icon;
                           return (
