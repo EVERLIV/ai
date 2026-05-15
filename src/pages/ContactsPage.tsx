@@ -101,18 +101,18 @@ export default function ContactsPage() {
         </div>
       </div>
 
-      <main className="flex-1">
+      <main className="flex-1 divide-y divide-border">
 
         {/* Hero — компактный */}
-        <section className="border-b border-border">
+        <section>
           <div className="container mx-auto px-4 lg:px-8 py-6 lg:py-10">
             <h1 className="font-display text-2xl lg:text-4xl font-bold text-foreground mb-1">Контакты</h1>
             <p className="text-sm text-muted-foreground">Работаем в Иркутске, Ангарске и Шелехове с 2013 года</p>
           </div>
         </section>
 
-        {/* Main info — горизонтальные строки вместо сетки */}
-        <section className="border-b border-border">
+        {/* Main info */}
+        <section>
           <div className="container mx-auto px-4 lg:px-8 py-0">
             <div className="divide-y divide-border">
               <div className="flex items-center gap-3 py-3.5">
@@ -152,7 +152,7 @@ export default function ContactsPage() {
         </section>
 
         {/* Departments + Form */}
-        <section className="border-b border-border">
+        <section>
           <div className="container mx-auto px-4 lg:px-8 py-8">
             <div className="flex flex-col lg:flex-row gap-12">
 
