@@ -6,7 +6,7 @@ import {
   Shield, Calendar, ChevronLeft, ChevronRight, Store, Warehouse, TreePine,
   MessageSquareText, Tag, Download,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -45,16 +45,6 @@ export default function PropertyDetail() {
     localStorage.setItem("saved_properties", JSON.stringify(next));
     setSaved(next.includes(id));
   };
-  const [scrollPct, setScrollPct] = useState(0);
-  useEffect(() => {
-    const onScroll = () => {
-      const docH = document.documentElement.scrollHeight - window.innerHeight;
-      setScrollPct(docH > 0 ? Math.min(100, (window.scrollY / docH) * 100) : 0);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-  
 
   if (isLoading) {
     return (
@@ -98,12 +88,12 @@ export default function PropertyDetail() {
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
 
-      <div className="sticky top-[56px] md:top-[98px] z-30 mt-[56px] md:mt-[98px] bg-card/90 backdrop-blur-xl shadow-[0_1px_0_0_hsl(var(--border)/0.5)]">
+      <div className="mt-[56px] md:mt-[98px] border-b border-border/40">
         <div className="container mx-auto px-3 lg:px-8 h-10 lg:h-11 flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
             aria-label="Назад"
-            className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="shrink-0 flex items-center justify-center w-8 h-8 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -120,23 +110,19 @@ export default function PropertyDetail() {
             <button
               onClick={handleSave}
               aria-label="Сохранить"
-              className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
-                saved ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              className={`flex items-center justify-center w-8 h-8 transition-colors ${
+                saved ? "text-primary" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <Heart className="w-4 h-4" fill={saved ? "currentColor" : "none"} />
             </button>
             <button
               aria-label="Поделиться"
-              className="flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="flex items-center justify-center w-8 h-8 text-muted-foreground hover:text-foreground transition-colors"
             >
               <Share2 className="w-4 h-4" />
             </button>
           </div>
-        </div>
-        {/* Scroll indicator */}
-        <div className="h-px bg-border/30">
-          <div className="h-full bg-foreground/20 transition-[width] duration-100" style={{ width: `${scrollPct}%` }} />
         </div>
       </div>
 
