@@ -122,7 +122,7 @@ export default function ContactsPage() {
         <section className="border-b border-border">
           <div className="container mx-auto px-4 lg:px-8 py-12">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border border-border">
-              <div className="p-6 sm:border-r border-border border-b sm:border-b-0">
+              <div className="p-4 sm:border-r border-border border-b sm:border-b-0">
                 <Phone className="w-5 h-5 text-primary mb-3" />
                 <div className="text-[11px] text-muted-foreground uppercase tracking-widest mb-1">Телефон</div>
                 <a href="tel:+73952551234" className="text-lg font-bold text-foreground hover:text-primary transition-colors">
@@ -130,7 +130,7 @@ export default function ContactsPage() {
                 </a>
                 <div className="text-xs text-muted-foreground mt-1">Единый номер</div>
               </div>
-              <div className="p-6 sm:border-r border-border border-b sm:border-b-0">
+              <div className="p-4 sm:border-r border-border border-b sm:border-b-0">
                 <Mail className="w-5 h-5 text-primary mb-3" />
                 <div className="text-[11px] text-muted-foreground uppercase tracking-widest mb-1">Email</div>
                 <a href="mailto:info@arendacity.ru" className="text-lg font-bold text-foreground hover:text-primary transition-colors break-all">
@@ -138,7 +138,7 @@ export default function ContactsPage() {
                 </a>
                 <div className="text-xs text-muted-foreground mt-1">Общие вопросы</div>
               </div>
-              <div className="p-6">
+              <div className="p-4">
                 <Clock className="w-5 h-5 text-primary mb-3" />
                 <div className="text-[11px] text-muted-foreground uppercase tracking-widest mb-1">Режим работы</div>
                 <div className="text-lg font-bold text-foreground">Пн–Пт: 9–19</div>
@@ -160,7 +160,7 @@ export default function ContactsPage() {
                   {departments.map((d, i) => {
                     const Icon = d.icon;
                     return (
-                      <div key={i} className="flex gap-4 p-5 border-b border-border last:border-0 group hover:bg-muted/30 transition-colors">
+                      <div key={i} className="flex gap-4 p-4 border-b border-border last:border-0 group hover:bg-muted/30 transition-colors">
                         <div className="w-9 h-9 bg-primary/8 flex items-center justify-center shrink-0">
                           <Icon className="w-4 h-4 text-primary" />
                         </div>
@@ -194,7 +194,7 @@ export default function ContactsPage() {
               <div className="lg:w-[420px] shrink-0">
                 <h2 className="font-display text-2xl font-bold text-foreground mb-6">Оставить заявку</h2>
                 {sent ? (
-                  <div className="border border-border p-10 text-center">
+                  <div className="border border-border p-8 text-center">
                     <CheckCircle2 className="w-10 h-10 text-primary mx-auto mb-4" />
                     <div className="text-base font-semibold text-foreground mb-2">Заявка отправлена</div>
                     <p className="text-sm text-muted-foreground mb-5">
@@ -206,7 +206,7 @@ export default function ContactsPage() {
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="border border-border p-6 space-y-4">
+                  <form onSubmit={handleSubmit} className="border border-border p-5 space-y-3.5">
                     <div>
                       <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Имя *</label>
                       <input required value={form.name} onChange={(e) => set("name", e.target.value)}
