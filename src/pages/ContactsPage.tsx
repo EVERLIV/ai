@@ -103,46 +103,49 @@ export default function ContactsPage() {
 
       <main className="flex-1">
 
-        {/* Hero */}
+        {/* Hero — компактный */}
         <section className="border-b border-border">
-          <div className="container mx-auto px-4 lg:px-8 py-14 lg:py-20">
-            <div className="max-w-2xl">
-              <p className="text-[11px] font-semibold tracking-widest uppercase text-primary mb-3">Контакты</p>
-              <h1 className="font-display text-4xl lg:text-5xl font-bold text-foreground leading-tight mb-4">
-                Свяжитесь с нами
-              </h1>
-              <p className="text-muted-foreground text-base leading-relaxed max-w-lg">
-                Мы работаем в Иркутске, Ангарске и Шелехове с 2013 года. Выберите нужный отдел или оставьте заявку — ответим в течение часа.
-              </p>
-            </div>
+          <div className="container mx-auto px-4 lg:px-8 py-6 lg:py-10">
+            <h1 className="font-display text-2xl lg:text-4xl font-bold text-foreground mb-1">Контакты</h1>
+            <p className="text-sm text-muted-foreground">Работаем в Иркутске, Ангарске и Шелехове с 2013 года</p>
           </div>
         </section>
 
-        {/* Main info */}
+        {/* Main info — горизонтальные строки вместо сетки */}
         <section className="border-b border-border">
-          <div className="container mx-auto px-4 lg:px-8 py-12">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border border-border">
-              <div className="p-4 sm:border-r border-border border-b sm:border-b-0">
-                <Phone className="w-5 h-5 text-primary mb-3" />
-                <div className="text-[11px] text-muted-foreground uppercase tracking-widest mb-1">Телефон</div>
-                <a href="tel:+73952551234" className="text-lg font-bold text-foreground hover:text-primary transition-colors">
-                  +7 (3952) 55-12-34
-                </a>
-                <div className="text-xs text-muted-foreground mt-1">Единый номер</div>
+          <div className="container mx-auto px-4 lg:px-8 py-0">
+            <div className="divide-y divide-border">
+              <div className="flex items-center gap-3 py-3.5">
+                <Phone className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-widest block">Телефон</span>
+                  <a href="tel:+73952551234" className="text-sm font-bold text-foreground hover:text-primary transition-colors">+7 (3952) 55-12-34</a>
+                </div>
+                <span className="text-xs text-muted-foreground hidden sm:block">Единый номер</span>
               </div>
-              <div className="p-4 sm:border-r border-border border-b sm:border-b-0">
-                <Mail className="w-5 h-5 text-primary mb-3" />
-                <div className="text-[11px] text-muted-foreground uppercase tracking-widest mb-1">Email</div>
-                <a href="mailto:info@arendacity.ru" className="text-lg font-bold text-foreground hover:text-primary transition-colors break-all">
-                  info@arendacity.ru
-                </a>
-                <div className="text-xs text-muted-foreground mt-1">Общие вопросы</div>
+              <div className="flex items-center gap-3 py-3.5">
+                <Mail className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-widest block">Email</span>
+                  <a href="mailto:info@arendacity.ru" className="text-sm font-bold text-foreground hover:text-primary transition-colors">info@arendacity.ru</a>
+                </div>
+                <span className="text-xs text-muted-foreground hidden sm:block">Общие вопросы</span>
               </div>
-              <div className="p-4">
-                <Clock className="w-5 h-5 text-primary mb-3" />
-                <div className="text-[11px] text-muted-foreground uppercase tracking-widest mb-1">Режим работы</div>
-                <div className="text-lg font-bold text-foreground">Пн–Пт: 9–19</div>
-                <div className="text-xs text-muted-foreground mt-1">Сб: 10:00–15:00</div>
+              <div className="flex items-center gap-3 py-3.5">
+                <Clock className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-widest block">Режим работы</span>
+                  <span className="text-sm font-bold text-foreground">Пн–Пт: 9:00–19:00</span>
+                </div>
+                <span className="text-xs text-muted-foreground hidden sm:block">Сб: 10:00–15:00</span>
+              </div>
+              <div className="flex items-center gap-3 py-3.5">
+                <MapPin className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-widest block">Адрес</span>
+                  <span className="text-sm font-bold text-foreground">ул. Карла Маркса, 37, оф. 201</span>
+                </div>
+                <span className="text-xs text-muted-foreground hidden sm:block">Иркутск</span>
               </div>
             </div>
           </div>
@@ -150,7 +153,7 @@ export default function ContactsPage() {
 
         {/* Departments + Form */}
         <section className="border-b border-border">
-          <div className="container mx-auto px-4 lg:px-8 py-12">
+          <div className="container mx-auto px-4 lg:px-8 py-8">
             <div className="flex flex-col lg:flex-row gap-12">
 
               {/* Left: departments */}
@@ -269,7 +272,7 @@ export default function ContactsPage() {
 
         {/* Offices */}
         <section>
-          <div className="container mx-auto px-4 lg:px-8 py-12">
+          <div className="container mx-auto px-4 lg:px-8 py-8">
             <h2 className="font-display text-2xl font-bold text-foreground mb-6">Офисы</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border border-border">
               {offices.map((o, i) => (
