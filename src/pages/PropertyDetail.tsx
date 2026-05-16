@@ -1,4 +1,4 @@
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useProperty } from "@/hooks/useProperties";
 import {
   ArrowLeft, Heart, Share2, MapPin, Clock, Eye, Phone, Mail,
@@ -6,11 +6,12 @@ import {
   Shield, Calendar, ChevronLeft, ChevronRight, Store, Warehouse, TreePine,
   MessageSquareText, Tag, Download, X, Send, ChevronDown,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import NearbyPropertiesSlider from "@/components/NearbyPropertiesSlider";
+import { useProperties } from "@/hooks/useProperties";
 import PropertyMap from "@/components/PropertyMap";
 import { getDefaultPropertyImage } from "@/lib/propertyImages";
 import RequestPriceDialog from "@/components/RequestPriceDialog";
@@ -26,8 +27,31 @@ export default function PropertyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: property, isLoading } = useProperty(id);
+  const { data: allProperties } = useProperties();
   const { user } = useAuth();
   const [activePhoto, setActivePhoto] = useState(0);
+
+  // Соседние объекты для свайпа
+  const ids = allProperties?.map((p) => p.id) ?? [];
+  const currentIdx = ids.indexOf(id ?? "");
+  const prevId = currentIdx > 0 ? ids[currentIdx - 1] : null;
+  const nextId = currentIdx >= 0 && currentIdx < ids.length - 1 ? ids[currentIdx + 1] : null;
+
+  // Touch swipe
+  const touchStartX = useRef<number | null>(null);
+  const [swipeDir, setSwipeDir] = useState<"left" | "right" | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 60) return; // порог
+    if (dx < 0 && nextId) { setSwipeDir("left"); setTimeout(() => { navigate(`/property/${nextId}`); setSwipeDir(null); }, 200); }
+    if (dx > 0 && prevId) { setSwipeDir("right"); setTimeout(() => { navigate(`/property/${prevId}`); setSwipeDir(null); }, 200); }
+  };
   const [contactOpen, setContactOpen] = useState(false);
   const [contactForm, setContactForm] = useState({ name: "", phone: "", message: "" });
   const [contactSent, setContactSent] = useState(false);
@@ -97,7 +121,13 @@ export default function PropertyDetail() {
   ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div
+      className={`min-h-screen bg-background flex flex-col transition-transform duration-200 ${
+        swipeDir === "left" ? "-translate-x-8 opacity-0" : swipeDir === "right" ? "translate-x-8 opacity-0" : ""
+      }`}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <SiteHeader />
 
       {/* ── Попап формы заявки ── */}
@@ -210,6 +240,33 @@ export default function PropertyDetail() {
           </div>
         </div>
       </div>
+
+      {/* Swipe indicators — мобильный, полупрозрачные стрелки по краям */}
+      {prevId && (
+        <button
+          onClick={() => navigate(`/property/${prevId}`)}
+          className="lg:hidden fixed left-0 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center w-8 h-16 bg-background/80 backdrop-blur-sm border-r border-border/40 text-muted-foreground active:text-primary transition-colors"
+          aria-label="Предыдущий объект"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+      )}
+      {nextId && (
+        <button
+          onClick={() => navigate(`/property/${nextId}`)}
+          className="lg:hidden fixed right-0 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center w-8 h-16 bg-background/80 backdrop-blur-sm border-l border-border/40 text-muted-foreground active:text-primary transition-colors"
+          aria-label="Следующий объект"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      )}
+
+      {/* Счётчик позиции */}
+      {ids.length > 0 && currentIdx >= 0 && (
+        <div className="lg:hidden fixed top-[calc(56px+40px+8px)] left-1/2 -translate-x-1/2 z-30 px-2.5 py-1 bg-foreground/70 backdrop-blur-sm text-background text-[10px] font-medium rounded-full pointer-events-none">
+          {currentIdx + 1} / {ids.length}
+        </div>
+      )}
 
       {/* Mobile bottom action bar */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_24px_-12px_hsl(0_0%_0%/0.15)]">
