@@ -185,7 +185,7 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
   return (
     <>
       {/* ── BUBBLE ── */}
-      <div className={`fixed right-5 top-1/2 -translate-y-1/2 z-40 transition-all duration-300 ${open ? "opacity-0 pointer-events-none scale-90" : "opacity-100 scale-100"}`}>
+      <div className={`fixed right-4 bottom-24 z-40 transition-all duration-300 ${open ? "opacity-0 pointer-events-none scale-90" : "opacity-100 scale-100"}`}>
         <button onClick={() => setOpen(true)} aria-label="Открыть чат"
           className={`flex flex-col items-center gap-1.5 group ${wiggle ? "animate-[tab-wiggle_0.8s_ease-in-out]" : ""}`}>
           <div className="relative w-12 h-12 bg-card border border-border shadow-lg flex items-center justify-center">
@@ -358,10 +358,10 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
 
       <style>{`
         @keyframes tab-wiggle {
-          0%,100% { transform: translateY(-50%) scale(1); }
-          20% { transform: translateY(-52%) scale(1.04) rotate(-1deg); }
-          50% { transform: translateY(-49%) scale(1.03) rotate(0.8deg); }
-          80% { transform: translateY(-51%) scale(1.01) rotate(-0.4deg); }
+          0%,100% { transform: scale(1); }
+          20% { transform: scale(1.06) rotate(-2deg); }
+          50% { transform: scale(1.04) rotate(1.5deg); }
+          80% { transform: scale(1.02) rotate(-1deg); }
         }
         @keyframes dot-pulse {
           0%,80%,100% { opacity: 0.3; transform: scale(0.8); }
