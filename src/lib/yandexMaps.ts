@@ -9,7 +9,7 @@ export function loadYandexMaps(): Promise<any> {
   if (window.ymaps3) return Promise.resolve((window as any).ymaps3);
   if (loadPromise) return loadPromise;
 
-  const apiKey = import.meta.env.VITE_YANDEX_MAPS_API_KEY as string | undefined;
+  const apiKey = (import.meta.env.VITE_YANDEX_MAPS_API_KEY as string | undefined) || "2dc2b4a9-a9d1-46df-b148-e19a985512ac";
 
   loadPromise = new Promise((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>('script[data-ymaps3="true"]');
