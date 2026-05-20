@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, ExternalLink, MapPin } from "lucide-react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { Eye, ExternalLink, MapPin, Building2 } from "lucide-react";
 import StreetViewModal from "./StreetViewModal";
 import { loadYandexMaps, IRKUTSK_CENTER_LNGLAT } from "@/lib/yandexMaps";
 import YandexMapFallback from "./YandexMapFallback";
@@ -53,9 +54,16 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
         if (hasCoords) {
           const el = document.createElement("div");
           el.className = "pm-pin";
+          const shortAddr = address.split(",").slice(0, 2).join(",").trim();
+          const iconSvg = renderToStaticMarkup(
+            <MapPin size={16} color="#fff" strokeWidth={2.5} />
+          );
           el.innerHTML = `
-            <span class="pm-pin__label">${address.split(",")[0]}</span>
-            <span class="pm-pin__tail"></span>
+            <div class="pm-pin__bubble">
+              <span class="pm-pin__icon">${iconSvg}</span>
+              <span class="pm-pin__text">${shortAddr}</span>
+            </div>
+            <div class="pm-pin__tail"></div>
           `;
           map.addChild(new YMapMarker({ coordinates: center }, el));
         }
@@ -138,26 +146,40 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
           align-items: center;
           transform: translate(-50%, -100%);
           pointer-events: none;
+          filter: drop-shadow(0 4px 12px rgba(0,0,0,0.28));
         }
-        .pm-pin__label {
-          display: block;
-          background: hsl(0, 72%, 51%);
+        .pm-pin__bubble {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          background: #c0392b;
           color: #fff;
-          font-size: 11px;
-          font-weight: 700;
-          font-family: inherit;
-          padding: 4px 8px;
+          font-size: 12px;
+          font-weight: 600;
+          font-family: system-ui, -apple-system, sans-serif;
+          padding: 6px 10px 6px 8px;
           white-space: nowrap;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.22);
-          line-height: 1.4;
+          letter-spacing: 0.01em;
+          line-height: 1;
+          border-radius: 2px;
+        }
+        .pm-pin__icon {
+          display: flex;
+          align-items: center;
+          opacity: 0.9;
+          flex-shrink: 0;
+        }
+        .pm-pin__text {
+          max-width: 200px;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .pm-pin__tail {
-          display: block;
           width: 0;
           height: 0;
-          border-left: 5px solid transparent;
-          border-right: 5px solid transparent;
-          border-top: 6px solid hsl(0, 72%, 51%);
+          border-left: 7px solid transparent;
+          border-right: 7px solid transparent;
+          border-top: 8px solid #c0392b;
         }
       `}</style>
     </div>
