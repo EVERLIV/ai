@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { ConversationProvider } from "@elevenlabs/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
@@ -7,6 +7,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import Gate from "./pages/Gate.tsx";
+
+// Ленивая загрузка — не попадает в основной бандл
+const TasksPage       = lazy(() => import("./pages/TasksPage"));
+const TaskNewPage     = lazy(() => import("./pages/TaskNewPage"));
+const TaskDetailPage  = lazy(() => import("./pages/TaskDetailPage"));
+const TaskReportsPage = lazy(() => import("./pages/TaskReportsPage"));
 import Index from "./pages/Index.tsx";
 import PropertyDetail from "./pages/PropertyDetail.tsx";
 import Catalog from "./pages/Catalog.tsx";
@@ -70,6 +76,27 @@ const App = () => {
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/account" element={<AccountPage />} />
                 <Route path="/contacts" element={<ContactsPage />} />
+                {/* Таск-менеджер — lazy, не влияет на основной бандл */}
+                <Route path="/tasks" element={
+                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-sm text-gray-400">Загрузка...</div>}>
+                    <TasksPage />
+                  </Suspense>
+                } />
+                <Route path="/tasks/new" element={
+                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-sm text-gray-400">Загрузка...</div>}>
+                    <TaskNewPage />
+                  </Suspense>
+                } />
+                <Route path="/tasks/:id" element={
+                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-sm text-gray-400">Загрузка...</div>}>
+                    <TaskDetailPage />
+                  </Suspense>
+                } />
+                <Route path="/reports" element={
+                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-sm text-gray-400">Загрузка...</div>}>
+                    <TaskReportsPage />
+                  </Suspense>
+                } />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
