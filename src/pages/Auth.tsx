@@ -40,19 +40,47 @@ export default function Auth() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName, phone },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
-    } else {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName, phone },
+          emailRedirectTo: window.location.origin,
+        },
+      });
+
+      if (error) {
+        toast({ title: "Ошибка регистрации", description: error.message, variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
+      // Если autoconfirm включён — сессия уже есть, сразу входим
+      if (data.session) {
+        navigate(redirectTo);
+        return;
+      }
+
+      // Если письмо не требуется (идентiti уже создан) — пробуем войти сразу
+      if (data.user && !data.session) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (!signInError) {
+          navigate(redirectTo);
+          return;
+        }
+      }
+
+      // Иначе — стандартный экран "проверьте почту"
       setRegistered(true);
+    } catch (err: any) {
+      toast({
+        title: "Ошибка соединения",
+        description: "Не удалось подключиться к серверу. Попробуйте позже.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 

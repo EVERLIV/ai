@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Plus, LogOut, Users, Home, Edit, Trash2,
   BarChart3, Eye, MapPin, ArrowLeft, Upload, X, Star, ImageIcon, Search,
-  ArrowUpDown, ArrowUp, ArrowDown, Settings2, Check, Megaphone,
+  ArrowUpDown, ArrowUp, ArrowDown, Settings2, Check, Megaphone, CheckSquare, Shield,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import AdPlacementsManager from "@/components/admin/AdPlacementsManager";
@@ -160,7 +160,7 @@ const emptyForm: PropertyForm = {
 };
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, hasRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -502,8 +502,11 @@ export default function Dashboard() {
           <TabsList>
             <TabsTrigger value="properties"><Home className="w-4 h-4 mr-1" /> Объекты</TabsTrigger>
             <TabsTrigger value="ads"><Megaphone className="w-4 h-4 mr-1" /> Реклама</TabsTrigger>
-            <TabsTrigger value="users"><Users className="w-4 h-4 mr-1" /> Пользователи</TabsTrigger>
+            <TabsTrigger value="users"><Users className="w-4 h-4 mr-1" /> Сотрудники</TabsTrigger>
             <TabsTrigger value="news">Новости</TabsTrigger>
+            {hasRole("admin") && (
+              <TabsTrigger value="tasks"><CheckSquare className="w-4 h-4 mr-1" /> Задачи</TabsTrigger>
+            )}
           </TabsList>
 
           {/* Properties Tab */}
@@ -1058,34 +1061,33 @@ export default function Dashboard() {
             <AdPlacementsTab />
           </TabsContent>
 
-          {/* Users Tab */}
+          {/* Users / Staff Tab */}
           <TabsContent value="users">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Пользователи системы</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Имя</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>ID</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((u: any) => (
-                      <TableRow key={u.id}>
-                        <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
-                        <TableCell>{u.email}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground font-mono">{u.id.slice(0, 8)}...</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <UsersRolesTab isAdmin={hasRole("admin")} currentUserId={user?.id} />
           </TabsContent>
+
+          {/* Tasks shortcut Tab */}
+          {hasRole("admin") && (
+            <TabsContent value="tasks">
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
+                  <CheckSquare className="w-12 h-12 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold">Система задач</h3>
+                  <p className="text-sm text-muted-foreground text-center max-w-xs">
+                    Управляйте задачами сотрудников в отдельной панели с Kanban-доской и отчётами.
+                  </p>
+                  <div className="flex gap-3">
+                    <Button onClick={() => navigate("/tasks")}>
+                      <CheckSquare className="w-4 h-4 mr-2" /> Открыть задачи
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate("/reports")}>
+                      <BarChart3 className="w-4 h-4 mr-2" /> Отчёты
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           <TabsContent value="news">
             <Card>
@@ -1097,5 +1099,121 @@ export default function Dashboard() {
         </Tabs>
       </main>
     </div>
+  );
+}
+
+// ── Компонент управления сотрудниками и ролями ──
+function UsersRolesTab({ isAdmin, currentUserId }: { isAdmin: boolean; currentUserId?: string }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["profiles-all"],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("*").order("full_name");
+      return data || [];
+    },
+  });
+
+  const { data: allRoles = [] } = useQuery({
+    queryKey: ["all-user-roles"],
+    queryFn: async () => {
+      const { data } = await supabase.from("user_roles").select("*");
+      return data || [];
+    },
+  });
+
+  const getRoles = (userId: string) =>
+    allRoles.filter((r: any) => r.user_id === userId).map((r: any) => r.role);
+
+  const toggleRole = async (userId: string, role: string, hasIt: boolean) => {
+    if (!isAdmin) return;
+    if (hasIt) {
+      await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role);
+    } else {
+      await supabase.from("user_roles").insert({ user_id: userId, role });
+    }
+    qc.invalidateQueries({ queryKey: ["all-user-roles"] });
+    toast({ title: hasIt ? `Роль «${roleLabel(role)}» убрана` : `Роль «${roleLabel(role)}» назначена` });
+  };
+
+  const roleLabel = (r: string) =>
+    r === "admin" ? "Супер-администратор" : r === "staff" ? "Сотрудник Аренда Сити" : r === "manager" ? "Менеджер" : r;
+
+  const roleBadgeColor = (r: string) =>
+    r === "admin" ? "bg-red-100 text-red-700" : r === "staff" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600";
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Shield className="w-5 h-5 text-primary" /> Сотрудники и роли
+        </CardTitle>
+        {!isAdmin && <p className="text-xs text-muted-foreground">Только просмотр</p>}
+      </CardHeader>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Имя</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Роли</TableHead>
+              {isAdmin && <TableHead className="text-right">Управление</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {profiles.map((u: any) => {
+              const userRoles = getRoles(u.id);
+              const isSelf = u.id === currentUserId;
+              return (
+                <TableRow key={u.id}>
+                  <TableCell className="font-medium">
+                    {u.full_name || "—"}
+                    {isSelf && <span className="ml-2 text-[10px] text-muted-foreground">(вы)</span>}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {userRoles.length === 0
+                        ? <span className="text-xs text-muted-foreground">Нет ролей</span>
+                        : userRoles.map((r: string) => (
+                          <span key={r} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${roleBadgeColor(r)}`}>
+                            {roleLabel(r)}
+                          </span>
+                        ))
+                      }
+                    </div>
+                  </TableCell>
+                  {isAdmin && (
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {["staff", "manager", "admin"].map((role) => {
+                          const has = userRoles.includes(role);
+                          return (
+                            <button
+                              key={role}
+                              onClick={() => toggleRole(u.id, role, has)}
+                              disabled={isSelf && role === "admin"}
+                              title={`${has ? "Убрать" : "Назначить"}: ${roleLabel(role)}`}
+                              className={`text-[10px] px-2 py-1 rounded border transition-colors ${
+                                has
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+                              } disabled:opacity-40 disabled:cursor-not-allowed`}
+                            >
+                              {has ? "✓ " : ""}{role === "staff" ? "Сотрудник" : role === "admin" ? "Админ" : "Менеджер"}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </TableCell>
+                  )}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }

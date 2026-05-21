@@ -4,7 +4,7 @@ import {
   Phone, Mail, MapPin,
   Send, MessageCircle, Instagram, ChevronDown, Sparkles, User,
   Heart, FileText, LogOut, LayoutGrid, Settings, Building2,
-  ArrowUpRight, Newspaper, Info, BookOpen,
+  ArrowUpRight, Newspaper, Info, BookOpen, Settings2,
 } from "lucide-react";
 import AIWizardModal from "@/components/AIWizardModal";
 import { useAuth } from "@/hooks/useAuth";
@@ -52,7 +52,7 @@ export default function SiteHeader() {
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
   const { pathname, hash } = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, signOut, hasRole } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -121,6 +121,12 @@ export default function SiteHeader() {
               className="hidden sm:flex items-center h-7 px-3 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity whitespace-nowrap">
               + Разместить за 0 ₽
             </Link>
+            {user && (hasRole("admin") || hasRole("staff")) && (
+              <Link to="/tasks"
+                className="hidden sm:flex items-center gap-1.5 h-7 px-3 border border-border text-[11px] font-semibold text-foreground hover:bg-muted transition-colors whitespace-nowrap">
+                ✓ Задачи
+              </Link>
+            )}
             {user ? (
               <div ref={accountRef} className="relative">
                 <button onClick={() => setAccountOpen(!accountOpen)}
@@ -146,6 +152,22 @@ export default function SiteHeader() {
                       <Icon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" /> {label}
                     </button>
                   ))}
+                  {(hasRole("admin") || hasRole("staff")) && (
+                    <div className="border-t border-border/50">
+                      <button onClick={() => { setAccountOpen(false); navigate("/tasks"); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-foreground hover:bg-muted hover:text-primary transition-all duration-150 group">
+                        <span className="w-3.5 h-3.5 text-center text-muted-foreground group-hover:text-primary transition-colors">✓</span>
+                        Задачи сотрудников
+                      </button>
+                      {hasRole("admin") && (
+                        <button onClick={() => { setAccountOpen(false); navigate("/dashboard"); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-foreground hover:bg-muted hover:text-primary transition-all duration-150 group">
+                          <Settings2 className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                          Панель управления
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <div className="border-t border-border">
                     <button onClick={() => { setAccountOpen(false); signOut(); navigate("/"); }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all duration-150">
