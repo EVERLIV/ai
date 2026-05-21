@@ -5,13 +5,13 @@ import {
   PointerSensor, useSensor, useSensors, closestCorners,
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Plus, Loader2, ChevronDown, Filter, X, FolderPlus } from "lucide-react";
+import { Plus, Loader2, Filter, X, FolderPlus, Trash2 } from "lucide-react";
 import TasksSidebar from "@/components/tasks/TasksSidebar";
 import TaskCard from "@/components/tasks/TaskCard";
 import QuickAddTask from "@/components/tasks/QuickAddTask";
 import {
-  useTasks, useUpdateTask, useProjects, useCreateProject,
-  type Task, type TaskStatus, type TaskProject,
+  useTasks, useUpdateTask, useProjects, useCreateProject, useDeleteProject, useDeleteTask,
+  type Task, type TaskStatus,
 } from "@/hooks/useTasks";
 import { useStaffMembers } from "@/hooks/useTasks";
 
@@ -35,11 +35,13 @@ export default function TasksPage() {
   const [showNewProject, setShowNewProject] = useState(false);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
-  const { data: projects = [], isLoading: projectsLoading } = useProjects();
+  const { data: projects = [] } = useProjects();
   const { data: tasks = [], isLoading } = useTasks(activeProjectId || undefined);
   const { data: staff = [] } = useStaffMembers();
   const updateTask = useUpdateTask();
   const createProject = useCreateProject();
+  const deleteProject = useDeleteProject();
+  const deleteTask = useDeleteTask();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
@@ -96,14 +98,29 @@ export default function TasksPage() {
 
             {/* Проекты */}
             {projects.map((p) => (
-              <button key={p.id} onClick={() => setActiveProjectId(p.id)}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeProjectId === p.id ? "text-white" : "text-gray-600 hover:bg-gray-100"
-                }`}
-                style={activeProjectId === p.id ? { backgroundColor: p.color } : {}}>
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: activeProjectId === p.id ? "rgba(255,255,255,0.7)" : p.color }} />
-                {p.name}
-              </button>
+              <div key={p.id} className="relative group/proj shrink-0">
+                <button onClick={() => setActiveProjectId(p.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 pr-7 rounded-lg text-sm font-medium transition-colors ${
+                    activeProjectId === p.id ? "text-white" : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                  style={activeProjectId === p.id ? { backgroundColor: p.color } : {}}>
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: activeProjectId === p.id ? "rgba(255,255,255,0.7)" : p.color }} />
+                  {p.name}
+                </button>
+                {/* Кнопка удаления доски */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!confirm(`Удалить доску «${p.name}»? Задачи останутся без доски.`)) return;
+                    deleteProject.mutate(p.id);
+                    if (activeProjectId === p.id) setActiveProjectId(null);
+                  }}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 opacity-0 group-hover/proj:opacity-100 w-5 h-5 flex items-center justify-center text-gray-400 hover:text-red-500 transition-all"
+                  title="Удалить доску"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
             ))}
 
             {/* Новый проект */}

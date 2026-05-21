@@ -1,8 +1,9 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Link } from "react-router-dom";
-import { User, CheckSquare } from "lucide-react";
+import { User, CheckSquare, Trash2 } from "lucide-react";
 import type { Task } from "@/hooks/useTasks";
+import { useDeleteTask } from "@/hooks/useTasks";
 import { getDeadlineInfo } from "@/lib/deadline";
 
 const priorityStyles: Record<string, string> = {
@@ -31,6 +32,7 @@ interface Props { task: Task; }
 export default function TaskCard({ task }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id });
+  const deleteTask = useDeleteTask();
 
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
 
@@ -41,7 +43,21 @@ export default function TaskCard({ task }: Props) {
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}
-      className="bg-white rounded-xl border border-gray-200 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-300 transition-all group">
+      className="relative bg-white rounded-xl border border-gray-200 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-300 transition-all group">
+
+      {/* Кнопка удаления */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!confirm("Удалить задачу?")) return;
+          deleteTask.mutate(task.id);
+        }}
+        className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-all"
+        title="Удалить задачу"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </button>
+
       <Link to={`/tasks/${task.id}`} onClick={(e) => e.stopPropagation()} className="block p-3">
 
         {/* Теги */}
