@@ -1,6 +1,36 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface StaffMember {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+}
+
+export function useStaffMembers() {
+  return useQuery({
+    queryKey: ["staff-members"],
+    queryFn: async () => {
+      // Берём профили пользователей у которых есть роль admin или staff
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ["admin", "staff", "manager"]);
+
+      if (!roles?.length) return [] as StaffMember[];
+
+      const ids = [...new Set(roles.map((r: any) => r.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", ids)
+        .order("full_name");
+
+      return (profiles || []) as StaffMember[];
+    },
+  });
+}
+
 export type TaskStatus = "todo" | "in_progress" | "done";
 export type TaskPriority = "low" | "medium" | "high";
 

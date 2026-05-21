@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Trash2, Loader2, Save } from "lucide-react";
 import TasksSidebar from "@/components/tasks/TasksSidebar";
-import { useTask, useUpdateTask, useDeleteTask, type TaskStatus, type TaskPriority } from "@/hooks/useTasks";
+import { useTask, useUpdateTask, useDeleteTask, useStaffMembers, type TaskStatus, type TaskPriority } from "@/hooks/useTasks";
 
 const statusLabels: Record<TaskStatus, string> = {
   todo: "К выполнению", in_progress: "В работе", done: "Готово",
@@ -17,6 +17,7 @@ export default function TaskDetailPage() {
   const { data: task, isLoading } = useTask(id);
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const { data: staff = [] } = useStaffMembers();
   const [notes, setNotes] = useState<string>("");
   const [notesSaved, setNotesSaved] = useState(false);
 
@@ -114,7 +115,18 @@ export default function TaskDetailPage() {
             {/* Исполнитель */}
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Исполнитель</label>
-              <p className="text-sm text-gray-700 py-2.5 px-3 bg-gray-50 rounded-lg">{task.assignee || "—"}</p>
+              <select
+                value={task.assignee || ""}
+                onChange={(e) => updateTask.mutate({ id: task.id, assignee: e.target.value || undefined })}
+                className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white"
+              >
+                <option value="">— Не назначен —</option>
+                {staff.map((s) => (
+                  <option key={s.id} value={s.full_name || s.email || s.id}>
+                    {s.full_name || s.email}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Срок */}

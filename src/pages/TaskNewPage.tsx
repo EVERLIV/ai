@@ -4,7 +4,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import TasksSidebar from "@/components/tasks/TasksSidebar";
-import { useCreateTask, type TaskPriority, type TaskStatus } from "@/hooks/useTasks";
+import { useCreateTask, useStaffMembers, type TaskPriority, type TaskStatus } from "@/hooks/useTasks";
 
 const schema = z.object({
   title:       z.string().min(1, "Название обязательно"),
@@ -20,6 +20,7 @@ type FormData = z.infer<typeof schema>;
 export default function TaskNewPage() {
   const navigate = useNavigate();
   const createTask = useCreateTask();
+  const { data: staff = [] } = useStaffMembers();
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -86,11 +87,17 @@ export default function TaskNewPage() {
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                   Исполнитель
                 </label>
-                <input
+                <select
                   {...register("assignee")}
-                  placeholder="Имя сотрудника"
-                  className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                />
+                  className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white"
+                >
+                  <option value="">— Не назначен —</option>
+                  {staff.map((s) => (
+                    <option key={s.id} value={s.full_name || s.email || s.id}>
+                      {s.full_name || s.email}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Срок */}
