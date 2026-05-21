@@ -172,6 +172,44 @@ export function useDeleteComment() {
   });
 }
 
+// ── AI Reports ──
+export interface AIReport {
+  id: string;
+  report_date: string;
+  summary: string;
+  insights: { type: "warning"|"success"|"info"|"critical"; title: string; text: string; emoji: string }[];
+  generated_at: string;
+}
+
+export function useAIReports() {
+  return useQuery({
+    queryKey: ["ai-reports"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_ai_reports")
+        .select("*")
+        .order("report_date", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return data as AIReport[];
+    },
+  });
+}
+
+export function useGenerateAIReport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (force = false) => {
+      const { data, error } = await supabase.functions.invoke("task-ai-report", {
+        body: { force },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["ai-reports"] }),
+  });
+}
+
 // ── Staff ──
 export function useStaffMembers() {
   return useQuery({

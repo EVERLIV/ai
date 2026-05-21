@@ -9,10 +9,11 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Gate from "./pages/Gate.tsx";
 
 // Ленивая загрузка — не попадает в основной бандл
-const TasksPage       = lazy(() => import("./pages/TasksPage"));
-const TaskNewPage     = lazy(() => import("./pages/TaskNewPage"));
-const TaskDetailPage  = lazy(() => import("./pages/TaskDetailPage"));
-const TaskReportsPage = lazy(() => import("./pages/TaskReportsPage"));
+const TasksPage          = lazy(() => import("./pages/TasksPage"));
+const TaskNewPage        = lazy(() => import("./pages/TaskNewPage"));
+const TaskDetailPage     = lazy(() => import("./pages/TaskDetailPage"));
+const TaskReportsPage    = lazy(() => import("./pages/TaskReportsPage"));
+const TaskAnalyticsPage  = lazy(() => import("./pages/TaskAnalyticsPage"));
 import Index from "./pages/Index.tsx";
 import PropertyDetail from "./pages/PropertyDetail.tsx";
 import Catalog from "./pages/Catalog.tsx";
@@ -95,6 +96,11 @@ const App = () => {
                 <Route path="/reports" element={
                   <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-sm text-gray-400">Загрузка...</div>}>
                     <TaskReportsPage />
+                  </Suspense>
+                } />
+                <Route path="/analytics" element={
+                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-sm text-gray-400">Загрузка...</div>}>
+                    <TaskAnalyticsPage />
                   </Suspense>
                 } />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

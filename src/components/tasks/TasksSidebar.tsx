@@ -1,9 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
-import { CheckSquare, BarChart2, ArrowLeft } from "lucide-react";
+import { CheckSquare, BarChart2, ArrowLeft, Sparkles } from "lucide-react";
 
 const links = [
-  { to: "/tasks", icon: CheckSquare, label: "Задачи" },
-  { to: "/reports", icon: BarChart2, label: "Отчёты" },
+  { to: "/tasks",     icon: CheckSquare, label: "Задачи" },
+  { to: "/reports",   icon: BarChart2,   label: "Отчёты" },
+  { to: "/analytics", icon: Sparkles,    label: "ИИ-аналитика" },
 ];
 
 export default function TasksSidebar() {
