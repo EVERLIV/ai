@@ -4,7 +4,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import TasksSidebar from "@/components/tasks/TasksSidebar";
-import { useCreateTask, useStaffMembers, type TaskPriority, type TaskStatus } from "@/hooks/useTasks";
+import { useCreateTask, useStaffMembers, useProjects, type TaskPriority, type TaskStatus } from "@/hooks/useTasks";
 
 const schema = z.object({
   title:       z.string().min(1, "Название обязательно"),
@@ -13,6 +13,7 @@ const schema = z.object({
   priority:    z.enum(["low", "medium", "high"]),
   status:      z.enum(["todo", "in_progress", "done"]),
   due_date:    z.string().optional(),
+  project_id:  z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -21,6 +22,7 @@ export default function TaskNewPage() {
   const navigate = useNavigate();
   const createTask = useCreateTask();
   const { data: staff = [] } = useStaffMembers();
+  const { data: projects = [] } = useProjects();
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -35,6 +37,7 @@ export default function TaskNewPage() {
       priority:    data.priority as TaskPriority,
       status:      data.status as TaskStatus,
       due_date:    data.due_date || undefined,
+      project_id:  data.project_id || null,
     });
     navigate("/tasks");
   };
@@ -142,6 +145,18 @@ export default function TaskNewPage() {
                 </select>
               </div>
             </div>
+
+            {/* Проект */}
+            {projects.length > 0 && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Проект / Доска</label>
+                <select {...register("project_id")}
+                  className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white">
+                  <option value="">— Без проекта —</option>
+                  {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+            )}
 
             <div className="flex gap-3 pt-2">
               <button
