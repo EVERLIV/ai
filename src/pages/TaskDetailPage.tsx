@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Loader2, Send, X, Plus, CheckSquare, Square } from "lucide-react";
+import { ArrowLeft, Trash2, Loader2, Send, X, Plus, CheckSquare, Square, Timer } from "lucide-react";
+import { getDeadlineInfo, formatCountdown } from "@/lib/deadline";
 import TasksSidebar from "@/components/tasks/TasksSidebar";
 import {
   useTask, useUpdateTask, useDeleteTask,
@@ -32,6 +33,16 @@ export default function TaskDetailPage() {
   const [newCheckItem, setNewCheckItem] = useState("");
   const [newTag, setNewTag] = useState("");
   const [showTagInput, setShowTagInput] = useState(false);
+  const [countdown, setCountdown] = useState("");
+
+  // Живой таймер обратного отсчёта
+  useEffect(() => {
+    if (!task?.due_date || task.status === "done") return;
+    const update = () => setCountdown(formatCountdown(task.due_date!));
+    update();
+    const iv = setInterval(update, 1000);
+    return () => clearInterval(iv);
+  }, [task?.due_date, task?.status]);
 
   if (isLoading || !task) return (
     <div className="flex min-h-screen bg-gray-50">
@@ -71,7 +82,7 @@ export default function TaskDetailPage() {
   const removeTag = (tag: string) => updateTask.mutate({ id: task.id, tags: tags.filter((t) => t !== tag) });
 
   const checkDone = checklist.filter((c) => c.done).length;
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== "done";
+  const deadline = getDeadlineInfo(task.due_date, task.status);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -126,6 +137,47 @@ export default function TaskDetailPage() {
             </div>
           </div>
 
+          {/* Таймер дедлайна */}
+          {deadline && task.status !== "done" && (
+            <div className={`rounded-xl border p-4 mb-4 flex items-center gap-4 ${
+              deadline.state === "overdue"  ? "bg-red-50 border-red-200" :
+              deadline.state === "critical" ? "bg-orange-50 border-orange-200" :
+              deadline.state === "warning"  ? "bg-yellow-50 border-yellow-200" :
+                                              "bg-gray-50 border-gray-200"
+            }`}>
+              <div className="text-3xl leading-none select-none">
+                {deadline.state === "overdue" ? "🔥" : deadline.state === "critical" ? "⚠️" : deadline.state === "warning" ? "⏰" : "📅"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className={`text-xs font-semibold uppercase tracking-wide mb-0.5 ${
+                  deadline.state === "overdue" ? "text-red-500" :
+                  deadline.state === "critical" ? "text-orange-500" :
+                  deadline.state === "warning" ? "text-yellow-700" : "text-gray-500"
+                }`}>
+                  {deadline.state === "overdue" ? "Задача просрочена" :
+                   deadline.state === "critical" ? "Срок истекает сегодня" :
+                   deadline.state === "warning" ? "Срок скоро" : "Срок выполнения"}
+                </div>
+                <div className={`text-xl font-bold font-mono ${
+                  deadline.state === "overdue" ? "text-red-700" :
+                  deadline.state === "critical" ? "text-orange-700" :
+                  deadline.state === "warning" ? "text-yellow-800" : "text-gray-800"
+                }`}>
+                  {countdown || deadline.label}
+                </div>
+                <div className="text-xs text-gray-400 mt-0.5">
+                  Дедлайн: {new Date(task.due_date!).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}
+                </div>
+              </div>
+              {deadline.state === "overdue" && (
+                <div className="text-[11px] font-semibold text-red-500 bg-red-100 px-2.5 py-1.5 rounded-lg text-center shrink-0">
+                  ПРОСРОЧЕНО<br />
+                  <span className="text-xs font-normal">{deadline.label}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Поля */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Детали задачи</h3>
@@ -160,7 +212,7 @@ export default function TaskDetailPage() {
                 <label className="block text-[11px] font-semibold text-gray-400 mb-1">Срок</label>
                 <input type="date" value={task.due_date || ""}
                   onChange={(e) => updateTask.mutate({ id: task.id, due_date: e.target.value || undefined })}
-                  className={`w-full h-9 px-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 ${isOverdue ? "border-red-300 bg-red-50 text-red-700" : "border-gray-200"}`} />
+                  className={`w-full h-9 px-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 ${deadline?.state === "overdue" ? "border-red-300 bg-red-50 text-red-700" : "border-gray-200"}`} />
               </div>
               <div>
                 <label className="block text-[11px] font-semibold text-gray-400 mb-1">Проект</label>

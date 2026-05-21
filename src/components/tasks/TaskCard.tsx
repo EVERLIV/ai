@@ -1,8 +1,9 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Link } from "react-router-dom";
-import { User, Calendar, CheckSquare } from "lucide-react";
+import { User, CheckSquare } from "lucide-react";
 import type { Task } from "@/hooks/useTasks";
+import { getDeadlineInfo } from "@/lib/deadline";
 
 const priorityStyles: Record<string, string> = {
   low:    "bg-gray-100 text-gray-500",
@@ -36,7 +37,7 @@ export default function TaskCard({ task }: Props) {
   const checklist = task.checklist || [];
   const checkDone = checklist.filter((c) => c.done).length;
   const checkTotal = checklist.length;
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== "done";
+  const deadline = getDeadlineInfo(task.due_date, task.status);
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}
@@ -79,17 +80,17 @@ export default function TaskCard({ task }: Props) {
           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${priorityStyles[task.priority]}`}>
             {priorityLabels[task.priority]}
           </span>
-          <div className="flex items-center gap-2 text-[11px] text-gray-400">
+          <div className="flex items-center gap-2">
             {task.assignee && (
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 text-[11px] text-gray-400">
                 <User className="w-3 h-3" />
                 {task.assignee.split(" ")[0]}
               </span>
             )}
-            {task.due_date && (
-              <span className={`flex items-center gap-1 ${isOverdue ? "text-red-500 font-semibold" : ""}`}>
-                <Calendar className="w-3 h-3" />
-                {new Date(task.due_date).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+            {deadline && (
+              <span className={`flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${deadline.colorClass} ${deadline.bgClass}`}>
+                {deadline.emoji && <span>{deadline.emoji}</span>}
+                {deadline.label}
               </span>
             )}
           </div>
