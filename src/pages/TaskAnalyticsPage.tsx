@@ -96,11 +96,11 @@ export default function TaskAnalyticsPage() {
     <div className="flex min-h-screen bg-gray-50">
       <TasksSidebar />
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-6 py-6">
+      <main className="flex-1 overflow-y-auto pt-12 md:pt-0">
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 md:py-6">
 
           {/* Шапка */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div>
               <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-indigo-500" /> ИИ-аналитика
@@ -110,7 +110,7 @@ export default function TaskAnalyticsPage() {
             <button
               onClick={() => generate.mutate(true)}
               disabled={generate.isPending}
-              className="flex items-center gap-2 px-4 h-9 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-60 transition-colors"
+              className="flex items-center justify-center gap-2 px-4 h-9 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-60 transition-colors w-full sm:w-auto"
             >
               {generate.isPending
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Анализирую...</>

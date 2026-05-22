@@ -50,7 +50,7 @@ export default function TaskReportsPage() {
     <div className="flex min-h-screen bg-gray-50">
       <TasksSidebar />
 
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-4 md:p-8 pt-16 md:pt-8 overflow-x-hidden">
         <div className="mb-6">
           <h1 className="text-lg font-bold text-gray-900">Отчёты</h1>
           <p className="text-xs text-gray-500 mt-0.5">Статистика по задачам сотрудников</p>
@@ -131,10 +131,10 @@ export default function TaskReportsPage() {
                   <thead>
                     <tr className="border-b border-gray-100 bg-gray-50">
                       <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Название</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Исполнитель</th>
+                      <th className="hidden sm:table-cell text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Исполнитель</th>
                       <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Статус</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Приоритет</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Срок</th>
+                      <th className="hidden md:table-cell text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Приоритет</th>
+                      <th className="hidden sm:table-cell text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Срок</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -148,15 +148,21 @@ export default function TaskReportsPage() {
                           <Link to={`/tasks/${task.id}`} className="font-medium text-gray-900 hover:text-gray-600 transition-colors">
                             {task.title}
                           </Link>
+                          {/* На мобильном показываем статус под названием */}
+                          <div className="sm:hidden mt-1">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusColors[task.status]}`}>
+                              {statusLabels[task.status]}
+                            </span>
+                          </div>
                         </td>
-                        <td className="px-4 py-3 text-gray-600">{task.assignee || "—"}</td>
-                        <td className="px-4 py-3">
+                        <td className="hidden sm:table-cell px-4 py-3 text-gray-600">{task.assignee || "—"}</td>
+                        <td className="hidden sm:table-cell px-4 py-3">
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[task.status]}`}>
                             {statusLabels[task.status]}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-gray-600 text-xs">{priorityLabels[task.priority]}</td>
-                        <td className="px-4 py-3 text-gray-600 text-xs">
+                        <td className="hidden md:table-cell px-4 py-3 text-gray-600 text-xs">{priorityLabels[task.priority]}</td>
+                        <td className="hidden sm:table-cell px-4 py-3 text-gray-600 text-xs">
                           {task.due_date ? new Date(task.due_date).toLocaleDateString("ru-RU") : "—"}
                         </td>
                       </tr>

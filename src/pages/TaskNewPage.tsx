@@ -46,7 +46,7 @@ export default function TaskNewPage() {
     <div className="flex min-h-screen bg-gray-50">
       <TasksSidebar />
 
-      <main className="flex-1 p-8 max-w-2xl">
+      <main className="flex-1 p-4 md:p-8 max-w-2xl pt-16 md:pt-8">
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors"
@@ -84,7 +84,7 @@ export default function TaskNewPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Исполнитель */}
               <div>
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">

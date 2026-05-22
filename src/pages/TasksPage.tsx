@@ -84,9 +84,9 @@ export default function TasksPage() {
     <div className="flex min-h-screen bg-gray-50">
       <TasksSidebar />
 
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden pt-12 md:pt-0">
         {/* Шапка */}
-        <div className="bg-white border-b border-gray-200 px-5 py-3 flex items-center gap-3">
+        <div className="bg-white border-b border-gray-200 px-3 md:px-5 py-3 flex items-center gap-2 md:gap-3">
           <div className="flex-1 flex items-center gap-2 overflow-x-auto scrollbar-hide">
             {/* Все задачи */}
             <button onClick={() => setActiveProjectId(null)}
@@ -201,15 +201,15 @@ export default function TasksPage() {
             <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
           </div>
         ) : (
-          <div className="flex-1 overflow-auto p-5">
+          <div className="flex-1 overflow-auto p-3 md:p-5">
             <DndContext sensors={sensors} collisionDetection={closestCorners}
               onDragStart={(e) => setActiveTask(tasks.find((t) => t.id === e.active.id) ?? null)}
               onDragEnd={handleDragEnd}>
-              <div className="flex gap-4 min-w-[680px] h-full">
+              <div className="flex gap-3 md:gap-4 min-w-[300px] h-full overflow-x-auto pb-4">
                 {COLUMNS.map((col) => {
                   const colTasks = byStatus(col.id);
                   return (
-                    <div key={col.id} className="flex-1 min-w-[220px] flex flex-col">
+                    <div key={col.id} className="flex-none w-[280px] md:flex-1 md:min-w-[220px] flex flex-col">
                       <div className="flex items-center gap-2 mb-2.5 px-1">
                         <span className={`w-2.5 h-2.5 rounded-full ${col.dot}`} />
                         <span className={`text-sm font-semibold ${col.header}`}>{col.label}</span>

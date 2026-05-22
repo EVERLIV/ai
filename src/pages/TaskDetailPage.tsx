@@ -88,8 +88,8 @@ export default function TaskDetailPage() {
     <div className="flex min-h-screen bg-gray-50">
       <TasksSidebar />
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-6 py-6">
+      <main className="flex-1 overflow-y-auto pt-12 md:pt-0">
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 md:py-6">
           {/* Навигация */}
           <div className="flex items-center justify-between mb-5">
             <button onClick={() => navigate("/tasks")}
@@ -139,7 +139,7 @@ export default function TaskDetailPage() {
 
           {/* Таймер дедлайна */}
           {deadline && task.status !== "done" && (
-            <div className={`rounded-xl border p-4 mb-4 flex items-center gap-4 ${
+            <div className={`rounded-xl border p-4 mb-4 flex items-center gap-3 md:gap-4 ${
               deadline.state === "overdue"  ? "bg-red-50 border-red-200" :
               deadline.state === "critical" ? "bg-orange-50 border-orange-200" :
               deadline.state === "warning"  ? "bg-yellow-50 border-yellow-200" :
@@ -181,7 +181,7 @@ export default function TaskDetailPage() {
           {/* Поля */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Детали задачи</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[11px] font-semibold text-gray-400 mb-1">Статус</label>
                 <select value={task.status} onChange={(e) => updateTask.mutate({ id: task.id, status: e.target.value as TaskStatus })}
