@@ -1,5 +1,5 @@
-export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-export const SERVICE_ROLE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY as string;
+export const SUPABASE_URL = "https://api.arendacity.com";
+export const SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3Nzg4NDI5NDAsImV4cCI6MTkzNjUyMjk0MH0.3cy9jvXONpIRoTDA2YOvo13LdBCTZzWTPs-J6_1RhKg";
 
 const authHeaders = {
   "apikey": SERVICE_ROLE_KEY,
