@@ -30,6 +30,7 @@ import NewsPostPage from "./pages/NewsPostPage.tsx";
 import AboutPage from "./pages/AboutPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
 import ContactsPage from "./pages/ContactsPage.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 import InstallPrompt from "@/components/InstallPrompt";
 import CookieBanner from "@/components/CookieBanner";
 
@@ -77,6 +78,7 @@ const App = () => {
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/account" element={<AccountPage />} />
                 <Route path="/contacts" element={<ContactsPage />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 {/* Таск-менеджер — lazy, не влияет на основной бандл */}
                 <Route path="/tasks" element={
                   <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-sm text-gray-400">Загрузка...</div>}>

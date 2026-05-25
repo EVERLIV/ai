@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +25,18 @@ export default function Auth() {
   const redirectTo = new URLSearchParams(search).get("redirect") || "/";
   const { toast } = useToast();
 
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes("type=signup") || hash.includes("type=email_change")) {
+      toast({
+        title: "Email подтверждён",
+        description: "Добро пожаловать в АрендаСити!",
+      });
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      navigate(redirectTo);
+    }
+  }, [navigate, redirectTo, toast]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -46,12 +58,20 @@ export default function Auth() {
         password,
         options: {
           data: { full_name: fullName, phone },
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: `${window.location.origin}/auth`,
         },
       });
 
       if (error) {
-        toast({ title: "Ошибка регистрации", description: error.message, variant: "destructive" });
+        const isTimeout = error.message.includes("timed out") || (error as { status?: number }).status === 504;
+        toast({
+          title: isTimeout ? "Письмо отправляется" : "Ошибка регистрации",
+          description: isTimeout
+            ? "Аккаунт создан. Если письмо не пришло в течение 5 минут — попробуйте войти или восстановить пароль."
+            : error.message,
+          variant: isTimeout ? "default" : "destructive",
+        });
+        if (isTimeout) setRegistered(true);
         setLoading(false);
         return;
       }
@@ -166,6 +186,11 @@ export default function Auth() {
                 className="w-full h-11 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
                 {loading ? "Вход..." : <><ArrowRight className="w-4 h-4" /> Войти</>}
               </button>
+              <div className="text-center">
+                <Link to="/reset-password" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                  Забыли пароль?
+                </Link>
+              </div>
             </form>
             <p className="text-xs text-muted-foreground mt-6 text-center">
               Нет аккаунта?{" "}

@@ -25,6 +25,7 @@ import AdPlacementsManager from "@/components/admin/AdPlacementsManager";
 import AdPlacementsTab from "@/components/admin/AdPlacementsTab";
 import PropertyUnitsManager from "@/components/admin/PropertyUnitsManager";
 import NewsAdminPanel from "@/components/NewsAdminPanel";
+import { supabaseAdmin, SUPABASE_URL, SERVICE_ROLE_KEY } from "@/integrations/supabase/adminClient";
 
 // ====== Predefined options ======
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
@@ -263,16 +264,35 @@ export default function Dashboard() {
     },
   });
 
+  const compressImage = (file: File, maxWidth = 1920, quality = 0.82): Promise<File> =>
+    new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(
+          (blob) => resolve(blob ? new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" }) : file),
+          "image/jpeg", quality
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+
   const uploadPhotos = async (propertyId: string): Promise<{ urls: string[]; cover: string }> => {
     const urls: string[] = [...existingPhotos];
 
     for (const file of photoFiles) {
-      const ext = file.name.split(".").pop();
-      const path = `${propertyId}/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from("property-photos").upload(path, file);
-      if (error) throw error;
-      const { data: urlData } = supabase.storage.from("property-photos").getPublicUrl(path);
-      urls.push(urlData.publicUrl);
+      const compressed = await compressImage(file);
+      const path = `${propertyId}/${crypto.randomUUID()}.jpg`;
+      const { error } = await supabaseAdmin.storage.upload("property-photos", path, compressed);
+      if (error) throw new Error(error);
+      urls.push(supabaseAdmin.storage.getPublicUrl("property-photos", path));
     }
 
     // Calculate cover: if coverIndex points to existing photos, use that; otherwise offset
@@ -1102,118 +1122,188 @@ export default function Dashboard() {
   );
 }
 
-// ── Компонент управления сотрудниками и ролями ──
+// ── Компонент управления пользователями и ролями ──
 function UsersRolesTab({ isAdmin, currentUserId }: { isAdmin: boolean; currentUserId?: string }) {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [search, setSearch] = useState("");
+  const [pwDialog, setPwDialog] = useState<{ open: boolean; userId: string; email: string }>({ open: false, userId: "", email: "" });
+  const [newPw, setNewPw] = useState("");
 
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles-all"],
+  const { data: users = [], isLoading, refetch } = useQuery({
+    queryKey: ["admin-all-users"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("*").order("full_name");
-      return data || [];
+      const { data: authData, error } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+      if (error) throw error;
+      const [rolesRes, profilesRes] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/user_roles?select=user_id,role`, {
+          headers: {
+            "apikey": SERVICE_ROLE_KEY,
+            "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
+          },
+        }),
+        supabase.from("profiles").select("id, full_name, phone"),
+      ]);
+      const rolesData = await rolesRes.json();
+      const profiles = profilesRes.data;
+      const rolesMap: Record<string, string[]> = {};
+      rolesData?.forEach((r: any) => { if (!rolesMap[r.user_id]) rolesMap[r.user_id] = []; rolesMap[r.user_id].push(r.role); });
+      const profileMap: Record<string, any> = {};
+      profiles?.forEach((p: any) => { profileMap[p.id] = p; });
+      return authData.users.map(u => ({
+        id: u.id,
+        email: u.email || "",
+        full_name: profileMap[u.id]?.full_name || u.user_metadata?.full_name || null,
+        phone: profileMap[u.id]?.phone || u.phone || null,
+        created_at: u.created_at,
+        last_sign_in: u.last_sign_in_at || null,
+        roles: rolesMap[u.id] || [],
+        confirmed: !!u.email_confirmed_at,
+      }));
     },
+    enabled: isAdmin,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
-
-  const { data: allRoles = [] } = useQuery({
-    queryKey: ["all-user-roles"],
-    queryFn: async () => {
-      const { data } = await supabase.from("user_roles").select("*");
-      return data || [];
-    },
-  });
-
-  const getRoles = (userId: string) =>
-    allRoles.filter((r: any) => r.user_id === userId).map((r: any) => r.role);
-
-  const toggleRole = async (userId: string, role: string, hasIt: boolean) => {
-    if (!isAdmin) return;
-    if (hasIt) {
-      await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role);
-    } else {
-      await supabase.from("user_roles").insert({ user_id: userId, role });
-    }
-    qc.invalidateQueries({ queryKey: ["all-user-roles"] });
-    toast({ title: hasIt ? `Роль «${roleLabel(role)}» убрана` : `Роль «${roleLabel(role)}» назначена` });
-  };
 
   const roleLabel = (r: string) =>
-    r === "admin" ? "Супер-администратор" : r === "staff" ? "Сотрудник Аренда Сити" : r === "manager" ? "Менеджер" : r;
+    r === "admin" ? "Администратор" : r === "manager" ? "Менеджер" : r === "staff" ? "Сотрудник" : r === "client" ? "Клиент" : r;
 
   const roleBadgeColor = (r: string) =>
-    r === "admin" ? "bg-red-100 text-red-700" : r === "staff" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600";
+    r === "admin" ? "bg-red-100 text-red-700" : r === "manager" ? "bg-blue-100 text-blue-700" : r === "staff" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600";
+
+  const toggleRole = async (userId: string, role: string, hasIt: boolean) => {
+    await supabaseAdmin.roles.toggle(userId, role, hasIt);
+    await refetch();
+    toast({ title: hasIt ? `Роль убрана` : `Роль назначена` });
+  };
+
+  const setPassword = async () => {
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(pwDialog.userId, { password: newPw });
+    if (error) { toast({ title: "Ошибка", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Пароль изменён" });
+    setPwDialog({ open: false, userId: "", email: "" });
+    setNewPw("");
+  };
+
+  const deleteUser = async (userId: string, email: string) => {
+    if (!confirm(`Удалить пользователя ${email}?`)) return;
+    await supabaseAdmin.auth.admin.deleteUser(userId);
+    refetch();
+    toast({ title: "Пользователь удалён" });
+  };
+
+  const confirmEmail = async (userId: string) => {
+    await supabaseAdmin.auth.admin.updateUserById(userId, { email_confirm: true });
+    refetch();
+    toast({ title: "Email подтверждён" });
+  };
+
+  const filtered = users.filter(u =>
+    !search || u.email.toLowerCase().includes(search.toLowerCase()) || u.full_name?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Shield className="w-5 h-5 text-primary" /> Сотрудники и роли
-        </CardTitle>
-        {!isAdmin && <p className="text-xs text-muted-foreground">Только просмотр</p>}
-      </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Имя</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Роли</TableHead>
-              {isAdmin && <TableHead className="text-right">Управление</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {profiles.map((u: any) => {
-              const userRoles = getRoles(u.id);
-              const isSelf = u.id === currentUserId;
-              return (
-                <TableRow key={u.id}>
-                  <TableCell className="font-medium">
-                    {u.full_name || "—"}
-                    {isSelf && <span className="ml-2 text-[10px] text-muted-foreground">(вы)</span>}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {userRoles.length === 0
-                        ? <span className="text-xs text-muted-foreground">Нет ролей</span>
-                        : userRoles.map((r: string) => (
-                          <span key={r} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${roleBadgeColor(r)}`}>
-                            {roleLabel(r)}
-                          </span>
-                        ))
-                      }
-                    </div>
-                  </TableCell>
-                  {isAdmin && (
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {["staff", "manager", "admin"].map((role) => {
-                          const has = userRoles.includes(role);
-                          return (
-                            <button
-                              key={role}
-                              onClick={() => toggleRole(u.id, role, has)}
-                              disabled={isSelf && role === "admin"}
-                              title={`${has ? "Убрать" : "Назначить"}: ${roleLabel(role)}`}
-                              className={`text-[10px] px-2 py-1 rounded border transition-colors ${
-                                has
-                                  ? "bg-primary text-primary-foreground border-primary"
-                                  : "border-border text-muted-foreground hover:border-primary hover:text-primary"
-                              } disabled:opacity-40 disabled:cursor-not-allowed`}
-                            >
-                              {has ? "✓ " : ""}{role === "staff" ? "Сотрудник" : role === "admin" ? "Админ" : "Менеджер"}
-                            </button>
-                          );
-                        })}
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-3 flex-wrap">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" /> Пользователи ({users.length})
+          </CardTitle>
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск..." className="pl-8 h-8 text-xs" />
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="pl-4">Пользователь</TableHead>
+                <TableHead>Роли</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Последний вход</TableHead>
+                {isAdmin && <TableHead className="text-right pr-4">Действия</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground text-sm">Загрузка...</TableCell></TableRow>
+              ) : filtered.map((u: any) => {
+                const isSelf = u.id === currentUserId;
+                return (
+                  <TableRow key={u.id}>
+                    <TableCell className="pl-4">
+                      <div className="font-medium text-sm">{u.full_name || "—"}{isSelf && <span className="ml-1 text-[10px] text-muted-foreground">(вы)</span>}</div>
+                      <div className="text-xs text-muted-foreground">{u.email}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {u.roles.length === 0
+                          ? <span className="text-xs text-muted-foreground">Клиент</span>
+                          : u.roles.map((r: string) => (
+                            <span key={r} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${roleBadgeColor(r)}`}>{roleLabel(r)}</span>
+                          ))}
                       </div>
                     </TableCell>
-                  )}
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+                    <TableCell>
+                      {u.confirmed
+                        ? <span className="text-xs text-green-600">подтверждён</span>
+                        : <button onClick={() => confirmEmail(u.id)} className="text-xs text-amber-500 hover:underline">подтвердить</button>}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {u.last_sign_in ? new Date(u.last_sign_in).toLocaleDateString("ru-RU") : "—"}
+                    </TableCell>
+                    {isAdmin && (
+                      <TableCell className="text-right pr-4">
+                        <div className="flex items-center justify-end gap-1">
+                          {["manager", "admin"].map((role) => {
+                            const has = u.roles.includes(role);
+                            return (
+                              <button key={role} onClick={() => toggleRole(u.id, role, has)}
+                                disabled={isSelf && role === "admin"}
+                                className={`text-[10px] px-2 py-1 rounded border transition-colors ${has ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary hover:text-primary"} disabled:opacity-40 disabled:cursor-not-allowed`}>
+                                {has ? "✓ " : ""}{roleLabel(role)}
+                              </button>
+                            );
+                          })}
+                          <button onClick={() => { setNewPw(""); setPwDialog({ open: true, userId: u.id, email: u.email }); }}
+                            className="text-[10px] px-2 py-1 rounded border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+                            Пароль
+                          </button>
+                          {!isSelf && (
+                            <button onClick={() => deleteUser(u.id, u.email)}
+                              className="text-[10px] px-2 py-1 rounded border border-border text-muted-foreground hover:border-destructive hover:text-destructive transition-colors">
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Set password dialog */}
+      <Sheet open={pwDialog.open} onOpenChange={open => !open && setPwDialog({ open: false, userId: "", email: "" })}>
+        <SheetContent side="right" className="w-80">
+          <SheetHeader>
+            <SheetTitle>Изменить пароль</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 mt-6">
+            <p className="text-sm text-muted-foreground">{pwDialog.email}</p>
+            <div>
+              <Label className="text-xs">Новый пароль</Label>
+              <Input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="Минимум 6 символов" className="mt-1" />
+            </div>
+            <Button onClick={setPassword} disabled={newPw.length < 6} className="w-full">Сохранить</Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
