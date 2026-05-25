@@ -331,13 +331,11 @@ export default function Dashboard() {
       setUploading(true);
 
       if (editId) {
-        // Upload photos
-        if (photoFiles.length > 0 || existingPhotos.length > 0) {
-          const { urls, cover } = await uploadPhotos(editId);
-          payload.photos = urls;
-          payload.cover_photo = cover;
-          payload.photos_count = urls.length;
-        }
+        // Always update photos when editing (handles deletions too)
+        const { urls, cover } = await uploadPhotos(editId);
+        payload.photos = urls;
+        payload.cover_photo = cover;
+        payload.photos_count = urls.length;
         const { error } = await supabase.from("properties").update(payload).eq("id", editId);
         if (error) throw error;
       } else {
