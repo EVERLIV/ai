@@ -201,12 +201,30 @@ export default function TaskDetailPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-gray-400 mb-1">Исполнитель</label>
-                <select value={task.assignee || ""} onChange={(e) => updateTask.mutate({ id: task.id, assignee: e.target.value || undefined })}
-                  className="w-full h-9 px-3 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900">
-                  <option value="">— Не назначен —</option>
-                  {staff.map((s) => <option key={s.id} value={s.full_name || s.email || s.id}>{s.full_name || s.email}</option>)}
-                </select>
+                <label className="block text-[11px] font-semibold text-gray-400 mb-1">Исполнители</label>
+                <div className="border border-gray-200 rounded-lg p-2 flex flex-wrap gap-1.5 min-h-[36px]">
+                  {(task.assignees || []).map((name) => (
+                    <span key={name} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full">
+                      {name}
+                      <button onClick={() => updateTask.mutate({ id: task.id, assignees: (task.assignees || []).filter(a => a !== name) })}
+                        className="hover:text-red-500 transition-colors"><X className="w-3 h-3" /></button>
+                    </span>
+                  ))}
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (!val || (task.assignees || []).includes(val)) return;
+                      updateTask.mutate({ id: task.id, assignees: [...(task.assignees || []), val] });
+                    }}
+                    className="h-6 px-1 text-xs border-0 bg-transparent text-gray-400 focus:outline-none focus:text-gray-700 cursor-pointer"
+                  >
+                    <option value="">+ добавить</option>
+                    {staff.filter(s => !(task.assignees || []).includes(s.full_name || s.email || "")).map((s) => (
+                      <option key={s.id} value={s.full_name || s.email || s.id}>{s.full_name || s.email}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div>
                 <label className="block text-[11px] font-semibold text-gray-400 mb-1">Срок</label>

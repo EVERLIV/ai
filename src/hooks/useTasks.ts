@@ -12,6 +12,7 @@ export interface Task {
   description: string | null;
   notes: string | null;
   assignee: string | null;
+  assignees: string[];
   status: TaskStatus;
   priority: TaskPriority;
   due_date: string | null;

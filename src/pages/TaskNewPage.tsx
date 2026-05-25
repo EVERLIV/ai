@@ -1,15 +1,15 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, X } from "lucide-react";
 import TasksSidebar from "@/components/tasks/TasksSidebar";
 import { useCreateTask, useStaffMembers, useProjects, type TaskPriority, type TaskStatus } from "@/hooks/useTasks";
 
 const schema = z.object({
   title:       z.string().min(1, "Название обязательно"),
   description: z.string().optional(),
-  assignee:    z.string().optional(),
   priority:    z.enum(["low", "medium", "high"]),
   status:      z.enum(["todo", "in_progress", "done"]),
   due_date:    z.string().optional(),
@@ -23,6 +23,7 @@ export default function TaskNewPage() {
   const createTask = useCreateTask();
   const { data: staff = [] } = useStaffMembers();
   const { data: projects = [] } = useProjects();
+  const [assignees, setAssignees] = useState<string[]>([]);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -33,7 +34,8 @@ export default function TaskNewPage() {
     await createTask.mutateAsync({
       title:       data.title,
       description: data.description || undefined,
-      assignee:    data.assignee || undefined,
+      assignee:    assignees[0] || undefined,
+      assignees,
       priority:    data.priority as TaskPriority,
       status:      data.status as TaskStatus,
       due_date:    data.due_date || undefined,
@@ -85,22 +87,34 @@ export default function TaskNewPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Исполнитель */}
+              {/* Исполнители */}
               <div>
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
-                  Исполнитель
+                  Исполнители
                 </label>
-                <select
-                  {...register("assignee")}
-                  className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white"
-                >
-                  <option value="">— Не назначен —</option>
-                  {staff.map((s) => (
-                    <option key={s.id} value={s.full_name || s.email || s.id}>
-                      {s.full_name || s.email}
-                    </option>
+                <div className="border border-gray-300 rounded-lg p-2 flex flex-wrap gap-1.5 min-h-[40px]">
+                  {assignees.map((name) => (
+                    <span key={name} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full">
+                      {name}
+                      <button type="button" onClick={() => setAssignees(assignees.filter(a => a !== name))}
+                        className="hover:text-red-500"><X className="w-3 h-3" /></button>
+                    </span>
                   ))}
-                </select>
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (!val || assignees.includes(val)) return;
+                      setAssignees([...assignees, val]);
+                    }}
+                    className="h-6 px-1 text-xs border-0 bg-transparent text-gray-400 focus:outline-none focus:text-gray-700 cursor-pointer"
+                  >
+                    <option value="">+ добавить</option>
+                    {staff.filter(s => !assignees.includes(s.full_name || s.email || "")).map((s) => (
+                      <option key={s.id} value={s.full_name || s.email || s.id}>{s.full_name || s.email}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Срок */}
