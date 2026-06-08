@@ -506,21 +506,21 @@ export default function Dashboard() {
 
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-2 sm:gap-4">
           {[
-            { label: "Всего объектов", value: stats.total, icon: Home, color: "text-primary" },
+            { label: "Объектов", value: stats.total, icon: Home, color: "text-primary" },
             { label: "Активных", value: stats.active, icon: Eye, color: "text-green-600" },
-            { label: "Общая площадь", value: `${stats.totalArea.toLocaleString()} м²`, icon: MapPin, color: "text-blue-600" },
+            { label: "Площадь", value: `${stats.totalArea.toLocaleString()} м²`, icon: MapPin, color: "text-blue-600" },
             { label: "Просмотры", value: stats.totalViews, icon: BarChart3, color: "text-amber-600" },
           ].map((s) => (
             <Card key={s.label}>
-              <CardContent className="pt-5 pb-4 flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg bg-muted flex items-center justify-center ${s.color}`}>
-                  <s.icon className="w-5 h-5" />
+              <CardContent className="p-2 sm:pt-5 sm:pb-4 sm:px-6 flex flex-col sm:flex-row items-center sm:items-center text-center sm:text-left gap-1 sm:gap-3 overflow-hidden">
+                <div className={`w-6 h-6 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center ${s.color} shrink-0`}>
+                  <s.icon className="w-3 h-3 sm:w-5 sm:h-5" />
                 </div>
-                <div>
-                  <p className="text-2xl font-bold">{s.value}</p>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                <div className="min-w-0 w-full">
+                  <p className="text-sm sm:text-2xl font-bold truncate leading-tight">{s.value}</p>
+                  <p className="text-[9px] sm:text-xs text-muted-foreground truncate leading-tight">{s.label}</p>
                 </div>
               </CardContent>
             </Card>
@@ -528,15 +528,23 @@ export default function Dashboard() {
         </div>
 
         <Tabs defaultValue="properties">
-          <TabsList className="w-full sm:w-auto overflow-x-auto flex-nowrap justify-start">
-
-            <TabsTrigger value="properties"><Home className="w-4 h-4 mr-1" /> Объекты</TabsTrigger>
-            <TabsTrigger value="ads"><Megaphone className="w-4 h-4 mr-1" /> Реклама</TabsTrigger>
-            <TabsTrigger value="users"><Users className="w-4 h-4 mr-1" /> Сотрудники</TabsTrigger>
-            <TabsTrigger value="news">Новости</TabsTrigger>
-            {hasRole("admin") && (
-              <TabsTrigger value="tasks"><CheckSquare className="w-4 h-4 mr-1" /> Задачи</TabsTrigger>
-            )}
+          <TabsList className="h-auto w-full justify-start gap-1 bg-transparent p-0 flex-wrap">
+            {[
+              { value: "properties", label: "Объекты", icon: Home },
+              { value: "ads", label: "Реклама", icon: Megaphone },
+              { value: "users", label: "Сотрудники", icon: Users },
+              { value: "news", label: "Новости", icon: null },
+              ...(hasRole("admin") ? [{ value: "tasks", label: "Задачи", icon: CheckSquare }] : []),
+            ].map((t) => (
+              <TabsTrigger
+                key={t.value}
+                value={t.value}
+                className="rounded-full border border-border bg-card px-3 py-1.5 text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary shadow-none"
+              >
+                {t.icon && <t.icon className="w-3.5 h-3.5 mr-1" />}
+                {t.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
           {/* Properties Tab */}
@@ -996,7 +1004,48 @@ export default function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="overflow-x-auto">
+                {/* Compact mobile list */}
+                <div className="lg:hidden divide-y divide-border">
+                  {isLoading ? (
+                    <div className="text-center py-8 text-sm text-muted-foreground">Загрузка...</div>
+                  ) : sortedProperties.length === 0 ? (
+                    <div className="text-center py-8 text-sm text-muted-foreground">Нет объектов</div>
+                  ) : (
+                    sortedProperties.map((p: any) => (
+                      <div key={p.id} className="flex items-center gap-3 px-4 py-3" onClick={() => openEdit(p)}>
+                        {p.cover_photo ? (
+                          <img src={p.cover_photo} alt="" className="w-12 h-12 rounded object-cover shrink-0" />
+                        ) : (
+                          <div className="w-12 h-12 rounded bg-muted flex items-center justify-center shrink-0">
+                            <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{p.type}</Badge>
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">{p.class}</Badge>
+                            {!p.is_active && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Скрыт</Badge>}
+                          </div>
+                          <p className="text-xs truncate">{p.address}</p>
+                          <p className="text-xs font-medium">
+                            {Number(p.price).toLocaleString()} ₽{p.deal_type === "Аренда" ? "/мес" : ""}
+                            <span className="text-muted-foreground font-normal"> · {p.area} м²</span>
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-1 shrink-0">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); openEdit(p); }}>
+                            <Edit className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7"
+                            onClick={(e) => { e.stopPropagation(); if (confirm("Удалить объект?")) deleteMutation.mutate(p.id); }}>
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="hidden lg:block overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>

@@ -8,6 +8,42 @@ const authHeaders = {
 };
 
 export const supabaseAdmin = {
+  db: {
+    async select(table: string, query = "select=*") {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { headers: authHeaders });
+      const data = await res.json();
+      if (!res.ok) return { data: null as any, error: data };
+      return { data, error: null };
+    },
+    async upsert(table: string, row: Record<string, any>) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+        method: "POST",
+        headers: { ...authHeaders, "Prefer": "resolution=merge-duplicates,return=representation" },
+        body: JSON.stringify(row),
+      });
+      const data = await res.json();
+      if (!res.ok) return { data: null as any, error: data };
+      return { data: Array.isArray(data) ? data[0] : data, error: null };
+    },
+    async update(table: string, match: string, row: Record<string, any>) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${match}`, {
+        method: "PATCH",
+        headers: { ...authHeaders, "Prefer": "return=representation" },
+        body: JSON.stringify(row),
+      });
+      const data = await res.json();
+      if (!res.ok) return { data: null as any, error: data };
+      return { data: Array.isArray(data) ? data[0] : data, error: null };
+    },
+    async delete(table: string, match: string) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${match}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+      if (!res.ok) { const data = await res.json(); return { error: data }; }
+      return { error: null };
+    },
+  },
   roles: {
     async set(userId: string, role: string) {
       // Удаляем все роли пользователя

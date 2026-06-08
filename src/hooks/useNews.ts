@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/adminClient";
 
 export type NewsPost = {
   id: string;
@@ -57,10 +58,7 @@ export function useAllNewsPosts() {
   return useQuery({
     queryKey: ["news_admin"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("news_posts")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabaseAdmin.db.select("news_posts", "select=*&order=created_at.desc");
       if (error) throw error;
       return (data ?? []) as NewsPost[];
     },
@@ -71,11 +69,10 @@ export function useUpsertNews() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (post: Partial<NewsPost> & { title: string; slug: string }) => {
-      const { data, error } = await supabase
-        .from("news_posts")
-        .upsert({ ...post, updated_at: new Date().toISOString() })
-        .select()
-        .single();
+      const row = { ...post, updated_at: new Date().toISOString() };
+      const { data, error } = post.id
+        ? await supabaseAdmin.db.update("news_posts", `id=eq.${post.id}`, row)
+        : await supabaseAdmin.db.upsert("news_posts", { ...row, created_at: new Date().toISOString() });
       if (error) throw error;
       return data;
     },
@@ -90,7 +87,7 @@ export function useDeleteNews() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("news_posts").delete().eq("id", id);
+      const { error } = await supabaseAdmin.db.delete("news_posts", `id=eq.${id}`);
       if (error) throw error;
     },
     onSuccess: () => {
