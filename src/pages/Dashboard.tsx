@@ -173,6 +173,7 @@ export default function Dashboard() {
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [propSearch, setPropSearch] = useState("");
   const [addressQuery, setAddressQuery] = useState("");
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -454,8 +455,18 @@ export default function Dashboard() {
   };
 
   const sortedProperties = useMemo(() => {
-    if (!sortField) return properties;
-    return [...properties].sort((a: any, b: any) => {
+    let list = properties;
+    if (propSearch.trim()) {
+      const q = propSearch.trim().toLowerCase();
+      list = list.filter((p: any) =>
+        p.address?.toLowerCase().includes(q) ||
+        p.district?.toLowerCase().includes(q) ||
+        p.type?.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q)
+      );
+    }
+    if (!sortField) return list;
+    return [...list].sort((a: any, b: any) => {
       let aVal = a[sortField];
       let bVal = b[sortField];
       if (typeof aVal === "string") aVal = aVal.toLowerCase();
@@ -466,7 +477,7 @@ export default function Dashboard() {
       if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
       return 0;
     });
-  }, [properties, sortField, sortDir]);
+  }, [properties, sortField, sortDir, propSearch]);
 
   const isSale = form.deal_type === "Продажа";
 
@@ -960,8 +971,13 @@ export default function Dashboard() {
             </div>
 
             <Card>
-              <CardHeader className="py-3 px-4 flex-row items-center justify-between">
-                <CardTitle className="text-sm font-medium">Список объектов ({properties.length})</CardTitle>
+              <CardHeader className="py-3 px-4 flex-row items-center justify-between gap-3 flex-wrap">
+                <CardTitle className="text-sm font-medium">Список объектов ({sortedProperties.length}{propSearch ? ` из ${properties.length}` : ""})</CardTitle>
+                <div className="flex items-center gap-2">
+                  <div className="relative w-64">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <Input value={propSearch} onChange={e => setPropSearch(e.target.value)} placeholder="Поиск по адресу, району, типу..." className="pl-8 h-8 text-xs" />
+                  </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
@@ -976,6 +992,7 @@ export default function Dashboard() {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
@@ -1027,7 +1044,7 @@ export default function Dashboard() {
                             </TableCell>}
                             {visibleCols.has("type") && <TableCell><Badge variant="secondary">{p.type}</Badge></TableCell>}
                             {visibleCols.has("class") && <TableCell><Badge variant="outline">{p.class}</Badge></TableCell>}
-                            {visibleCols.has("address") && <TableCell className="max-w-[200px] truncate text-xs">{p.address}</TableCell>}
+                            {visibleCols.has("address") && <TableCell className="text-xs whitespace-normal min-w-[220px]">{p.address}</TableCell>}
                             {visibleCols.has("district") && <TableCell className="text-xs">{p.district || "—"}</TableCell>}
                             {visibleCols.has("area") && <TableCell className="text-xs">{p.area} м²</TableCell>}
                             {visibleCols.has("price") && <TableCell className="font-medium text-xs whitespace-nowrap">
@@ -1127,6 +1144,9 @@ function UsersRolesTab({ isAdmin, currentUserId }: { isAdmin: boolean; currentUs
   const [search, setSearch] = useState("");
   const [pwDialog, setPwDialog] = useState<{ open: boolean; userId: string; email: string }>({ open: false, userId: "", email: "" });
   const [newPw, setNewPw] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
+  const [newUser, setNewUser] = useState({ email: "", password: "", full_name: "", role: "client" });
+  const [creating, setCreating] = useState(false);
 
   const { data: users = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-all-users"],
@@ -1197,6 +1217,30 @@ function UsersRolesTab({ isAdmin, currentUserId }: { isAdmin: boolean; currentUs
     toast({ title: "Email подтверждён" });
   };
 
+  const createUser = async () => {
+    if (!newUser.email || newUser.password.length < 6) {
+      toast({ title: "Заполните email и пароль (мин. 6 символов)", variant: "destructive" });
+      return;
+    }
+    setCreating(true);
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email: newUser.email, password: newUser.password, full_name: newUser.full_name || undefined,
+    });
+    if (error) {
+      toast({ title: "Ошибка создания", description: error.message || error.msg || JSON.stringify(error), variant: "destructive" });
+      setCreating(false);
+      return;
+    }
+    if (newUser.role !== "client" && data?.id) {
+      await supabaseAdmin.roles.set(data.id, newUser.role);
+    }
+    toast({ title: "Пользователь создан" });
+    setAddOpen(false);
+    setNewUser({ email: "", password: "", full_name: "", role: "client" });
+    setCreating(false);
+    refetch();
+  };
+
   const filtered = users.filter(u =>
     !search || u.email.toLowerCase().includes(search.toLowerCase()) || u.full_name?.toLowerCase().includes(search.toLowerCase())
   );
@@ -1208,9 +1252,16 @@ function UsersRolesTab({ isAdmin, currentUserId }: { isAdmin: boolean; currentUs
           <CardTitle className="text-lg flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" /> Пользователи ({users.length})
           </CardTitle>
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск..." className="pl-8 h-8 text-xs" />
+          <div className="flex items-center gap-2">
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск..." className="pl-8 h-8 text-xs" />
+            </div>
+            {isAdmin && (
+              <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => setAddOpen(true)}>
+                <Plus className="w-3.5 h-3.5" /> Добавить пользователя
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -1285,6 +1336,42 @@ function UsersRolesTab({ isAdmin, currentUserId }: { isAdmin: boolean; currentUs
           </Table>
         </CardContent>
       </Card>
+
+      {/* Add user dialog */}
+      <Sheet open={addOpen} onOpenChange={setAddOpen}>
+        <SheetContent side="right" className="w-80">
+          <SheetHeader>
+            <SheetTitle>Новый пользователь</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 mt-6">
+            <div>
+              <Label className="text-xs">Email</Label>
+              <Input type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} placeholder="user@example.com" className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-xs">Имя</Label>
+              <Input value={newUser.full_name} onChange={e => setNewUser({ ...newUser, full_name: e.target.value })} placeholder="Имя Фамилия" className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-xs">Пароль</Label>
+              <Input type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} placeholder="Минимум 6 символов" className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-xs">Роль</Label>
+              <select value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                className="mt-1 w-full h-9 px-3 border border-input rounded-md text-sm bg-background">
+                <option value="client">Клиент</option>
+                <option value="staff">Сотрудник</option>
+                <option value="manager">Менеджер</option>
+                <option value="admin">Администратор</option>
+              </select>
+            </div>
+            <Button onClick={createUser} disabled={creating || !newUser.email || newUser.password.length < 6} className="w-full">
+              {creating ? "Создание..." : "Создать"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Set password dialog */}
       <Sheet open={pwDialog.open} onOpenChange={open => !open && setPwDialog({ open: false, userId: "", email: "" })}>

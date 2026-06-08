@@ -77,6 +77,21 @@ export const supabaseAdmin = {
   },
   auth: {
     admin: {
+      async createUser(attrs: { email: string; password: string; full_name?: string }) {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({
+            email: attrs.email,
+            password: attrs.password,
+            email_confirm: true,
+            user_metadata: attrs.full_name ? { full_name: attrs.full_name } : {},
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) return { data: null, error: data };
+        return { data, error: null };
+      },
       async listUsers({ perPage = 1000 } = {}) {
         const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?per_page=${perPage}`, { headers: authHeaders });
         const data = await res.json();
