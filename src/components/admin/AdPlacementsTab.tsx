@@ -110,7 +110,7 @@ export default function AdPlacementsTab() {
       </div>
 
       {/* Table */}
-      <div className="border border-border rounded-md overflow-hidden bg-card">
+      <div className="border border-border rounded-md overflow-x-auto bg-card">
         <Table>
           <TableHeader>
             <TableRow>

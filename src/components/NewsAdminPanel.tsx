@@ -233,6 +233,7 @@ export default function NewsAdminPanel() {
       ) : !posts?.length ? (
         <div className="text-sm text-muted-foreground py-8 text-center">Нет статей. Создайте первую.</div>
       ) : (
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -267,6 +268,7 @@ export default function NewsAdminPanel() {
             ))}
           </TableBody>
         </Table>
+        </div>
       )}
     </div>
   );

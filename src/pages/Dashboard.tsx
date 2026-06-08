@@ -486,12 +486,12 @@ export default function Dashboard() {
       {/* Header */}
       <header className="border-b bg-card sticky top-0 z-30">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0">
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <Building2 className="w-6 h-6 text-primary" />
-            <span className="font-semibold text-lg" style={{ fontFamily: "var(--font-display)" }}>
+            <Building2 className="w-6 h-6 text-primary shrink-0" />
+            <span className="font-semibold text-base sm:text-lg truncate" style={{ fontFamily: "var(--font-display)" }}>
               Панель управления
             </span>
           </div>
@@ -528,7 +528,8 @@ export default function Dashboard() {
         </div>
 
         <Tabs defaultValue="properties">
-          <TabsList>
+          <TabsList className="w-full sm:w-auto overflow-x-auto flex-nowrap justify-start">
+
             <TabsTrigger value="properties"><Home className="w-4 h-4 mr-1" /> Объекты</TabsTrigger>
             <TabsTrigger value="ads"><Megaphone className="w-4 h-4 mr-1" /> Реклама</TabsTrigger>
             <TabsTrigger value="users"><Users className="w-4 h-4 mr-1" /> Сотрудники</TabsTrigger>
@@ -540,7 +541,7 @@ export default function Dashboard() {
 
           {/* Properties Tab */}
           <TabsContent value="properties" className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-wrap justify-between items-center gap-2">
               <h2 className="text-lg font-semibold">Объекты недвижимости</h2>
               <Sheet open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
                 <SheetTrigger asChild>
@@ -973,8 +974,8 @@ export default function Dashboard() {
             <Card>
               <CardHeader className="py-3 px-4 flex-row items-center justify-between gap-3 flex-wrap">
                 <CardTitle className="text-sm font-medium">Список объектов ({sortedProperties.length}{propSearch ? ` из ${properties.length}` : ""})</CardTitle>
-                <div className="flex items-center gap-2">
-                  <div className="relative w-64">
+                <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+                  <div className="relative w-full sm:w-64">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                     <Input value={propSearch} onChange={e => setPropSearch(e.target.value)} placeholder="Поиск по адресу, району, типу..." className="pl-8 h-8 text-xs" />
                   </div>
@@ -1252,8 +1253,8 @@ function UsersRolesTab({ isAdmin, currentUserId }: { isAdmin: boolean; currentUs
           <CardTitle className="text-lg flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" /> Пользователи ({users.length})
           </CardTitle>
-          <div className="flex items-center gap-2">
-            <div className="relative w-64">
+          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск..." className="pl-8 h-8 text-xs" />
             </div>
