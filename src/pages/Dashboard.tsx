@@ -26,6 +26,17 @@ import AdPlacementsTab from "@/components/admin/AdPlacementsTab";
 import PropertyUnitsManager from "@/components/admin/PropertyUnitsManager";
 import NewsAdminPanel from "@/components/NewsAdminPanel";
 import { supabaseAdmin, SUPABASE_URL, SERVICE_ROLE_KEY } from "@/integrations/supabase/adminClient";
+import {
+  isLandProperty,
+  LAND_BUILDING_FIELD_DEFAULTS,
+  LAND_USE_OPTIONS,
+} from "@/lib/propertyLand";
+import { isSaleDeal } from "@/lib/propertyDeal";
+import {
+  type PropertySidebarExtras,
+  getSidebarVisibility,
+  sanitizeSidebarExtras,
+} from "@/lib/propertySidebar";
 
 // ====== Predefined options ======
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
@@ -83,26 +94,7 @@ const ADDRESS_SUGGESTIONS = [
   "Усолье-Сибирское, ул. Ленина,", "Братск, ул. Мира,",
 ];
 
-interface PropertyExtras {
-  entrance_group?: string;
-  utilities_included?: string;
-  vat?: string;
-  indexation?: string;
-  min_term?: string;
-  pedestrian_traffic?: number;
-  metro_minutes?: string;
-  transport_hub?: string;
-  contract_form?: string;
-  sublease?: string;
-  landlord_type?: string;
-  purpose?: string;
-  agent_name?: string;
-  agent_company?: string;
-  agent_objects_count?: number;
-  agent_rating?: number;
-  agent_response_min?: number;
-  agent_verified?: boolean;
-}
+interface PropertyExtras extends PropertySidebarExtras {}
 
 interface PropertyForm {
   type: string;
@@ -130,24 +122,24 @@ interface PropertyForm {
 }
 
 const emptyExtras: PropertyExtras = {
-  entrance_group: "Отдельный",
-  utilities_included: "включены",
-  vat: "не облагается",
-  indexation: "раз в год",
-  min_term: "от 1 мес.",
-  pedestrian_traffic: 3,
+  entrance_group: "",
+  utilities_included: "",
+  vat: "",
+  indexation: "",
+  min_term: "",
+  pedestrian_traffic: undefined,
   metro_minutes: "",
   transport_hub: "",
-  contract_form: "Краткосрочный",
-  sublease: "По согласованию",
-  landlord_type: "Юр. лицо",
+  contract_form: "",
+  sublease: "",
+  landlord_type: "",
   purpose: "",
-  agent_name: "Анастасия Романова",
-  agent_company: "АРЕНДА СИТИ",
-  agent_objects_count: 47,
-  agent_rating: 4.9,
-  agent_response_min: 12,
-  agent_verified: true,
+  agent_name: "",
+  agent_company: "",
+  agent_objects_count: undefined,
+  agent_rating: undefined,
+  agent_response_min: undefined,
+  agent_verified: false,
 };
 
 const emptyForm: PropertyForm = {
@@ -303,6 +295,8 @@ export default function Dashboard() {
 
   const saveMutation = useMutation({
     mutationFn: async (formData: PropertyForm) => {
+      const isLand = isLandProperty(formData.type);
+      const isSale = isSaleDeal(formData.deal_type);
       // Create property first to get ID, then upload photos
       const payload: any = {
         type: formData.type,
@@ -312,21 +306,21 @@ export default function Dashboard() {
         price_per_m2: formData.area > 0 ? Math.round(formData.price / formData.area) : 0,
         address: formData.address,
         district: formData.district,
-        floor: formData.floor,
-        total_floors: formData.total_floors,
-        ceiling_height: formData.ceiling_height,
-        parking: formData.parking,
-        condition: formData.condition,
-        layout: formData.layout,
+        floor: isLand ? LAND_BUILDING_FIELD_DEFAULTS.floor : formData.floor,
+        total_floors: isLand ? LAND_BUILDING_FIELD_DEFAULTS.total_floors : formData.total_floors,
+        ceiling_height: isLand ? null : formData.ceiling_height,
+        parking: isLand ? LAND_BUILDING_FIELD_DEFAULTS.parking : formData.parking,
+        condition: isLand ? null : (formData.condition || null),
+        layout: isLand ? null : (formData.layout || null),
         deal_type: formData.deal_type,
-        deposit: formData.deposit,
-        contract_term: formData.contract_term,
+        deposit: isSale ? null : (formData.deposit || null),
+        contract_term: isSale ? null : (formData.contract_term || null),
         description: formData.description,
         features: formData.features,
         manager_id: formData.manager_id || null,
         client_id: formData.client_id || null,
         is_active: formData.is_active,
-        extras: formData.extras || {},
+        extras: sanitizeSidebarExtras(formData.extras || {}, formData.type, formData.deal_type),
       };
 
       setUploading(true);
@@ -397,7 +391,14 @@ export default function Dashboard() {
       features: prop.features || [],
       manager_id: prop.manager_id || "", client_id: prop.client_id || "",
       is_active: prop.is_active,
-      extras: { ...emptyExtras, ...(prop.extras || {}) },
+      extras: {
+        ...emptyExtras,
+        ...(prop.extras || {}),
+        ...(isLandProperty(prop.type) ? {
+          land_use: (prop.extras as PropertyExtras)?.land_use || prop.layout || "",
+          cadastral_number: (prop.extras as PropertyExtras)?.cadastral_number || "",
+        } : {}),
+      },
     });
     const existing = prop.photos || [];
     setExistingPhotos(existing);
@@ -415,6 +416,47 @@ export default function Dashboard() {
 
   const updateField = (key: keyof PropertyForm, value: any) =>
     setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleDealTypeChange = (dealType: string) => {
+    setForm((prev) => {
+      const next = {
+        ...prev,
+        deal_type: dealType,
+        deposit: isSaleDeal(dealType) ? "" : (prev.deposit || "1 месяц"),
+        contract_term: isSaleDeal(dealType) ? "" : (prev.contract_term || "от 1 года"),
+        extras: sanitizeSidebarExtras(prev.extras, prev.type, dealType),
+      };
+      return next;
+    });
+  };
+
+  const handleTypeChange = (type: string) => {
+    if (isLandProperty(type)) {
+      setForm((prev) => ({
+        ...prev,
+        type,
+        class: "-",
+        ...LAND_BUILDING_FIELD_DEFAULTS,
+        extras: sanitizeSidebarExtras({
+          ...prev.extras,
+          land_use: prev.extras.land_use || prev.layout || "",
+        }, type, prev.deal_type),
+      }));
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      type,
+      class: prev.class === "-" ? "B" : prev.class,
+      floor: prev.floor === "-" ? "1" : prev.floor,
+      total_floors: prev.total_floors || 1,
+      ceiling_height: prev.ceiling_height || 3,
+      parking: prev.parking === "-" ? "Нет" : prev.parking,
+      condition: prev.condition || "Хороший ремонт",
+      layout: prev.layout || "Open-space",
+      extras: sanitizeSidebarExtras(prev.extras, type, prev.deal_type),
+    }));
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -479,7 +521,9 @@ export default function Dashboard() {
     });
   }, [properties, sortField, sortDir, propSearch]);
 
-  const isSale = form.deal_type === "Продажа";
+  const isSale = isSaleDeal(form.deal_type);
+  const isLandForm = isLandProperty(form.type);
+  const sidebarVis = getSidebarVisibility(form.type, form.deal_type);
 
   return (
     <div className="min-h-screen bg-background">
@@ -573,7 +617,7 @@ export default function Dashboard() {
                       <div className="grid grid-cols-3 gap-2">
                         <div>
                           <Label className="text-xs mb-1 block">Тип</Label>
-                          <Select value={form.type} onValueChange={(v) => updateField("type", v)}>
+                          <Select value={form.type} onValueChange={handleTypeChange}>
                             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>{TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                           </Select>
@@ -587,7 +631,7 @@ export default function Dashboard() {
                         </div>
                         <div>
                           <Label className="text-xs mb-1 block">Сделка</Label>
-                          <Select value={form.deal_type} onValueChange={(v) => updateField("deal_type", v)}>
+                          <Select value={form.deal_type} onValueChange={handleDealTypeChange}>
                             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>{DEAL_TYPES.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
                           </Select>
@@ -635,7 +679,7 @@ export default function Dashboard() {
                           </div>
                         )}
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className={`grid gap-2 ${isLandForm ? "grid-cols-1" : "grid-cols-3"}`}>
                         <div>
                           <Label className="text-xs mb-1 block">Район</Label>
                           <Select value={form.district || "none"} onValueChange={(v) => updateField("district", v === "none" ? "" : v)}>
@@ -643,76 +687,129 @@ export default function Dashboard() {
                             <SelectContent><SelectItem value="none">—</SelectItem>{DISTRICTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
                           </Select>
                         </div>
-                        <div>
-                          <Label className="text-xs mb-1 block">Этаж</Label>
-                          <Select value={form.floor || "none"} onValueChange={(v) => updateField("floor", v === "none" ? "" : v)}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
-                            <SelectContent><SelectItem value="none">—</SelectItem>{FLOORS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-xs mb-1 block">Этажей</Label>
-                          <Select value={String(form.total_floors)} onValueChange={(v) => updateField("total_floors", Number(v))}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>{TOTAL_FLOORS_OPTIONS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </fieldset>
-
-                    {/* Section: Характеристики */}
-                    <fieldset className="border border-border rounded-lg p-3 space-y-3">
-                      <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Характеристики</legend>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div>
-                          <Label className="text-xs mb-1 block">Потолки, м</Label>
-                          <Select value={String(form.ceiling_height)} onValueChange={(v) => updateField("ceiling_height", Number(v))}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>{CEILING_HEIGHTS.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-xs mb-1 block">Парковка</Label>
-                          <Select value={form.parking || "none"} onValueChange={(v) => updateField("parking", v === "none" ? "" : v)}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
-                            <SelectContent><SelectItem value="none">—</SelectItem>{PARKING_OPTIONS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-xs mb-1 block">Состояние</Label>
-                          <Select value={form.condition || "none"} onValueChange={(v) => updateField("condition", v === "none" ? "" : v)}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
-                            <SelectContent><SelectItem value="none">—</SelectItem>{CONDITIONS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div>
-                          <Label className="text-xs mb-1 block">Планировка</Label>
-                          <Select value={form.layout || "none"} onValueChange={(v) => updateField("layout", v === "none" ? "" : v)}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
-                            <SelectContent><SelectItem value="none">—</SelectItem>{LAYOUTS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </div>
-                        {!isSale && (
+                        {!isLandForm && (
                           <>
                             <div>
-                              <Label className="text-xs mb-1 block">Залог</Label>
-                              <Select value={form.deposit || "none"} onValueChange={(v) => updateField("deposit", v === "none" ? "" : v)}>
+                              <Label className="text-xs mb-1 block">Этаж</Label>
+                              <Select value={form.floor || "none"} onValueChange={(v) => updateField("floor", v === "none" ? "" : v)}>
                                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
-                                <SelectContent><SelectItem value="none">—</SelectItem>{DEPOSIT_OPTIONS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                                <SelectContent><SelectItem value="none">—</SelectItem>{FLOORS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
                               </Select>
                             </div>
                             <div>
-                              <Label className="text-xs mb-1 block">Срок</Label>
-                              <Select value={form.contract_term || "none"} onValueChange={(v) => updateField("contract_term", v === "none" ? "" : v)}>
-                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
-                                <SelectContent><SelectItem value="none">—</SelectItem>{CONTRACT_TERMS.map((ct) => <SelectItem key={ct} value={ct}>{ct}</SelectItem>)}</SelectContent>
+                              <Label className="text-xs mb-1 block">Этажей</Label>
+                              <Select value={String(form.total_floors)} onValueChange={(v) => updateField("total_floors", Number(v))}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>{TOTAL_FLOORS_OPTIONS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
                               </Select>
                             </div>
                           </>
                         )}
                       </div>
+                    </fieldset>
+
+                    {/* Section: Характеристики */}
+                    <fieldset className="border border-border rounded-lg p-3 space-y-3">
+                      <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">
+                        {isLandForm ? "Земельный участок" : "Характеристики"}
+                      </legend>
+                      {isLandForm ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs mb-1 block">Кадастровый номер</Label>
+                            <Input
+                              className="h-8 text-xs"
+                              placeholder="38:36:0000000:12345"
+                              value={form.extras.cadastral_number || ""}
+                              onChange={(e) => updateField("extras", { ...form.extras, cadastral_number: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs mb-1 block">Участок под</Label>
+                            <Select
+                              value={form.extras.land_use || "none"}
+                              onValueChange={(v) => updateField("extras", { ...form.extras, land_use: v === "none" ? "" : v })}
+                            >
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Назначение" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">—</SelectItem>
+                                {LAND_USE_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <Label className="text-xs mb-1 block">Потолки, м</Label>
+                              <Select value={String(form.ceiling_height)} onValueChange={(v) => updateField("ceiling_height", Number(v))}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>{CEILING_HEIGHTS.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="text-xs mb-1 block">Парковка</Label>
+                              <Select value={form.parking || "none"} onValueChange={(v) => updateField("parking", v === "none" ? "" : v)}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent><SelectItem value="none">—</SelectItem>{PARKING_OPTIONS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="text-xs mb-1 block">Состояние</Label>
+                              <Select value={form.condition || "none"} onValueChange={(v) => updateField("condition", v === "none" ? "" : v)}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent><SelectItem value="none">—</SelectItem>{CONDITIONS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <Label className="text-xs mb-1 block">Планировка</Label>
+                              <Select value={form.layout || "none"} onValueChange={(v) => updateField("layout", v === "none" ? "" : v)}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent><SelectItem value="none">—</SelectItem>{LAYOUTS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                            {!isSale && (
+                              <>
+                                <div>
+                                  <Label className="text-xs mb-1 block">Залог</Label>
+                                  <Select value={form.deposit || "none"} onValueChange={(v) => updateField("deposit", v === "none" ? "" : v)}>
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                                    <SelectContent><SelectItem value="none">—</SelectItem>{DEPOSIT_OPTIONS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <Label className="text-xs mb-1 block">Срок</Label>
+                                  <Select value={form.contract_term || "none"} onValueChange={(v) => updateField("contract_term", v === "none" ? "" : v)}>
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                                    <SelectContent><SelectItem value="none">—</SelectItem>{CONTRACT_TERMS.map((ct) => <SelectItem key={ct} value={ct}>{ct}</SelectItem>)}</SelectContent>
+                                  </Select>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </>
+                      )}
+                      {isLandForm && !isSale && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs mb-1 block">Залог</Label>
+                            <Select value={form.deposit || "none"} onValueChange={(v) => updateField("deposit", v === "none" ? "" : v)}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                              <SelectContent><SelectItem value="none">—</SelectItem>{DEPOSIT_OPTIONS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-xs mb-1 block">Срок</Label>
+                            <Select value={form.contract_term || "none"} onValueChange={(v) => updateField("contract_term", v === "none" ? "" : v)}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                              <SelectContent><SelectItem value="none">—</SelectItem>{CONTRACT_TERMS.map((ct) => <SelectItem key={ct} value={ct}>{ct}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
                     </fieldset>
 
                     {/* Section: Назначение */}
@@ -760,16 +857,22 @@ export default function Dashboard() {
                       </div>
                     </fieldset>
 
-                    {/* Section: Расширенные параметры (sidebar extras) */}
-                    <fieldset className="border border-border rounded-lg p-3 space-y-3">
-                      <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Расширенные параметры (сайдбар)</legend>
+                    {/* Section: Сайдбар на странице объекта */}
+                    <fieldset className="border border-border rounded-lg p-3 space-y-4">
+                      <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">
+                        Сайдбар на странице объекта
+                      </legend>
+                      <p className="text-[11px] text-muted-foreground -mt-1">
+                        Блоки справа на карточке объекта. Поля скрываются автоматически для земли и продажи.
+                      </p>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {sidebarVis.entrance && (
                         <div>
-                          <Label className="text-xs mb-1 block">Входная группа</Label>
-                          <Select value={form.extras.entrance_group || "Отдельный"} onValueChange={(v) => updateField("extras", { ...form.extras, entrance_group: v })}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <div className="text-[11px] font-semibold text-muted-foreground mb-2">Вход</div>
+                          <Select value={form.extras.entrance_group || "none"} onValueChange={(v) => updateField("extras", { ...form.extras, entrance_group: v === "none" ? "" : v })}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Не указано" /></SelectTrigger>
                             <SelectContent>
+                              <SelectItem value="none">—</SelectItem>
                               <SelectItem value="Отдельный">Отдельный</SelectItem>
                               <SelectItem value="Общий">Общий</SelectItem>
                               <SelectItem value="С улицы">С улицы</SelectItem>
@@ -777,102 +880,138 @@ export default function Dashboard() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div>
-                          <Label className="text-xs mb-1 block">Коммунальные</Label>
-                          <Select value={form.extras.utilities_included || "включены"} onValueChange={(v) => updateField("extras", { ...form.extras, utilities_included: v })}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="включены">Включены</SelectItem>
-                              <SelectItem value="отдельно">Отдельно</SelectItem>
-                              <SelectItem value="по счётчикам">По счётчикам</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-xs mb-1 block">НДС</Label>
-                          <Select value={form.extras.vat || "не облагается"} onValueChange={(v) => updateField("extras", { ...form.extras, vat: v })}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="не облагается">Не облагается</SelectItem>
-                              <SelectItem value="20%">20%</SelectItem>
-                              <SelectItem value="включён">Включён</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-xs mb-1 block">Индексация</Label>
-                          <Input className="h-8 text-xs" placeholder="раз в год" value={form.extras.indexation || ""} onChange={(e) => updateField("extras", { ...form.extras, indexation: e.target.value })} />
+                      )}
+
+                      <div>
+                        <div className="text-[11px] font-semibold text-muted-foreground mb-2">Финансовые условия</div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          <div>
+                            <Label className="text-xs mb-1 block">Коммунальные</Label>
+                            <Select value={form.extras.utilities_included || "none"} onValueChange={(v) => updateField("extras", { ...form.extras, utilities_included: v === "none" ? "" : v })}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">—</SelectItem>
+                                <SelectItem value="включены">Включены</SelectItem>
+                                <SelectItem value="отдельно">Отдельно</SelectItem>
+                                <SelectItem value="по счётчикам">По счётчикам</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-xs mb-1 block">НДС</Label>
+                            <Select value={form.extras.vat || "none"} onValueChange={(v) => updateField("extras", { ...form.extras, vat: v === "none" ? "" : v })}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">—</SelectItem>
+                                <SelectItem value="не облагается">Не облагается</SelectItem>
+                                <SelectItem value="20%">20%</SelectItem>
+                                <SelectItem value="включён">Включён</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {sidebarVis.indexation && (
+                            <div>
+                              <Label className="text-xs mb-1 block">Индексация</Label>
+                              <Input className="h-8 text-xs" placeholder="раз в год" value={form.extras.indexation || ""} onChange={(e) => updateField("extras", { ...form.extras, indexation: e.target.value })} />
+                            </div>
+                          )}
+                          {sidebarVis.minTerm && (
+                            <div>
+                              <Label className="text-xs mb-1 block">Мин. срок аренды</Label>
+                              <Input className="h-8 text-xs" placeholder="от 1 мес." value={form.extras.min_term || ""} onChange={(e) => updateField("extras", { ...form.extras, min_term: e.target.value })} />
+                            </div>
+                          )}
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        <div>
-                          <Label className="text-xs mb-1 block">Мин. срок</Label>
-                          <Input className="h-8 text-xs" placeholder="от 1 мес." value={form.extras.min_term || ""} onChange={(e) => updateField("extras", { ...form.extras, min_term: e.target.value })} />
+                      <div>
+                        <div className="text-[11px] font-semibold text-muted-foreground mb-2">Трафик и локация</div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {sidebarVis.pedestrianTraffic && (
+                            <div>
+                              <Label className="text-xs mb-1 block">Пеш. трафик</Label>
+                              <Select value={form.extras.pedestrian_traffic ? String(form.extras.pedestrian_traffic) : "none"} onValueChange={(v) => updateField("extras", { ...form.extras, pedestrian_traffic: v === "none" ? undefined : Number(v) as 1|2|3|4 })}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">—</SelectItem>
+                                  <SelectItem value="1">1 — Низкий</SelectItem>
+                                  <SelectItem value="2">2 — Средний</SelectItem>
+                                  <SelectItem value="3">3 — Высокий</SelectItem>
+                                  <SelectItem value="4">4 — Очень высокий</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                          <div>
+                            <Label className="text-xs mb-1 block">До метро / центра</Label>
+                            <Input className="h-8 text-xs" placeholder="5 мин." value={form.extras.metro_minutes || ""} onChange={(e) => updateField("extras", { ...form.extras, metro_minutes: e.target.value })} />
+                          </div>
+                          <div>
+                            <Label className="text-xs mb-1 block">Транспортный узел</Label>
+                            <Input className="h-8 text-xs" placeholder="250 м" value={form.extras.transport_hub || ""} onChange={(e) => updateField("extras", { ...form.extras, transport_hub: e.target.value })} />
+                          </div>
                         </div>
-                        <div>
-                          <Label className="text-xs mb-1 block">Пеш. трафик</Label>
-                          <Select value={String(form.extras.pedestrian_traffic ?? 3)} onValueChange={(v) => updateField("extras", { ...form.extras, pedestrian_traffic: Number(v) })}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="1">1 — Низкий</SelectItem>
-                              <SelectItem value="2">2 — Средний</SelectItem>
-                              <SelectItem value="3">3 — Высокий</SelectItem>
-                              <SelectItem value="4">4 — Очень высокий</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-xs mb-1 block">До метро/центра</Label>
-                          <Input className="h-8 text-xs" placeholder="5 мин." value={form.extras.metro_minutes || ""} onChange={(e) => updateField("extras", { ...form.extras, metro_minutes: e.target.value })} />
-                        </div>
-                        <div>
-                          <Label className="text-xs mb-1 block">Транспортный узел</Label>
-                          <Input className="h-8 text-xs" placeholder="250 м" value={form.extras.transport_hub || ""} onChange={(e) => updateField("extras", { ...form.extras, transport_hub: e.target.value })} />
-                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1.5">Район берётся из поля «Локация» выше.</p>
                       </div>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        <div>
-                          <Label className="text-xs mb-1 block">Форма договора</Label>
-                          <Select value={form.extras.contract_form || "Краткосрочный"} onValueChange={(v) => updateField("extras", { ...form.extras, contract_form: v })}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Краткосрочный">Краткосрочный</SelectItem>
-                              <SelectItem value="Долгосрочный">Долгосрочный</SelectItem>
-                              <SelectItem value="Бессрочный">Бессрочный</SelectItem>
-                            </SelectContent>
-                          </Select>
+                      <div>
+                        <div className="text-[11px] font-semibold text-muted-foreground mb-2">Юридические условия</div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {sidebarVis.contractForm && (
+                            <div>
+                              <Label className="text-xs mb-1 block">Форма договора</Label>
+                              <Select value={form.extras.contract_form || "none"} onValueChange={(v) => updateField("extras", { ...form.extras, contract_form: v === "none" ? "" : v })}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">—</SelectItem>
+                                  <SelectItem value="Краткосрочный">Краткосрочный</SelectItem>
+                                  <SelectItem value="Долгосрочный">Долгосрочный</SelectItem>
+                                  <SelectItem value="Бессрочный">Бессрочный</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                          <div>
+                            <Label className="text-xs mb-1 block">{sidebarVis.landlordLabel}</Label>
+                            <Select value={form.extras.landlord_type || "none"} onValueChange={(v) => updateField("extras", { ...form.extras, landlord_type: v === "none" ? "" : v })}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">—</SelectItem>
+                                <SelectItem value="Юр. лицо">Юр. лицо</SelectItem>
+                                <SelectItem value="ИП">ИП</SelectItem>
+                                <SelectItem value="Физ. лицо">Физ. лицо</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {sidebarVis.sublease && (
+                            <div>
+                              <Label className="text-xs mb-1 block">Субаренда</Label>
+                              <Select value={form.extras.sublease || "none"} onValueChange={(v) => updateField("extras", { ...form.extras, sublease: v === "none" ? "" : v })}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">—</SelectItem>
+                                  <SelectItem value="Разрешена">Разрешена</SelectItem>
+                                  <SelectItem value="Запрещена">Запрещена</SelectItem>
+                                  <SelectItem value="По согласованию">По согласованию</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                          {!isLandForm && (
+                            <div className="sm:col-span-2">
+                              <Label className="text-xs mb-1 block">Назначение</Label>
+                              <Input className="h-8 text-xs" placeholder="Офис, услуги" value={form.extras.purpose || ""} onChange={(e) => updateField("extras", { ...form.extras, purpose: e.target.value })} />
+                            </div>
+                          )}
                         </div>
-                        <div>
-                          <Label className="text-xs mb-1 block">Арендодатель</Label>
-                          <Select value={form.extras.landlord_type || "Юр. лицо"} onValueChange={(v) => updateField("extras", { ...form.extras, landlord_type: v })}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Юр. лицо">Юр. лицо</SelectItem>
-                              <SelectItem value="ИП">ИП</SelectItem>
-                              <SelectItem value="Физ. лицо">Физ. лицо</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-xs mb-1 block">Субаренда</Label>
-                          <Select value={form.extras.sublease || "По согласованию"} onValueChange={(v) => updateField("extras", { ...form.extras, sublease: v })}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Разрешена">Разрешена</SelectItem>
-                              <SelectItem value="Запрещена">Запрещена</SelectItem>
-                              <SelectItem value="По согласованию">По согласованию</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-xs mb-1 block">Назначение</Label>
-                          <Input className="h-8 text-xs" placeholder="Офис, услуги" value={form.extras.purpose || ""} onChange={(e) => updateField("extras", { ...form.extras, purpose: e.target.value })} />
-                        </div>
+                        {isLandForm && (
+                          <p className="text-[10px] text-muted-foreground mt-1.5">
+                            «Участок под» заполняется в блоке «Земельный участок» выше.
+                          </p>
+                        )}
                       </div>
 
-                      <div className="border-t border-border pt-2 mt-2">
+                      <div className="border-t border-border pt-3">
                         <div className="text-[11px] font-semibold text-muted-foreground mb-2">Карточка агента</div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           <div>
@@ -885,15 +1024,15 @@ export default function Dashboard() {
                           </div>
                           <div>
                             <Label className="text-xs mb-1 block">Кол-во объектов</Label>
-                            <Input className="h-8 text-xs" type="number" value={form.extras.agent_objects_count ?? 0} onChange={(e) => updateField("extras", { ...form.extras, agent_objects_count: Number(e.target.value) })} />
+                            <Input className="h-8 text-xs" type="number" value={form.extras.agent_objects_count ?? ""} onChange={(e) => updateField("extras", { ...form.extras, agent_objects_count: e.target.value ? Number(e.target.value) : undefined })} />
                           </div>
                           <div>
                             <Label className="text-xs mb-1 block">Рейтинг (0–5)</Label>
-                            <Input className="h-8 text-xs" type="number" step="0.1" min="0" max="5" value={form.extras.agent_rating ?? 0} onChange={(e) => updateField("extras", { ...form.extras, agent_rating: Number(e.target.value) })} />
+                            <Input className="h-8 text-xs" type="number" step="0.1" min="0" max="5" value={form.extras.agent_rating ?? ""} onChange={(e) => updateField("extras", { ...form.extras, agent_rating: e.target.value ? Number(e.target.value) : undefined })} />
                           </div>
                           <div>
                             <Label className="text-xs mb-1 block">Ответ ~ мин</Label>
-                            <Input className="h-8 text-xs" type="number" value={form.extras.agent_response_min ?? 0} onChange={(e) => updateField("extras", { ...form.extras, agent_response_min: Number(e.target.value) })} />
+                            <Input className="h-8 text-xs" type="number" value={form.extras.agent_response_min ?? ""} onChange={(e) => updateField("extras", { ...form.extras, agent_response_min: e.target.value ? Number(e.target.value) : undefined })} />
                           </div>
                           <label className="flex items-center gap-2 text-xs mt-5 cursor-pointer">
                             <Checkbox className="h-4 w-4" checked={!!form.extras.agent_verified} onCheckedChange={(v) => updateField("extras", { ...form.extras, agent_verified: !!v })} />

@@ -24,6 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import CatalogMap from "@/components/CatalogMap";
 import PropertyImage from "@/components/PropertyImage";
+import { getLandCadastral, getLandUse, isLandProperty } from "@/lib/propertyLand";
 
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
 const DEALS = ["Все", "Аренда", "Продажа"];
@@ -41,6 +42,9 @@ const CEILING_OPTIONS = [
   { label: "от 5 м", value: 5 },
 ];
 
+const SIDEBAR_W_OPEN = 280;
+const SIDEBAR_W_COLLAPSED = 52;
+
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": PhBuildings, "Торговая": PhStorefront, "Склад": PhWarehouse, "Земля": PhTree, "Производство": PhFactory,
 };
@@ -56,18 +60,13 @@ function RangeSlider({ min, max, valueMin, valueMax, step, onChangeMin, onChange
   const pct = (v: number) => ((v - min) / (max - min)) * 100;
   const left = pct(valueMin);
   const right = pct(valueMax);
-  const THUMB = 7; // half of thumb width px
   return (
-    <div className="px-2">
-      <div className="relative h-5 flex items-center">
-        {/* Track */}
-        <div className="absolute inset-x-0 h-0.5 bg-border" />
+    <div className="w-full min-w-0">
+      <div className="relative h-6 flex items-center mx-1.5">
+        <div className="absolute inset-x-0 h-1 rounded-full bg-muted" />
         <div
-          className="absolute h-0.5 bg-primary"
-          style={{
-            left: `calc(${left}% + ${THUMB * (1 - left / 50)}px)`,
-            right: `calc(${100 - right}% + ${THUMB * (right / 50 - 1)}px)`,
-          }}
+          className="absolute h-1 rounded-full bg-primary"
+          style={{ left: `${left}%`, right: `${100 - right}%` }}
         />
         <input
           type="range" min={min} max={max} step={step} value={valueMin}
@@ -81,35 +80,73 @@ function RangeSlider({ min, max, valueMin, valueMax, step, onChangeMin, onChange
           className="range-thumb absolute inset-0 w-full opacity-0 cursor-pointer h-full"
           style={{ zIndex: 4 }}
         />
-        {/* Thumb dots */}
-        <div className="absolute w-3.5 h-3.5 bg-background border-2 border-primary pointer-events-none"
-          style={{ left: `calc(${left}% - ${THUMB}px)` }} />
-        <div className="absolute w-3.5 h-3.5 bg-background border-2 border-primary pointer-events-none"
-          style={{ left: `calc(${right}% - ${THUMB}px)` }} />
+        <div
+          className="absolute w-4 h-4 rounded-full bg-background border-2 border-primary shadow-sm pointer-events-none -translate-x-1/2"
+          style={{ left: `${left}%` }}
+        />
+        <div
+          className="absolute w-4 h-4 rounded-full bg-background border-2 border-primary shadow-sm pointer-events-none -translate-x-1/2"
+          style={{ left: `${right}%` }}
+        />
       </div>
-      <div className="flex justify-between mt-1.5 text-[10px] text-muted-foreground">
-        <span>{format(valueMin)}</span>
-        <span>{format(valueMax)}</span>
+      <div className="flex justify-between mt-2 text-[11px] tabular-nums text-muted-foreground">
+        <span className="truncate">{format(valueMin)}</span>
+        <span className="truncate">{format(valueMax)}</span>
       </div>
     </div>
   );
 }
 
-// ─── Compact select ───
-function SelectFilter({ label, value, options, onChange }: {
-  label: string; value: string; options: string[]; onChange: (v: string) => void;
+// ─── Modern select ───
+function SelectFilter({ label, ariaLabel, value, options, onChange }: {
+  label?: string; ariaLabel?: string; value: string; options: string[]; onChange: (v: string) => void;
 }) {
   return (
-    <div>
-      <label className="text-[11px] font-medium text-muted-foreground mb-1 block">{label}</label>
-      <div className="relative">
-        <select value={value} onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none px-0 py-1.5 pr-7 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none focus:border-primary transition-colors">
+    <div className="min-w-0">
+      {label && <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">{label}</label>}
+      <div className="relative rounded-lg border border-border/70 bg-muted/30 hover:border-border transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-label={ariaLabel ?? label}
+          className="w-full min-w-0 appearance-none px-3 py-2 pr-8 bg-transparent text-xs text-foreground focus:outline-none cursor-pointer truncate"
+        >
           {options.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
-        <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
       </div>
     </div>
+  );
+}
+
+// ─── Filter section header ───
+function FilterSectionHeader({ icon: Icon, label, active }: { icon: React.ElementType; label: string; active?: boolean }) {
+  return (
+    <div className="flex items-center gap-2 mb-3 min-w-0">
+      <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+        <Icon className="w-3.5 h-3.5" />
+      </div>
+      <p className={`text-xs font-semibold truncate ${active ? "text-foreground" : "text-muted-foreground"}`}>{label}</p>
+    </div>
+  );
+}
+
+// ─── Collapsed rail icon ───
+function RailIcon({ icon: Icon, label, active, onClick }: {
+  icon: React.ElementType; label: string; active?: boolean; onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      onClick={onClick}
+      className={`relative w-9 h-9 mx-auto flex items-center justify-center rounded-lg transition-colors ${
+        active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      }`}
+    >
+      <Icon className="w-4 h-4" />
+      {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full bg-primary" />}
+    </button>
   );
 }
 
@@ -137,12 +174,67 @@ function Section({ title, defaultOpen = false, children }: { title: string; defa
 // ─── Active filter chip ───
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-medium">
-      {label}
-      <button onClick={onRemove} className="hover:text-primary/70 transition-colors ml-0.5">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-medium max-w-full">
+      <span className="truncate">{label}</span>
+      <button onClick={onRemove} aria-label={`Убрать фильтр ${label}`} className="hover:text-primary/70 transition-colors shrink-0">
         <X className="w-2.5 h-2.5" />
       </button>
     </span>
+  );
+}
+
+// ─── Unified filter panel footer ───
+function FilterPanelFooter({
+  count, isLoading, activeFiltersCount, activeChips, onReset, onClose, showCloseButton,
+}: {
+  count: number;
+  isLoading: boolean;
+  activeFiltersCount: number;
+  activeChips: { label: string; onRemove: () => void }[];
+  onReset: () => void;
+  onClose?: () => void;
+  showCloseButton?: boolean;
+}) {
+  return (
+    <div className="shrink-0 border-t border-border/40 bg-muted/30">
+      {activeChips.length > 0 && (
+        <div className="px-4 pt-3 flex flex-wrap gap-1.5">
+          {activeChips.map((c, i) => <Chip key={i} label={c.label} onRemove={c.onRemove} />)}
+        </div>
+      )}
+      <div className="px-4 py-3 space-y-2.5">
+        <p className="text-sm text-muted-foreground">
+          {isLoading ? (
+            <span className="inline-flex gap-1 items-center">
+              <span className="w-1 h-1 bg-muted-foreground animate-bounce" />
+              <span className="w-1 h-1 bg-muted-foreground animate-bounce [animation-delay:120ms]" />
+              <span className="w-1 h-1 bg-muted-foreground animate-bounce [animation-delay:240ms]" />
+            </span>
+          ) : (
+            <>Найдено <span className="font-semibold text-foreground tabular-nums">{count}</span> объектов</>
+          )}
+        </p>
+        <div className={`flex gap-2 ${showCloseButton ? "" : ""}`}>
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={onReset}
+              className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium text-destructive border border-destructive/20 hover:bg-destructive/5 transition-colors ${showCloseButton ? "flex-1" : "w-full"}`}
+            >
+              <X className="w-3.5 h-3.5 shrink-0" />
+              Сбросить
+            </button>
+          )}
+          {showCloseButton && onClose && (
+            <button
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
+            >
+              Показать {isLoading ? "…" : count}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -308,7 +400,7 @@ export default function Catalog() {
 
   // Init state from URL
   const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebar, setMobileSidebar] = useState(false);
 
   const [dealType, setDealType] = useState(() => searchParams.get("deal") || "Все");
@@ -340,7 +432,15 @@ export default function Catalog() {
 
   const districts = useMemo(() => ["Все", ...Array.from(new Set(properties.map((p) => p.district).filter(Boolean)))], [properties]);
   const conditions = useMemo(() => ["Все", ...Array.from(new Set(properties.map((p) => p.condition).filter(Boolean) as string[]))], [properties]);
-  const layouts = useMemo(() => Array.from(new Set(properties.map((p) => (p as any).layout).filter(Boolean) as string[])), [properties]);
+  const layouts = useMemo(() => Array.from(new Set(
+    properties.flatMap((p) => {
+      if (isLandProperty(p.type)) {
+        const landUse = getLandUse(p);
+        return landUse ? [landUse] : [];
+      }
+      return (p as any).layout ? [(p as any).layout] : [];
+    })
+  )), [properties]);
 
   // Sync filters → URL
   useEffect(() => {
@@ -416,9 +516,15 @@ export default function Catalog() {
     }
     if (areaMin > 0) result = result.filter((p) => Number(p.area) >= areaMin);
     if (areaMax < 10000) result = result.filter((p) => Number(p.area) <= areaMax);
-    if (ceilingMin > 0) result = result.filter((p) => Number(p.ceiling_height) >= ceilingMin);
-    if (parkingOnly) result = result.filter((p) => p.parking && p.parking !== "Нет" && p.parking !== "-");
-    if (selectedLayouts.length > 0) result = result.filter((p) => selectedLayouts.includes((p as any).layout));
+    if (ceilingMin > 0) result = result.filter((p) => isLandProperty(p.type) || Number(p.ceiling_height) >= ceilingMin);
+    if (parkingOnly) result = result.filter((p) => isLandProperty(p.type) || (p.parking && p.parking !== "Нет" && p.parking !== "-"));
+    if (selectedLayouts.length > 0) result = result.filter((p) => {
+      if (isLandProperty(p.type)) {
+        const landUse = getLandUse(p);
+        return landUse ? selectedLayouts.includes(landUse) : false;
+      }
+      return selectedLayouts.includes((p as any).layout);
+    });
 
     switch (sort) {
       case "price_asc": result.sort((a, b) => Number(a.price) - Number(b.price)); break;
@@ -449,200 +555,203 @@ export default function Catalog() {
   const formatPrice = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}к` : String(v);
   const formatArea = (v: number) => `${v} м²`;
 
-  // На мобильном всегда показываем полный вид, на десктопе — зависит от sidebarOpen
-  const showFull = sidebarOpen || mobileSidebar;
+  const paramsActive = propertyClass !== "Все" || condition !== "Все" || ceilingMin > 0 || parkingOnly || selectedLayouts.length > 0;
 
-  // Иконка-заголовок секции с тултипом
-  const SectionIcon = ({ icon: Icon, label, active }: { icon: React.ElementType; label: string; active?: boolean }) =>
-    showFull ? (
-      <div className="flex items-center gap-2 mb-2.5">
-        <Icon className={`w-3.5 h-3.5 shrink-0 ${active ? "text-primary" : "text-muted-foreground"}`} />
-        <p className={`text-[10px] font-semibold uppercase tracking-widest ${active ? "text-primary" : "text-muted-foreground"}`}>{label}</p>
-      </div>
-    ) : (
-      <div className="relative group/tip flex justify-center py-2.5">
-        <div className={`w-8 h-8 flex items-center justify-center transition-colors ${active ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
-          <Icon className="w-4 h-4" />
-        </div>
-        <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 px-2 py-1 bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
-          {label}
-        </div>
-      </div>
-    );
-
-  // Sidebar content (shared between desktop & mobile)
-  const sidebarContent = (
-    <div className="divide-y divide-border/30">
-
+  const filterFields = (
+    <div className="min-w-0 divide-y divide-border/40">
       {/* Поиск */}
-      <div className={showFull ? "px-4 py-3" : "px-1.5 py-2.5 flex justify-center"}>
-        {showFull ? (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Search className="w-3.5 h-3.5 shrink-0" />
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Адрес, район..."
-              className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="hover:text-foreground transition-colors">
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="relative group/tip">
-            <div className={`w-8 h-8 flex items-center justify-center ${searchQuery ? "text-primary" : "text-muted-foreground hover:text-foreground"} transition-colors`}>
-              <Search className="w-4 h-4" />
-            </div>
-            <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 px-2 py-1 bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
-              Поиск
-            </div>
-          </div>
-        )}
+      <div className="px-4 py-4">
+        <div className="flex items-center gap-2.5 rounded-lg border border-border/70 bg-muted/30 px-3 py-2.5 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+          <Search className="w-4 h-4 shrink-0 text-muted-foreground" />
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Адрес, район..."
+            className="flex-1 min-w-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} aria-label="Очистить поиск" className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Тип сделки */}
-      <div className={showFull ? "px-4 py-3" : "px-1.5 py-1"}>
-        <SectionIcon icon={Tag} label="Тип сделки" active={dealType !== "Все"} />
-        {showFull && (
-          <div className="flex gap-1">
-            {DEALS.map((d) => (
-              <button key={d} onClick={() => setDealType(d)}
-                className={`flex-1 py-1.5 text-[11px] font-medium transition-all ${dealType === d ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-                {d}
-              </button>
-            ))}
-          </div>
-        )}
+      <div className="px-4 py-4">
+        <FilterSectionHeader icon={Tag} label="Тип сделки" active={dealType !== "Все"} />
+        <div className="flex rounded-lg bg-muted/50 p-1 gap-0.5">
+          {DEALS.map((d) => (
+            <button
+              key={d}
+              onClick={() => setDealType(d)}
+              className={`flex-1 min-w-0 py-2 rounded-md text-xs font-medium transition-all ${
+                dealType === d
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {d}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Тип объекта */}
-      <div className={showFull ? "px-4 py-3" : "px-1.5 py-1"}>
-        <SectionIcon icon={Building} label="Тип объекта" active={selectedTypes.length > 0} />
-        {showFull && (
-          <div className="flex flex-wrap gap-1.5">
-            {TYPES.map((t) => {
-              const Icon = typeIcons[t] || PhBuildings;
-              const active = selectedTypes.includes(t);
-              return (
-                <button key={t} onClick={() => toggleType(t)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium transition-all border ${
-                    active ? "bg-primary text-primary-foreground border-primary" : "border-border/60 text-muted-foreground hover:border-primary/50 hover:text-foreground"
-                  }`}>
-                  <Icon className="w-3.5 h-3.5" weight="duotone" />
-                  {t}
-                </button>
-              );
-            })}
-          </div>
-        )}
+      <div className="px-4 py-4">
+        <FilterSectionHeader icon={Building} label="Тип объекта" active={selectedTypes.length > 0} />
+        <div className="flex flex-wrap gap-1.5">
+          {TYPES.map((t) => {
+            const Icon = typeIcons[t] || PhBuildings;
+            const active = selectedTypes.includes(t);
+            return (
+              <button
+                key={t}
+                onClick={() => toggleType(t)}
+                className={`inline-flex items-center gap-1.5 max-w-full px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground bg-background"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5 shrink-0" weight="duotone" />
+                <span className="truncate">{t}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Локация */}
-      <div className={showFull ? "px-4 py-3" : "px-1.5 py-1"}>
-        <SectionIcon icon={MapPin} label="Район" active={district !== "Все"} />
-        {showFull && (
-          <div className="relative">
-            <select value={district} onChange={(e) => setDistrict(e.target.value)}
-              className="w-full appearance-none bg-transparent text-xs text-foreground pr-5 focus:outline-none cursor-pointer">
-              {districts.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-            <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
-          </div>
-        )}
+      <div className="px-4 py-4">
+        <FilterSectionHeader icon={MapPin} label="Район" active={district !== "Все"} />
+        <SelectFilter ariaLabel="Район" value={district} options={districts} onChange={setDistrict} />
       </div>
 
-      {/* Цена */}
-      <div className={showFull ? "px-4 py-3" : "px-1.5 py-1"}>
-        <SectionIcon icon={Banknote} label="Цена, ₽/мес" active={isPriceFiltered} />
-        {showFull && (
-          <RangeSlider min={0} max={500000} step={5000}
+      {/* Цена и площадь */}
+      <div className="px-4 py-4 space-y-5">
+        <div>
+          <FilterSectionHeader icon={Banknote} label="Цена, ₽/мес" active={isPriceFiltered} />
+          <RangeSlider
+            min={0} max={500000} step={5000}
             valueMin={priceMin} valueMax={priceMax}
             onChangeMin={setPriceMin} onChangeMax={setPriceMax}
             format={formatPrice}
           />
-        )}
-      </div>
-
-      {/* Площадь */}
-      <div className={showFull ? "px-4 py-3" : "px-1.5 py-1"}>
-        <SectionIcon icon={Ruler} label="Площадь, м²" active={isAreaFiltered} />
-        {showFull && (
-          <RangeSlider min={0} max={10000} step={10}
+        </div>
+        <div>
+          <FilterSectionHeader icon={Ruler} label="Площадь, м²" active={isAreaFiltered} />
+          <RangeSlider
+            min={0} max={10000} step={10}
             valueMin={areaMin} valueMax={areaMax}
             onChangeMin={setAreaMin} onChangeMax={setAreaMax}
             format={formatArea}
           />
-        )}
+        </div>
       </div>
 
-      {/* Параметры + Дополнительно */}
-      <div className={showFull ? "px-4 py-3" : "px-1.5 py-1"}>
-        <SectionIcon icon={Settings2} label="Параметры" active={propertyClass !== "Все" || condition !== "Все" || ceilingMin > 0 || parkingOnly || selectedLayouts.length > 0} />
-        {showFull && (
-          <>
-            <div className="space-y-2.5 mb-3">
-              <SelectFilter label="Класс" value={propertyClass} options={CLASSES} onChange={setPropertyClass} />
-              <SelectFilter label="Состояние" value={condition} options={conditions} onChange={setCondition} />
-            </div>
-            <div className="space-y-2.5">
-              <div>
-                <p className="text-[10px] text-muted-foreground mb-2">Высота потолков</p>
-                <div className="flex gap-1.5">
-                  {CEILING_OPTIONS.map((opt) => (
-                    <button key={opt.value} onClick={() => setCeilingMin(ceilingMin === opt.value ? 0 : opt.value)}
-                      className={`px-2 py-1 text-[11px] transition-all border ${
-                        ceilingMin === opt.value ? "bg-primary text-primary-foreground border-primary" : "border-border/60 text-muted-foreground hover:border-primary/50 hover:text-foreground"
-                      }`}>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <Checkbox checked={parkingOnly} onCheckedChange={(v) => setParkingOnly(!!v)} className="w-3.5 h-3.5" />
-                <span className="text-xs text-foreground">Есть парковка</span>
-              </label>
-              {layouts.length > 0 && (
-                <div>
-                  <p className="text-[10px] text-muted-foreground mb-1.5">Планировка</p>
-                  <div className="space-y-1.5">
-                    {layouts.map((l) => (
-                      <label key={l} className="flex items-center gap-2 cursor-pointer select-none">
-                        <Checkbox checked={selectedLayouts.includes(l)} onCheckedChange={() => toggleLayout(l)} className="w-3.5 h-3.5" />
-                        <span className="text-xs text-foreground">{l}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+      {/* Параметры */}
+      <div className="px-4 py-4">
+        <FilterSectionHeader icon={Settings2} label="Параметры" active={paramsActive} />
+        <div className="space-y-4 min-w-0">
+          <div className="grid grid-cols-2 gap-3 min-w-0">
+            <SelectFilter label="Класс" value={propertyClass} options={CLASSES} onChange={setPropertyClass} />
+            <SelectFilter label="Состояние" value={condition} options={conditions} onChange={setCondition} />
+          </div>
 
-      {/* Сброс */}
-      {activeFiltersCount > 0 && (
-        <div className={showFull ? "px-4 py-3" : "px-1.5 py-2.5 flex justify-center"}>
-          {showFull ? (
-            <button onClick={resetFilters}
-              className="w-full flex items-center justify-center gap-1.5 py-2 text-xs text-destructive hover:text-destructive/80 transition-colors">
-              <X className="w-3 h-3" /> Сбросить фильтры ({activeFiltersCount})
-            </button>
-          ) : (
-            <div className="relative group/tip">
-              <button onClick={resetFilters} className="w-8 h-8 flex items-center justify-center text-destructive hover:text-destructive/80 transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-              <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 px-2 py-1 bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
-                Сбросить ({activeFiltersCount})
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium text-muted-foreground mb-2">Высота потолков</p>
+            <div className="flex flex-wrap gap-1.5">
+              {CEILING_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setCeilingMin(ceilingMin === opt.value ? 0 : opt.value)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border whitespace-nowrap ${
+                    ceilingMin === opt.value
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground bg-background"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-lg border border-border/60 px-3 py-2.5 hover:bg-muted/40 transition-colors">
+            <Checkbox checked={parkingOnly} onCheckedChange={(v) => setParkingOnly(!!v)} className="shrink-0" />
+            <span className="text-sm text-foreground">Есть парковка</span>
+          </label>
+
+          {layouts.length > 0 && (
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium text-muted-foreground mb-2">Планировка</p>
+              <div className="space-y-1 max-h-40 overflow-y-auto overflow-x-hidden pr-1 -mr-1">
+                {layouts.map((l) => (
+                  <label
+                    key={l}
+                    className="flex items-start gap-2.5 cursor-pointer select-none rounded-lg px-2 py-1.5 hover:bg-muted/40 transition-colors min-w-0"
+                  >
+                    <Checkbox
+                      checked={selectedLayouts.includes(l)}
+                      onCheckedChange={() => toggleLayout(l)}
+                      className="shrink-0 mt-0.5"
+                    />
+                    <span className="text-xs leading-snug text-foreground break-words min-w-0">{l}</span>
+                  </label>
+                ))}
               </div>
             </div>
           )}
         </div>
-      )}
+      </div>
+    </div>
+  );
+
+  const filterFooter = (
+    <FilterPanelFooter
+      count={filtered.length}
+      isLoading={isLoading}
+      activeFiltersCount={activeFiltersCount}
+      activeChips={activeChips}
+      onReset={resetFilters}
+      onClose={() => setMobileSidebar(false)}
+      showCloseButton={mobileSidebar}
+    />
+  );
+
+  const collapsedRail = (
+    <div className="flex flex-col h-full min-w-0 w-full overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setSidebarOpen(true)}
+        title="Показать фильтры"
+        className="flex flex-col items-center gap-1 w-full py-3 border-b border-border/40 hover:bg-muted/40 transition-colors shrink-0"
+      >
+        <PanelLeft className="w-4 h-4 text-primary" />
+        <span className="text-[10px] font-medium text-foreground leading-none">Фильтры</span>
+        {activeFiltersCount > 0 && (
+          <span className="count-badge mt-0.5">{activeFiltersCount}</span>
+        )}
+      </button>
+      <div className="flex-1 flex flex-col items-center gap-1 py-2 min-h-0 overflow-y-auto overflow-x-hidden">
+        <RailIcon icon={Search} label="Поиск" active={!!searchQuery} onClick={() => setSidebarOpen(true)} />
+        <RailIcon icon={Tag} label="Тип сделки" active={dealType !== "Все"} onClick={() => setSidebarOpen(true)} />
+        <RailIcon icon={Building} label="Тип объекта" active={selectedTypes.length > 0} onClick={() => setSidebarOpen(true)} />
+        <RailIcon icon={MapPin} label="Район" active={district !== "Все"} onClick={() => setSidebarOpen(true)} />
+        <RailIcon icon={Banknote} label="Цена" active={isPriceFiltered} onClick={() => setSidebarOpen(true)} />
+        <RailIcon icon={Ruler} label="Площадь" active={isAreaFiltered} onClick={() => setSidebarOpen(true)} />
+        <RailIcon icon={Settings2} label="Параметры" active={paramsActive} onClick={() => setSidebarOpen(true)} />
+      </div>
+      <button
+        type="button"
+        onClick={() => setSidebarOpen(true)}
+        title={`Найдено ${filtered.length} объектов`}
+        className="shrink-0 w-full py-3 border-t border-border/40 hover:bg-muted/40 transition-colors text-center"
+      >
+        <span className="text-sm font-semibold text-foreground tabular-nums">{isLoading ? "…" : filtered.length}</span>
+        <span className="block text-[9px] text-muted-foreground mt-0.5">объектов</span>
+      </button>
     </div>
   );
 
@@ -661,32 +770,14 @@ export default function Catalog() {
           </div>
         </div>
 
-        {/* Топ-бар */}
+        {/* Топ-бар — сортировка и вид */}
         <div className="sticky top-[100px] z-20 bg-background border-b border-border/30">
-          <div className="px-6 lg:px-12 xl:px-20 h-12 flex items-center gap-0">
+          <div className="px-6 lg:px-12 xl:px-20 h-12 flex items-center gap-3">
 
-            {/* Кнопка фильтров — десктоп */}
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className={`hidden lg:inline-flex items-center gap-2 h-8 px-3 mr-4 text-xs font-medium border transition-colors shrink-0 ${
-                sidebarOpen
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-              }`}
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              Фильтры
-              {activeFiltersCount > 0 && (
-                <span className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[9px] font-bold rounded-sm ${
-                  sidebarOpen ? "bg-background text-foreground" : "bg-primary text-primary-foreground"
-                }`}>{activeFiltersCount}</span>
-              )}
-            </button>
-
-            {/* Кнопка фильтров — мобайл */}
+            {/* Кнопка фильтров — только мобайл */}
             <button
               onClick={() => setMobileSidebar(true)}
-              className="lg:hidden inline-flex items-center gap-2 h-8 px-3 mr-4 text-xs font-medium border border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-colors"
+              className="lg:hidden inline-flex items-center gap-2 h-8 px-3 text-xs font-medium border border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-colors shrink-0"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
               Фильтры
@@ -695,11 +786,8 @@ export default function Catalog() {
               )}
             </button>
 
-            {/* Разделитель */}
-            <div className="hidden lg:block w-px h-5 bg-border/60 mr-4 shrink-0" />
-
-            {/* Счётчик */}
-            <div className="text-xs text-muted-foreground mr-auto">
+            {/* Мобильный счётчик */}
+            <div className="lg:hidden text-xs text-muted-foreground mr-auto">
               {isLoading ? (
                 <span className="inline-flex gap-1 items-center">
                   <span className="w-1 h-1 bg-muted-foreground animate-bounce" />
@@ -709,8 +797,10 @@ export default function Catalog() {
               ) : <><strong className="text-foreground font-semibold">{filtered.length}</strong> объектов</>}
             </div>
 
-            {/* Сортировка — таблетки */}
-            <div className="hidden sm:flex items-center gap-0 mr-4">
+            <div className="hidden lg:block flex-1" />
+
+            {/* Сортировка */}
+            <div className="hidden sm:flex items-center gap-0 mr-1">
               {SORT_OPTIONS.map((o) => (
                 <button
                   key={o.value}
@@ -746,47 +836,60 @@ export default function Catalog() {
               ))}
             </div>
           </div>
-
-          {/* Активные чипсы фильтров */}
-          {activeChips.length > 0 && (
-            <div className="px-6 lg:px-12 xl:px-20 pb-2 flex flex-wrap gap-1.5 items-center">
-              {activeChips.map((c, i) => <Chip key={i} label={c.label} onRemove={c.onRemove} />)}
-              <button onClick={resetFilters} className="text-[10px] text-muted-foreground hover:text-destructive transition-colors">
-                Сбросить всё
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Контент: сайдбар + карточки + правый сайдбар */}
         <div className="flex-1 flex min-h-0">
 
-          {/* Левый сайдбар */}
+          {/* Левый сайдбар — единое пространство фильтров */}
           <aside
-            className="hidden lg:block shrink-0 overflow-y-auto"
+            className="hidden lg:flex flex-col shrink-0 overflow-hidden catalog-filter-sidebar bg-muted/10"
             style={{
-              width: sidebarOpen ? "240px" : "44px",
+              width: sidebarOpen ? SIDEBAR_W_OPEN : SIDEBAR_W_COLLAPSED,
               borderRight: "1px solid hsl(var(--border) / 0.3)",
               transition: "width 280ms cubic-bezier(0.4,0,0.2,1)",
             }}
           >
-            <div style={{ width: sidebarOpen ? 240 : 44, overflow: "hidden" }}>{sidebarContent}</div>
+            {sidebarOpen ? (
+              <>
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 bg-background shrink-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <SlidersHorizontal className="w-4 h-4 text-primary shrink-0" />
+                    <span className="text-sm font-semibold text-foreground">Фильтры</span>
+                    {activeFiltersCount > 0 && <span className="count-badge">{activeFiltersCount}</span>}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSidebarOpen(false)}
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                  >
+                    <PanelLeftClose className="w-4 h-4" />
+                    <span>Скрыть</span>
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">{filterFields}</div>
+                {filterFooter}
+              </>
+            ) : (
+              collapsedRail
+            )}
           </aside>
 
           {/* Мобильный сайдбар */}
           {mobileSidebar && (
             <div className="fixed inset-0 z-50 bg-background flex flex-col lg:hidden">
               <div className="flex items-center justify-between px-5 py-3 border-b border-border/40 shrink-0">
-                <span className="text-sm font-semibold">Фильтры {activeFiltersCount > 0 && <span className="count-badge ml-1">{activeFiltersCount}</span>}</span>
-                <button onClick={() => setMobileSidebar(false)}><X className="w-5 h-5" /></button>
-              </div>
-              <div className="flex-1 overflow-y-auto">{sidebarContent}</div>
-              <div className="px-5 py-3 border-t border-border/40 shrink-0">
-                <button onClick={() => setMobileSidebar(false)}
-                  className="w-full py-2.5 bg-primary text-primary-foreground text-sm font-medium">
-                  Показать {filtered.length} объектов
+                <div className="flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold">Фильтры</span>
+                  {activeFiltersCount > 0 && <span className="count-badge">{activeFiltersCount}</span>}
+                </div>
+                <button type="button" onClick={() => setMobileSidebar(false)} aria-label="Закрыть фильтры">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
+              <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">{filterFields}</div>
+              {filterFooter}
             </div>
           )}
 
@@ -832,8 +935,14 @@ export default function Catalog() {
 
       <style>{`
         .range-thumb { -webkit-appearance: none; pointer-events: all; }
-        .range-thumb::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; pointer-events: all; cursor: pointer; }
-        .range-thumb::-moz-range-thumb { width: 14px; height: 14px; pointer-events: all; cursor: pointer; border: none; background: transparent; }
+        .range-thumb::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; pointer-events: all; cursor: pointer; }
+        .range-thumb::-moz-range-thumb { width: 16px; height: 16px; pointer-events: all; cursor: pointer; border: none; background: transparent; }
+        .catalog-filter-sidebar {
+          scrollbar-width: thin;
+          scrollbar-color: hsl(var(--border)) transparent;
+        }
+        .catalog-filter-sidebar::-webkit-scrollbar { width: 4px; height: 0; }
+        .catalog-filter-sidebar::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
       `}</style>
     </div>
   );
@@ -842,6 +951,9 @@ export default function Catalog() {
 // ─── Cards ───
 
 function GridCard({ property: p }: { property: DbProperty }) {
+  const land = isLandProperty(p.type);
+  const landUse = getLandUse(p);
+  const cadastral = getLandCadastral(p.extras as Record<string, unknown> | null);
   return (
     <Link to={`/property/${p.id}`}
       className="group bg-card overflow-hidden hover:shadow-md transition-shadow duration-200 border border-border/50">
@@ -876,8 +988,17 @@ function GridCard({ property: p }: { property: DbProperty }) {
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-foreground">
           <span className="flex items-center gap-1"><Maximize2 className="w-3 h-3 text-muted-foreground" />{p.area} м²</span>
-          {p.floor && p.floor !== "-" && <span>Этаж {p.floor}/{p.total_floors}</span>}
-          {p.ceiling_height && Number(p.ceiling_height) > 0 && <span>Потолки {p.ceiling_height} м</span>}
+          {land ? (
+            <>
+              {landUse && <span>Участок под: {landUse}</span>}
+              {cadastral && <span className="truncate">к/н {cadastral}</span>}
+            </>
+          ) : (
+            <>
+              {p.floor && p.floor !== "-" && <span>Этаж {p.floor}/{p.total_floors}</span>}
+              {p.ceiling_height && Number(p.ceiling_height) > 0 && <span>Потолки {p.ceiling_height} м</span>}
+            </>
+          )}
         </div>
         <div className="flex flex-wrap gap-1 mt-3">
           {(p.features || []).slice(0, 3).map((f) => (
@@ -897,6 +1018,9 @@ function GridCard({ property: p }: { property: DbProperty }) {
 }
 
 function ListCard({ property: p }: { property: DbProperty }) {
+  const land = isLandProperty(p.type);
+  const landUse = getLandUse(p);
+  const cadastral = getLandCadastral(p.extras as Record<string, unknown> | null);
   return (
     <Link to={`/property/${p.id}`}
       className="group flex bg-card overflow-hidden hover:shadow-md transition-shadow duration-200 border border-border/50">
@@ -933,9 +1057,18 @@ function ListCard({ property: p }: { property: DbProperty }) {
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-foreground mt-2">
             <span>{p.area} м²</span>
-            {p.floor && p.floor !== "-" && <span>Этаж {p.floor}/{p.total_floors}</span>}
-            {p.ceiling_height && Number(p.ceiling_height) > 0 && <span>Потолки {p.ceiling_height} м</span>}
-            {p.condition && <span>{p.condition}</span>}
+            {land ? (
+              <>
+                {landUse && <span>Участок под: {landUse}</span>}
+                {cadastral && <span>к/н {cadastral}</span>}
+              </>
+            ) : (
+              <>
+                {p.floor && p.floor !== "-" && <span>Этаж {p.floor}/{p.total_floors}</span>}
+                {p.ceiling_height && Number(p.ceiling_height) > 0 && <span>Потолки {p.ceiling_height} м</span>}
+                {p.condition && <span>{p.condition}</span>}
+              </>
+            )}
           </div>
         </div>
         <div className="flex flex-wrap gap-1 mt-3">

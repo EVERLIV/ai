@@ -1,5 +1,23 @@
 project_id = "xbdwapunrlnxcuxjhaca"
 
+# Auth / SMTP (production: /opt/supabase/.env on VPS)
+# Timeweb: smtp.timeweb.ru, port 587 (STARTTLS) or 465 (SSL)
+# VPS must have outbound ports 587/465 unblocked in Timeweb Cloud panel
+[auth]
+site_url = "https://arendacity.com"
+additional_redirect_urls = [
+  "https://arendacity.com",
+  "https://everliv-ai-dc0f.twc1.net",
+  "http://localhost:8080",
+  "http://localhost:8081",
+  "http://localhost:8083",
+]
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+
 [functions.ai-property-pick]
 verify_jwt = false
 

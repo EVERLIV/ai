@@ -18,6 +18,8 @@ import RequestPriceDialog from "@/components/RequestPriceDialog";
 import PropertyAIChat from "@/components/PropertyAIChat";
 import PropertyUnitsTable from "@/components/PropertyUnitsTable";
 import PropertySidebarExtras from "@/components/PropertySidebarExtras";
+import { getLandCadastral, getLandUse, isLandProperty } from "@/lib/propertyLand";
+import { isSaleDeal } from "@/lib/propertyDeal";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
@@ -108,17 +110,35 @@ export default function PropertyDetail() {
   const photos = property.photos || [];
   const photosCount = photos.length || 1;
 
-  const specs = [
-    { icon: Ruler, label: "Площадь", value: `${property.area} м²` },
-    { icon: Layers, label: "Этаж", value: property.floor && property.floor !== "-" ? `${property.floor} из ${property.total_floors}` : "—" },
-    { icon: Building2, label: "Высота потолков", value: property.ceiling_height && Number(property.ceiling_height) > 0 ? `${property.ceiling_height} м` : "—" },
-    { icon: Car, label: "Парковка", value: property.parking || "—" },
-    { icon: Paintbrush, label: "Состояние", value: property.condition || "—" },
-    { icon: LayoutGrid, label: "Планировка", value: property.layout || "—" },
-    { icon: FileText, label: "Тип сделки", value: property.deal_type },
-    { icon: Shield, label: "Депозит", value: property.deposit || "—" },
-    { icon: Calendar, label: "Срок договора", value: property.contract_term || "—" },
-  ];
+  const isLand = isLandProperty(property.type);
+  const isSale = isSaleDeal(property.deal_type);
+  const landExtras = (property.extras || {}) as Record<string, unknown>;
+
+  const rentTerms = isSale
+    ? []
+    : [
+        { icon: Shield, label: "Депозит", value: property.deposit || "—" },
+        { icon: Calendar, label: "Срок договора", value: property.contract_term || "—" },
+      ];
+
+  const specs = isLand
+    ? [
+        { icon: Ruler, label: "Площадь", value: `${property.area} м²` },
+        { icon: FileText, label: "Кадастровый номер", value: getLandCadastral(landExtras) || "—" },
+        { icon: TreePine, label: "Участок под", value: getLandUse(property) || "—" },
+        { icon: FileText, label: "Тип сделки", value: property.deal_type },
+        ...rentTerms,
+      ]
+    : [
+        { icon: Ruler, label: "Площадь", value: `${property.area} м²` },
+        { icon: Layers, label: "Этаж", value: property.floor && property.floor !== "-" ? `${property.floor} из ${property.total_floors}` : "—" },
+        { icon: Building2, label: "Высота потолков", value: property.ceiling_height && Number(property.ceiling_height) > 0 ? `${property.ceiling_height} м` : "—" },
+        { icon: Car, label: "Парковка", value: property.parking || "—" },
+        { icon: Paintbrush, label: "Состояние", value: property.condition || "—" },
+        { icon: LayoutGrid, label: "Планировка", value: property.layout || "—" },
+        { icon: FileText, label: "Тип сделки", value: property.deal_type },
+        ...rentTerms,
+      ];
 
   return (
     <div
