@@ -30,6 +30,7 @@ import {
   isLandProperty,
   LAND_BUILDING_FIELD_DEFAULTS,
   LAND_USE_OPTIONS,
+  LAND_TYPE_LABEL,
 } from "@/lib/propertyLand";
 import { isSaleDeal } from "@/lib/propertyDeal";
 import {
@@ -725,12 +726,12 @@ export default function Dashboard() {
                             />
                           </div>
                           <div>
-                            <Label className="text-xs mb-1 block">Участок под</Label>
+                            <Label className="text-xs mb-1 block">{LAND_TYPE_LABEL}</Label>
                             <Select
                               value={form.extras.land_use || "none"}
                               onValueChange={(v) => updateField("extras", { ...form.extras, land_use: v === "none" ? "" : v })}
                             >
-                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Назначение" /></SelectTrigger>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Выберите тип" /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">—</SelectItem>
                                 {LAND_USE_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
@@ -1006,7 +1007,7 @@ export default function Dashboard() {
                         </div>
                         {isLandForm && (
                           <p className="text-[10px] text-muted-foreground mt-1.5">
-                            «Участок под» заполняется в блоке «Земельный участок» выше.
+                            «Тип» участка заполняется в блоке «Земельный участок» выше.
                           </p>
                         )}
                       </div>

@@ -24,7 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import CatalogMap from "@/components/CatalogMap";
 import PropertyImage from "@/components/PropertyImage";
-import { getLandCadastral, getLandUse, isLandProperty } from "@/lib/propertyLand";
+import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL, LAND_USE_OPTIONS } from "@/lib/propertyLand";
 
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
 const DEALS = ["Все", "Аренда", "Продажа"];
@@ -556,6 +556,10 @@ export default function Catalog() {
   const formatArea = (v: number) => `${v} м²`;
 
   const paramsActive = propertyClass !== "Все" || condition !== "Все" || ceilingMin > 0 || parkingOnly || selectedLayouts.length > 0;
+  const landTypeFilterOnly = selectedTypes.length > 0 && selectedTypes.every((t) => t === "Земля");
+  const layoutFilterOptions = landTypeFilterOnly
+    ? Array.from(new Set([...LAND_USE_OPTIONS, ...layouts]))
+    : layouts;
 
   const filterFields = (
     <div className="min-w-0 divide-y divide-border/40">
@@ -683,11 +687,13 @@ export default function Catalog() {
             <span className="text-sm text-foreground">Есть парковка</span>
           </label>
 
-          {layouts.length > 0 && (
+          {layoutFilterOptions.length > 0 && (
             <div className="min-w-0">
-              <p className="text-[11px] font-medium text-muted-foreground mb-2">Планировка</p>
+              <p className="text-[11px] font-medium text-muted-foreground mb-2">
+                {landTypeFilterOnly ? LAND_TYPE_LABEL : "Планировка"}
+              </p>
               <div className="space-y-1 max-h-40 overflow-y-auto overflow-x-hidden pr-1 -mr-1">
-                {layouts.map((l) => (
+                {layoutFilterOptions.map((l) => (
                   <label
                     key={l}
                     className="flex items-start gap-2.5 cursor-pointer select-none rounded-lg px-2 py-1.5 hover:bg-muted/40 transition-colors min-w-0"
@@ -990,7 +996,7 @@ function GridCard({ property: p }: { property: DbProperty }) {
           <span className="flex items-center gap-1"><Maximize2 className="w-3 h-3 text-muted-foreground" />{p.area} м²</span>
           {land ? (
             <>
-              {landUse && <span>Участок под: {landUse}</span>}
+              {landUse && <span>{LAND_TYPE_LABEL}: {landUse}</span>}
               {cadastral && <span className="truncate">к/н {cadastral}</span>}
             </>
           ) : (
@@ -1059,7 +1065,7 @@ function ListCard({ property: p }: { property: DbProperty }) {
             <span>{p.area} м²</span>
             {land ? (
               <>
-                {landUse && <span>Участок под: {landUse}</span>}
+                {landUse && <span>{LAND_TYPE_LABEL}: {landUse}</span>}
                 {cadastral && <span>к/н {cadastral}</span>}
               </>
             ) : (

@@ -1,4 +1,4 @@
-import { getLandUse, isLandProperty } from "@/lib/propertyLand";
+import { getLandUse, isLandProperty, LAND_TYPE_LABEL } from "@/lib/propertyLand";
 import { isSaleDeal } from "@/lib/propertyDeal";
 
 export type PropertySidebarExtras = {
@@ -50,7 +50,7 @@ export function getSidebarVisibility(
     contractForm: !isSale,
     sublease: !isSale,
     landlordLabel: isSale ? "Продавец" : "Арендодатель",
-    purposeLabel: isLand ? "Участок под" : "Назначение",
+    purposeLabel: isLand ? LAND_TYPE_LABEL : "Назначение",
   };
 }
 

@@ -18,7 +18,7 @@ import RequestPriceDialog from "@/components/RequestPriceDialog";
 import PropertyAIChat from "@/components/PropertyAIChat";
 import PropertyUnitsTable from "@/components/PropertyUnitsTable";
 import PropertySidebarExtras from "@/components/PropertySidebarExtras";
-import { getLandCadastral, getLandUse, isLandProperty } from "@/lib/propertyLand";
+import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL } from "@/lib/propertyLand";
 import { isSaleDeal } from "@/lib/propertyDeal";
 
 const typeIcons: Record<string, React.ElementType> = {
@@ -125,7 +125,7 @@ export default function PropertyDetail() {
     ? [
         { icon: Ruler, label: "Площадь", value: `${property.area} м²` },
         { icon: FileText, label: "Кадастровый номер", value: getLandCadastral(landExtras) || "—" },
-        { icon: TreePine, label: "Участок под", value: getLandUse(property) || "—" },
+        { icon: TreePine, label: LAND_TYPE_LABEL, value: getLandUse(property) || "—" },
         { icon: FileText, label: "Тип сделки", value: property.deal_type },
         ...rentTerms,
       ]

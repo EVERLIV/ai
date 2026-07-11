@@ -1,15 +1,13 @@
 export const LAND_PROPERTY_TYPE = "Земля";
 
+export const LAND_TYPE_LABEL = "Тип";
+
 export const LAND_USE_OPTIONS = [
-  "Склад",
-  "Торговля",
-  "Производство",
-  "Автосервис",
-  "Офис",
-  "Сельхоз",
-  "Жилая застройка",
-  "Смешанное",
-  "Другое",
+  "ИЖС",
+  "Жилая",
+  "Коммерческая",
+  "Гаражи",
+  "Сельскохозяйственная",
 ] as const;
 
 export type PropertyExtrasLike = {
@@ -27,7 +25,7 @@ export function getLandCadastral(extras: PropertyExtrasLike | null | undefined):
   return value || null;
 }
 
-/** Назначение участка: extras.land_use, с fallback на старые поля layout/condition */
+/** Тип земельного участка: extras.land_use, с fallback на старые поля layout/condition */
 export function getLandUse(property: {
   type?: string | null;
   layout?: string | null;
