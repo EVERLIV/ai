@@ -118,7 +118,6 @@ export default function NearbyPropertiesSlider({ district, excludeId, type }: Pr
                 </div>
               </div>
               <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                <span className="px-1.5 py-0.5 bg-secondary">{p.class}</span>
                 <span className="truncate">{p.type}</span>
               </div>
             </div>

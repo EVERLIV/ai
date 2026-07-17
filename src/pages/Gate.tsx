@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Lock, ArrowRight } from "lucide-react";
 import heroImg from "@/assets/hero-warehouses.jpg";
 
-const SITE_PASSWORD = "arenda2025";
+const SITE_PASSWORD = "arenda2026";
 
 interface GateProps {
   onUnlock: () => void;

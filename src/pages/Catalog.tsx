@@ -24,6 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import CatalogMap from "@/components/CatalogMap";
 import PropertyImage from "@/components/PropertyImage";
+import PKKMapModal from "@/components/PKKMapModal";
 import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL, LAND_USE_OPTIONS } from "@/lib/propertyLand";
 
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
@@ -51,47 +52,35 @@ const typeIcons: Record<string, React.ElementType> = {
 
 const ELEVENLABS_AGENT_ID = "agent_7301kmyt4jxxf8etgj0av5x43qb4";
 
-// ─── Double Range Slider ───
-function RangeSlider({ min, max, valueMin, valueMax, step, onChangeMin, onChangeMax, format }: {
-  min: number; max: number; valueMin: number; valueMax: number; step: number;
+// ─── Range Inputs (от / до) ───
+function RangeInputs({ min, max, step, valueMin, valueMax, onChangeMin, onChangeMax, suffix }: {
+  min: number; max: number; step: number;
+  valueMin: number; valueMax: number;
   onChangeMin: (v: number) => void; onChangeMax: (v: number) => void;
-  format: (v: number) => string;
+  suffix?: string;
 }) {
-  const pct = (v: number) => ((v - min) / (max - min)) * 100;
-  const left = pct(valueMin);
-  const right = pct(valueMax);
   return (
-    <div className="w-full min-w-0">
-      <div className="relative h-6 flex items-center mx-1.5">
-        <div className="absolute inset-x-0 h-1 rounded-full bg-muted" />
-        <div
-          className="absolute h-1 rounded-full bg-primary"
-          style={{ left: `${left}%`, right: `${100 - right}%` }}
-        />
+    <div className="flex items-center gap-2 mt-1">
+      <div className="relative flex-1">
         <input
-          type="range" min={min} max={max} step={step} value={valueMin}
-          onChange={(e) => { const v = Number(e.target.value); if (v <= valueMax) onChangeMin(v); }}
-          className="range-thumb absolute inset-0 w-full opacity-0 cursor-pointer h-full"
-          style={{ zIndex: valueMin > max - step ? 5 : 3 }}
+          type="number" min={min} max={valueMax} step={step}
+          value={valueMin || ""}
+          placeholder="от"
+          onChange={(e) => { const v = Number(e.target.value); onChangeMin(Math.min(v, valueMax)); }}
+          className="w-full px-2.5 py-2 pr-7 text-xs border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-md"
         />
-        <input
-          type="range" min={min} max={max} step={step} value={valueMax}
-          onChange={(e) => { const v = Number(e.target.value); if (v >= valueMin) onChangeMax(v); }}
-          className="range-thumb absolute inset-0 w-full opacity-0 cursor-pointer h-full"
-          style={{ zIndex: 4 }}
-        />
-        <div
-          className="absolute w-4 h-4 rounded-full bg-background border-2 border-primary shadow-sm pointer-events-none -translate-x-1/2"
-          style={{ left: `${left}%` }}
-        />
-        <div
-          className="absolute w-4 h-4 rounded-full bg-background border-2 border-primary shadow-sm pointer-events-none -translate-x-1/2"
-          style={{ left: `${right}%` }}
-        />
+        {suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">{suffix}</span>}
       </div>
-      <div className="flex justify-between mt-2 text-[11px] tabular-nums text-muted-foreground">
-        <span className="truncate">{format(valueMin)}</span>
-        <span className="truncate">{format(valueMax)}</span>
+      <span className="text-muted-foreground text-xs shrink-0">—</span>
+      <div className="relative flex-1">
+        <input
+          type="number" min={valueMin} max={max} step={step}
+          value={valueMax >= max ? "" : valueMax}
+          placeholder="до"
+          onChange={(e) => { const v = e.target.value === "" ? max : Math.max(Number(e.target.value), valueMin); onChangeMax(v); }}
+          className="w-full px-2.5 py-2 pr-7 text-xs border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-md"
+        />
+        {suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">{suffix}</span>}
       </div>
     </div>
   );
@@ -402,6 +391,7 @@ export default function Catalog() {
   const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebar, setMobileSidebar] = useState(false);
+  const [activePKK, setActivePKK] = useState<string | null>(null);
 
   const [dealType, setDealType] = useState(() => searchParams.get("deal") || "Все");
   const [selectedTypes, setSelectedTypes] = useState<string[]>(() => {
@@ -414,11 +404,11 @@ export default function Catalog() {
   const [sort, setSort] = useState(() => searchParams.get("sort") || "date");
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") || "");
 
-  // Range sliders: price 0–500000, area 0–10000
+  // Range sliders: price 0–50000000, area 0–300000
   const [priceMin, setPriceMin] = useState(() => Number(searchParams.get("priceMin") || 0));
-  const [priceMax, setPriceMax] = useState(() => Number(searchParams.get("priceMax") || 500000));
+  const [priceMax, setPriceMax] = useState(() => Number(searchParams.get("priceMax") || 50000000));
   const [areaMin, setAreaMin] = useState(() => Number(searchParams.get("areaMin") || 0));
-  const [areaMax, setAreaMax] = useState(() => Number(searchParams.get("areaMax") || 10000));
+  const [areaMax, setAreaMax] = useState(() => Number(searchParams.get("areaMax") || 300000));
 
   // New filters
   const [ceilingMin, setCeilingMin] = useState(() => Number(searchParams.get("ceil") || 0));
@@ -453,9 +443,9 @@ export default function Catalog() {
     if (sort !== "date") params.sort = sort;
     if (debouncedSearch) params.q = debouncedSearch;
     if (priceMin > 0) params.priceMin = String(priceMin);
-    if (priceMax < 500000) params.priceMax = String(priceMax);
+    if (priceMax < 50000000) params.priceMax = String(priceMax);
     if (areaMin > 0) params.areaMin = String(areaMin);
-    if (areaMax < 10000) params.areaMax = String(areaMax);
+    if (areaMax < 300000) params.areaMax = String(areaMax);
     if (ceilingMin > 0) params.ceil = String(ceilingMin);
     if (parkingOnly) params.parking = "1";
     if (selectedLayouts.length > 0) params.layouts = selectedLayouts.join(",");
@@ -470,8 +460,8 @@ export default function Catalog() {
     setSelectedLayouts((prev) => prev.includes(l) ? prev.filter((x) => x !== l) : [...prev, l]);
   };
 
-  const isPriceFiltered = priceMin > 0 || priceMax < 500000;
-  const isAreaFiltered = areaMin > 0 || areaMax < 10000;
+  const isPriceFiltered = priceMin > 0 || priceMax < 50000000;
+  const isAreaFiltered = areaMin > 0 || areaMax < 300000;
 
   const activeFiltersCount = [
     dealType !== "Все",
@@ -490,7 +480,7 @@ export default function Catalog() {
   const resetFilters = () => {
     setDealType("Все"); setSelectedTypes([]); setDistrict("Все");
     setPropertyClass("Все"); setCondition("Все");
-    setPriceMin(0); setPriceMax(500000); setAreaMin(0); setAreaMax(10000);
+    setPriceMin(0); setPriceMax(50000000); setAreaMin(0); setAreaMax(300000);
     setSearchQuery(""); setCeilingMin(0); setParkingOnly(false); setSelectedLayouts([]);
   };
 
@@ -512,10 +502,10 @@ export default function Catalog() {
     if (condition !== "Все") result = result.filter((p) => p.condition === condition);
     if (isPriceFiltered) {
       if (priceMin > 0) result = result.filter((p) => Number(p.price) >= priceMin || Number(p.price) === 0);
-      if (priceMax < 500000) result = result.filter((p) => Number(p.price) <= priceMax || Number(p.price) === 0);
+      if (priceMax < 50000000) result = result.filter((p) => Number(p.price) <= priceMax || Number(p.price) === 0);
     }
     if (areaMin > 0) result = result.filter((p) => Number(p.area) >= areaMin);
-    if (areaMax < 10000) result = result.filter((p) => Number(p.area) <= areaMax);
+    if (areaMax < 300000) result = result.filter((p) => Number(p.area) <= areaMax);
     if (ceilingMin > 0) result = result.filter((p) => isLandProperty(p.type) || Number(p.ceiling_height) >= ceilingMin);
     if (parkingOnly) result = result.filter((p) => isLandProperty(p.type) || (p.parking && p.parking !== "Нет" && p.parking !== "-"));
     if (selectedLayouts.length > 0) result = result.filter((p) => {
@@ -543,8 +533,8 @@ export default function Catalog() {
     if (district !== "Все") chips.push({ label: district, onRemove: () => setDistrict("Все") });
     if (propertyClass !== "Все") chips.push({ label: `Класс ${propertyClass}`, onRemove: () => setPropertyClass("Все") });
     if (condition !== "Все") chips.push({ label: condition, onRemove: () => setCondition("Все") });
-    if (isPriceFiltered) chips.push({ label: `${priceMin > 0 ? `от ${(priceMin / 1000).toFixed(0)}к` : ""}${priceMax < 500000 ? ` до ${(priceMax / 1000).toFixed(0)}к ₽` : " ₽"}`.trim(), onRemove: () => { setPriceMin(0); setPriceMax(500000); } });
-    if (isAreaFiltered) chips.push({ label: `${areaMin > 0 ? `от ${areaMin}` : ""}${areaMax < 10000 ? ` до ${areaMax} м²` : " м²"}`.trim(), onRemove: () => { setAreaMin(0); setAreaMax(10000); } });
+    if (isPriceFiltered) chips.push({ label: `${priceMin > 0 ? `от ${(priceMin / 1000).toFixed(0)}к` : ""}${priceMax < 50000000 ? ` до ${(priceMax / 1000).toFixed(0)}к ₽` : " ₽"}`.trim(), onRemove: () => { setPriceMin(0); setPriceMax(50000000); } });
+    if (isAreaFiltered) chips.push({ label: `${areaMin > 0 ? `от ${areaMin}` : ""}${areaMax < 300000 ? ` до ${areaMax} м²` : " м²"}`.trim(), onRemove: () => { setAreaMin(0); setAreaMax(300000); } });
     if (ceilingMin > 0) chips.push({ label: `Потолки от ${ceilingMin} м`, onRemove: () => setCeilingMin(0) });
     if (parkingOnly) chips.push({ label: "Парковка", onRemove: () => setParkingOnly(false) });
     selectedLayouts.forEach((l) => chips.push({ label: l, onRemove: () => toggleLayout(l) }));
@@ -552,8 +542,6 @@ export default function Catalog() {
     return chips;
   }, [dealType, selectedTypes, district, propertyClass, condition, isPriceFiltered, isAreaFiltered, priceMin, priceMax, areaMin, areaMax, ceilingMin, parkingOnly, selectedLayouts, debouncedSearch]);
 
-  const formatPrice = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}к` : String(v);
-  const formatArea = (v: number) => `${v} м²`;
 
   const paramsActive = propertyClass !== "Все" || condition !== "Все" || ceilingMin > 0 || parkingOnly || selectedLayouts.length > 0;
   const landTypeFilterOnly = selectedTypes.length > 0 && selectedTypes.every((t) => t === "Земля");
@@ -636,20 +624,20 @@ export default function Catalog() {
       <div className="px-4 py-4 space-y-5">
         <div>
           <FilterSectionHeader icon={Banknote} label="Цена, ₽/мес" active={isPriceFiltered} />
-          <RangeSlider
-            min={0} max={500000} step={5000}
+          <RangeInputs
+            min={0} max={50000000} step={50000}
             valueMin={priceMin} valueMax={priceMax}
             onChangeMin={setPriceMin} onChangeMax={setPriceMax}
-            format={formatPrice}
+            suffix="₽"
           />
         </div>
         <div>
           <FilterSectionHeader icon={Ruler} label="Площадь, м²" active={isAreaFiltered} />
-          <RangeSlider
-            min={0} max={10000} step={10}
+          <RangeInputs
+            min={0} max={300000} step={100}
             valueMin={areaMin} valueMax={areaMax}
             onChangeMin={setAreaMin} onChangeMax={setAreaMax}
-            format={formatArea}
+            suffix="м²"
           />
         </div>
       </div>
@@ -692,7 +680,7 @@ export default function Catalog() {
               <p className="text-[11px] font-medium text-muted-foreground mb-2">
                 {landTypeFilterOnly ? LAND_TYPE_LABEL : "Планировка"}
               </p>
-              <div className="space-y-1 max-h-40 overflow-y-auto overflow-x-hidden pr-1 -mr-1">
+              <div className="space-y-1">
                 {layoutFilterOptions.map((l) => (
                   <label
                     key={l}
@@ -849,9 +837,10 @@ export default function Catalog() {
 
           {/* Левый сайдбар — единое пространство фильтров */}
           <aside
-            className="hidden lg:flex flex-col shrink-0 overflow-hidden catalog-filter-sidebar bg-muted/10"
+            className="hidden lg:flex flex-col shrink-0 overflow-hidden catalog-filter-sidebar bg-muted/10 sticky top-[148px] self-start"
             style={{
               width: sidebarOpen ? SIDEBAR_W_OPEN : SIDEBAR_W_COLLAPSED,
+              height: "calc(100vh - 148px)",
               borderRight: "1px solid hsl(var(--border) / 0.3)",
               transition: "width 280ms cubic-bezier(0.4,0,0.2,1)",
             }}
@@ -938,6 +927,7 @@ export default function Catalog() {
         </div>
       </div>
       <SiteFooter />
+      {activePKK && <PKKMapModal cadastralNumber={activePKK} onClose={() => setActivePKK(null)} />}
 
       <style>{`
         .range-thumb { -webkit-appearance: none; pointer-events: all; }
@@ -968,7 +958,6 @@ function GridCard({ property: p }: { property: DbProperty }) {
         <div className="absolute top-3 left-3 flex gap-1.5">
           <span className="px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">{p.deal_type}</span>
           <span className="px-2 py-0.5 rounded-md bg-card/90 backdrop-blur text-foreground text-[10px] font-semibold">{p.type}</span>
-          {p.class !== "-" && <span className="px-2 py-0.5 rounded-md bg-accent/90 text-accent-foreground text-[10px] font-semibold">Класс {p.class}</span>}
         </div>
         <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-md bg-card/80 backdrop-blur text-[10px] text-muted-foreground">
           <Eye className="w-3 h-3" /> {p.views_count || 0}
@@ -997,7 +986,7 @@ function GridCard({ property: p }: { property: DbProperty }) {
           {land ? (
             <>
               {landUse && <span>{LAND_TYPE_LABEL}: {landUse}</span>}
-              {cadastral && <span className="truncate">к/н {cadastral}</span>}
+              {cadastral && <button onClick={(e) => { e.preventDefault(); setActivePKK(cadastral); }} className="truncate text-primary hover:underline underline-offset-2">к/н {cadastral}</button>}
             </>
           ) : (
             <>
@@ -1045,12 +1034,12 @@ function ListCard({ property: p }: { property: DbProperty }) {
                   <div className="font-display text-lg font-bold text-foreground group-hover:text-primary transition-colors">
                     {Number(p.price).toLocaleString("ru-RU")} ₽{p.deal_type === "Аренда" && <span className="text-xs font-normal text-muted-foreground">/мес</span>}
                   </div>
-                  <div className="text-xs text-muted-foreground">{Number(p.price_per_m2).toLocaleString("ru-RU")} ₽/м² · {p.type} {p.class !== "-" ? `класса ${p.class}` : ""}</div>
+                  <div className="text-xs text-muted-foreground">{Number(p.price_per_m2).toLocaleString("ru-RU")} ₽/м² · {p.type}</div>
                 </>
               ) : (
                 <>
                   <div className="font-display text-lg font-bold text-muted-foreground">Уточнить у менеджера</div>
-                  <div className="text-xs text-muted-foreground">{p.type} {p.class !== "-" ? `класса ${p.class}` : ""}</div>
+                  <div className="text-xs text-muted-foreground">{p.type}</div>
                 </>
               )}
             </div>
@@ -1066,7 +1055,7 @@ function ListCard({ property: p }: { property: DbProperty }) {
             {land ? (
               <>
                 {landUse && <span>{LAND_TYPE_LABEL}: {landUse}</span>}
-                {cadastral && <span>к/н {cadastral}</span>}
+                {cadastral && <button onClick={(e) => { e.preventDefault(); setActivePKK(cadastral); }} className="text-primary hover:underline underline-offset-2">к/н {cadastral}</button>}
               </>
             ) : (
               <>

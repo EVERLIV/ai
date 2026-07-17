@@ -85,11 +85,6 @@ export default function PropertyGrid({ filters }: { filters?: PropertyFilters })
                     <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium z-10">
                       {p.type}
                     </span>
-                    {p.class !== "-" && (
-                      <span className="absolute top-3 right-3 px-2 py-1 rounded-full bg-card text-foreground text-xs font-medium shadow-card">
-                        Класс {p.class}
-                      </span>
-                    )}
                   </div>
 
                   <div className="p-5">

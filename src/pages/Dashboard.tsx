@@ -176,12 +176,11 @@ export default function Dashboard() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   // Column visibility
-  type ColKey = "photo" | "type" | "class" | "address" | "district" | "area" | "price" | "price_per_m2" | "deal_type" | "floor" | "ceiling_height" | "parking" | "condition" | "layout" | "deposit" | "contract_term" | "features" | "photos_count" | "views_count" | "manager" | "client" | "status" | "published_date" | "actions";
+  type ColKey = "photo" | "type" | "address" | "district" | "area" | "price" | "price_per_m2" | "deal_type" | "floor" | "ceiling_height" | "parking" | "condition" | "layout" | "deposit" | "contract_term" | "features" | "photos_count" | "views_count" | "manager" | "client" | "status" | "published_date" | "actions";
 
   const ALL_COLUMNS: { key: ColKey; label: string; defaultOn: boolean }[] = [
     { key: "photo", label: "Фото", defaultOn: true },
     { key: "type", label: "Тип", defaultOn: true },
-    { key: "class", label: "Класс", defaultOn: true },
     { key: "address", label: "Адрес", defaultOn: true },
     { key: "district", label: "Район", defaultOn: true },
     { key: "area", label: "Площадь", defaultOn: true },
@@ -615,19 +614,12 @@ export default function Dashboard() {
                     {/* Section: Основное */}
                     <fieldset className="border border-border rounded-lg p-3 space-y-3">
                       <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Основное</legend>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <div>
                           <Label className="text-xs mb-1 block">Тип</Label>
                           <Select value={form.type} onValueChange={handleTypeChange}>
                             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>{TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-xs mb-1 block">Класс</Label>
-                          <Select value={form.class} onValueChange={(v) => updateField("class", v)}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>{CLASSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                           </Select>
                         </div>
                         <div>
@@ -1163,7 +1155,6 @@ export default function Dashboard() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{p.type}</Badge>
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">{p.class}</Badge>
                             {!p.is_active && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Скрыт</Badge>}
                           </div>
                           <p className="text-xs truncate">{p.address}</p>
@@ -1191,7 +1182,6 @@ export default function Dashboard() {
                       <TableRow>
                         {visibleCols.has("photo") && <TableHead className="w-12">Фото</TableHead>}
                         {visibleCols.has("type") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("type")}><span className="flex items-center">Тип<SortIcon field="type" /></span></TableHead>}
-                        {visibleCols.has("class") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("class")}><span className="flex items-center">Класс<SortIcon field="class" /></span></TableHead>}
                         {visibleCols.has("address") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("address")}><span className="flex items-center">Адрес<SortIcon field="address" /></span></TableHead>}
                         {visibleCols.has("district") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("district")}><span className="flex items-center">Район<SortIcon field="district" /></span></TableHead>}
                         {visibleCols.has("area") && <TableHead className="cursor-pointer select-none" onClick={() => handleSort("area")}><span className="flex items-center">Площадь<SortIcon field="area" /></span></TableHead>}
@@ -1233,7 +1223,6 @@ export default function Dashboard() {
                               )}
                             </TableCell>}
                             {visibleCols.has("type") && <TableCell><Badge variant="secondary">{p.type}</Badge></TableCell>}
-                            {visibleCols.has("class") && <TableCell><Badge variant="outline">{p.class}</Badge></TableCell>}
                             {visibleCols.has("address") && <TableCell className="text-xs whitespace-normal min-w-[220px]">{p.address}</TableCell>}
                             {visibleCols.has("district") && <TableCell className="text-xs">{p.district || "—"}</TableCell>}
                             {visibleCols.has("area") && <TableCell className="text-xs">{p.area} м²</TableCell>}

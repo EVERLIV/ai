@@ -39,7 +39,7 @@ const queryClient = new QueryClient();
 const App = () => {
   const [unlocked, setUnlocked] = useState(() => {
     // v2: новый пароль — сбрасываем старые сессии
-    if (localStorage.getItem("site_unlock_v") !== "2") {
+    if (localStorage.getItem("site_unlock_v") !== "3") {
       localStorage.removeItem("site_unlocked");
     }
     return localStorage.getItem("site_unlocked") === "true";
@@ -47,7 +47,7 @@ const App = () => {
 
   if (!unlocked) {
     return <Gate onUnlock={() => {
-      localStorage.setItem("site_unlock_v", "2");
+      localStorage.setItem("site_unlock_v", "3");
       setUnlocked(true);
     }} />;
   }

@@ -169,26 +169,6 @@ export default function AIPropertyWizard({ properties, onClose }: { properties: 
     }
   };
 
-  // ── Header ──
-  const Header = (
-    <div className="flex items-center gap-2 px-3 pt-3 pb-2">
-      <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-sm">
-        <Wand2 className="w-3.5 h-3.5 text-primary-foreground" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[11px] font-semibold text-foreground leading-tight">ИИ-подбор объекта</div>
-        <div className="text-[10px] text-muted-foreground leading-tight truncate">
-          {showResult ? (loading ? "ИИ анализирует..." : "Результат подбора") : `Шаг ${step + 1} из ${STEPS.length} · ${STEPS[step]}`}
-        </div>
-      </div>
-      {(step > 0 || showResult) && (
-        <button onClick={reset} title="Начать заново"
-          className="p-1 rounded-md text-muted-foreground hover:text-primary transition-colors">
-          <RotateCcw className="w-3 h-3" />
-        </button>
-      )}
-    </div>
-  );
 
   // ── Progress ──
   const Progress = (
@@ -208,7 +188,7 @@ export default function AIPropertyWizard({ properties, onClose }: { properties: 
   if (showResult) {
     return (
       <div className="bg-muted/40 min-w-0 overflow-hidden">
-        {Header}
+
         {Progress}
         <div className="px-3 pb-3 space-y-2 min-w-0">
           {loading ? (
@@ -310,7 +290,6 @@ export default function AIPropertyWizard({ properties, onClose }: { properties: 
   // ── Steps ──
   return (
     <div className="bg-muted/40 min-w-0 overflow-hidden">
-      {Header}
       {Progress}
 
       <div className="px-3 pb-3 min-h-[120px] min-w-0">

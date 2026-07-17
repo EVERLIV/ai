@@ -217,40 +217,47 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
       `} style={{ background: "hsl(var(--background))" }}>
 
         {/* HEADER */}
-        <div className="shrink-0 flex items-center gap-3 px-4 bg-card border-b border-border/60"
-          style={{ paddingTop: "max(10px, env(safe-area-inset-top))", paddingBottom: "10px" }}>
+        <div
+          className="shrink-0 flex items-center gap-3 px-4 bg-card border-b border-border"
+          style={{ paddingTop: "max(14px, env(safe-area-inset-top))", paddingBottom: "14px" }}
+        >
+          {/* Close */}
           <button onClick={() => setOpen(false)}
-            className="shrink-0 -ml-1 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-            <X className="w-5 h-5" />
+            className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+            <X className="w-4 h-4" />
           </button>
+
+          {/* Avatar with online dot */}
           <div className="relative shrink-0">
-            <img src={consultantAvatar} alt="Анастасия" className="w-10 h-10 rounded-full object-cover object-top" />
+            <img src={consultantAvatar} alt="" className="w-10 h-10 rounded-full object-cover object-top shadow-sm" />
             <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-card rounded-full" />
           </div>
+
+          {/* Name + subtitle */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-2">
-              <span className="text-[13px] font-bold text-foreground">Анастасия</span>
-              <span className="text-[10px] text-muted-foreground">АРЕНДА СИТИ</span>
-            </div>
-            <div className="h-4 flex items-center">
+            <p className="text-sm font-semibold text-foreground leading-tight truncate">Анастасия</p>
+            <p className="text-xs text-muted-foreground leading-tight mt-0.5">
               {thinking ? (
-                <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600">
-                  <span className="inline-flex gap-0.5">
-                    <span className="w-1 h-1 rounded-full bg-emerald-500 animate-[dot-pulse_1.4s_0s_infinite]" />
-                    <span className="w-1 h-1 rounded-full bg-emerald-500 animate-[dot-pulse_1.4s_0.2s_infinite]" />
-                    <span className="w-1 h-1 rounded-full bg-emerald-500 animate-[dot-pulse_1.4s_0.4s_infinite]" />
+                <span className="inline-flex items-center gap-1.5 text-emerald-600">
+                  <span className="inline-flex gap-[3px]">
+                    {[0, 0.2, 0.4].map((d) => (
+                      <span key={d} className="w-1 h-1 rounded-full bg-emerald-500"
+                        style={{ animation: `dot-pulse 1.4s ${d}s infinite` }} />
+                    ))}
                   </span>
                   печатает…
                 </span>
               ) : (
-                <span className="text-[11px] text-muted-foreground">Консультант по недвижимости</span>
+                "Консультант"
               )}
-            </div>
+            </p>
           </div>
+
+          {/* Call */}
           <a href="tel:+73952551234"
-            className="shrink-0 flex items-center gap-1.5 px-3 h-8 bg-emerald-500 text-white text-[11px] font-semibold hover:bg-emerald-600 transition-colors rounded-sm">
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white text-xs font-medium px-3 h-8 transition-colors">
             <PhoneCall className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Позвонить</span>
+            Позвонить
           </a>
         </div>
 

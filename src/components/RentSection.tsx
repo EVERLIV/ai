@@ -88,7 +88,7 @@ export default function RentSection() {
                       <span className="text-[11px] font-normal text-muted-foreground">/мес</span>
                     </div>
                     <div className="text-[11px] text-muted-foreground mt-0.5">
-                      {p.area} м² · Класс {p.class}
+                      {p.area} м²
                     </div>
                     <div className="flex items-start gap-1 text-[11px] text-muted-foreground mt-2">
                       <MapPin className="w-3 h-3 shrink-0 mt-0.5" />

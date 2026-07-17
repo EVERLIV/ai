@@ -18,6 +18,7 @@ import RequestPriceDialog from "@/components/RequestPriceDialog";
 import PropertyAIChat from "@/components/PropertyAIChat";
 import PropertyUnitsTable from "@/components/PropertyUnitsTable";
 import PropertySidebarExtras from "@/components/PropertySidebarExtras";
+import PKKMapModal from "@/components/PKKMapModal";
 import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL } from "@/lib/propertyLand";
 import { isSaleDeal } from "@/lib/propertyDeal";
 
@@ -32,6 +33,7 @@ export default function PropertyDetail() {
   const { data: allProperties } = useProperties();
   const { user } = useAuth();
   const [activePhoto, setActivePhoto] = useState(0);
+  const [showPKK, setShowPKK] = useState(false);
 
   // Соседние объекты для свайпа
   const ids = allProperties?.map((p) => p.id) ?? [];
@@ -124,7 +126,12 @@ export default function PropertyDetail() {
   const specs = isLand
     ? [
         { icon: Ruler, label: "Площадь", value: `${property.area} м²` },
-        { icon: FileText, label: "Кадастровый номер", value: getLandCadastral(landExtras) || "—" },
+        {
+          icon: FileText, label: "Кадастровый номер",
+          value: getLandCadastral(landExtras)
+            ? <button onClick={() => setShowPKK(true)} className="font-mono text-primary hover:underline underline-offset-2 cursor-pointer">{getLandCadastral(landExtras)}</button>
+            : "—"
+        },
         { icon: TreePine, label: LAND_TYPE_LABEL, value: getLandUse(property) || "—" },
         { icon: FileText, label: "Тип сделки", value: property.deal_type },
         ...rentTerms,
@@ -362,9 +369,6 @@ export default function PropertyDetail() {
                 )}
                 <div className="absolute top-4 left-4 flex flex-wrap gap-2">
                   <span className="px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium">{property.type}</span>
-                  {property.class !== "-" && (
-                    <span className="px-3 py-1.5 rounded-full bg-card text-foreground text-xs font-medium shadow-card">Класс {property.class}</span>
-                  )}
                 </div>
                 <span className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-card/80 backdrop-blur text-foreground text-xs font-medium">
                   {activePhoto + 1} / {photosCount}
@@ -473,6 +477,9 @@ export default function PropertyDetail() {
 
       </main>
       <SiteFooter />
+      {showPKK && getLandCadastral(landExtras) && (
+        <PKKMapModal cadastralNumber={getLandCadastral(landExtras)!} onClose={() => setShowPKK(false)} />
+      )}
     </div>
   );
 }

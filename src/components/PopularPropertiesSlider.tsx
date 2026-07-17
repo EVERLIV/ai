@@ -118,7 +118,7 @@ export default function PopularPropertiesSlider() {
                     </span>
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    {p.area} м² · Класс {p.class}
+                    {p.area} м²
                   </div>
                   <div className="flex items-start gap-1 text-[11px] text-muted-foreground">
                     <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
