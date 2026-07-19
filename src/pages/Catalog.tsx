@@ -1,26 +1,15 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useProperties, type DbProperty } from "@/hooks/useProperties";
-import { useConversation } from "@elevenlabs/react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import NewsSidebar from "@/components/NewsSidebar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  SlidersHorizontal, X, ChevronDown, MapPin, Maximize2, LayoutGrid, List,
-  ArrowUpDown, Eye, Calendar,
-  Sparkles, Send, Phone, PhoneOff, Mic, PanelLeftClose, PanelLeft,
-  Search, ChevronUp, Map as MapIcon, Banknote, Ruler, Tag, Building, Settings2,
+  SlidersHorizontal, X, ChevronDown, MapPin, LayoutGrid, List,
+  Search, Map as MapIcon, Check, Eye,
 } from "lucide-react";
-import {
-  Buildings as PhBuildings,
-  Storefront as PhStorefront,
-  Warehouse as PhWarehouse,
-  Tree as PhTree,
-  Factory as PhFactory,
-} from "@phosphor-icons/react";
+import { Buildings as PhBuildings } from "@phosphor-icons/react";
+import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import CatalogMap from "@/components/CatalogMap";
 import PropertyImage from "@/components/PropertyImage";
@@ -30,6 +19,8 @@ import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL, LAND_USE
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
 const DEALS = ["Все", "Аренда", "Продажа"];
 const CLASSES = ["Все", "A", "A+", "B+", "B", "C"];
+const PRICE_MAX_DEFAULT = 50000000;
+const AREA_MAX_DEFAULT = 300000;
 const SORT_OPTIONS = [
   { label: "Сначала новые", value: "date" },
   { label: "Цена ↑", value: "price_asc" },
@@ -43,16 +34,81 @@ const CEILING_OPTIONS = [
   { label: "от 5 м", value: 5 },
 ];
 
-const SIDEBAR_W_OPEN = 280;
-const SIDEBAR_W_COLLAPSED = 52;
+// ─── useDebounce ───
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
 
-const typeIcons: Record<string, React.ElementType> = {
-  "Офис": PhBuildings, "Торговая": PhStorefront, "Склад": PhWarehouse, "Земля": PhTree, "Производство": PhFactory,
-};
+// ─── Dropdown pill for the horizontal filter bar ───
+function FilterDropdown({ label, valueLabel, active, children, panelWidth = 260 }: {
+  label: string;
+  valueLabel?: string;
+  active?: boolean;
+  children: React.ReactNode | ((close: () => void) => React.ReactNode);
+  panelWidth?: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-const ELEVENLABS_AGENT_ID = "agent_7301kmyt4jxxf8etgj0av5x43qb4";
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
 
-// ─── Range Inputs (от / до) ───
+  const close = useCallback(() => setOpen(false), []);
+
+  return (
+    <div ref={ref} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md border text-xs font-medium transition-colors whitespace-nowrap ${
+          active
+            ? "border-primary/60 text-primary bg-primary/5"
+            : "border-border bg-card text-foreground hover:border-foreground/30"
+        }`}
+      >
+        <span>{active && valueLabel ? valueLabel : label}</span>
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""} ${active ? "text-primary" : "text-muted-foreground"}`} />
+      </button>
+      {open && (
+        <div
+          className="absolute left-0 top-[calc(100%+6px)] z-40 rounded-lg border border-border bg-card shadow-lg p-3"
+          style={{ width: panelWidth }}
+        >
+          {typeof children === "function" ? children(close) : children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Option row inside a dropdown panel ───
+function OptionRow({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-xs transition-colors ${
+        selected ? "bg-primary/10 text-primary font-semibold" : "text-foreground hover:bg-muted"
+      }`}
+    >
+      <span className="truncate">{label}</span>
+      {selected && <Check className="w-3.5 h-3.5 shrink-0" />}
+    </button>
+  );
+}
+
+// ─── от / до numeric inputs ───
 function RangeInputs({ min, max, step, valueMin, valueMax, onChangeMin, onChangeMax, suffix }: {
   min: number; max: number; step: number;
   valueMin: number; valueMax: number;
@@ -60,7 +116,7 @@ function RangeInputs({ min, max, step, valueMin, valueMax, onChangeMin, onChange
   suffix?: string;
 }) {
   return (
-    <div className="flex items-center gap-2 mt-1">
+    <div className="flex items-center gap-2">
       <div className="relative flex-1">
         <input
           type="number" min={min} max={valueMax} step={step}
@@ -86,300 +142,169 @@ function RangeInputs({ min, max, step, valueMin, valueMax, onChangeMin, onChange
   );
 }
 
-// ─── Modern select ───
-function SelectFilter({ label, ariaLabel, value, options, onChange }: {
-  label?: string; ariaLabel?: string; value: string; options: string[]; onChange: (v: string) => void;
-}) {
+// ─── Fade-in при появлении в вьюпорте ───
+function FadeIn({ children, delay = 0, className }: { children: React.ReactNode; delay?: number; className?: string }) {
   return (
-    <div className="min-w-0">
-      {label && <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">{label}</label>}
-      <div className="relative rounded-lg border border-border/70 bg-muted/30 hover:border-border transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          aria-label={ariaLabel ?? label}
-          className="w-full min-w-0 appearance-none px-3 py-2 pr-8 bg-transparent text-xs text-foreground focus:outline-none cursor-pointer truncate"
-        >
-          {options.map((o) => <option key={o} value={o}>{o}</option>)}
-        </select>
-        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-      </div>
-    </div>
-  );
-}
-
-// ─── Filter section header ───
-function FilterSectionHeader({ icon: Icon, label, active }: { icon: React.ElementType; label: string; active?: boolean }) {
-  return (
-    <div className="flex items-center gap-2 mb-3 min-w-0">
-      <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-        <Icon className="w-3.5 h-3.5" />
-      </div>
-      <p className={`text-xs font-semibold truncate ${active ? "text-foreground" : "text-muted-foreground"}`}>{label}</p>
-    </div>
-  );
-}
-
-// ─── Collapsed rail icon ───
-function RailIcon({ icon: Icon, label, active, onClick }: {
-  icon: React.ElementType; label: string; active?: boolean; onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      title={label}
-      onClick={onClick}
-      className={`relative w-9 h-9 mx-auto flex items-center justify-center rounded-lg transition-colors ${
-        active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
-      }`}
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay }}
+      className={className}
     >
-      <Icon className="w-4 h-4" />
-      {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full bg-primary" />}
-    </button>
+      {children}
+    </motion.div>
   );
 }
 
-// ─── Collapsible section ───
-function Section({ title, defaultOpen = false, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div>
-      <button
-        onClick={() => setOpen(!open)}
-        className="group w-full flex items-center justify-between py-1.5 text-[11px] font-semibold text-foreground uppercase tracking-[0.1em] transition-colors"
-      >
-        <span className="section-title group-hover:text-primary transition-colors">{title}</span>
-        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-all duration-300 group-hover:text-primary ${open ? "rotate-180" : ""}`} />
-      </button>
-      <div className={`collapse-grid ${open ? "is-open" : ""}`}>
-        <div className="collapse-inner">
-          <div className="space-y-2.5 pt-1.5">{children}</div>
-        </div>
-      </div>
-    </div>
-  );
+// ─── Формат цены под макет: "6 300 000 ₽" / "400 000 ₽/мес" ───
+function formatPrice(p: DbProperty): string | null {
+  const price = Number(p.price);
+  if (!price) return null;
+  return `${price.toLocaleString("ru-RU")} ₽${p.deal_type === "Аренда" ? "/мес" : ""}`;
 }
 
-// ─── Active filter chip ───
-function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
-  return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-medium max-w-full">
-      <span className="truncate">{label}</span>
-      <button onClick={onRemove} aria-label={`Убрать фильтр ${label}`} className="hover:text-primary/70 transition-colors shrink-0">
-        <X className="w-2.5 h-2.5" />
-      </button>
-    </span>
-  );
-}
-
-// ─── Unified filter panel footer ───
-function FilterPanelFooter({
-  count, isLoading, activeFiltersCount, activeChips, onReset, onClose, showCloseButton,
-}: {
-  count: number;
-  isLoading: boolean;
-  activeFiltersCount: number;
-  activeChips: { label: string; onRemove: () => void }[];
-  onReset: () => void;
-  onClose?: () => void;
-  showCloseButton?: boolean;
-}) {
-  return (
-    <div className="shrink-0 border-t border-border/40 bg-muted/30">
-      {activeChips.length > 0 && (
-        <div className="px-4 pt-3 flex flex-wrap gap-1.5">
-          {activeChips.map((c, i) => <Chip key={i} label={c.label} onRemove={c.onRemove} />)}
-        </div>
-      )}
-      <div className="px-4 py-3 space-y-2.5">
-        <p className="text-sm text-muted-foreground">
-          {isLoading ? (
-            <span className="inline-flex gap-1 items-center">
-              <span className="w-1 h-1 bg-muted-foreground animate-bounce" />
-              <span className="w-1 h-1 bg-muted-foreground animate-bounce [animation-delay:120ms]" />
-              <span className="w-1 h-1 bg-muted-foreground animate-bounce [animation-delay:240ms]" />
-            </span>
-          ) : (
-            <>Найдено <span className="font-semibold text-foreground tabular-nums">{count}</span> объектов</>
-          )}
-        </p>
-        <div className={`flex gap-2 ${showCloseButton ? "" : ""}`}>
-          {activeFiltersCount > 0 && (
-            <button
-              onClick={onReset}
-              className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium text-destructive border border-destructive/20 hover:bg-destructive/5 transition-colors ${showCloseButton ? "flex-1" : "w-full"}`}
-            >
-              <X className="w-3.5 h-3.5 shrink-0" />
-              Сбросить
-            </button>
-          )}
-          {showCloseButton && onClose && (
-            <button
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
-            >
-              Показать {isLoading ? "…" : count}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Mini AI Chat in sidebar ───
-function SidebarAIChat() {
-  const [messages, setMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [isVoice, setIsVoice] = useState(false);
-  const [connecting, setConnecting] = useState(false);
-  const [transcripts, setTranscripts] = useState<string[]>([]);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
-
-  const conversation = useConversation({
-    onConnect: () => { setConnecting(false); setTranscripts([]); },
-    onDisconnect: () => setIsVoice(false),
-    onMessage: (msg: any) => {
-      if (msg.type === "agent_response") {
-        const t = msg.agent_response_event?.agent_response;
-        if (t) setTranscripts((p) => [...p, `🤖 ${t}`]);
-      }
-      if (msg.type === "user_transcript") {
-        const t = msg.user_transcription_event?.user_transcript;
-        if (t) setTranscripts((p) => [...p, `👤 ${t}`]);
-      }
-    },
-    onError: () => {
-      toast({ title: "Ошибка голосового агента", variant: "destructive" });
-      setConnecting(false); setIsVoice(false);
-    },
-  });
-
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, transcripts, loading]);
-
-  const startVoice = useCallback(async () => {
-    setConnecting(true);
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token", {
-        body: { agent_id: ELEVENLABS_AGENT_ID },
-      });
-      if (error || !data?.token) throw new Error("Нет токена");
-      await conversation.startSession({ conversationToken: data.token, connectionType: "webrtc" });
-      setIsVoice(true);
-    } catch {
-      toast({ title: "Не удалось начать звонок", variant: "destructive" });
-      setConnecting(false);
-    }
-  }, [conversation, toast]);
-
-  const endVoice = useCallback(async () => {
-    await conversation.endSession();
-    setIsVoice(false);
-  }, [conversation]);
-
-  const send = (text: string) => {
-    if (!text.trim() || loading) return;
-    setMessages((p) => [...p, { role: "user", text: text.trim() }]);
-    setInput("");
-    setLoading(true);
-    setTimeout(() => {
-      setMessages((p) => [...p, { role: "assistant", text: "ИИ работает в демо-режиме. Уточните ваш запрос!" }]);
-      setLoading(false);
-    }, 1200);
-  };
+// ─── Карточка объекта (Variant 2) ───
+function GridCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK: (cad: string) => void }) {
+  const land = isLandProperty(p.type);
+  const landUse = getLandUse(p);
+  const cadastral = getLandCadastral(p.extras as Record<string, unknown> | null);
+  const price = formatPrice(p);
+  const title = p.description?.split("\n")[0]?.slice(0, 60) || `${p.type} · ${p.district}`;
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 px-3 py-2">
-        <div className={`w-6 h-6 rounded-full flex items-center justify-center ${isVoice ? "bg-primary/15" : "bg-accent"}`}>
-          {isVoice ? <Phone className="w-3 h-3 text-primary" /> : <Sparkles className="w-3 h-3 text-primary" />}
+    <Link
+      to={`/property/${p.id}`}
+      className="group flex flex-col h-full bg-card border border-border/60 rounded-lg overflow-hidden hover:shadow-lg hover:border-border transition-all duration-200"
+    >
+      <div className="relative h-44 bg-muted overflow-hidden">
+        <PropertyImage src={p.cover_photo} alt={p.address} imgClassName="transition-transform duration-500 group-hover:scale-[1.04]" />
+        <div className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded bg-black/50 backdrop-blur text-[10px] text-white">
+          <Eye className="w-3 h-3" /> {p.views_count || 0}
         </div>
-        <span className="text-xs font-semibold text-foreground flex-1">
-          {isVoice ? "Голосовой звонок" : "ИИ-помощник"}
-        </span>
-        {isVoice && (
-          <span className="text-[10px] text-primary flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            {conversation.isSpeaking ? "говорит" : "слушает"}
+        {/* Красная плашка цены поверх нижнего края фото */}
+        <div className="absolute bottom-0 left-0">
+          <span className="inline-block bg-primary text-primary-foreground text-sm font-bold px-3 py-1.5 leading-none">
+            {price ?? "Цена по запросу"}
           </span>
-        )}
+        </div>
       </div>
 
-      {isVoice ? (
-        <>
-          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5 min-h-0">
-            {transcripts.length === 0 && (
-              <div className="text-center py-6 text-muted-foreground">
-                <Mic className={`w-8 h-8 mx-auto mb-2 text-primary ${!conversation.isSpeaking ? "animate-pulse" : ""}`} />
-                <p className="text-[11px]">Говорите — агент слушает</p>
-              </div>
-            )}
-            {transcripts.map((t, i) => (
-              <div key={i} className={`text-[11px] px-2.5 py-1.5 rounded-lg ${t.startsWith("👤") ? "bg-primary/10 ml-4" : "bg-muted mr-4"}`}>
-                {t.slice(2)}
-              </div>
-            ))}
-            <div ref={bottomRef} />
+      <div className="flex flex-col flex-1 p-4">
+        <h3 className="text-sm font-bold text-foreground leading-snug mb-1 line-clamp-2 group-hover:text-primary transition-colors">
+          {title}
+        </h3>
+        <p className="text-[11px] text-muted-foreground mb-3 flex items-center gap-1 min-w-0">
+          <MapPin className="w-3 h-3 shrink-0" />
+          <span className="truncate">адрес: {p.address}</span>
+        </p>
+
+        <div className="grid grid-cols-3 gap-2 pb-3 border-b border-border/50">
+          <div className="min-w-0">
+            <p className="text-[10px] text-muted-foreground mb-0.5">Площадь</p>
+            <p className="text-xs font-semibold text-foreground truncate">{p.area} м²</p>
           </div>
-          <div className="px-3 py-2 border-t border-border">
-            <button onClick={endVoice} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity">
-              <PhoneOff className="w-3.5 h-3.5" /> Завершить
+          {land ? (
+            <div className="col-span-2 min-w-0">
+              <p className="text-[10px] text-muted-foreground mb-0.5">{LAND_TYPE_LABEL}</p>
+              <p className="text-xs font-semibold text-foreground truncate">{landUse || "—"}</p>
+            </div>
+          ) : (
+            <>
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground mb-0.5">Этаж</p>
+                <p className="text-xs font-semibold text-foreground truncate">
+                  {p.floor && p.floor !== "-" ? `${p.floor}${p.total_floors ? `/${p.total_floors}` : ""}` : "—"}
+                </p>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground mb-0.5">Потолок</p>
+                <p className="text-xs font-semibold text-foreground truncate">
+                  {p.ceiling_height && Number(p.ceiling_height) > 0 ? `${p.ceiling_height} м` : "—"}
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="mt-auto pt-3 flex items-center justify-between">
+          <span className="text-xs font-semibold text-primary group-hover:underline underline-offset-4">Подробнее</span>
+          {land && cadastral ? (
+            <button
+              onClick={(e) => { e.preventDefault(); onOpenPKK(cadastral); }}
+              className="text-[10px] text-muted-foreground hover:text-primary transition-colors"
+            >
+              к/н {cadastral}
             </button>
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2 min-h-0">
-            {messages.length === 0 && (
-              <p className="text-[11px] text-muted-foreground text-center py-4">Задайте вопрос о недвижимости</p>
-            )}
-            {messages.map((m, i) => (
-              <div key={i} className={`text-[11px] px-2.5 py-1.5 rounded-lg leading-relaxed ${m.role === "user" ? "bg-primary text-primary-foreground ml-4 rounded-br-sm" : "bg-muted text-foreground mr-4 rounded-bl-sm"}`}>
-                {m.text}
-              </div>
-            ))}
-            {loading && (
-              <div className="bg-muted px-3 py-2 rounded-lg rounded-bl-sm flex gap-1 mr-4">
-                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" />
-                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:150ms]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:300ms]" />
-              </div>
-            )}
-            <div ref={bottomRef} />
-          </div>
-          <div className="px-3 py-2 border-t border-border space-y-1.5">
-            <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="flex gap-1.5">
-              <input value={input} onChange={(e) => setInput(e.target.value)}
-                placeholder="Поиск объектов..."
-                className="flex-1 px-2.5 py-1.5 rounded-md bg-background text-xs text-foreground placeholder:text-muted-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary" />
-              <button type="submit" disabled={!input.trim() || loading}
-                className="p-1.5 rounded-md bg-primary text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-opacity">
-                <Send className="w-3.5 h-3.5" />
-              </button>
-            </form>
-            <button onClick={startVoice} disabled={connecting}
-              className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-md border border-primary/30 text-primary hover:bg-primary/5 transition-colors text-[11px] font-medium disabled:opacity-50">
-              <Phone className="w-3 h-3" />
-              {connecting ? "Подключение..." : "Позвонить ИИ"}
-            </button>
-          </div>
-        </>
-      )}
+          ) : (
+            <span className="text-[10px] text-muted-foreground">{p.district}</span>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+// ─── Тёмная промо-карточка в сетке ───
+function PromoCard() {
+  return (
+    <div className="relative flex flex-col h-full bg-[#141414] text-white rounded-lg overflow-hidden p-5 min-h-[320px]">
+      <span className="absolute top-0 left-0 w-16 h-16 bg-primary [clip-path:polygon(0_0,100%_0,0_100%)]" aria-hidden />
+      <p className="relative text-[10px] font-bold tracking-[0.2em] text-primary uppercase mt-6 mb-3">Сдайте объект</p>
+      <h3 className="relative font-display text-xl font-bold leading-tight mb-3">Разместите объект за 0 ₽</h3>
+      <p className="relative text-xs text-white/60 leading-relaxed mb-4">
+        Профессиональная фотосъёмка, экспертная оценка и продвижение вашей коммерческой недвижимости.
+      </p>
+      <Link
+        to="/list-property"
+        className="relative mt-auto inline-flex items-center justify-center h-10 px-4 rounded-md bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-colors"
+      >
+        Узнать подробнее
+      </Link>
     </div>
   );
 }
 
-// ─── useDebounce ───
-function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return debounced;
+// ─── Нижний CTA-баннер «Сдайте объект за 14 дней» ───
+function CtaBanner() {
+  return (
+    <div className="px-6 lg:px-12 xl:px-20 pb-10">
+      <motion.div
+        initial={{ opacity: 0, y: 32 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="relative overflow-hidden rounded-xl bg-[#141414] text-white">
+        <span
+          className="absolute right-0 top-0 h-full w-56 hidden md:block"
+          style={{ background: "repeating-linear-gradient(115deg, hsl(var(--primary)) 0 28px, transparent 28px 72px)" }}
+          aria-hidden
+        />
+        <div className="relative grid md:grid-cols-[1.2fr_1fr_auto] gap-6 items-center px-6 md:px-10 py-8">
+          <div>
+            <h2 className="font-display text-xl md:text-2xl font-bold mb-2">Сдайте объект за 14 дней</h2>
+            <p className="text-xs text-white/50 leading-relaxed max-w-sm">
+              Создадим эффективную презентацию, качественный показ и быстрый выход на сделку с проверенными арендаторами.
+            </p>
+          </div>
+          <ul className="space-y-2">
+            {["Выведем объект на рынок за 14 дней", "Проверенные арендаторы", "Сопровождение сделки под ключ", "Юридическая чистота договора"].map((t) => (
+              <li key={t} className="flex items-start gap-2 text-xs text-white/80">
+                <Check className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                {t}
+              </li>
+            ))}
+          </ul>
+          <Link
+            to="/list-property"
+            className="justify-self-start md:justify-self-end inline-flex items-center h-11 px-6 rounded-md bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors"
+          >
+            Разместить объект
+          </Link>
+        </div>
+      </motion.div>
+    </div>
+  );
 }
 
 // ─── Main Catalog ───
@@ -387,11 +312,10 @@ export default function Catalog() {
   const { data: properties = [], isLoading } = useProperties();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Init state from URL
   const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [mobileSidebar, setMobileSidebar] = useState(false);
+  const [mobileFilters, setMobileFilters] = useState(false);
   const [activePKK, setActivePKK] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const [dealType, setDealType] = useState(() => searchParams.get("deal") || "Все");
   const [selectedTypes, setSelectedTypes] = useState<string[]>(() => {
@@ -404,13 +328,11 @@ export default function Catalog() {
   const [sort, setSort] = useState(() => searchParams.get("sort") || "date");
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") || "");
 
-  // Range sliders: price 0–50000000, area 0–300000
   const [priceMin, setPriceMin] = useState(() => Number(searchParams.get("priceMin") || 0));
-  const [priceMax, setPriceMax] = useState(() => Number(searchParams.get("priceMax") || 50000000));
+  const [priceMax, setPriceMax] = useState(() => Number(searchParams.get("priceMax") || PRICE_MAX_DEFAULT));
   const [areaMin, setAreaMin] = useState(() => Number(searchParams.get("areaMin") || 0));
-  const [areaMax, setAreaMax] = useState(() => Number(searchParams.get("areaMax") || 300000));
+  const [areaMax, setAreaMax] = useState(() => Number(searchParams.get("areaMax") || AREA_MAX_DEFAULT));
 
-  // New filters
   const [ceilingMin, setCeilingMin] = useState(() => Number(searchParams.get("ceil") || 0));
   const [parkingOnly, setParkingOnly] = useState(() => searchParams.get("parking") === "1");
   const [selectedLayouts, setSelectedLayouts] = useState<string[]>(() => {
@@ -443,9 +365,9 @@ export default function Catalog() {
     if (sort !== "date") params.sort = sort;
     if (debouncedSearch) params.q = debouncedSearch;
     if (priceMin > 0) params.priceMin = String(priceMin);
-    if (priceMax < 50000000) params.priceMax = String(priceMax);
+    if (priceMax < PRICE_MAX_DEFAULT) params.priceMax = String(priceMax);
     if (areaMin > 0) params.areaMin = String(areaMin);
-    if (areaMax < 300000) params.areaMax = String(areaMax);
+    if (areaMax < AREA_MAX_DEFAULT) params.areaMax = String(areaMax);
     if (ceilingMin > 0) params.ceil = String(ceilingMin);
     if (parkingOnly) params.parking = "1";
     if (selectedLayouts.length > 0) params.layouts = selectedLayouts.join(",");
@@ -455,13 +377,13 @@ export default function Catalog() {
   const toggleType = (t: string) => {
     setSelectedTypes((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]);
   };
-
   const toggleLayout = (l: string) => {
     setSelectedLayouts((prev) => prev.includes(l) ? prev.filter((x) => x !== l) : [...prev, l]);
   };
 
-  const isPriceFiltered = priceMin > 0 || priceMax < 50000000;
-  const isAreaFiltered = areaMin > 0 || areaMax < 300000;
+  const isPriceFiltered = priceMin > 0 || priceMax < PRICE_MAX_DEFAULT;
+  const isAreaFiltered = areaMin > 0 || areaMax < AREA_MAX_DEFAULT;
+  const moreActive = propertyClass !== "Все" || condition !== "Все" || ceilingMin > 0 || parkingOnly || selectedLayouts.length > 0;
 
   const activeFiltersCount = [
     dealType !== "Все",
@@ -480,7 +402,7 @@ export default function Catalog() {
   const resetFilters = () => {
     setDealType("Все"); setSelectedTypes([]); setDistrict("Все");
     setPropertyClass("Все"); setCondition("Все");
-    setPriceMin(0); setPriceMax(50000000); setAreaMin(0); setAreaMax(300000);
+    setPriceMin(0); setPriceMax(PRICE_MAX_DEFAULT); setAreaMin(0); setAreaMax(AREA_MAX_DEFAULT);
     setSearchQuery(""); setCeilingMin(0); setParkingOnly(false); setSelectedLayouts([]);
   };
 
@@ -502,10 +424,10 @@ export default function Catalog() {
     if (condition !== "Все") result = result.filter((p) => p.condition === condition);
     if (isPriceFiltered) {
       if (priceMin > 0) result = result.filter((p) => Number(p.price) >= priceMin || Number(p.price) === 0);
-      if (priceMax < 50000000) result = result.filter((p) => Number(p.price) <= priceMax || Number(p.price) === 0);
+      if (priceMax < PRICE_MAX_DEFAULT) result = result.filter((p) => Number(p.price) <= priceMax || Number(p.price) === 0);
     }
     if (areaMin > 0) result = result.filter((p) => Number(p.area) >= areaMin);
-    if (areaMax < 300000) result = result.filter((p) => Number(p.area) <= areaMax);
+    if (areaMax < AREA_MAX_DEFAULT) result = result.filter((p) => Number(p.area) <= areaMax);
     if (ceilingMin > 0) result = result.filter((p) => isLandProperty(p.type) || Number(p.ceiling_height) >= ceilingMin);
     if (parkingOnly) result = result.filter((p) => isLandProperty(p.type) || (p.parking && p.parking !== "Нет" && p.parking !== "-"));
     if (selectedLayouts.length > 0) result = result.filter((p) => {
@@ -525,229 +447,111 @@ export default function Catalog() {
     return result;
   }, [properties, dealType, selectedTypes, district, propertyClass, condition, priceMin, priceMax, areaMin, areaMax, sort, debouncedSearch, ceilingMin, parkingOnly, selectedLayouts, isPriceFiltered]);
 
-  // Active filter chips data
-  const activeChips = useMemo(() => {
-    const chips: { label: string; onRemove: () => void }[] = [];
-    if (dealType !== "Все") chips.push({ label: dealType, onRemove: () => setDealType("Все") });
-    selectedTypes.forEach((t) => chips.push({ label: t, onRemove: () => toggleType(t) }));
-    if (district !== "Все") chips.push({ label: district, onRemove: () => setDistrict("Все") });
-    if (propertyClass !== "Все") chips.push({ label: `Класс ${propertyClass}`, onRemove: () => setPropertyClass("Все") });
-    if (condition !== "Все") chips.push({ label: condition, onRemove: () => setCondition("Все") });
-    if (isPriceFiltered) chips.push({ label: `${priceMin > 0 ? `от ${(priceMin / 1000).toFixed(0)}к` : ""}${priceMax < 50000000 ? ` до ${(priceMax / 1000).toFixed(0)}к ₽` : " ₽"}`.trim(), onRemove: () => { setPriceMin(0); setPriceMax(50000000); } });
-    if (isAreaFiltered) chips.push({ label: `${areaMin > 0 ? `от ${areaMin}` : ""}${areaMax < 300000 ? ` до ${areaMax} м²` : " м²"}`.trim(), onRemove: () => { setAreaMin(0); setAreaMax(300000); } });
-    if (ceilingMin > 0) chips.push({ label: `Потолки от ${ceilingMin} м`, onRemove: () => setCeilingMin(0) });
-    if (parkingOnly) chips.push({ label: "Парковка", onRemove: () => setParkingOnly(false) });
-    selectedLayouts.forEach((l) => chips.push({ label: l, onRemove: () => toggleLayout(l) }));
-    if (debouncedSearch) chips.push({ label: `"${debouncedSearch}"`, onRemove: () => setSearchQuery("") });
-    return chips;
-  }, [dealType, selectedTypes, district, propertyClass, condition, isPriceFiltered, isAreaFiltered, priceMin, priceMax, areaMin, areaMax, ceilingMin, parkingOnly, selectedLayouts, debouncedSearch]);
-
-
-  const paramsActive = propertyClass !== "Все" || condition !== "Все" || ceilingMin > 0 || parkingOnly || selectedLayouts.length > 0;
   const landTypeFilterOnly = selectedTypes.length > 0 && selectedTypes.every((t) => t === "Земля");
   const layoutFilterOptions = landTypeFilterOnly
     ? Array.from(new Set([...LAND_USE_OPTIONS, ...layouts]))
     : layouts;
 
-  const filterFields = (
-    <div className="min-w-0 divide-y divide-border/40">
-      {/* Поиск */}
-      <div className="px-4 py-4">
-        <div className="flex items-center gap-2.5 rounded-lg border border-border/70 bg-muted/30 px-3 py-2.5 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
-          <Search className="w-4 h-4 shrink-0 text-muted-foreground" />
-          <input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Адрес, район..."
-            className="flex-1 min-w-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery("")} aria-label="Очистить поиск" className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
+  const priceLabel = isPriceFiltered
+    ? `${priceMin > 0 ? `от ${priceMin.toLocaleString("ru-RU")}` : ""}${priceMax < PRICE_MAX_DEFAULT ? ` до ${priceMax.toLocaleString("ru-RU")}` : ""} ₽`.trim()
+    : undefined;
+  const areaLabel = isAreaFiltered
+    ? `${areaMin > 0 ? `от ${areaMin}` : ""}${areaMax < AREA_MAX_DEFAULT ? ` до ${areaMax}` : ""} м²`.trim()
+    : undefined;
 
-      {/* Тип сделки */}
-      <div className="px-4 py-4">
-        <FilterSectionHeader icon={Tag} label="Тип сделки" active={dealType !== "Все"} />
-        <div className="flex rounded-lg bg-muted/50 p-1 gap-0.5">
-          {DEALS.map((d) => (
+  // «Ещё фильтры» — общие поля (используются и в дропдауне, и в мобильной панели)
+  const moreFilterFields = (
+    <div className="space-y-4">
+      <div>
+        <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Класс</p>
+        <div className="flex flex-wrap gap-1.5">
+          {CLASSES.map((c) => (
             <button
-              key={d}
-              onClick={() => setDealType(d)}
-              className={`flex-1 min-w-0 py-2 rounded-md text-xs font-medium transition-all ${
-                dealType === d
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+              key={c}
+              onClick={() => setPropertyClass(c)}
+              className={`px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                propertyClass === c
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "border-border text-muted-foreground hover:border-foreground/30 bg-background"
               }`}
             >
-              {d}
+              {c}
             </button>
           ))}
         </div>
       </div>
-
-      {/* Тип объекта */}
-      <div className="px-4 py-4">
-        <FilterSectionHeader icon={Building} label="Тип объекта" active={selectedTypes.length > 0} />
+      <div>
+        <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Состояние</p>
         <div className="flex flex-wrap gap-1.5">
-          {TYPES.map((t) => {
-            const Icon = typeIcons[t] || PhBuildings;
-            const active = selectedTypes.includes(t);
-            return (
-              <button
-                key={t}
-                onClick={() => toggleType(t)}
-                className={`inline-flex items-center gap-1.5 max-w-full px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border ${
-                  active
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground bg-background"
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5 shrink-0" weight="duotone" />
-                <span className="truncate">{t}</span>
-              </button>
-            );
-          })}
+          {conditions.map((c) => (
+            <button
+              key={c}
+              onClick={() => setCondition(c)}
+              className={`px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                condition === c
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "border-border text-muted-foreground hover:border-foreground/30 bg-background"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
         </div>
       </div>
-
-      {/* Локация */}
-      <div className="px-4 py-4">
-        <FilterSectionHeader icon={MapPin} label="Район" active={district !== "Все"} />
-        <SelectFilter ariaLabel="Район" value={district} options={districts} onChange={setDistrict} />
+      <div>
+        <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Высота потолков</p>
+        <div className="flex flex-wrap gap-1.5">
+          {CEILING_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setCeilingMin(ceilingMin === opt.value ? 0 : opt.value)}
+              className={`px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                ceilingMin === opt.value
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "border-border text-muted-foreground hover:border-foreground/30 bg-background"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
-
-      {/* Цена и площадь */}
-      <div className="px-4 py-4 space-y-5">
+      <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-md border border-border px-3 py-2.5 hover:bg-muted/40 transition-colors">
+        <Checkbox checked={parkingOnly} onCheckedChange={(v) => setParkingOnly(!!v)} className="shrink-0" />
+        <span className="text-xs text-foreground">Есть парковка</span>
+      </label>
+      {layoutFilterOptions.length > 0 && (
         <div>
-          <FilterSectionHeader icon={Banknote} label="Цена, ₽/мес" active={isPriceFiltered} />
-          <RangeInputs
-            min={0} max={50000000} step={50000}
-            valueMin={priceMin} valueMax={priceMax}
-            onChangeMin={setPriceMin} onChangeMax={setPriceMax}
-            suffix="₽"
-          />
-        </div>
-        <div>
-          <FilterSectionHeader icon={Ruler} label="Площадь, м²" active={isAreaFiltered} />
-          <RangeInputs
-            min={0} max={300000} step={100}
-            valueMin={areaMin} valueMax={areaMax}
-            onChangeMin={setAreaMin} onChangeMax={setAreaMax}
-            suffix="м²"
-          />
-        </div>
-      </div>
-
-      {/* Параметры */}
-      <div className="px-4 py-4">
-        <FilterSectionHeader icon={Settings2} label="Параметры" active={paramsActive} />
-        <div className="space-y-4 min-w-0">
-          <div className="grid grid-cols-2 gap-3 min-w-0">
-            <SelectFilter label="Класс" value={propertyClass} options={CLASSES} onChange={setPropertyClass} />
-            <SelectFilter label="Состояние" value={condition} options={conditions} onChange={setCondition} />
+          <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">
+            {landTypeFilterOnly ? LAND_TYPE_LABEL : "Планировка"}
+          </p>
+          <div className="space-y-1 max-h-40 overflow-y-auto">
+            {layoutFilterOptions.map((l) => (
+              <label key={l} className="flex items-start gap-2.5 cursor-pointer select-none rounded-md px-2 py-1.5 hover:bg-muted/40 transition-colors min-w-0">
+                <Checkbox checked={selectedLayouts.includes(l)} onCheckedChange={() => toggleLayout(l)} className="shrink-0 mt-0.5" />
+                <span className="text-xs leading-snug text-foreground break-words min-w-0">{l}</span>
+              </label>
+            ))}
           </div>
-
-          <div className="min-w-0">
-            <p className="text-[11px] font-medium text-muted-foreground mb-2">Высота потолков</p>
-            <div className="flex flex-wrap gap-1.5">
-              {CEILING_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setCeilingMin(ceilingMin === opt.value ? 0 : opt.value)}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border whitespace-nowrap ${
-                    ceilingMin === opt.value
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground bg-background"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-lg border border-border/60 px-3 py-2.5 hover:bg-muted/40 transition-colors">
-            <Checkbox checked={parkingOnly} onCheckedChange={(v) => setParkingOnly(!!v)} className="shrink-0" />
-            <span className="text-sm text-foreground">Есть парковка</span>
-          </label>
-
-          {layoutFilterOptions.length > 0 && (
-            <div className="min-w-0">
-              <p className="text-[11px] font-medium text-muted-foreground mb-2">
-                {landTypeFilterOnly ? LAND_TYPE_LABEL : "Планировка"}
-              </p>
-              <div className="space-y-1">
-                {layoutFilterOptions.map((l) => (
-                  <label
-                    key={l}
-                    className="flex items-start gap-2.5 cursor-pointer select-none rounded-lg px-2 py-1.5 hover:bg-muted/40 transition-colors min-w-0"
-                  >
-                    <Checkbox
-                      checked={selectedLayouts.includes(l)}
-                      onCheckedChange={() => toggleLayout(l)}
-                      className="shrink-0 mt-0.5"
-                    />
-                    <span className="text-xs leading-snug text-foreground break-words min-w-0">{l}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-      </div>
+      )}
     </div>
   );
 
-  const filterFooter = (
-    <FilterPanelFooter
-      count={filtered.length}
-      isLoading={isLoading}
-      activeFiltersCount={activeFiltersCount}
-      activeChips={activeChips}
-      onReset={resetFilters}
-      onClose={() => setMobileSidebar(false)}
-      showCloseButton={mobileSidebar}
-    />
-  );
-
-  const collapsedRail = (
-    <div className="flex flex-col h-full min-w-0 w-full overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setSidebarOpen(true)}
-        title="Показать фильтры"
-        className="flex flex-col items-center gap-1 w-full py-3 border-b border-border/40 hover:bg-muted/40 transition-colors shrink-0"
-      >
-        <PanelLeft className="w-4 h-4 text-primary" />
-        <span className="text-[10px] font-medium text-foreground leading-none">Фильтры</span>
-        {activeFiltersCount > 0 && (
-          <span className="count-badge mt-0.5">{activeFiltersCount}</span>
-        )}
-      </button>
-      <div className="flex-1 flex flex-col items-center gap-1 py-2 min-h-0 overflow-y-auto overflow-x-hidden">
-        <RailIcon icon={Search} label="Поиск" active={!!searchQuery} onClick={() => setSidebarOpen(true)} />
-        <RailIcon icon={Tag} label="Тип сделки" active={dealType !== "Все"} onClick={() => setSidebarOpen(true)} />
-        <RailIcon icon={Building} label="Тип объекта" active={selectedTypes.length > 0} onClick={() => setSidebarOpen(true)} />
-        <RailIcon icon={MapPin} label="Район" active={district !== "Все"} onClick={() => setSidebarOpen(true)} />
-        <RailIcon icon={Banknote} label="Цена" active={isPriceFiltered} onClick={() => setSidebarOpen(true)} />
-        <RailIcon icon={Ruler} label="Площадь" active={isAreaFiltered} onClick={() => setSidebarOpen(true)} />
-        <RailIcon icon={Settings2} label="Параметры" active={paramsActive} onClick={() => setSidebarOpen(true)} />
-      </div>
-      <button
-        type="button"
-        onClick={() => setSidebarOpen(true)}
-        title={`Найдено ${filtered.length} объектов`}
-        className="shrink-0 w-full py-3 border-t border-border/40 hover:bg-muted/40 transition-colors text-center"
-      >
-        <span className="text-sm font-semibold text-foreground tabular-nums">{isLoading ? "…" : filtered.length}</span>
-        <span className="block text-[9px] text-muted-foreground mt-0.5">объектов</span>
-      </button>
-    </div>
-  );
+  // Сетка с промо-карточкой на 4-й позиции (как в макете)
+  const gridItems = useMemo(() => {
+    const items: React.ReactNode[] = [];
+    filtered.forEach((p, i) => {
+      if (i === 3) items.push(<FadeIn key="promo" delay={0.18} className="h-full"><PromoCard /></FadeIn>);
+      items.push(
+        <FadeIn key={p.id} delay={(i % 4) * 0.06} className="h-full">
+          <GridCard property={p} onOpenPKK={setActivePKK} />
+        </FadeIn>
+      );
+    });
+    if (filtered.length > 0 && filtered.length <= 3) items.push(<FadeIn key="promo" className="h-full"><PromoCard /></FadeIn>);
+    return items;
+  }, [filtered]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
@@ -755,63 +559,124 @@ export default function Catalog() {
 
       <div className="pt-[100px] flex-1 flex flex-col">
 
-        {/* Хлебные крошки */}
-        <div>
-          <div className="px-6 lg:px-12 xl:px-20 h-9 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <Link to="/" className="hover:text-foreground transition-colors">Главная</Link>
-            <span className="opacity-40">/</span>
-            <span className="text-foreground">Каталог объектов</span>
-          </div>
-        </div>
-
-        {/* Топ-бар — сортировка и вид */}
-        <div className="sticky top-[100px] z-20 bg-background border-b border-border/30">
-          <div className="px-6 lg:px-12 xl:px-20 h-12 flex items-center gap-3">
-
-            {/* Кнопка фильтров — только мобайл */}
-            <button
-              onClick={() => setMobileSidebar(true)}
-              className="lg:hidden inline-flex items-center gap-2 h-8 px-3 text-xs font-medium border border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-colors shrink-0"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              Фильтры
-              {activeFiltersCount > 0 && (
-                <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[9px] font-bold rounded-sm bg-primary text-primary-foreground">{activeFiltersCount}</span>
+        {/* Горизонтальная панель фильтров (Variant 2) */}
+        <div className="sticky top-[100px] z-30 bg-background border-b border-border/40">
+          <div className="px-6 lg:px-12 xl:px-20 py-3 hidden lg:flex items-center gap-2 flex-wrap">
+            <FilterDropdown label="Тип сделки" valueLabel={dealType} active={dealType !== "Все"} panelWidth={200}>
+              {(close) => (
+                <div className="space-y-0.5">
+                  {DEALS.map((d) => (
+                    <OptionRow key={d} label={d} selected={dealType === d} onClick={() => { setDealType(d); close(); }} />
+                  ))}
+                </div>
               )}
-            </button>
+            </FilterDropdown>
 
-            {/* Мобильный счётчик */}
-            <div className="lg:hidden text-xs text-muted-foreground mr-auto">
-              {isLoading ? (
-                <span className="inline-flex gap-1 items-center">
-                  <span className="w-1 h-1 bg-muted-foreground animate-bounce" />
-                  <span className="w-1 h-1 bg-muted-foreground animate-bounce [animation-delay:120ms]" />
-                  <span className="w-1 h-1 bg-muted-foreground animate-bounce [animation-delay:240ms]" />
-                </span>
-              ) : <><strong className="text-foreground font-semibold">{filtered.length}</strong> объектов</>}
+            <FilterDropdown
+              label="Тип объекта"
+              valueLabel={selectedTypes.length > 0 ? selectedTypes.join(", ") : undefined}
+              active={selectedTypes.length > 0}
+              panelWidth={220}
+            >
+              <div className="space-y-0.5">
+                {TYPES.map((t) => (
+                  <OptionRow key={t} label={t} selected={selectedTypes.includes(t)} onClick={() => toggleType(t)} />
+                ))}
+              </div>
+            </FilterDropdown>
+
+            <FilterDropdown label="Район" valueLabel={district} active={district !== "Все"} panelWidth={220}>
+              {(close) => (
+                <div className="space-y-0.5 max-h-64 overflow-y-auto">
+                  {districts.map((d) => (
+                    <OptionRow key={d} label={d} selected={district === d} onClick={() => { setDistrict(d); close(); }} />
+                  ))}
+                </div>
+              )}
+            </FilterDropdown>
+
+            <FilterDropdown label="Цена, ₽" valueLabel={priceLabel} active={isPriceFiltered} panelWidth={280}>
+              <RangeInputs
+                min={0} max={PRICE_MAX_DEFAULT} step={50000}
+                valueMin={priceMin} valueMax={priceMax}
+                onChangeMin={setPriceMin} onChangeMax={setPriceMax}
+                suffix="₽"
+              />
+            </FilterDropdown>
+
+            <FilterDropdown label="Площадь, м²" valueLabel={areaLabel} active={isAreaFiltered} panelWidth={260}>
+              <RangeInputs
+                min={0} max={AREA_MAX_DEFAULT} step={100}
+                valueMin={areaMin} valueMax={areaMax}
+                onChangeMin={setAreaMin} onChangeMax={setAreaMax}
+                suffix="м²"
+              />
+            </FilterDropdown>
+
+            <FilterDropdown label="Ещё фильтры" active={moreActive} panelWidth={320}>
+              {moreFilterFields}
+            </FilterDropdown>
+
+            {/* Поиск */}
+            <div className={`flex items-center h-9 rounded-md border transition-all ${searchOpen || searchQuery ? "border-border bg-card pl-3 pr-2 w-56" : "border-transparent w-9"}`}>
+              <button
+                type="button"
+                aria-label="Поиск"
+                onClick={() => setSearchOpen(true)}
+                className={`shrink-0 ${searchOpen || searchQuery ? "text-muted-foreground" : "w-9 h-9 flex items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:border-foreground/30"}`}
+              >
+                <Search className="w-3.5 h-3.5" />
+              </button>
+              {(searchOpen || searchQuery) && (
+                <>
+                  <input
+                    autoFocus
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onBlur={() => { if (!searchQuery) setSearchOpen(false); }}
+                    placeholder="Адрес, район..."
+                    className="flex-1 min-w-0 px-2 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery("")} aria-label="Очистить поиск" className="shrink-0 text-muted-foreground hover:text-foreground">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </>
+              )}
             </div>
 
-            <div className="hidden lg:block flex-1" />
+            {activeFiltersCount > 0 && (
+              <button
+                onClick={resetFilters}
+                className="text-xs text-muted-foreground hover:text-primary transition-colors shrink-0"
+              >
+                Сбросить
+              </button>
+            )}
 
-            {/* Сортировка */}
-            <div className="hidden sm:flex items-center gap-0 mr-1">
-              {SORT_OPTIONS.map((o) => (
-                <button
-                  key={o.value}
-                  onClick={() => setSort(o.value)}
-                  className={`h-7 px-3 text-[11px] font-medium transition-all whitespace-nowrap ${
-                    sort === o.value
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                  }`}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
+            <div className="flex-1" />
 
-            {/* Вид: сетка / список / карта */}
-            <div className="flex items-center border border-border/40 shrink-0">
+            <span className="text-xs text-muted-foreground shrink-0">
+              {isLoading ? "…" : <>Найдено <strong className="text-foreground font-semibold tabular-nums">{filtered.length}</strong></>}
+            </span>
+
+            <FilterDropdown
+              label="Сортировка"
+              valueLabel={SORT_OPTIONS.find((o) => o.value === sort)?.label}
+              active={sort !== "date"}
+              panelWidth={200}
+            >
+              {(close) => (
+                <div className="space-y-0.5">
+                  {SORT_OPTIONS.map((o) => (
+                    <OptionRow key={o.value} label={o.label} selected={sort === o.value} onClick={() => { setSort(o.value); close(); }} />
+                  ))}
+                </div>
+              )}
+            </FilterDropdown>
+
+            <div className="flex items-center h-9 border border-border rounded-md overflow-hidden shrink-0 bg-card">
               {([
                 { mode: "grid" as const, icon: LayoutGrid, label: "Сетка" },
                 { mode: "list" as const, icon: List, label: "Список" },
@@ -821,241 +686,250 @@ export default function Catalog() {
                   key={mode}
                   onClick={() => setViewMode(mode)}
                   title={label}
-                  className={`w-8 h-8 flex items-center justify-center transition-colors ${
+                  aria-label={label}
+                  className={`w-9 h-9 flex items-center justify-center transition-colors ${
                     viewMode === mode ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                  } ${i > 0 ? "border-l border-border/40" : ""}`}
+                  } ${i > 0 ? "border-l border-border/60" : ""}`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                 </button>
               ))}
             </div>
           </div>
+
+          {/* Мобильная строка фильтров */}
+          <div className="px-6 py-3 flex lg:hidden items-center gap-3">
+            <button
+              onClick={() => setMobileFilters(true)}
+              className="inline-flex items-center gap-2 h-9 px-3.5 rounded-md border border-border bg-card text-xs font-medium text-foreground"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Фильтры
+              {activeFiltersCount > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[9px] font-bold rounded-sm bg-primary text-primary-foreground">{activeFiltersCount}</span>
+              )}
+            </button>
+            <div className="text-xs text-muted-foreground">
+              {isLoading ? "…" : <><strong className="text-foreground font-semibold">{filtered.length}</strong> объектов</>}
+            </div>
+            <div className="flex-1" />
+            <div className="flex items-center h-9 border border-border rounded-md overflow-hidden shrink-0 bg-card">
+              {([
+                { mode: "grid" as const, icon: LayoutGrid, label: "Сетка" },
+                { mode: "list" as const, icon: List, label: "Список" },
+                { mode: "map" as const, icon: MapIcon, label: "Карта" },
+              ]).map(({ mode, icon: Icon, label }, i) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  title={label}
+                  aria-label={label}
+                  className={`w-9 h-9 flex items-center justify-center transition-colors ${
+                    viewMode === mode ? "bg-foreground text-background" : "text-muted-foreground"
+                  } ${i > 0 ? "border-l border-border/60" : ""}`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </button>
+              ))}
+            </div>
+          </div>
+
         </div>
 
-        {/* Контент: сайдбар + карточки + правый сайдбар */}
-        <div className="flex-1 flex min-h-0">
-
-          {/* Левый сайдбар — единое пространство фильтров */}
-          <aside
-            className="hidden lg:flex flex-col shrink-0 overflow-hidden catalog-filter-sidebar bg-muted/10 sticky top-[148px] self-start"
-            style={{
-              width: sidebarOpen ? SIDEBAR_W_OPEN : SIDEBAR_W_COLLAPSED,
-              height: "calc(100vh - 148px)",
-              borderRight: "1px solid hsl(var(--border) / 0.3)",
-              transition: "width 280ms cubic-bezier(0.4,0,0.2,1)",
-            }}
-          >
-            {sidebarOpen ? (
-              <>
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 bg-background shrink-0">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <SlidersHorizontal className="w-4 h-4 text-primary shrink-0" />
-                    <span className="text-sm font-semibold text-foreground">Фильтры</span>
-                    {activeFiltersCount > 0 && <span className="count-badge">{activeFiltersCount}</span>}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSidebarOpen(false)}
-                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                  >
-                    <PanelLeftClose className="w-4 h-4" />
-                    <span>Скрыть</span>
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">{filterFields}</div>
-                {filterFooter}
-              </>
-            ) : (
-              collapsedRail
-            )}
-          </aside>
-
-          {/* Мобильный сайдбар */}
-          {mobileSidebar && (
-            <div className="fixed inset-0 z-50 bg-background flex flex-col lg:hidden">
-              <div className="flex items-center justify-between px-5 py-3 border-b border-border/40 shrink-0">
-                <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-semibold">Фильтры</span>
-                  {activeFiltersCount > 0 && <span className="count-badge">{activeFiltersCount}</span>}
-                </div>
-                <button type="button" onClick={() => setMobileSidebar(false)} aria-label="Закрыть фильтры">
-                  <X className="w-5 h-5" />
-                </button>
+        {/* Мобильная панель фильтров */}
+        {mobileFilters && (
+          <div className="fixed inset-0 z-50 bg-background flex flex-col lg:hidden">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border/40 shrink-0">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold">Фильтры</span>
               </div>
-              <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">{filterFields}</div>
-              {filterFooter}
+              <button type="button" onClick={() => setMobileFilters(false)} aria-label="Закрыть фильтры">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Тип сделки</p>
+                <div className="flex rounded-md bg-muted/50 p-1 gap-0.5">
+                  {DEALS.map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => setDealType(d)}
+                      className={`flex-1 py-2 rounded text-xs font-medium transition-all ${
+                        dealType === d ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Тип объекта</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {TYPES.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => toggleType(t)}
+                      className={`px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                        selectedTypes.includes(t)
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-border text-muted-foreground bg-background"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Район</p>
+                <div className="relative rounded-md border border-border">
+                  <select
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    aria-label="Район"
+                    className="w-full appearance-none px-3 py-2 pr-8 bg-transparent text-xs text-foreground focus:outline-none cursor-pointer"
+                  >
+                    {districts.map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Цена, ₽</p>
+                <RangeInputs min={0} max={PRICE_MAX_DEFAULT} step={50000} valueMin={priceMin} valueMax={priceMax} onChangeMin={setPriceMin} onChangeMax={setPriceMax} suffix="₽" />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Площадь, м²</p>
+                <RangeInputs min={0} max={AREA_MAX_DEFAULT} step={100} valueMin={areaMin} valueMax={areaMax} onChangeMin={setAreaMin} onChangeMax={setAreaMax} suffix="м²" />
+              </div>
+              {moreFilterFields}
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Сортировка</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {SORT_OPTIONS.map((o) => (
+                    <button
+                      key={o.value}
+                      onClick={() => setSort(o.value)}
+                      className={`px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                        sort === o.value
+                          ? "bg-foreground text-background border-foreground"
+                          : "border-border text-muted-foreground bg-background"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="shrink-0 border-t border-border/40 px-5 py-3 flex gap-2">
+              {activeFiltersCount > 0 && (
+                <button
+                  onClick={resetFilters}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-md text-xs font-medium text-destructive border border-destructive/20 hover:bg-destructive/5 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" /> Сбросить
+                </button>
+              )}
+              <button
+                onClick={() => setMobileFilters(false)}
+                className="flex-1 py-2.5 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
+              >
+                Показать {isLoading ? "…" : filtered.length}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Результаты */}
+        <div className="flex-1 min-w-0">
+          {viewMode === "map" ? (
+            <CatalogMap properties={filtered} />
+          ) : (
+            <div className="px-6 lg:px-12 xl:px-20 py-6">
+              {isLoading ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {Array.from({ length: 8 }).map((_, i) => <GridCardSkeleton key={i} />)}
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="text-center py-20">
+                  <div className="w-14 h-14 bg-muted flex items-center justify-center mx-auto mb-4 rounded-lg">
+                    <PhBuildings className="w-7 h-7 text-muted-foreground" weight="duotone" />
+                  </div>
+                  <h3 className="font-display text-base font-semibold mb-1">Объекты не найдены</h3>
+                  <p className="text-xs text-muted-foreground mb-4">Попробуйте изменить параметры фильтрации</p>
+                  <button onClick={resetFilters} className="text-xs text-primary font-medium hover:underline">Сбросить фильтры</button>
+                </div>
+              ) : viewMode === "grid" ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {gridItems}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filtered.map((p) => (
+                    <FadeIn key={p.id}>
+                      <ListCard property={p} onOpenPKK={setActivePKK} />
+                    </FadeIn>
+                  ))}
+                </div>
+              )}
             </div>
           )}
-
-          {/* Результаты */}
-          <div className="flex-1 overflow-y-auto min-w-0">
-            {viewMode === "map" ? (
-              <CatalogMap properties={filtered} />
-            ) : (
-              <div className="px-6 py-5">
-                {isLoading ? (
-                  <div className={`grid gap-4 sm:grid-cols-2 ${sidebarOpen ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>
-                    {Array.from({ length: 6 }).map((_, i) => <GridCardSkeleton key={i} />)}
-                  </div>
-                ) : filtered.length === 0 ? (
-                  <div className="text-center py-20">
-                    <div className="w-14 h-14 bg-muted flex items-center justify-center mx-auto mb-4">
-                      <PhBuildings className="w-7 h-7 text-muted-foreground" weight="duotone" />
-                    </div>
-                    <h3 className="font-display text-base font-semibold mb-1">Объекты не найдены</h3>
-                    <p className="text-xs text-muted-foreground mb-4">Попробуйте изменить параметры фильтрации</p>
-                    <button onClick={resetFilters} className="text-xs text-primary font-medium hover:underline">Сбросить фильтры</button>
-                  </div>
-                ) : viewMode === "grid" ? (
-                  <div className={`grid gap-4 sm:grid-cols-2 ${sidebarOpen ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>
-                    {filtered.map((p) => <GridCard key={p.id} property={p} />)}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {filtered.map((p) => <ListCard key={p.id} property={p} />)}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Правый сайдбар */}
-          <div className="hidden xl:flex shrink-0 w-[280px] flex-col overflow-y-auto overflow-x-hidden border-l border-border/30 pl-5 pr-5 py-5">
-            <NewsSidebar />
-          </div>
         </div>
+
+        {viewMode !== "map" && <CtaBanner />}
       </div>
+
       <SiteFooter />
       {activePKK && <PKKMapModal cadastralNumber={activePKK} onClose={() => setActivePKK(null)} />}
-
-      <style>{`
-        .range-thumb { -webkit-appearance: none; pointer-events: all; }
-        .range-thumb::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; pointer-events: all; cursor: pointer; }
-        .range-thumb::-moz-range-thumb { width: 16px; height: 16px; pointer-events: all; cursor: pointer; border: none; background: transparent; }
-        .catalog-filter-sidebar {
-          scrollbar-width: thin;
-          scrollbar-color: hsl(var(--border)) transparent;
-        }
-        .catalog-filter-sidebar::-webkit-scrollbar { width: 4px; height: 0; }
-        .catalog-filter-sidebar::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
-      `}</style>
     </div>
   );
 }
 
-// ─── Cards ───
-
-function GridCard({ property: p }: { property: DbProperty }) {
+// ─── List card ───
+function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK: (cad: string) => void }) {
   const land = isLandProperty(p.type);
   const landUse = getLandUse(p);
   const cadastral = getLandCadastral(p.extras as Record<string, unknown> | null);
+  const price = formatPrice(p);
   return (
     <Link to={`/property/${p.id}`}
-      className="group bg-card overflow-hidden hover:shadow-md transition-shadow duration-200 border border-border/50">
-      <div className="relative h-44 bg-muted overflow-hidden">
-        <PropertyImage src={p.cover_photo} alt={p.address} imgClassName="transition-transform duration-500 group-hover:scale-[1.03]" />
-        <div className="absolute top-3 left-3 flex gap-1.5">
-          <span className="px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">{p.deal_type}</span>
-          <span className="px-2 py-0.5 rounded-md bg-card/90 backdrop-blur text-foreground text-[10px] font-semibold">{p.type}</span>
-        </div>
-        <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-md bg-card/80 backdrop-blur text-[10px] text-muted-foreground">
-          <Eye className="w-3 h-3" /> {p.views_count || 0}
-        </div>
-      </div>
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <div className="min-w-0">
-            {Number(p.price) > 0 ? (
-              <>
-                <div className="font-display text-lg font-bold text-foreground group-hover:text-primary transition-colors">
-                  {Number(p.price).toLocaleString("ru-RU")} ₽{p.deal_type === "Аренда" && <span className="text-xs font-normal text-muted-foreground">/мес</span>}
-                </div>
-                <div className="text-xs text-muted-foreground">{Number(p.price_per_m2).toLocaleString("ru-RU")} ₽/м²</div>
-              </>
-            ) : (
-              <div className="font-display text-lg font-bold text-muted-foreground">Уточнить у менеджера</div>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
-          <MapPin className="w-3 h-3 shrink-0" /> <span className="truncate">{p.address}</span>
-        </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-foreground">
-          <span className="flex items-center gap-1"><Maximize2 className="w-3 h-3 text-muted-foreground" />{p.area} м²</span>
-          {land ? (
-            <>
-              {landUse && <span>{LAND_TYPE_LABEL}: {landUse}</span>}
-              {cadastral && <button onClick={(e) => { e.preventDefault(); setActivePKK(cadastral); }} className="truncate text-primary hover:underline underline-offset-2">к/н {cadastral}</button>}
-            </>
-          ) : (
-            <>
-              {p.floor && p.floor !== "-" && <span>Этаж {p.floor}/{p.total_floors}</span>}
-              {p.ceiling_height && Number(p.ceiling_height) > 0 && <span>Потолки {p.ceiling_height} м</span>}
-            </>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-1 mt-3">
-          {(p.features || []).slice(0, 3).map((f) => (
-            <span key={f} className="px-2 py-0.5 rounded-md bg-muted text-[10px] text-muted-foreground">{f}</span>
-          ))}
-          {(p.features || []).length > 3 && (
-            <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] text-muted-foreground">+{(p.features || []).length - 3}</span>
-          )}
-        </div>
-        <div className="mt-3 flex items-center justify-between text-[10px] text-muted-foreground">
-          <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {p.published_date ? new Date(p.published_date).toLocaleDateString("ru-RU") : "—"}</span>
-          <span>{p.district}</span>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function ListCard({ property: p }: { property: DbProperty }) {
-  const land = isLandProperty(p.type);
-  const landUse = getLandUse(p);
-  const cadastral = getLandCadastral(p.extras as Record<string, unknown> | null);
-  return (
-    <Link to={`/property/${p.id}`}
-      className="group flex bg-card overflow-hidden hover:shadow-md transition-shadow duration-200 border border-border/50">
+      className="group flex bg-card overflow-hidden hover:shadow-md transition-shadow duration-200 border border-border/60 rounded-lg">
       <div className="relative w-48 shrink-0 bg-muted hidden sm:block overflow-hidden">
         <PropertyImage src={p.cover_photo} alt={p.address} imgClassName="transition-transform duration-500 group-hover:scale-[1.03]" />
-        <div className="absolute top-2 left-2 flex gap-1">
-          <span className="px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide">{p.deal_type}</span>
+        <div className="absolute bottom-0 left-0">
+          <span className="inline-block bg-primary text-primary-foreground text-xs font-bold px-2.5 py-1 leading-none">
+            {price ?? "Цена по запросу"}
+          </span>
         </div>
       </div>
-      <div className="flex-1 p-4 flex flex-col justify-between">
+      <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
         <div>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              {Number(p.price) > 0 ? (
-                <>
-                  <div className="font-display text-lg font-bold text-foreground group-hover:text-primary transition-colors">
-                    {Number(p.price).toLocaleString("ru-RU")} ₽{p.deal_type === "Аренда" && <span className="text-xs font-normal text-muted-foreground">/мес</span>}
-                  </div>
-                  <div className="text-xs text-muted-foreground">{Number(p.price_per_m2).toLocaleString("ru-RU")} ₽/м² · {p.type}</div>
-                </>
-              ) : (
-                <>
-                  <div className="font-display text-lg font-bold text-muted-foreground">Уточнить у менеджера</div>
-                  <div className="text-xs text-muted-foreground">{p.type}</div>
-                </>
-              )}
+              <div className="font-display text-base font-bold text-foreground group-hover:text-primary transition-colors sm:hidden">
+                {price ?? "Цена по запросу"}
+              </div>
+              <div className="text-sm font-bold text-foreground truncate">{p.type} · {p.district}</div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                <MapPin className="w-3 h-3 shrink-0" /> <span className="truncate">{p.address}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
-              <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{p.views_count || 0}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2">
-            <MapPin className="w-3 h-3 shrink-0" /> {p.address} · {p.district}
+            <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0"><Eye className="w-3 h-3" />{p.views_count || 0}</span>
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-foreground mt-2">
             <span>{p.area} м²</span>
             {land ? (
               <>
                 {landUse && <span>{LAND_TYPE_LABEL}: {landUse}</span>}
-                {cadastral && <button onClick={(e) => { e.preventDefault(); setActivePKK(cadastral); }} className="text-primary hover:underline underline-offset-2">к/н {cadastral}</button>}
+                {cadastral && (
+                  <button onClick={(e) => { e.preventDefault(); onOpenPKK(cadastral); }} className="text-primary hover:underline underline-offset-2">
+                    к/н {cadastral}
+                  </button>
+                )}
               </>
             ) : (
               <>
@@ -1066,95 +940,42 @@ function ListCard({ property: p }: { property: DbProperty }) {
             )}
           </div>
         </div>
-        <div className="flex flex-wrap gap-1 mt-3">
-          {(p.features || []).slice(0, 5).map((f) => (
-            <span key={f} className="px-2 py-0.5 rounded-md bg-muted text-[10px] text-muted-foreground">{f}</span>
-          ))}
-          {(p.features || []).length > 5 && (
-            <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] text-muted-foreground">+{(p.features || []).length - 5}</span>
-          )}
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-xs font-semibold text-primary group-hover:underline underline-offset-4">Подробнее</span>
+          <div className="flex flex-wrap gap-1 justify-end">
+            {(p.features || []).slice(0, 3).map((f) => (
+              <span key={f} className="px-2 py-0.5 rounded bg-muted text-[10px] text-muted-foreground">{f}</span>
+            ))}
+          </div>
         </div>
       </div>
     </Link>
   );
 }
 
-// ─── Skeletons ───
-
+// ─── Skeleton ───
 function GridCardSkeleton() {
   return (
-    <div className="bg-card overflow-hidden border border-border/50">
+    <div className="bg-card overflow-hidden border border-border/60 rounded-lg">
       <div className="relative h-44 overflow-hidden">
         <Skeleton className="absolute inset-0 rounded-none" />
-        <div className="absolute top-3 left-3 flex gap-1.5">
-          <Skeleton className="h-4 w-14 rounded-md" />
-          <Skeleton className="h-4 w-12 rounded-md" />
+        <div className="absolute bottom-0 left-0">
+          <Skeleton className="h-7 w-28 rounded-none" />
         </div>
       </div>
       <div className="p-4 space-y-3">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1.5">
-            <Skeleton className="h-5 w-28" />
-            <Skeleton className="h-3 w-20" />
-          </div>
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-1/2" />
+        <div className="grid grid-cols-3 gap-2">
+          <Skeleton className="h-8" />
+          <Skeleton className="h-8" />
+          <Skeleton className="h-8" />
         </div>
-        <div className="flex items-center gap-1.5">
-          <Skeleton className="h-3 w-3 rounded-full" />
-          <Skeleton className="h-3 w-3/4" />
-        </div>
-        <div className="flex gap-3">
+        <div className="flex items-center justify-between pt-1">
           <Skeleton className="h-3 w-16" />
           <Skeleton className="h-3 w-14" />
-          <Skeleton className="h-3 w-20" />
-        </div>
-        <div className="flex gap-1">
-          <Skeleton className="h-4 w-14 rounded-md" />
-          <Skeleton className="h-4 w-16 rounded-md" />
-          <Skeleton className="h-4 w-12 rounded-md" />
-        </div>
-        <div className="pt-3 flex items-center justify-between">
-          <Skeleton className="h-3 w-20" />
-          <Skeleton className="h-3 w-16" />
         </div>
       </div>
     </div>
   );
 }
-
-function ListCardSkeleton() {
-  return (
-    <div className="flex bg-card overflow-hidden border border-border/50">
-      <div className="relative w-48 shrink-0 hidden sm:block">
-        <Skeleton className="absolute inset-0 rounded-none" />
-      </div>
-      <div className="flex-1 p-4 flex flex-col justify-between gap-3">
-        <div className="space-y-2">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1.5">
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-3 w-44" />
-            </div>
-            <Skeleton className="h-3 w-10" />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Skeleton className="h-3 w-3 rounded-full" />
-            <Skeleton className="h-3 w-2/3" />
-          </div>
-          <div className="flex gap-4">
-            <Skeleton className="h-3 w-14" />
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-3 w-16" />
-          </div>
-        </div>
-        <div className="flex gap-1">
-          <Skeleton className="h-4 w-14 rounded-md" />
-          <Skeleton className="h-4 w-16 rounded-md" />
-          <Skeleton className="h-4 w-12 rounded-md" />
-          <Skeleton className="h-4 w-20 rounded-md" />
-        </div>
-      </div>
-    </div>
-  );
-}
-

@@ -21,6 +21,7 @@ import PropertySidebarExtras from "@/components/PropertySidebarExtras";
 import PKKMapModal from "@/components/PKKMapModal";
 import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL } from "@/lib/propertyLand";
 import { isSaleDeal } from "@/lib/propertyDeal";
+import { motion } from "framer-motion";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
@@ -343,7 +344,11 @@ export default function PropertyDetail() {
         <div className="h-[env(safe-area-inset-bottom)]" />
       </div>
 
-      <main className="container mx-auto px-4 lg:px-8 py-6 lg:py-10 pt-16 lg:pt-20 pb-28 lg:pb-10 flex-1">
+      <motion.main
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        className="container mx-auto px-4 lg:px-8 py-6 lg:py-10 pt-16 lg:pt-20 pb-28 lg:pb-10 flex-1">
 
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 min-w-0">
@@ -475,7 +480,7 @@ export default function PropertyDetail() {
           type={property.type}
         />
 
-      </main>
+      </motion.main>
       <SiteFooter />
       {showPKK && getLandCadastral(landExtras) && (
         <PKKMapModal cadastralNumber={getLandCadastral(landExtras)!} onClose={() => setShowPKK(false)} />

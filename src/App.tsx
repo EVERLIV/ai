@@ -2,6 +2,7 @@ import { useState, lazy, Suspense } from "react";
 import { ConversationProvider } from "@elevenlabs/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { MotionConfig } from "framer-motion";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -59,6 +60,7 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <MotionConfig reducedMotion="user">
             <BrowserRouter>
               <InstallPrompt />
               <CookieBanner />
@@ -109,6 +111,7 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
+            </MotionConfig>
           </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>
