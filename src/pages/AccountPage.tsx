@@ -1,24 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import { Heart, FileText, User, LogOut, MapPin, Maximize2, ChevronRight } from "lucide-react";
+import MyPropertiesTab from "@/components/account/MyPropertiesTab";
+import { Heart, FileText, User, LogOut, MapPin, Maximize2, ChevronRight, Building2 } from "lucide-react";
 import { useProperties } from "@/hooks/useProperties";
 
 const TABS = [
   { key: "favorites", label: "Избранное", icon: Heart },
+  { key: "properties", label: "Мои объекты", icon: Building2 },
   { key: "requests", label: "Мои заявки", icon: FileText },
   { key: "profile", label: "Мои данные", icon: User },
 ] as const;
 
 type Tab = typeof TABS[number]["key"];
 
+const VALID_TABS = new Set<string>(TABS.map((t) => t.key));
+
 export default function AccountPage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("favorites");
   const { data: properties = [] } = useProperties();
+
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (VALID_TABS.has(hash)) setTab(hash as Tab);
+  }, []);
+
+  const switchTab = (key: Tab) => {
+    setTab(key);
+    window.history.replaceState(null, "", `/account#${key}`);
+  };
 
   if (!user) {
     navigate("/auth");
@@ -76,7 +90,7 @@ export default function AccountPage() {
               {TABS.map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
-                  onClick={() => setTab(key)}
+                  onClick={() => switchTab(key)}
                   className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
                     tab === key ? "text-primary font-medium" : "text-foreground hover:text-primary"
                   }`}
@@ -143,6 +157,8 @@ export default function AccountPage() {
                 )}
               </div>
             )}
+
+            {tab === "properties" && <MyPropertiesTab />}
 
             {tab === "requests" && (
               <div>

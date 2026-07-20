@@ -20,6 +20,7 @@ export type PropertySidebarExtras = {
   agent_rating?: number;
   agent_response_min?: number;
   agent_verified?: boolean;
+  agent_avatar_url?: string;
   cadastral_number?: string;
   land_use?: string;
 };
@@ -105,6 +106,7 @@ export function resolveSidebarDisplay(property: {
     agent_rating: e.agent_rating ?? 0,
     agent_response_min: e.agent_response_min ?? 0,
     agent_verified: !!e.agent_verified,
+    agent_avatar_url: e.agent_avatar_url || "",
     showAgent: !!(e.agent_name?.trim() || e.agent_company?.trim()),
   };
 }

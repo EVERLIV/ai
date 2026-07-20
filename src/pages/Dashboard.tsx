@@ -24,7 +24,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMe
 import AdPlacementsManager from "@/components/admin/AdPlacementsManager";
 import AdPlacementsTab from "@/components/admin/AdPlacementsTab";
 import PropertyUnitsManager from "@/components/admin/PropertyUnitsManager";
-import NewsAdminPanel from "@/components/NewsAdminPanel";
+import ModerationQueue from "@/components/admin/ModerationQueue";
 import { supabaseAdmin, SUPABASE_URL, SERVICE_ROLE_KEY } from "@/integrations/supabase/adminClient";
 import {
   isLandProperty,
@@ -575,6 +575,7 @@ export default function Dashboard() {
           <TabsList className="h-auto w-full justify-start gap-1 bg-transparent p-0 flex-wrap">
             {[
               { value: "properties", label: "Объекты", icon: Home },
+              { value: "moderation", label: "Модерация", icon: Shield },
               { value: "ads", label: "Реклама", icon: Megaphone },
               { value: "users", label: "Сотрудники", icon: Users },
               { value: "news", label: "Новости", icon: null },
@@ -1268,6 +1269,11 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="moderation" className="space-y-4">
+            <h2 className="text-lg font-semibold">Очередь модерации</h2>
+            <ModerationQueue />
           </TabsContent>
 
           {/* Ads Tab */}

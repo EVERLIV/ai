@@ -77,7 +77,7 @@ export default function PropertySidebarExtras({ property }: Props) {
         <div className="bg-card rounded-2xl shadow-card p-3">
           <div className="flex items-center gap-2.5">
             <img
-              src={consultantAvatar}
+              src={d.agent_avatar_url || consultantAvatar}
               alt={d.agent_name}
               className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20 shrink-0"
             />

@@ -445,12 +445,18 @@ export type Database = {
           layout: string | null
           lng: number | null
           manager_id: string | null
+          moderated_at: string | null
+          moderated_by: string | null
+          moderation_status: Database["public"]["Enums"]["property_moderation_status"]
           parking: string | null
           photos: string[] | null
           photos_count: number | null
           price: number
           price_per_m2: number
           published_date: string | null
+          rejection_reason: string | null
+          request_type: Database["public"]["Enums"]["property_request_type"] | null
+          submitted_by: string | null
           total_floors: number | null
           type: string
           updated_at: string
@@ -479,12 +485,18 @@ export type Database = {
           layout?: string | null
           lng?: number | null
           manager_id?: string | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          moderation_status?: Database["public"]["Enums"]["property_moderation_status"]
           parking?: string | null
           photos?: string[] | null
           photos_count?: number | null
           price?: number
           price_per_m2?: number
           published_date?: string | null
+          rejection_reason?: string | null
+          request_type?: Database["public"]["Enums"]["property_request_type"] | null
+          submitted_by?: string | null
           total_floors?: number | null
           type?: string
           updated_at?: string
@@ -513,12 +525,18 @@ export type Database = {
           layout?: string | null
           lng?: number | null
           manager_id?: string | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          moderation_status?: Database["public"]["Enums"]["property_moderation_status"]
           parking?: string | null
           photos?: string[] | null
           photos_count?: number | null
           price?: number
           price_per_m2?: number
           published_date?: string | null
+          rejection_reason?: string | null
+          request_type?: Database["public"]["Enums"]["property_request_type"] | null
+          submitted_by?: string | null
           total_floors?: number | null
           type?: string
           updated_at?: string
@@ -535,6 +553,20 @@ export type Database = {
           {
             foreignKeyName: "properties_manager_id_fkey"
             columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_moderated_by_fkey"
+            columns: ["moderated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -639,6 +671,8 @@ export type Database = {
         | "digital_screen"
         | "flag_pole"
       app_role: "admin" | "manager" | "client"
+      property_moderation_status: "draft" | "on_moderation" | "published" | "rejected"
+      property_request_type: "free_listing" | "management"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -782,6 +816,8 @@ export const Constants = {
         "flag_pole",
       ],
       app_role: ["admin", "manager", "client"],
+      property_moderation_status: ["draft", "on_moderation", "published", "rejected"],
+      property_request_type: ["free_listing", "management"],
     },
   },
 } as const

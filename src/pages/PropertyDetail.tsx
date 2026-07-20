@@ -15,7 +15,9 @@ import { useProperties } from "@/hooks/useProperties";
 import PropertyMap from "@/components/PropertyMap";
 import { getDefaultPropertyImage } from "@/lib/propertyImages";
 import RequestPriceDialog from "@/components/RequestPriceDialog";
+import OwnerMessageDialog from "@/components/OwnerMessageDialog";
 import PropertyAIChat from "@/components/PropertyAIChat";
+import { isOwnerListing, getOwnerUserId } from "@/lib/propertyModeration";
 import PropertyUnitsTable from "@/components/PropertyUnitsTable";
 import PropertySidebarExtras from "@/components/PropertySidebarExtras";
 import PKKMapModal from "@/components/PKKMapModal";
@@ -490,6 +492,11 @@ export default function PropertyDetail() {
 }
 
 function PropertyPriceBlock({ property }: { property: any }) {
+  const extras = (property.extras || {}) as Record<string, unknown>;
+  const ownerListing = isOwnerListing(extras);
+  const ownerUserId = getOwnerUserId(extras);
+  const ownerName = typeof extras.agent_name === "string" ? extras.agent_name : undefined;
+
   return (
     <div id="contact-form" className="bg-card rounded-2xl shadow-card p-4 scroll-mt-24 space-y-3">
       {Number(property.price) > 0 ? (
@@ -515,13 +522,22 @@ function PropertyPriceBlock({ property }: { property: any }) {
 
       {/* CTAs — компактно: основные две рядом, "Предложить цену" — текстовая ссылка */}
       <div className="grid grid-cols-2 gap-2">
-        <button
-          onClick={() => window.dispatchEvent(new CustomEvent("open-consultant-chat"))}
-          className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity text-sm font-semibold"
-        >
-          <MessageSquareText className="w-4 h-4" />
-          Написать
-        </button>
+        {ownerListing ? (
+          <OwnerMessageDialog
+            propertyId={property.id}
+            propertyAddress={property.address}
+            ownerName={ownerName}
+            ownerUserId={ownerUserId || undefined}
+          />
+        ) : (
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("open-consultant-chat"))}
+            className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity text-sm font-semibold"
+          >
+            <MessageSquareText className="w-4 h-4" />
+            Написать
+          </button>
+        )}
         <a
           href="tel:+73952551234"
           className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-foreground text-background hover:opacity-90 transition-opacity text-sm font-semibold"

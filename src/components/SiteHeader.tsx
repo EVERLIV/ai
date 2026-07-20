@@ -144,6 +144,7 @@ export default function SiteHeader() {
                   </div>
                   {[
                     { icon: Heart, label: "Избранное", tab: "favorites" },
+                    { icon: Building2, label: "Мои объекты", tab: "properties" },
                     { icon: FileText, label: "Мои заявки", tab: "requests" },
                     { icon: User, label: "Мои данные", tab: "profile" },
                   ].map(({ icon: Icon, label, tab }) => (
