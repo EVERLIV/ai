@@ -170,8 +170,7 @@ function GridCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
   const landUse = getLandUse(p);
   const cadastral = getLandCadastral(p.extras as Record<string, unknown> | null);
   const price = formatPrice(p);
-  const title = p.description?.split("\n")[0]?.slice(0, 60) || `${p.type} · ${p.district}`;
-  const description = p.description?.split("\n")[1]?.slice(0, 80) || "";
+  const description = p.description?.slice(0, 200) || "";
 
   return (
     <Link
@@ -196,18 +195,14 @@ function GridCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
       </div>
 
       <div className="flex flex-col flex-1 p-4">
-        <h3 className="text-sm font-bold text-foreground leading-snug mb-1 line-clamp-2 group-hover:text-primary transition-colors">
-          {title}
+        <h3 className="text-sm font-bold text-foreground leading-snug mb-2 group-hover:text-primary transition-colors">
+          {p.address}
         </h3>
         {description && (
-          <p className="text-[11px] text-muted-foreground mb-2 line-clamp-1">
+          <p className="text-[10px] text-muted-foreground mb-3 leading-relaxed line-clamp-3">
             {description}
           </p>
         )}
-        <p className="text-[11px] text-muted-foreground mb-3 flex items-center gap-1 min-w-0">
-          <MapPin className="w-3 h-3 shrink-0" />
-          <span className="truncate">адрес: {p.address}</span>
-        </p>
 
         <div className="grid grid-cols-3 gap-2 pb-3 border-b border-border/50">
           <div className="min-w-0">
@@ -911,7 +906,7 @@ function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
   const landUse = getLandUse(p);
   const cadastral = getLandCadastral(p.extras as Record<string, unknown> | null);
   const price = formatPrice(p);
-  const description = p.description?.split("\n")[1]?.slice(0, 100) || "";
+  const description = p.description?.slice(0, 250) || "";
   return (
     <Link to={`/property/${p.id}`}
       className="group flex bg-card overflow-hidden hover:shadow-md transition-shadow duration-200 border border-border/60 rounded-lg">
@@ -934,17 +929,14 @@ function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
               <div className="font-display text-base font-bold text-foreground group-hover:text-primary transition-colors sm:hidden">
                 {price ?? "Цена по запросу"}
               </div>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="text-sm font-bold text-foreground truncate">{p.type} · {p.district}</div>
-                <span className="inline-block px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold shrink-0 sm:hidden">
-                  {p.deal_type || "Аренда"}
-                </span>
+              <div className="text-sm font-bold text-foreground mb-2">
+                {p.address}
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                <MapPin className="w-3 h-3 shrink-0" /> <span className="truncate">{p.address}</span>
-              </div>
+              <span className="inline-block px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold mb-2 sm:hidden">
+                {p.deal_type || "Аренда"}
+              </span>
               {description && (
-                <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1">
+                <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">
                   {description}
                 </p>
               )}
