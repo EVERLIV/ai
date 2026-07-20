@@ -171,6 +171,7 @@ function GridCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
   const cadastral = getLandCadastral(p.extras as Record<string, unknown> | null);
   const price = formatPrice(p);
   const title = p.description?.split("\n")[0]?.slice(0, 60) || `${p.type} · ${p.district}`;
+  const description = p.description?.split("\n")[1]?.slice(0, 80) || "";
 
   return (
     <Link
@@ -179,6 +180,10 @@ function GridCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
     >
       <div className="relative h-44 bg-muted overflow-hidden">
         <PropertyImage src={p.cover_photo} alt={p.address} imgClassName="transition-transform duration-500 group-hover:scale-[1.04]" />
+        {/* Бейдж типа сделки */}
+        <div className="absolute top-2.5 left-2.5 inline-block px-2 py-1 rounded-md bg-primary/90 text-primary-foreground text-[10px] font-bold">
+          {p.deal_type || "Аренда"}
+        </div>
         <div className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded bg-black/50 backdrop-blur text-[10px] text-white">
           <Eye className="w-3 h-3" /> {p.views_count || 0}
         </div>
@@ -194,6 +199,11 @@ function GridCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
         <h3 className="text-sm font-bold text-foreground leading-snug mb-1 line-clamp-2 group-hover:text-primary transition-colors">
           {title}
         </h3>
+        {description && (
+          <p className="text-[11px] text-muted-foreground mb-2 line-clamp-1">
+            {description}
+          </p>
+        )}
         <p className="text-[11px] text-muted-foreground mb-3 flex items-center gap-1 min-w-0">
           <MapPin className="w-3 h-3 shrink-0" />
           <span className="truncate">адрес: {p.address}</span>
@@ -227,18 +237,21 @@ function GridCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
           )}
         </div>
 
-        <div className="mt-auto pt-3 flex items-center justify-between">
-          <span className="text-xs font-semibold text-primary group-hover:underline underline-offset-4">Подробнее</span>
-          {land && cadastral ? (
-            <button
-              onClick={(e) => { e.preventDefault(); onOpenPKK(cadastral); }}
-              className="text-[10px] text-muted-foreground hover:text-primary transition-colors"
-            >
-              к/н {cadastral}
-            </button>
-          ) : (
-            <span className="text-[10px] text-muted-foreground">{p.district}</span>
-          )}
+        <div className="mt-auto pt-3 space-y-2">
+          <p className="text-[10px] text-muted-foreground">Управление: Аренда сити</p>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-primary group-hover:underline underline-offset-4">Подробнее</span>
+            {land && cadastral ? (
+              <button
+                onClick={(e) => { e.preventDefault(); onOpenPKK(cadastral); }}
+                className="text-[10px] text-muted-foreground hover:text-primary transition-colors"
+              >
+                к/н {cadastral}
+              </button>
+            ) : (
+              <span className="text-[10px] text-muted-foreground">{p.district}</span>
+            )}
+          </div>
         </div>
       </div>
     </Link>
@@ -344,13 +357,12 @@ export default function Catalog() {
 
   const districts = useMemo(() => ["Все", ...Array.from(new Set(properties.map((p) => p.district).filter(Boolean)))], [properties]);
   const conditions = useMemo(() => ["Все", ...Array.from(new Set(properties.map((p) => p.condition).filter(Boolean) as string[]))], [properties]);
-  const layouts = useMemo(() => Array.from(new Set(
+  // Виды использования только по земельным объектам — фильтр доступен лишь для типа «Земля».
+  const landUses = useMemo(() => Array.from(new Set(
     properties.flatMap((p) => {
-      if (isLandProperty(p.type)) {
-        const landUse = getLandUse(p);
-        return landUse ? [landUse] : [];
-      }
-      return (p as any).layout ? [(p as any).layout] : [];
+      if (!isLandProperty(p.type)) return [];
+      const landUse = getLandUse(p);
+      return landUse ? [landUse] : [];
     })
   )), [properties]);
 
@@ -431,11 +443,9 @@ export default function Catalog() {
     if (ceilingMin > 0) result = result.filter((p) => isLandProperty(p.type) || Number(p.ceiling_height) >= ceilingMin);
     if (parkingOnly) result = result.filter((p) => isLandProperty(p.type) || (p.parking && p.parking !== "Нет" && p.parking !== "-"));
     if (selectedLayouts.length > 0) result = result.filter((p) => {
-      if (isLandProperty(p.type)) {
-        const landUse = getLandUse(p);
-        return landUse ? selectedLayouts.includes(landUse) : false;
-      }
-      return selectedLayouts.includes((p as any).layout);
+      if (!isLandProperty(p.type)) return false;
+      const landUse = getLandUse(p);
+      return landUse ? selectedLayouts.includes(landUse) : false;
     });
 
     switch (sort) {
@@ -449,8 +459,14 @@ export default function Catalog() {
 
   const landTypeFilterOnly = selectedTypes.length > 0 && selectedTypes.every((t) => t === "Земля");
   const layoutFilterOptions = landTypeFilterOnly
-    ? Array.from(new Set([...LAND_USE_OPTIONS, ...layouts]))
-    : layouts;
+    ? Array.from(new Set([...LAND_USE_OPTIONS, ...landUses]))
+    : [];
+
+  // Фильтр по виду использования доступен только для земли — иначе сбрасываем,
+  // чтобы скрытый фильтр не отсекал объекты незаметно для пользователя.
+  useEffect(() => {
+    if (!landTypeFilterOnly && selectedLayouts.length > 0) setSelectedLayouts([]);
+  }, [landTypeFilterOnly, selectedLayouts.length]);
 
   const priceLabel = isPriceFiltered
     ? `${priceMin > 0 ? `от ${priceMin.toLocaleString("ru-RU")}` : ""}${priceMax < PRICE_MAX_DEFAULT ? ` до ${priceMax.toLocaleString("ru-RU")}` : ""} ₽`.trim()
@@ -520,11 +536,9 @@ export default function Catalog() {
         <Checkbox checked={parkingOnly} onCheckedChange={(v) => setParkingOnly(!!v)} className="shrink-0" />
         <span className="text-xs text-foreground">Есть парковка</span>
       </label>
-      {layoutFilterOptions.length > 0 && (
+      {landTypeFilterOnly && layoutFilterOptions.length > 0 && (
         <div>
-          <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">
-            {landTypeFilterOnly ? LAND_TYPE_LABEL : "Планировка"}
-          </p>
+          <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">{LAND_TYPE_LABEL}</p>
           <div className="space-y-1 max-h-40 overflow-y-auto">
             {layoutFilterOptions.map((l) => (
               <label key={l} className="flex items-start gap-2.5 cursor-pointer select-none rounded-md px-2 py-1.5 hover:bg-muted/40 transition-colors min-w-0">
@@ -895,11 +909,16 @@ function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
   const landUse = getLandUse(p);
   const cadastral = getLandCadastral(p.extras as Record<string, unknown> | null);
   const price = formatPrice(p);
+  const description = p.description?.split("\n")[1]?.slice(0, 100) || "";
   return (
     <Link to={`/property/${p.id}`}
       className="group flex bg-card overflow-hidden hover:shadow-md transition-shadow duration-200 border border-border/60 rounded-lg">
       <div className="relative w-48 shrink-0 bg-muted hidden sm:block overflow-hidden">
         <PropertyImage src={p.cover_photo} alt={p.address} imgClassName="transition-transform duration-500 group-hover:scale-[1.03]" />
+        {/* Бейдж типа сделки */}
+        <div className="absolute top-2 left-2 inline-block px-2 py-1 rounded-md bg-primary/90 text-primary-foreground text-[10px] font-bold">
+          {p.deal_type || "Аренда"}
+        </div>
         <div className="absolute bottom-0 left-0">
           <span className="inline-block bg-primary text-primary-foreground text-xs font-bold px-2.5 py-1 leading-none">
             {price ?? "Цена по запросу"}
@@ -913,10 +932,20 @@ function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
               <div className="font-display text-base font-bold text-foreground group-hover:text-primary transition-colors sm:hidden">
                 {price ?? "Цена по запросу"}
               </div>
-              <div className="text-sm font-bold text-foreground truncate">{p.type} · {p.district}</div>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="text-sm font-bold text-foreground truncate">{p.type} · {p.district}</div>
+                <span className="inline-block px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold shrink-0 sm:hidden">
+                  {p.deal_type || "Аренда"}
+                </span>
+              </div>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
                 <MapPin className="w-3 h-3 shrink-0" /> <span className="truncate">{p.address}</span>
               </div>
+              {description && (
+                <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1">
+                  {description}
+                </p>
+              )}
             </div>
             <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0"><Eye className="w-3 h-3" />{p.views_count || 0}</span>
           </div>
@@ -939,6 +968,7 @@ function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
               </>
             )}
           </div>
+          <p className="text-[10px] text-muted-foreground mt-2">Управление: Аренда сити</p>
         </div>
         <div className="mt-3 flex items-center justify-between">
           <span className="text-xs font-semibold text-primary group-hover:underline underline-offset-4">Подробнее</span>
