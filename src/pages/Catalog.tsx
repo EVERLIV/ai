@@ -6,7 +6,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   SlidersHorizontal, X, ChevronDown, MapPin, LayoutGrid, List,
-  Search, Map as MapIcon, Check, Eye,
+  Search, Map as MapIcon, Check, Eye, Square, Layers, Maximize2, Landmark,
 } from "lucide-react";
 import { Buildings as PhBuildings } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
@@ -204,29 +204,41 @@ function GridCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
           </p>
         )}
 
-        <div className="grid grid-cols-3 gap-2 pb-3">
-          <div className="min-w-0">
-            <p className="text-[10px] text-muted-foreground mb-0.5">Площадь</p>
-            <p className="text-xs font-semibold text-foreground truncate">{p.area} м²</p>
+        <div className="grid grid-cols-3 gap-3 pb-3">
+          <div className="min-w-0 flex items-start gap-2">
+            <Square className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground mb-0.5">Площадь</p>
+              <p className="text-xs font-semibold text-foreground truncate">{p.area} м²</p>
+            </div>
           </div>
           {land ? (
-            <div className="col-span-2 min-w-0">
-              <p className="text-[10px] text-muted-foreground mb-0.5">{LAND_TYPE_LABEL}</p>
-              <p className="text-xs font-semibold text-foreground truncate">{landUse || "—"}</p>
+            <div className="col-span-2 min-w-0 flex items-start gap-2">
+              <Landmark className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground mb-0.5">{LAND_TYPE_LABEL}</p>
+                <p className="text-xs font-semibold text-foreground truncate">{landUse || "—"}</p>
+              </div>
             </div>
           ) : (
             <>
-              <div className="min-w-0">
-                <p className="text-[10px] text-muted-foreground mb-0.5">Этаж</p>
-                <p className="text-xs font-semibold text-foreground truncate">
-                  {p.floor && p.floor !== "-" ? `${p.floor}${p.total_floors ? `/${p.total_floors}` : ""}` : "—"}
-                </p>
+              <div className="min-w-0 flex items-start gap-2">
+                <Layers className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground mb-0.5">Этаж</p>
+                  <p className="text-xs font-semibold text-foreground truncate">
+                    {p.floor && p.floor !== "-" ? `${p.floor}${p.total_floors ? `/${p.total_floors}` : ""}` : "—"}
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] text-muted-foreground mb-0.5">Потолок</p>
-                <p className="text-xs font-semibold text-foreground truncate">
-                  {p.ceiling_height && Number(p.ceiling_height) > 0 ? `${p.ceiling_height} м` : "—"}
-                </p>
+              <div className="min-w-0 flex items-start gap-2">
+                <Maximize2 className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground mb-0.5">Потолок</p>
+                  <p className="text-xs font-semibold text-foreground truncate">
+                    {p.ceiling_height && Number(p.ceiling_height) > 0 ? `${p.ceiling_height} м` : "—"}
+                  </p>
+                </div>
               </div>
             </>
           )}
@@ -943,11 +955,19 @@ function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
             </div>
             <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0"><Eye className="w-3 h-3" />{p.views_count || 0}</span>
           </div>
-          <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-foreground mt-2">
-            <span>{p.area} м²</span>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-foreground mt-2">
+            <span className="flex items-center gap-1.5">
+              <Square className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              {p.area} м²
+            </span>
             {land ? (
               <>
-                {landUse && <span>{LAND_TYPE_LABEL}: {landUse}</span>}
+                {landUse && (
+                  <span className="flex items-center gap-1.5">
+                    <Landmark className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    {LAND_TYPE_LABEL}: {landUse}
+                  </span>
+                )}
                 {cadastral && (
                   <button onClick={(e) => { e.preventDefault(); onOpenPKK(cadastral); }} className="text-primary hover:underline underline-offset-2">
                     к/н {cadastral}
@@ -956,8 +976,18 @@ function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
               </>
             ) : (
               <>
-                {p.floor && p.floor !== "-" && <span>Этаж {p.floor}/{p.total_floors}</span>}
-                {p.ceiling_height && Number(p.ceiling_height) > 0 && <span>Потолки {p.ceiling_height} м</span>}
+                {p.floor && p.floor !== "-" && (
+                  <span className="flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    Этаж {p.floor}/{p.total_floors}
+                  </span>
+                )}
+                {p.ceiling_height && Number(p.ceiling_height) > 0 && (
+                  <span className="flex items-center gap-1.5">
+                    <Maximize2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    Потолки {p.ceiling_height} м
+                  </span>
+                )}
                 {p.condition && <span>{p.condition}</span>}
               </>
             )}
