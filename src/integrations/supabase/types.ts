@@ -393,6 +393,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: Database["public"]["Enums"]["profile_account_type"]
+          agency_about: string | null
+          agency_name: string | null
+          agency_staff_count: number | null
           avatar_url: string | null
           created_at: string
           email: string | null
@@ -400,8 +404,16 @@ export type Database = {
           id: string
           phone: string | null
           updated_at: string
+          verification_requested_at: string | null
+          verification_status: Database["public"]["Enums"]["verification_status"]
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
+          account_type?: Database["public"]["Enums"]["profile_account_type"]
+          agency_about?: string | null
+          agency_name?: string | null
+          agency_staff_count?: number | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
@@ -409,8 +421,16 @@ export type Database = {
           id: string
           phone?: string | null
           updated_at?: string
+          verification_requested_at?: string | null
+          verification_status?: Database["public"]["Enums"]["verification_status"]
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
+          account_type?: Database["public"]["Enums"]["profile_account_type"]
+          agency_about?: string | null
+          agency_name?: string | null
+          agency_staff_count?: number | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
@@ -418,8 +438,20 @@ export type Database = {
           id?: string
           phone?: string | null
           updated_at?: string
+          verification_requested_at?: string | null
+          verification_status?: Database["public"]["Enums"]["verification_status"]
+          verified_at?: string | null
+          verified_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       properties: {
         Row: {
@@ -453,6 +485,7 @@ export type Database = {
           photos_count: number | null
           price: number
           price_per_m2: number
+          public_id: string | null
           published_date: string | null
           rejection_reason: string | null
           request_type: Database["public"]["Enums"]["property_request_type"] | null
@@ -493,6 +526,7 @@ export type Database = {
           photos_count?: number | null
           price?: number
           price_per_m2?: number
+          public_id?: string | null
           published_date?: string | null
           rejection_reason?: string | null
           request_type?: Database["public"]["Enums"]["property_request_type"] | null
@@ -533,6 +567,7 @@ export type Database = {
           photos_count?: number | null
           price?: number
           price_per_m2?: number
+          public_id?: string | null
           published_date?: string | null
           rejection_reason?: string | null
           request_type?: Database["public"]["Enums"]["property_request_type"] | null
@@ -671,8 +706,10 @@ export type Database = {
         | "digital_screen"
         | "flag_pole"
       app_role: "admin" | "manager" | "client"
-      property_moderation_status: "draft" | "on_moderation" | "published" | "rejected"
+      profile_account_type: "owner" | "realtor"
+      property_moderation_status: "draft" | "on_moderation" | "published" | "rejected" | "cancelled"
       property_request_type: "free_listing" | "management"
+      verification_status: "unverified" | "pending" | "verified" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -816,8 +853,10 @@ export const Constants = {
         "flag_pole",
       ],
       app_role: ["admin", "manager", "client"],
-      property_moderation_status: ["draft", "on_moderation", "published", "rejected"],
+      profile_account_type: ["owner", "realtor"],
+      property_moderation_status: ["draft", "on_moderation", "published", "rejected", "cancelled"],
       property_request_type: ["free_listing", "management"],
+      verification_status: ["unverified", "pending", "verified", "rejected"],
     },
   },
 } as const

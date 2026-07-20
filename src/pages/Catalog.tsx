@@ -13,6 +13,8 @@ import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import CatalogMap from "@/components/CatalogMap";
 import PropertyImage from "@/components/PropertyImage";
+import VerifiedBadge from "@/components/VerifiedBadge";
+import ListingAgentFooter from "@/components/ListingAgentFooter";
 import PKKMapModal from "@/components/PKKMapModal";
 import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL, LAND_USE_OPTIONS } from "@/lib/propertyLand";
 
@@ -164,6 +166,11 @@ function formatPrice(p: DbProperty): string | null {
   return `${price.toLocaleString("ru-RU")} ₽${p.deal_type === "Аренда" ? "/мес" : ""}`;
 }
 
+function isListingVerified(p: DbProperty): boolean {
+  const extras = p.extras as Record<string, unknown> | null;
+  return !!extras?.agent_verified;
+}
+
 // ─── Карточка объекта (Variant 2) ───
 function GridCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK: (cad: string) => void }) {
   const land = isLandProperty(p.type);
@@ -195,9 +202,12 @@ function GridCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
       </div>
 
       <div className="flex flex-col flex-1 p-4">
-        <h3 className="text-sm font-bold text-foreground leading-snug mb-2 group-hover:text-primary transition-colors">
-          {p.address}
-        </h3>
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <h3 className="text-sm font-bold text-foreground leading-snug group-hover:text-primary transition-colors flex-1">
+            {p.address}
+          </h3>
+          {isListingVerified(p) && <VerifiedBadge showLabel={false} className="shrink-0" />}
+        </div>
         {description && (
           <p className="text-[10px] text-muted-foreground mb-3 leading-relaxed line-clamp-3">
             {description}
@@ -244,24 +254,23 @@ function GridCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
           )}
         </div>
 
-        <div className="mt-auto pt-3 space-y-2">
-          <p className="text-[10px] text-muted-foreground">
-            <Link to="/about" className="text-primary hover:underline">Аренда сити</Link>
-          </p>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-primary group-hover:underline underline-offset-4">Подробнее</span>
-            {land && cadastral ? (
+        <ListingAgentFooter
+          extras={p.extras as Record<string, unknown> | null}
+          district={land && cadastral ? undefined : p.district}
+          trailing={
+            land && cadastral ? (
               <button
-                onClick={(e) => { e.preventDefault(); onOpenPKK(cadastral); }}
-                className="text-[10px] text-muted-foreground hover:text-primary transition-colors"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpenPKK(cadastral);
+                }}
+                className="text-[10px] text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
               >
                 к/н {cadastral}
               </button>
-            ) : (
-              <span className="text-[10px] text-muted-foreground">{p.district}</span>
-            )}
-          </div>
-        </div>
+            ) : undefined
+          }
+        />
       </div>
     </Link>
   );
@@ -941,8 +950,9 @@ function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
               <div className="font-display text-base font-bold text-foreground group-hover:text-primary transition-colors sm:hidden">
                 {price ?? "Цена по запросу"}
               </div>
-              <div className="text-sm font-bold text-foreground mb-2">
+              <div className="text-sm font-bold text-foreground mb-2 flex items-center gap-2 flex-wrap">
                 {p.address}
+                {isListingVerified(p) && <VerifiedBadge showLabel={false} className="shrink-0" />}
               </div>
               <span className="inline-block px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold mb-2 sm:hidden">
                 {p.deal_type || "Аренда"}
@@ -992,18 +1002,25 @@ function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
               </>
             )}
           </div>
-          <p className="text-[10px] text-muted-foreground mt-2">
-            <Link to="/about" className="text-primary hover:underline">Аренда сити</Link>
-          </p>
+          <ListingAgentFooter
+            extras={p.extras as Record<string, unknown> | null}
+            district={p.district}
+            compact
+            className="mt-2"
+          />
         </div>
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-xs font-semibold text-primary group-hover:underline underline-offset-4">Подробнее</span>
-          <div className="flex flex-wrap gap-1 justify-end">
-            {(p.features || []).slice(0, 3).map((f) => (
+        {(p.features || []).length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1 justify-end">
+            {(p.features || []).slice(0, 5).map((f) => (
               <span key={f} className="px-2 py-0.5 rounded bg-muted text-[10px] text-muted-foreground">{f}</span>
             ))}
+            {(p.features || []).length > 5 && (
+              <span className="px-2 py-0.5 rounded bg-primary/10 text-[10px] text-primary font-medium">
+                +{(p.features || []).length - 5}
+              </span>
+            )}
           </div>
-        </div>
+        )}
       </div>
     </Link>
   );

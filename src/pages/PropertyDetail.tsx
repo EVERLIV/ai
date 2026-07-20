@@ -15,7 +15,7 @@ import { useProperties } from "@/hooks/useProperties";
 import PropertyMap from "@/components/PropertyMap";
 import { getDefaultPropertyImage } from "@/lib/propertyImages";
 import RequestPriceDialog from "@/components/RequestPriceDialog";
-import OwnerMessageDialog from "@/components/OwnerMessageDialog";
+import OwnerMessageDialog, { propertyCtaButtonClass } from "@/components/OwnerMessageDialog";
 import PropertyAIChat from "@/components/PropertyAIChat";
 import { isOwnerListing, getOwnerUserId } from "@/lib/propertyModeration";
 import PropertyUnitsTable from "@/components/PropertyUnitsTable";
@@ -311,11 +311,11 @@ export default function PropertyDetail() {
           </a>
           <button
             onClick={() => { setContactOpen(true); setContactSent(false); }}
-            aria-label="Написать"
+            aria-label="Задать вопрос"
             className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-foreground hover:bg-muted active:scale-95 transition-all"
           >
             <Mail className="w-6 h-6" strokeWidth={2.2} />
-            <span className="text-[10px] font-medium">Написать</span>
+            <span className="text-[9px] font-medium whitespace-nowrap">Задать вопрос</span>
           </button>
           <button
             onClick={handleSave}
@@ -493,8 +493,8 @@ export default function PropertyDetail() {
 
 function PropertyPriceBlock({ property }: { property: any }) {
   const extras = (property.extras || {}) as Record<string, unknown>;
-  const ownerListing = isOwnerListing(extras);
-  const ownerUserId = getOwnerUserId(extras);
+  const ownerListing = isOwnerListing(extras, property.submitted_by);
+  const ownerUserId = getOwnerUserId(extras, property.submitted_by);
   const ownerName = typeof extras.agent_name === "string" ? extras.agent_name : undefined;
 
   return (
@@ -532,17 +532,17 @@ function PropertyPriceBlock({ property }: { property: any }) {
         ) : (
           <button
             onClick={() => window.dispatchEvent(new CustomEvent("open-consultant-chat"))}
-            className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity text-sm font-semibold"
+            className={`${propertyCtaButtonClass} bg-primary text-primary-foreground`}
           >
-            <MessageSquareText className="w-4 h-4" />
-            Написать
+            <MessageSquareText className="w-4 h-4 shrink-0" />
+            Задать вопрос
           </button>
         )}
         <a
           href="tel:+73952551234"
-          className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-foreground text-background hover:opacity-90 transition-opacity text-sm font-semibold"
+          className={`${propertyCtaButtonClass} bg-foreground text-background`}
         >
-          <Phone className="w-4 h-4" />
+          <Phone className="w-4 h-4 shrink-0" />
           Позвонить
         </a>
       </div>

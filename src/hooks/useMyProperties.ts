@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { fetchModerationQueue } from "@/lib/adminModeration";
 import type { Tables } from "@/integrations/supabase/types";
-
 export type MyProperty = Tables<"properties">;
 
 export function useMyProperties() {
@@ -26,17 +26,8 @@ export function useMyProperties() {
 export function useModerationQueue() {
   return useQuery({
     queryKey: ["moderation-queue"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("properties")
-        .select(`
-          *,
-          submitter:profiles!properties_submitted_by_fkey(id, full_name, email, phone, avatar_url)
-        `)
-        .eq("moderation_status", "on_moderation")
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: fetchModerationQueue,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 }

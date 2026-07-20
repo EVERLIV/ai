@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProperties, type DbProperty } from "@/hooks/useProperties";
 import PropertyImage from "@/components/PropertyImage";
+import ListingAgentFooter from "@/components/ListingAgentFooter";
 import type { PropertyFilters } from "@/components/SearchFilters";
 
 const typeIcons: Record<string, React.ElementType> = {
@@ -115,14 +116,16 @@ export default function PropertyGrid({ filters }: { filters?: PropertyFilters })
                       </button>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
                       <MapPin className="w-3.5 h-3.5 shrink-0" />
                       {p.address}
                     </div>
 
-                    <button className="w-full py-2.5 rounded-lg text-sm font-medium text-primary border border-primary/20 hover:bg-primary hover:text-primary-foreground transition-all duration-300">
-                      Подробнее
-                    </button>
+                    <ListingAgentFooter
+                      extras={p.extras as Record<string, unknown> | null}
+                      district={p.district}
+                      className="pt-0"
+                    />
                   </div>
                 </div>
               );

@@ -1,0 +1,12 @@
+-- =============================================================================
+-- Верификация — порядок запуска:
+--
+--   Вариант А (рекомендуется): один файл
+--     → self_hosted_verification_ALL.sql
+--
+--   Вариант Б (по шагам):
+--     1a → self_hosted_verification_step1a_types.sql
+--     1b → self_hosted_verification_step1b_columns.sql
+--     2  → self_hosted_verification_step2_trigger.sql
+--     3  → self_hosted_verification_step3_signup.sql
+-- =============================================================================

@@ -17,6 +17,9 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [accountType, setAccountType] = useState<"owner" | "realtor">("owner");
+  const [agencyName, setAgencyName] = useState("");
+  const [agencyStaffCount, setAgencyStaffCount] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
@@ -57,7 +60,13 @@ export default function Auth() {
         email,
         password,
         options: {
-          data: { full_name: fullName, phone },
+          data: {
+            full_name: fullName,
+            phone,
+            account_type: accountType,
+            agency_name: accountType === "realtor" ? agencyName.trim() : "",
+            agency_staff_count: accountType === "realtor" ? agencyStaffCount.trim() : "",
+          },
           emailRedirectTo: `${window.location.origin}/auth`,
         },
       });
@@ -204,6 +213,59 @@ export default function Auth() {
             <h1 className="font-display text-2xl font-bold text-foreground mb-1">Создать аккаунт</h1>
             <p className="text-sm text-muted-foreground mb-7">Бесплатно — доступ к избранному и заявкам</p>
             <form onSubmit={handleRegister} className="space-y-4">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Вы —</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    ["owner", "Собственник"],
+                    ["realtor", "Риелтор"],
+                  ] as const).map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setAccountType(key)}
+                      className={`h-10 text-xs font-semibold border transition-colors ${
+                        accountType === key
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-primary/50"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {accountType === "realtor" && (
+                <>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                      Название агентства (по документам)
+                    </label>
+                    <input
+                      type="text"
+                      value={agencyName}
+                      onChange={(e) => setAgencyName(e.target.value)}
+                      required
+                      placeholder="ООО «Название»"
+                      className="w-full h-11 px-4 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                      Количество сотрудников
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={agencyStaffCount}
+                      onChange={(e) => setAgencyStaffCount(e.target.value)}
+                      required
+                      placeholder="5"
+                      className="w-full h-11 px-4 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                    />
+                  </div>
+                </>
+              )}
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1.5">Имя и фамилия</label>
                 <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} required

@@ -1,5 +1,6 @@
 import { getLandUse, isLandProperty, LAND_TYPE_LABEL } from "@/lib/propertyLand";
 import { isSaleDeal } from "@/lib/propertyDeal";
+import { ACCOUNT_TYPE_LABELS } from "@/hooks/useProfile";
 
 export type PropertySidebarExtras = {
   entrance_group?: string;
@@ -21,9 +22,62 @@ export type PropertySidebarExtras = {
   agent_response_min?: number;
   agent_verified?: boolean;
   agent_avatar_url?: string;
+  agent_account_type?: "owner" | "realtor";
+  agent_agency_about?: string;
+  owner_user_id?: string;
   cadastral_number?: string;
   land_use?: string;
 };
+
+export type ListingAgentDisplay = {
+  primaryLabel: string;
+  secondaryLabel: string;
+  avatarUrl: string | null;
+  isVerified: boolean;
+  isRealtor: boolean;
+  objectsCount: number;
+};
+
+/** Данные собственника/риелтора для карточки в каталоге (из extras объекта) */
+export function getListingAgentDisplay(
+  extras?: PropertySidebarExtras | Record<string, unknown> | null,
+): ListingAgentDisplay | null {
+  const e = (extras || {}) as PropertySidebarExtras;
+  const name = e.agent_name?.trim() || "";
+  const company = e.agent_company?.trim() || "";
+  const hasAgent = !!(name || e.owner_user_id);
+  if (!hasAgent) return null;
+
+  const isRealtor = e.agent_account_type === "realtor";
+  const hasAgency = isRealtor && !!company && company !== "Риелтор";
+
+  let primaryLabel: string;
+  let secondaryLabel: string;
+
+  if (hasAgency) {
+    primaryLabel = company;
+    secondaryLabel = name || ACCOUNT_TYPE_LABELS.realtor;
+  } else if (isRealtor) {
+    primaryLabel = name || ACCOUNT_TYPE_LABELS.realtor;
+    secondaryLabel = ACCOUNT_TYPE_LABELS.realtor;
+  } else {
+    primaryLabel = name || ACCOUNT_TYPE_LABELS.owner;
+    secondaryLabel = ACCOUNT_TYPE_LABELS.owner;
+  }
+
+  if (secondaryLabel === primaryLabel) {
+    secondaryLabel = isRealtor ? ACCOUNT_TYPE_LABELS.realtor : ACCOUNT_TYPE_LABELS.owner;
+  }
+
+  return {
+    primaryLabel,
+    secondaryLabel,
+    avatarUrl: e.agent_avatar_url?.trim() || null,
+    isVerified: !!e.agent_verified,
+    isRealtor,
+    objectsCount: e.agent_objects_count ?? 0,
+  };
+}
 
 export type SidebarVisibility = {
   entrance: boolean;
@@ -107,7 +161,10 @@ export function resolveSidebarDisplay(property: {
     agent_response_min: e.agent_response_min ?? 0,
     agent_verified: !!e.agent_verified,
     agent_avatar_url: e.agent_avatar_url || "",
-    showAgent: !!(e.agent_name?.trim() || e.agent_company?.trim()),
+    agent_account_type: e.agent_account_type === "realtor" ? "realtor" : "owner",
+    agent_agency_about: e.agent_agency_about?.trim() || "",
+    owner_user_id: typeof e.owner_user_id === "string" ? e.owner_user_id : "",
+    showAgent: !!(e.agent_name?.trim() || e.agent_company?.trim() || e.owner_user_id),
   };
 }
 

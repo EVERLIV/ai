@@ -7,6 +7,11 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Send, CheckCircle, MessageSquareText, User, Phone, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
+
+/** Единый стиль CTA-кнопок в сайдбаре объекта */
+export const propertyCtaButtonClass =
+  "inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg text-sm font-semibold whitespace-nowrap transition-opacity hover:opacity-90 min-w-0 w-full";
 
 interface Props {
   propertyId: string;
@@ -14,6 +19,7 @@ interface Props {
   ownerName?: string;
   ownerUserId?: string;
   trigger?: React.ReactNode;
+  className?: string;
 }
 
 export default function OwnerMessageDialog({
@@ -22,6 +28,7 @@ export default function OwnerMessageDialog({
   ownerName,
   ownerUserId,
   trigger,
+  className,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
@@ -48,12 +55,12 @@ export default function OwnerMessageDialog({
         name,
         phone,
         email: email || null,
-        message: `Сообщение риелтору${ownerName ? ` (${ownerName})` : ""}${ownerUserId ? ` [user:${ownerUserId}]` : ""}:\n${message}`,
+        message: `Вопрос по объекту${ownerName ? ` (${ownerName})` : ""}${ownerUserId ? ` [user:${ownerUserId}]` : ""}:\n${message}`,
         source: "owner_message",
         business_category: propertyAddress,
       });
       setSent(true);
-      toast({ title: "Сообщение отправлено", description: "Риелтор получит ваше обращение." });
+      toast({ title: "Вопрос отправлен", description: "Собственник или риелтор получит ваше обращение." });
     } catch {
       toast({ title: "Не удалось отправить", variant: "destructive" });
     } finally {
@@ -64,22 +71,24 @@ export default function OwnerMessageDialog({
   const defaultTrigger = (
     <button
       type="button"
-      className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity text-sm font-semibold w-full"
+      className={cn(propertyCtaButtonClass, "bg-primary text-primary-foreground", className)}
     >
-      <MessageSquareText className="w-4 h-4" />
-      Написать сообщение
+      <MessageSquareText className="w-4 h-4 shrink-0" />
+      Задать вопрос
     </button>
   );
 
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setSent(false); }}>
-      <div onClick={() => setOpen(true)}>{trigger ?? defaultTrigger}</div>
+      <div onClick={() => setOpen(true)} className="min-w-0">
+        {trigger ?? defaultTrigger}
+      </div>
       <DialogContent className="max-w-md">
         {sent ? (
           <div className="text-center py-6 space-y-3">
             <CheckCircle className="w-12 h-12 text-primary mx-auto" />
-            <h3 className="font-semibold">Сообщение отправлено</h3>
-            <p className="text-sm text-muted-foreground">Риелтор свяжется с вами в ближайшее время.</p>
+            <h3 className="font-semibold">Вопрос отправлен</h3>
+            <p className="text-sm text-muted-foreground">Вам ответят в ближайшее время.</p>
             <Button variant="outline" onClick={() => setOpen(false)}>Закрыть</Button>
           </div>
         ) : (
@@ -87,10 +96,10 @@ export default function OwnerMessageDialog({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <MessageSquareText className="w-4 h-4 text-primary" />
-                Написать сообщение
+                Задать вопрос
               </DialogTitle>
               <DialogDescription>
-                {ownerName ? `Риелтор: ${ownerName}` : "Отправьте сообщение риелтору объекта"}
+                {ownerName ? `Контакт: ${ownerName}` : "Задайте вопрос по объекту"}
                 {propertyAddress && <> · {propertyAddress}</>}
               </DialogDescription>
             </DialogHeader>
@@ -108,7 +117,7 @@ export default function OwnerMessageDialog({
                 <Input name="email" type="email" placeholder="Email (необязательно)" className="pl-9" />
               </div>
               <div>
-                <Label className="text-xs mb-1 block">Сообщение</Label>
+                <Label className="text-xs mb-1 block">Ваш вопрос</Label>
                 <Textarea name="message" rows={4} placeholder="Здравствуйте, интересует объект…" required />
               </div>
               <Button type="submit" className="w-full gap-2" disabled={loading}>

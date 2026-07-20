@@ -18,13 +18,15 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Plus, LogOut, Users, Home, Edit, Trash2,
   BarChart3, Eye, MapPin, ArrowLeft, Upload, X, Star, ImageIcon, Search,
-  ArrowUpDown, ArrowUp, ArrowDown, Settings2, Check, Megaphone, CheckSquare, Shield,
+  ArrowUpDown, ArrowUp, ArrowDown, Settings2, Check, Megaphone, CheckSquare, Shield, UserCircle,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import AdPlacementsManager from "@/components/admin/AdPlacementsManager";
 import AdPlacementsTab from "@/components/admin/AdPlacementsTab";
 import PropertyUnitsManager from "@/components/admin/PropertyUnitsManager";
 import ModerationQueue from "@/components/admin/ModerationQueue";
+import VerificationUsersTab from "@/components/admin/VerificationUsersTab";
+import NewsAdminPanel from "@/components/NewsAdminPanel";
 import { supabaseAdmin, SUPABASE_URL, SERVICE_ROLE_KEY } from "@/integrations/supabase/adminClient";
 import {
   isLandProperty,
@@ -38,47 +40,31 @@ import {
   getSidebarVisibility,
   sanitizeSidebarExtras,
 } from "@/lib/propertySidebar";
-
-// ====== Predefined options ======
-const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
-const CLASSES = ["A", "A+", "B+", "B", "C", "-"];
-const DEAL_TYPES = ["Аренда", "Продажа"];
-
-const DISTRICTS = [
-  "Кировский", "Октябрьский", "Свердловский", "Ленинский", "Куйбышевский",
-  "Ангарск", "Шелехов", "Усолье-Сибирское", "Братск", "Усть-Илимск",
-];
-
-const FLOORS = ["-", "Цоколь", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "Мансарда"];
-const TOTAL_FLOORS_OPTIONS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "12", "14", "16", "18", "20", "25", "30"];
-const CEILING_HEIGHTS = ["2.5", "2.7", "2.8", "3.0", "3.2", "3.5", "4.0", "4.2", "4.5", "5.0", "6.0", "7.0", "7.5", "8.0", "10.0", "12.0"];
-
-const PARKING_OPTIONS = ["Нет", "Наземный, 1 м/м", "Наземный, 2 м/м", "Наземный, 3 м/м", "Наземный, 5 м/м", "Наземный, 10 м/м", "Подземный", "Открытая, 5 м/м", "Открытая, 8 м/м", "Открытая, 10 м/м", "Открытая, 20 м/м", "-"];
-
-const CONDITIONS = [
-  "Евроремонт", "Хороший ремонт", "Косметический ремонт", "Рабочее состояние",
-  "Под чистовую отделку", "Shell & Core", "Требуется ремонт", "Без строений", "Новое",
-];
-
-const LAYOUTS = [
-  "Open-space", "Open-space + кабинеты", "Кабинетная", "Свободная планировка",
-  "2 кабинета + приёмная", "Open-space + 2 кабинета", "Open-space + 3 кабинета",
-  "Единое пространство", "Единое пространство + офис", "Прямоугольный участок",
-  "Г-образная", "Студия",
-];
-
-const DEPOSIT_OPTIONS = ["Нет", "1 месяц", "2 месяца", "3 месяца", "50%", "100%"];
-const CONTRACT_TERMS = ["от 1 мес", "от 3 мес", "от 6 мес", "от 1 года", "от 2 лет", "от 3 лет", "от 5 лет", "Бессрочный"];
-
-const FEATURES_LIST = [
-  "Кондиционирование", "Охрана", "Интернет", "Переговорная", "Кухня", "Ресепшн",
-  "Парковка", "Видеонаблюдение", "Мебель", "Санузел", "Кондиционер", "Пожарная сигнализация",
-  "Первая линия", "Отдельный вход", "Витрины", "Высокий трафик", "Вытяжка", "Мокрая точка",
-  "Вывеска", "Погрузка", "Рампа", "Отопление", "Грузовой подъезд", "Офисный блок",
-  "Фасадное остекление", "Вентиляция", "Лифт", "Охрана территории",
-  "Электричество 40 кВт", "Электричество 80 кВт", "Электричество 100 кВт",
-  "Водопровод", "Асфальтированный подъезд", "Ровный рельеф", "Коммерческое назначение", "Ограждение",
-];
+import {
+  PROPERTY_TYPES as TYPES,
+  PROPERTY_CLASSES as CLASSES,
+  DEAL_TYPES,
+  DISTRICTS,
+  FLOORS,
+  TOTAL_FLOORS_OPTIONS,
+  CEILING_HEIGHTS,
+  CONDITIONS,
+  LAYOUTS,
+  PARKING_OPTIONS,
+  DEPOSIT_OPTIONS,
+  CONTRACT_TERMS,
+  FEATURES_LIST,
+  UTILITIES_OPTIONS,
+  VAT_OPTIONS,
+  INDEXATION_OPTIONS,
+  CONTRACT_FORM_OPTIONS,
+  LANDLORD_TYPES,
+  SUBLEASE_OPTIONS,
+  PEDESTRIAN_TRAFFIC_LEVELS,
+  TRANSPORT_HUB_OPTIONS,
+  ENTRANCE_OPTIONS,
+  PURPOSE_OPTIONS,
+} from "@/lib/propertyOptions";
 
 // Address suggestions for Irkutsk region
 const ADDRESS_SUGGESTIONS = [
@@ -576,6 +562,7 @@ export default function Dashboard() {
             {[
               { value: "properties", label: "Объекты", icon: Home },
               { value: "moderation", label: "Модерация", icon: Shield },
+              { value: "clients", label: "Собственники и риелторы", icon: UserCircle },
               { value: "ads", label: "Реклама", icon: Megaphone },
               { value: "users", label: "Сотрудники", icon: Users },
               { value: "news", label: "Новости", icon: null },
@@ -885,9 +872,7 @@ export default function Dashboard() {
                               <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">—</SelectItem>
-                                <SelectItem value="включены">Включены</SelectItem>
-                                <SelectItem value="отдельно">Отдельно</SelectItem>
-                                <SelectItem value="по счётчикам">По счётчикам</SelectItem>
+                                {UTILITIES_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </div>
@@ -897,22 +882,32 @@ export default function Dashboard() {
                               <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">—</SelectItem>
-                                <SelectItem value="не облагается">Не облагается</SelectItem>
-                                <SelectItem value="20%">20%</SelectItem>
-                                <SelectItem value="включён">Включён</SelectItem>
+                                {VAT_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </div>
                           {sidebarVis.indexation && (
                             <div>
                               <Label className="text-xs mb-1 block">Индексация</Label>
-                              <Input className="h-8 text-xs" placeholder="раз в год" value={form.extras.indexation || ""} onChange={(e) => updateField("extras", { ...form.extras, indexation: e.target.value })} />
+                              <Select value={form.extras.indexation || "none"} onValueChange={(v) => updateField("extras", { ...form.extras, indexation: v === "none" ? "" : v })}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">—</SelectItem>
+                                  {INDEXATION_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
                             </div>
                           )}
                           {sidebarVis.minTerm && (
                             <div>
                               <Label className="text-xs mb-1 block">Мин. срок аренды</Label>
-                              <Input className="h-8 text-xs" placeholder="от 1 мес." value={form.extras.min_term || ""} onChange={(e) => updateField("extras", { ...form.extras, min_term: e.target.value })} />
+                              <Select value={form.extras.min_term || "none"} onValueChange={(v) => updateField("extras", { ...form.extras, min_term: v === "none" ? "" : v })}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">—</SelectItem>
+                                  {CONTRACT_TERMS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
                             </div>
                           )}
                         </div>
@@ -928,10 +923,9 @@ export default function Dashboard() {
                                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="none">—</SelectItem>
-                                  <SelectItem value="1">1 — Низкий</SelectItem>
-                                  <SelectItem value="2">2 — Средний</SelectItem>
-                                  <SelectItem value="3">3 — Высокий</SelectItem>
-                                  <SelectItem value="4">4 — Очень высокий</SelectItem>
+                                  {PEDESTRIAN_TRAFFIC_LEVELS.map((l) => (
+                                    <SelectItem key={l.value} value={String(l.value)}>{l.label}</SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             </div>
@@ -942,7 +936,13 @@ export default function Dashboard() {
                           </div>
                           <div>
                             <Label className="text-xs mb-1 block">Транспортный узел</Label>
-                            <Input className="h-8 text-xs" placeholder="250 м" value={form.extras.transport_hub || ""} onChange={(e) => updateField("extras", { ...form.extras, transport_hub: e.target.value })} />
+                            <Select value={form.extras.transport_hub || "none"} onValueChange={(v) => updateField("extras", { ...form.extras, transport_hub: v === "none" ? "" : v })}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">—</SelectItem>
+                                {TRANSPORT_HUB_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
                         <p className="text-[10px] text-muted-foreground mt-1.5">Район берётся из поля «Локация» выше.</p>
@@ -958,9 +958,7 @@ export default function Dashboard() {
                                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="none">—</SelectItem>
-                                  <SelectItem value="Краткосрочный">Краткосрочный</SelectItem>
-                                  <SelectItem value="Долгосрочный">Долгосрочный</SelectItem>
-                                  <SelectItem value="Бессрочный">Бессрочный</SelectItem>
+                                  {CONTRACT_FORM_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                                 </SelectContent>
                               </Select>
                             </div>
@@ -971,9 +969,7 @@ export default function Dashboard() {
                               <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">—</SelectItem>
-                                <SelectItem value="Юр. лицо">Юр. лицо</SelectItem>
-                                <SelectItem value="ИП">ИП</SelectItem>
-                                <SelectItem value="Физ. лицо">Физ. лицо</SelectItem>
+                                {LANDLORD_TYPES.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </div>
@@ -984,9 +980,7 @@ export default function Dashboard() {
                                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="none">—</SelectItem>
-                                  <SelectItem value="Разрешена">Разрешена</SelectItem>
-                                  <SelectItem value="Запрещена">Запрещена</SelectItem>
-                                  <SelectItem value="По согласованию">По согласованию</SelectItem>
+                                  {SUBLEASE_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                                 </SelectContent>
                               </Select>
                             </div>
@@ -994,7 +988,13 @@ export default function Dashboard() {
                           {!isLandForm && (
                             <div className="sm:col-span-2">
                               <Label className="text-xs mb-1 block">Назначение</Label>
-                              <Input className="h-8 text-xs" placeholder="Офис, услуги" value={form.extras.purpose || ""} onChange={(e) => updateField("extras", { ...form.extras, purpose: e.target.value })} />
+                              <Select value={form.extras.purpose || "none"} onValueChange={(v) => updateField("extras", { ...form.extras, purpose: v === "none" ? "" : v })}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">—</SelectItem>
+                                  {PURPOSE_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
                             </div>
                           )}
                         </div>
@@ -1274,6 +1274,14 @@ export default function Dashboard() {
           <TabsContent value="moderation" className="space-y-4">
             <h2 className="text-lg font-semibold">Очередь модерации</h2>
             <ModerationQueue />
+          </TabsContent>
+
+          <TabsContent value="clients" className="space-y-4">
+            <VerificationUsersTab />
+          </TabsContent>
+
+          <TabsContent value="verification" className="space-y-4">
+            <VerificationUsersTab />
           </TabsContent>
 
           {/* Ads Tab */}

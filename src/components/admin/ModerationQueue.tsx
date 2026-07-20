@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useModerationQueue } from "@/hooks/useMyProperties";
+import { adminInsertCrmLead, adminUpdateProperty, countPublishedBySubmitter } from "@/lib/adminModeration";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,48 +37,63 @@ type QueueItem = {
     email: string | null;
     phone: string | null;
     avatar_url: string | null;
+    account_type?: "owner" | "realtor";
+    agency_name?: string | null;
+    agency_about?: string | null;
+    agency_staff_count?: number | null;
+    verification_status?: "unverified" | "pending" | "verified" | "rejected";
   } | null;
 };
 
 export default function ModerationQueue() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: queue = [], isLoading } = useModerationQueue();
+  const { data: queue = [], isLoading, isError, error, refetch } = useModerationQueue();
 
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
   const approveMutation = useMutation({
     mutationFn: async (item: QueueItem) => {
-      if (!user) throw new Error("Не авторизован");
+      const { data: { session } } = await supabase.auth.getSession();
+      const moderatorId = session?.user?.id ?? user?.id ?? null;
 
       const submitter = item.submitter;
       const isFreeListing = item.request_type === "free_listing";
+      const isVerified = submitter?.verification_status === "verified";
+      const isRealtor = submitter?.account_type === "realtor";
+
+      let objectsCount = 0;
+      if (submitter?.id) {
+        objectsCount = await countPublishedBySubmitter(submitter.id);
+        if (isFreeListing) objectsCount += 1;
+      }
 
       const extras = {
         agent_name: submitter?.full_name || "Собственник",
-        agent_company: "Собственник",
-        agent_verified: true,
+        agent_company: isRealtor ? (submitter?.agency_name || "Риелтор") : "Собственник",
+        agent_verified: isVerified,
         agent_avatar_url: submitter?.avatar_url || "",
+        agent_account_type: isRealtor ? "realtor" : "owner",
+        agent_objects_count: objectsCount,
+        agent_agency_about: submitter?.agency_about || "",
         owner_user_id: submitter?.id || "",
       };
 
-      const { error } = await supabase.from("properties").update({
+      await adminUpdateProperty(item.id, {
         moderation_status: "published",
         is_active: isFreeListing,
         moderated_at: new Date().toISOString(),
-        moderated_by: user.id,
+        moderated_by: moderatorId,
         published_date: new Date().toISOString(),
         rejection_reason: null,
         extras,
         client_id: submitter?.id || null,
-      }).eq("id", item.id);
-
-      if (error) throw error;
+      });
 
       if (item.request_type === "management") {
-        await supabase.from("crm_leads").insert({
+        await adminInsertCrmLead({
           object_id: item.id,
           name: submitter?.full_name || "Клиент",
           phone: submitter?.phone || "",
@@ -101,15 +117,16 @@ export default function ModerationQueue() {
 
   const rejectMutation = useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      if (!user) throw new Error("Не авторизован");
-      const { error } = await supabase.from("properties").update({
+      const { data: { session } } = await supabase.auth.getSession();
+      const moderatorId = session?.user?.id ?? user?.id ?? null;
+
+      await adminUpdateProperty(id, {
         moderation_status: "rejected",
         is_active: false,
         rejection_reason: reason,
         moderated_at: new Date().toISOString(),
-        moderated_by: user.id,
-      }).eq("id", id);
-      if (error) throw error;
+        moderated_by: moderatorId,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["moderation-queue"] });
@@ -127,12 +144,29 @@ export default function ModerationQueue() {
     return <div className="text-sm text-muted-foreground py-8 text-center">Загрузка очереди…</div>;
   }
 
+  if (isError) {
+    return (
+      <div className="text-center py-12 border border-dashed border-destructive/40 rounded-lg bg-destructive/5">
+        <p className="text-sm font-medium text-destructive">Не удалось загрузить очередь</p>
+        <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+          {(error as Error)?.message || "Проверьте миграции moderation_status и RLS"}
+        </p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>
+          Повторить
+        </Button>
+      </div>
+    );
+  }
+
   if (queue.length === 0) {
     return (
       <div className="text-center py-12 border border-dashed border-border rounded-lg">
         <Building2 className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
         <p className="text-sm font-medium text-foreground">Очередь модерации пуста</p>
         <p className="text-xs text-muted-foreground mt-1">Новые заявки от пользователей появятся здесь</p>
+        <p className="text-[10px] text-muted-foreground/70 mt-2">
+          Убедитесь, что выполнен SQL: self_hosted_client_properties.sql
+        </p>
       </div>
     );
   }
@@ -164,7 +198,10 @@ export default function ModerationQueue() {
                 </div>
                 <div>
                   <div className="font-semibold text-foreground">{item.address}</div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                    {item.public_id && (
+                      <span className="font-mono font-bold text-primary">{item.public_id}</span>
+                    )}
                     <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{item.district}</span>
                     <span className="flex items-center gap-1"><Maximize2 className="w-3 h-3" />{item.area} м²</span>
                     {Number(item.price) > 0 && (
@@ -200,10 +237,19 @@ export default function ModerationQueue() {
                 )}
 
                 <div className="flex gap-2 pt-1">
-                  <Button size="sm" onClick={() => approveMutation.mutate(item)} disabled={approveMutation.isPending}>
+                  <Button
+                    size="sm"
+                    onClick={() => approveMutation.mutate(item)}
+                    disabled={authLoading || approveMutation.isPending}
+                  >
                     <Check className="w-4 h-4 mr-1" /> Подтвердить
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setRejectId(item.id)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setRejectId(item.id)}
+                    disabled={authLoading || rejectMutation.isPending}
+                  >
                     <X className="w-4 h-4 mr-1" /> Отклонить
                   </Button>
                 </div>

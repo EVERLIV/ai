@@ -4,8 +4,11 @@ import { useAuth } from "@/hooks/useAuth";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import MyPropertiesTab from "@/components/account/MyPropertiesTab";
+import ProfileTab from "@/components/account/ProfileTab";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import { Heart, FileText, User, LogOut, MapPin, Maximize2, ChevronRight, Building2 } from "lucide-react";
 import { useProperties } from "@/hooks/useProperties";
+import { useProfile, ACCOUNT_TYPE_LABELS, isProfileVerified } from "@/hooks/useProfile";
 
 const TABS = [
   { key: "favorites", label: "Избранное", icon: Heart },
@@ -23,6 +26,7 @@ export default function AccountPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("favorites");
   const { data: properties = [] } = useProperties();
+  const { data: profile } = useProfile();
 
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
@@ -81,9 +85,14 @@ export default function AccountPage() {
                   {fullName && <div className="text-sm font-semibold text-foreground truncate">{fullName}</div>}
                   <div className="text-xs text-muted-foreground truncate">{email}</div>
                 </div>
-                <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary font-medium shrink-0">
-                  User
-                </span>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary font-medium">
+                    {ACCOUNT_TYPE_LABELS[profile?.account_type || "owner"]}
+                  </span>
+                  {isProfileVerified(profile?.verification_status) && (
+                    <VerifiedBadge showLabel={false} />
+                  )}
+                </div>
               </div>
 
               {/* Nav */}
@@ -174,41 +183,7 @@ export default function AccountPage() {
               </div>
             )}
 
-            {tab === "profile" && (
-              <div>
-                <h2 className="font-display text-xl font-bold text-foreground mb-5">Мои данные</h2>
-                <div className="bg-card border border-border p-6 space-y-4">
-                  <div>
-                    <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide block mb-1.5">Имя</label>
-                    <div className="h-10 px-3 bg-muted border border-border flex items-center text-sm text-foreground">
-                      {fullName || <span className="text-muted-foreground">Не указано</span>}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide block mb-1.5">Email</label>
-                    <div className="h-10 px-3 bg-muted border border-border flex items-center text-sm text-foreground">
-                      {email}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide block mb-1.5">Телефон</label>
-                    <div className="h-10 px-3 bg-muted border border-border flex items-center text-sm text-muted-foreground">
-                      {user.user_metadata?.phone || "Не указан"}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide block mb-1.5">Роль</label>
-                    <div className="h-10 px-3 bg-muted border border-border flex items-center text-sm text-foreground">
-                      Пользователь
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground pt-2">
-                    Для изменения данных свяжитесь с менеджером по телефону{" "}
-                    <a href="tel:+73952551234" className="text-primary hover:underline">+7 (3952) 55-12-34</a>
-                  </p>
-                </div>
-              </div>
-            )}
+            {tab === "profile" && <ProfileTab />}
           </div>
         </div>
       </main>

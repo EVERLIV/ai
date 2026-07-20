@@ -1,9 +1,12 @@
 import {
   DoorOpen, Receipt, TrendingUp, MapPinned, Footprints, Train, ScrollText,
-  Star, Clock3, BadgeCheck,
+  Building2, Home, Users,
 } from "lucide-react";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import { resolveSidebarDisplay } from "@/lib/propertySidebar";
+import VerifiedBadge from "@/components/VerifiedBadge";
+import { useOwnerListingCard } from "@/hooks/useOwnerListingCard";
+import { ACCOUNT_TYPE_LABELS } from "@/hooks/useProfile";
 
 interface Props {
   property: {
@@ -13,6 +16,7 @@ interface Props {
     contract_term?: string | null;
     layout?: string | null;
     condition?: string | null;
+    submitted_by?: string | null;
     extras?: Record<string, unknown> | null;
   };
 }
@@ -20,6 +24,22 @@ interface Props {
 export default function PropertySidebarExtras({ property }: Props) {
   const d = resolveSidebarDisplay(property);
   const { vis } = d;
+  const ownerUserId = d.owner_user_id || property.submitted_by || "";
+  const { data: liveOwner } = useOwnerListingCard(ownerUserId || null);
+
+  const agentName = liveOwner?.full_name || (d.agent_name !== "—" ? d.agent_name : "");
+  const agentAvatar = liveOwner?.avatar_url || d.agent_avatar_url || consultantAvatar;
+  const accountType = liveOwner?.account_type || d.agent_account_type;
+  const isRealtor = accountType === "realtor";
+  const agencyName = liveOwner?.agency_name || (d.agent_company !== "—" && d.agent_company !== "Собственник" ? d.agent_company : "");
+  const agencyAbout = liveOwner?.agency_about || d.agent_agency_about;
+  const objectsCount = liveOwner?.published_objects_count ?? d.agent_objects_count;
+  const isVerified = liveOwner
+    ? liveOwner.verification_status === "verified"
+    : d.agent_verified;
+  const staffCount = liveOwner?.agency_staff_count;
+
+  const showAgent = !!ownerUserId && !!(agentName || liveOwner?.full_name);
 
   return (
     <div className="space-y-3">
@@ -73,46 +93,59 @@ export default function PropertySidebarExtras({ property }: Props) {
         <Row label={vis.purposeLabel} value={d.purpose} />
       </Block>
 
-      {d.showAgent && (
-        <div className="bg-card rounded-2xl shadow-card p-3">
-          <div className="flex items-center gap-2.5">
+      {showAgent && (
+        <div className="bg-card rounded-2xl shadow-card p-3.5">
+          <div className="flex items-start gap-3">
             <img
-              src={d.agent_avatar_url || consultantAvatar}
-              alt={d.agent_name}
-              className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20 shrink-0"
+              src={agentAvatar}
+              alt={agentName}
+              className="w-12 h-12 rounded-lg object-cover shrink-0 bg-muted"
             />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1">
-                <div className="text-sm font-semibold text-foreground truncate">{d.agent_name}</div>
-                {d.agent_verified && <BadgeCheck className="w-3.5 h-3.5 text-primary shrink-0" />}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-sm font-semibold text-foreground leading-tight truncate">
+                  {agentName}
+                </span>
+                {isVerified && <VerifiedBadge size="sm" showLabel={false} />}
               </div>
-              {d.agent_company !== "—" && (
-                <div className="text-[11px] text-muted-foreground truncate">{d.agent_company}</div>
-              )}
-              {(d.agent_rating > 0 || d.agent_response_min > 0 || d.agent_objects_count > 0) && (
-                <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
-                  {d.agent_rating > 0 && (
-                    <span className="inline-flex items-center gap-0.5 text-foreground">
-                      <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                      <span className="font-semibold">{d.agent_rating.toFixed(1)}</span>
-                    </span>
-                  )}
-                  {d.agent_rating > 0 && d.agent_response_min > 0 && <span>·</span>}
-                  {d.agent_response_min > 0 && (
-                    <span className="inline-flex items-center gap-0.5">
-                      <Clock3 className="w-3 h-3" />~{d.agent_response_min} мин
-                    </span>
-                  )}
-                  {d.agent_objects_count > 0 && (
-                    <>
-                      <span>·</span>
-                      <span>{d.agent_objects_count} об.</span>
-                    </>
-                  )}
-                </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {ACCOUNT_TYPE_LABELS[accountType]}
+              </p>
+              {isRealtor && agencyName && (
+                <p className="text-xs font-medium text-foreground mt-1 flex items-center gap-1 truncate">
+                  <Building2 className="w-3 h-3 text-primary shrink-0" />
+                  {agencyName}
+                </p>
               )}
             </div>
           </div>
+
+          <div className="mt-3 grid gap-2">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <Home className="w-3.5 h-3.5" />
+                Объектов в каталоге
+              </span>
+              <span className="font-semibold text-foreground tabular-nums">
+                {objectsCount > 0 ? objectsCount : 1}
+              </span>
+            </div>
+            {isRealtor && staffCount != null && staffCount > 0 && (
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <Users className="w-3.5 h-3.5" />
+                  Сотрудников
+                </span>
+                <span className="font-semibold text-foreground tabular-nums">{staffCount}</span>
+              </div>
+            )}
+          </div>
+
+          {agencyAbout && (
+            <p className="mt-2.5 text-[11px] text-muted-foreground leading-relaxed line-clamp-3">
+              {agencyAbout}
+            </p>
+          )}
         </div>
       )}
     </div>
