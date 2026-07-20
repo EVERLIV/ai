@@ -238,7 +238,9 @@ function GridCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
         </div>
 
         <div className="mt-auto pt-3 space-y-2">
-          <p className="text-[10px] text-muted-foreground">Управление: Аренда сити</p>
+          <p className="text-[10px] text-muted-foreground">
+            <Link to="/about" className="text-primary hover:underline">Аренда сити</Link>
+          </p>
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-primary group-hover:underline underline-offset-4">Подробнее</span>
             {land && cadastral ? (
@@ -968,7 +970,9 @@ function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
               </>
             )}
           </div>
-          <p className="text-[10px] text-muted-foreground mt-2">Управление: Аренда сити</p>
+          <p className="text-[10px] text-muted-foreground mt-2">
+            <Link to="/about" className="text-primary hover:underline">Аренда сити</Link>
+          </p>
         </div>
         <div className="mt-3 flex items-center justify-between">
           <span className="text-xs font-semibold text-primary group-hover:underline underline-offset-4">Подробнее</span>
