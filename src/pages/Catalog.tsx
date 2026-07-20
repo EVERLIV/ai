@@ -204,7 +204,7 @@ function GridCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
           </p>
         )}
 
-        <div className="grid grid-cols-3 gap-2 pb-3 border-b border-border/50">
+        <div className="grid grid-cols-3 gap-2 pb-3">
           <div className="min-w-0">
             <p className="text-[10px] text-muted-foreground mb-0.5">Площадь</p>
             <p className="text-xs font-semibold text-foreground truncate">{p.area} м²</p>
