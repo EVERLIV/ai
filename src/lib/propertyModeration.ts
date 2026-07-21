@@ -1,4 +1,4 @@
-export type ModerationStatus = "draft" | "on_moderation" | "published" | "rejected" | "cancelled";
+export type ModerationStatus = "draft" | "on_moderation" | "published" | "rejected" | "cancelled" | "archived";
 export type RequestType = "free_listing" | "management";
 
 export const MODERATION_STATUS_LABELS: Record<ModerationStatus, string> = {
@@ -7,6 +7,7 @@ export const MODERATION_STATUS_LABELS: Record<ModerationStatus, string> = {
   published: "Опубликован",
   rejected: "Отклонён",
   cancelled: "Отменён",
+  archived: "В архиве",
 };
 
 export const EDITABLE_STATUSES: ModerationStatus[] = ["draft", "on_moderation", "rejected"];
@@ -42,6 +43,8 @@ export function getModerationBadgeVariant(
       return "destructive";
     case "cancelled":
       return "outline";
+    case "archived":
+      return "secondary";
     default:
       return "outline";
   }

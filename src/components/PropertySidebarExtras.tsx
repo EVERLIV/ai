@@ -39,7 +39,17 @@ export default function PropertySidebarExtras({ property }: Props) {
     : d.agent_verified;
   const staffCount = liveOwner?.agency_staff_count;
 
-  const showAgent = !!ownerUserId && !!(agentName || liveOwner?.full_name);
+  const hasOwnerData = !!ownerUserId && !!(agentName || liveOwner?.full_name);
+  const showAgent = true;
+  const displayAgentName = hasOwnerData ? agentName : "Анастасия Романова";
+  const displayAgentAvatar = hasOwnerData ? agentAvatar : consultantAvatar;
+  const displayIsVerified = hasOwnerData ? isVerified : true;
+  const displayIsRealtor = hasOwnerData ? isRealtor : true;
+  const displayAgencyName = hasOwnerData ? agencyName : "Аренда Сити";
+  const displayObjectsCount = hasOwnerData ? objectsCount : 0;
+  const displayAgencyAbout = hasOwnerData ? agencyAbout : "Эксперт по коммерческой недвижимости. Более 200 сделок.";
+  const displayAccountType = hasOwnerData ? accountType : ("realtor" as const);
+  const displayStaffCount = hasOwnerData ? staffCount : undefined;
 
   return (
     <div className="space-y-3">
@@ -97,24 +107,24 @@ export default function PropertySidebarExtras({ property }: Props) {
         <div className="bg-card rounded-2xl shadow-card p-3.5">
           <div className="flex items-start gap-3">
             <img
-              src={agentAvatar}
-              alt={agentName}
+              src={displayAgentAvatar}
+              alt={displayAgentName}
               className="w-12 h-12 rounded-lg object-cover shrink-0 bg-muted"
             />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-sm font-semibold text-foreground leading-tight truncate">
-                  {agentName}
+                  {displayAgentName}
                 </span>
-                {isVerified && <VerifiedBadge size="sm" showLabel={false} />}
+                {displayIsVerified && <VerifiedBadge size="sm" showLabel={false} />}
               </div>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                {ACCOUNT_TYPE_LABELS[accountType]}
+                {ACCOUNT_TYPE_LABELS[displayAccountType]}
               </p>
-              {isRealtor && agencyName && (
+              {displayIsRealtor && displayAgencyName && (
                 <p className="text-xs font-medium text-foreground mt-1 flex items-center gap-1 truncate">
                   <Building2 className="w-3 h-3 text-primary shrink-0" />
-                  {agencyName}
+                  {displayAgencyName}
                 </p>
               )}
             </div>
@@ -127,23 +137,23 @@ export default function PropertySidebarExtras({ property }: Props) {
                 Объектов в каталоге
               </span>
               <span className="font-semibold text-foreground tabular-nums">
-                {objectsCount > 0 ? objectsCount : 1}
+                {displayObjectsCount > 0 ? displayObjectsCount : 1}
               </span>
             </div>
-            {isRealtor && staffCount != null && staffCount > 0 && (
+            {displayIsRealtor && displayStaffCount != null && displayStaffCount > 0 && (
               <div className="flex items-center justify-between text-[11px]">
                 <span className="flex items-center gap-1.5 text-muted-foreground">
                   <Users className="w-3.5 h-3.5" />
                   Сотрудников
                 </span>
-                <span className="font-semibold text-foreground tabular-nums">{staffCount}</span>
+                <span className="font-semibold text-foreground tabular-nums">{displayStaffCount}</span>
               </div>
             )}
           </div>
 
-          {agencyAbout && (
+          {displayAgencyAbout && (
             <p className="mt-2.5 text-[11px] text-muted-foreground leading-relaxed line-clamp-3">
-              {agencyAbout}
+              {displayAgencyAbout}
             </p>
           )}
         </div>

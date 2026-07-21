@@ -20,22 +20,14 @@ export default function ListingAgentFooter({
   className,
   compact = false,
 }: Props) {
-  const agent = getListingAgentDisplay(extras);
-
-  if (!agent) {
-    if (!district && !trailing) return null;
-    return (
-      <div className={cn("mt-auto pt-3 flex items-center justify-end gap-2", className)}>
-        {trailing}
-        {district && (
-          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-            <MapPin className="w-3 h-3 shrink-0" />
-            {district}
-          </span>
-        )}
-      </div>
-    );
-  }
+  const agent = getListingAgentDisplay(extras) ?? {
+    primaryLabel: "Анастасия Романова",
+    secondaryLabel: "Риелтор · «Аренда Сити»",
+    avatarUrl: consultantAvatar,
+    isVerified: true,
+    isRealtor: false,
+    objectsCount: 0,
+  };
 
   const avatar = agent.avatarUrl || consultantAvatar;
   const objectsLabel =

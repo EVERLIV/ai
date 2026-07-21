@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
   useProfile,
@@ -8,10 +8,11 @@ import {
   VERIFICATION_LABELS,
   isProfileVerified,
 } from "@/hooks/useProfile";
+import { useAuth } from "@/hooks/useAuth";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ShieldCheck, ShieldAlert, Clock, Loader2 } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Clock, Loader2, Camera } from "lucide-react";
 
 export default function ProfileTab() {
   const { toast } = useToast();
@@ -25,6 +26,46 @@ export default function ProfileTab() {
   const [agencyName, setAgencyName] = useState("");
   const [agencyStaffCount, setAgencyStaffCount] = useState("");
   const [agencyAbout, setAgencyAbout] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "Файл слишком большой", description: "Максимум 2 МБ", variant: "destructive" });
+      return;
+    }
+    setAvatarUploading(true);
+    try {
+      const canvas = document.createElement("canvas");
+      const img = new Image();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        img.onload = () => {
+          const size = 256;
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext("2d")!;
+          const min = Math.min(img.width, img.height);
+          const sx = (img.width - min) / 2;
+          const sy = (img.height - min) / 2;
+          ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+          resolve(canvas.toDataURL("image/jpeg", 0.8));
+        };
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+      });
+      await updateProfile.mutateAsync({ avatar_url: dataUrl });
+      setAvatarUrl(dataUrl);
+      toast({ title: "Фото обновлено" });
+    } catch (err) {
+      toast({ title: "Не удалось загрузить фото", description: err instanceof Error ? err.message : "", variant: "destructive" });
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   useEffect(() => {
     if (!profile) return;
@@ -34,6 +75,7 @@ export default function ProfileTab() {
     setAgencyName(profile.agency_name || "");
     setAgencyStaffCount(profile.agency_staff_count != null ? String(profile.agency_staff_count) : "");
     setAgencyAbout(profile.agency_about || "");
+    setAvatarUrl(profile.avatar_url || null);
   }, [profile]);
 
   const handleSave = async () => {
@@ -146,7 +188,41 @@ export default function ProfileTab() {
         </div>
       )}
 
-      <div className="bg-card border border-border p-6 space-y-4">
+      <div className="bg-card p-6 space-y-4">
+        <div className="flex items-center gap-4 pb-4">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="relative w-16 h-16 rounded-full bg-muted shrink-0 overflow-hidden group"
+            disabled={avatarUploading}
+          >
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Аватар" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground text-lg font-bold">
+                {(profile?.full_name || "?")[0]?.toUpperCase()}
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              {avatarUploading ? (
+                <Loader2 className="w-5 h-5 text-white animate-spin" />
+              ) : (
+                <Camera className="w-5 h-5 text-white" />
+              )}
+            </div>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarUpload}
+          />
+          <div>
+            <p className="text-sm font-medium text-foreground">Фото профиля</p>
+            <p className="text-xs text-muted-foreground">Нажмите чтобы загрузить</p>
+          </div>
+        </div>
+
         <div>
           <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide block mb-1.5">
             Тип аккаунта

@@ -24,6 +24,8 @@ import PKKMapModal from "@/components/PKKMapModal";
 import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL } from "@/lib/propertyLand";
 import { isSaleDeal } from "@/lib/propertyDeal";
 import { motion } from "framer-motion";
+import PropertyOGMeta from "@/components/PropertyOGMeta";
+import { supabase } from "@/integrations/supabase/client";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
@@ -66,10 +68,28 @@ export default function PropertyDetail() {
 
   const SUBJECTS = ["Аренда офисного помещения", "Аренда торговой площади", "Аренда склада", "Другое"];
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setContactLoading(true);
-    setTimeout(() => { setContactLoading(false); setContactSent(true); }, 1200);
+    try {
+      const ownerUserId = getOwnerUserId(
+        (property?.extras || {}) as Record<string, unknown>,
+        property?.submitted_by,
+      );
+      await supabase.from("crm_leads").insert({
+        object_id: id || null,
+        name: contactForm.name,
+        phone: contactForm.phone,
+        message: contactForm.message || null,
+        source: "property_contact",
+        business_category: property?.address || null,
+      });
+      setContactSent(true);
+    } catch {
+      // silent fallback
+    } finally {
+      setContactLoading(false);
+    }
   };
 
   const getSaved = (): string[] => JSON.parse(localStorage.getItem("saved_properties") || "[]");
@@ -159,6 +179,15 @@ export default function PropertyDetail() {
       onTouchEnd={handleTouchEnd}
     >
       <SiteHeader />
+
+      <PropertyOGMeta
+        title={property.address}
+        description={property.description || ""}
+        image={photos[0] || property.cover_photo}
+        price={Number(property.price) || null}
+        area={property.area}
+        type={property.type}
+      />
 
       {/* ── Попап формы заявки ── */}
       {contactOpen && (

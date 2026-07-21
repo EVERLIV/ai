@@ -34,7 +34,6 @@ import ContactsPage from "./pages/ContactsPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import InstallPrompt from "@/components/InstallPrompt";
 import CookieBanner from "@/components/CookieBanner";
-
 const queryClient = new QueryClient();
 
 const App = () => {

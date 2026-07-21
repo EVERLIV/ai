@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Building2, Pencil, XCircle, ExternalLink, MapPin, Maximize2 } from "lucide-react";
+import { Plus, Building2, Pencil, XCircle, ExternalLink, MapPin, Maximize2, Archive, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -28,6 +28,7 @@ const STATUS_STYLES: Record<ModerationStatus, string> = {
   published: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300",
   rejected: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300",
   cancelled: "bg-muted text-muted-foreground",
+  archived: "bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-400",
 };
 
 function StatusBadge({ status }: { status: ModerationStatus }) {
@@ -53,10 +54,14 @@ function PropertyCard({
   property: p,
   onEdit,
   onCancel,
+  onArchive,
+  onDelete,
 }: {
   property: MyProperty;
   onEdit: (p: MyProperty) => void;
   onCancel: (p: MyProperty) => void;
+  onArchive: (p: MyProperty) => void;
+  onDelete: (p: MyProperty) => void;
 }) {
   const status = (p.moderation_status || "draft") as ModerationStatus;
   const requestType = p.request_type as RequestType | null;
@@ -64,7 +69,7 @@ function PropertyCard({
   const displayId = p.public_id || p.id.slice(0, 8).toUpperCase();
 
   return (
-    <article className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+    <article className="bg-card rounded-lg overflow-hidden hover:shadow-md transition-shadow">
       <div className="flex flex-col sm:flex-row">
         {/* Фото */}
         <div className="relative w-full sm:w-[140px] h-[140px] sm:h-auto sm:min-h-[120px] shrink-0 bg-muted">
@@ -122,7 +127,7 @@ function PropertyCard({
           )}
 
           {/* Действия */}
-          <div className="flex items-center justify-end gap-1 mt-auto pt-2 border-t border-border/50">
+          <div className="flex items-center justify-end gap-1 mt-auto pt-2">
             {isPublished && (
               <Button asChild variant="outline" size="sm" className="h-8 text-xs gap-1">
                 <Link to={`/property/${p.id}`}>
@@ -153,6 +158,28 @@ function PropertyCard({
                 <span className="hidden sm:inline">Отменить</span>
               </Button>
             )}
+            {isPublished && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                onClick={() => onArchive(p)}
+              >
+                <Archive className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">В архив</span>
+              </Button>
+            )}
+            {(status === "cancelled" || status === "archived" || status === "draft") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => onDelete(p)}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Удалить</span>
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -168,6 +195,46 @@ export default function MyPropertiesTab() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editProperty, setEditProperty] = useState<MyProperty | null>(null);
   const [cancelTarget, setCancelTarget] = useState<MyProperty | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<MyProperty | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MyProperty | null>(null);
+
+  const archiveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("properties")
+        .update({ moderation_status: "archived", is_active: false })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-properties"] });
+      queryClient.invalidateQueries({ queryKey: ["properties"] });
+      setArchiveTarget(null);
+      toast({ title: "Объект перемещён в архив" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Не удалось архивировать", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("properties")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-properties"] });
+      queryClient.invalidateQueries({ queryKey: ["properties"] });
+      setDeleteTarget(null);
+      toast({ title: "Объект удалён" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Не удалось удалить", description: err.message, variant: "destructive" });
+    },
+  });
 
   const cancelMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -210,11 +277,11 @@ export default function MyPropertiesTab() {
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2].map((i) => (
-            <div key={i} className="bg-card border border-border rounded-lg h-[140px] animate-pulse" />
+            <div key={i} className="bg-card rounded-lg h-[140px] animate-pulse" />
           ))}
         </div>
       ) : properties.length === 0 ? (
-        <div className="bg-card border border-border rounded-lg p-8 sm:p-12 text-center">
+        <div className="bg-card rounded-lg p-8 sm:p-12 text-center">
           <Building2 className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
           <p className="text-sm font-medium text-foreground mb-1">Объектов пока нет</p>
           <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">
@@ -232,6 +299,8 @@ export default function MyPropertiesTab() {
               property={p}
               onEdit={openEdit}
               onCancel={setCancelTarget}
+              onArchive={setArchiveTarget}
+              onDelete={setDeleteTarget}
             />
           ))}
         </div>
@@ -258,6 +327,45 @@ export default function MyPropertiesTab() {
               onClick={() => cancelTarget && cancelMutation.mutate(cancelTarget.id)}
             >
               Отменить заявку
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!archiveTarget} onOpenChange={(o) => { if (!o) setArchiveTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Архивировать объект?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Объект {archiveTarget?.public_id || ""} ({archiveTarget?.address}) будет скрыт из каталога. Вы сможете восстановить его позже.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Назад</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => archiveTarget && archiveMutation.mutate(archiveTarget.id)}
+            >
+              В архив
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить объект?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Объект {deleteTarget?.public_id || ""} ({deleteTarget?.address}) будет удалён безвозвратно.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Назад</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+            >
+              Удалить
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

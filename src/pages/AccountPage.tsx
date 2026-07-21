@@ -5,8 +5,10 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import MyPropertiesTab from "@/components/account/MyPropertiesTab";
 import ProfileTab from "@/components/account/ProfileTab";
+import MyLeadsTab from "@/components/account/MyLeadsTab";
+import StatsTab from "@/components/account/StatsTab";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import { Heart, FileText, User, LogOut, MapPin, Maximize2, ChevronRight, Building2 } from "lucide-react";
+import { Heart, FileText, User, LogOut, MapPin, Maximize2, ChevronRight, Building2, BarChart3 } from "lucide-react";
 import { useProperties } from "@/hooks/useProperties";
 import { useProfile, ACCOUNT_TYPE_LABELS, isProfileVerified } from "@/hooks/useProfile";
 
@@ -14,6 +16,7 @@ const TABS = [
   { key: "favorites", label: "Избранное", icon: Heart },
   { key: "properties", label: "Мои объекты", icon: Building2 },
   { key: "requests", label: "Мои заявки", icon: FileText },
+  { key: "stats", label: "Статистика", icon: BarChart3 },
   { key: "profile", label: "Мои данные", icon: User },
 ] as const;
 
@@ -75,9 +78,9 @@ export default function AccountPage() {
           {/* Sidebar */}
           <aside className="lg:w-64 shrink-0">
             {/* Avatar */}
-            <div className="bg-card border border-border overflow-hidden">
+            <div className="bg-card overflow-hidden divide-y divide-border">
               {/* Profile */}
-              <div className="flex items-center gap-3 p-4 border-b border-border">
+              <div className="flex items-center gap-3 p-4">
                 <div className="w-10 h-10 bg-primary flex items-center justify-center text-primary-foreground font-bold shrink-0">
                   {initials}
                 </div>
@@ -127,7 +130,7 @@ export default function AccountPage() {
               <div>
                 <h2 className="font-display text-xl font-bold text-foreground mb-5">Избранное</h2>
                 {savedProperties.length === 0 ? (
-                  <div className="bg-card border border-border p-12 text-center">
+                  <div className="bg-card p-12 text-center">
                     <Heart className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
                     <p className="text-sm font-medium text-foreground mb-1">Нет сохранённых объектов</p>
                     <p className="text-xs text-muted-foreground mb-4">Нажмите ♡ на карточке объекта чтобы добавить в избранное</p>
@@ -139,7 +142,7 @@ export default function AccountPage() {
                   <div className="space-y-3">
                     {savedProperties.map(p => (
                       <Link key={p.id} to={`/property/${p.id}`}
-                        className="group flex gap-4 bg-card border border-border p-4 hover:shadow-md transition-all">
+                        className="group flex gap-4 bg-card p-4 hover:shadow-md transition-all">
                         <div className="w-24 h-20 bg-muted shrink-0 overflow-hidden">
                           {p.cover_photo && <img src={p.cover_photo} alt={p.address} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />}
                         </div>
@@ -169,19 +172,9 @@ export default function AccountPage() {
 
             {tab === "properties" && <MyPropertiesTab />}
 
-            {tab === "requests" && (
-              <div>
-                <h2 className="font-display text-xl font-bold text-foreground mb-5">Мои заявки</h2>
-                <div className="bg-card border border-border p-12 text-center">
-                  <FileText className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-foreground mb-1">Заявок пока нет</p>
-                  <p className="text-xs text-muted-foreground mb-4">Оставьте заявку на понравившийся объект и она появится здесь</p>
-                  <Link to="/catalog" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline">
-                    Смотреть объекты <ChevronRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            )}
+            {tab === "requests" && <MyLeadsTab />}
+
+            {tab === "stats" && <StatsTab />}
 
             {tab === "profile" && <ProfileTab />}
           </div>
