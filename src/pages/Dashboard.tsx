@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -27,6 +27,7 @@ import PropertyUnitsManager from "@/components/admin/PropertyUnitsManager";
 import ModerationQueue from "@/components/admin/ModerationQueue";
 import VerificationUsersTab from "@/components/admin/VerificationUsersTab";
 import NewsAdminPanel from "@/components/NewsAdminPanel";
+import DictionariesTab from "@/components/admin/DictionariesTab";
 import { supabaseAdmin, SUPABASE_URL, SERVICE_ROLE_KEY } from "@/integrations/supabase/adminClient";
 import {
   isLandProperty,
@@ -40,30 +41,31 @@ import {
   getSidebarVisibility,
   sanitizeSidebarExtras,
 } from "@/lib/propertySidebar";
+import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 import {
-  PROPERTY_TYPES as TYPES,
-  PROPERTY_CLASSES as CLASSES,
-  DEAL_TYPES,
-  DISTRICTS,
+  PROPERTY_TYPES as FALLBACK_TYPES,
+  PROPERTY_CLASSES as FALLBACK_CLASSES,
+  DEAL_TYPES as FALLBACK_DEAL_TYPES,
+  DISTRICTS as FALLBACK_DISTRICTS,
   FLOORS,
   TOTAL_FLOORS_OPTIONS,
   CEILING_HEIGHTS,
-  CONDITIONS,
-  LAYOUTS,
-  PARKING_OPTIONS,
-  DEPOSIT_OPTIONS,
-  CONTRACT_TERMS,
+  CONDITIONS as FALLBACK_CONDITIONS,
+  LAYOUTS as FALLBACK_LAYOUTS,
+  PARKING_OPTIONS as FALLBACK_PARKING,
+  DEPOSIT_OPTIONS as FALLBACK_DEPOSIT,
+  CONTRACT_TERMS as FALLBACK_CONTRACT_TERMS,
   FEATURES_LIST,
-  UTILITIES_OPTIONS,
-  VAT_OPTIONS,
+  UTILITIES_OPTIONS as FALLBACK_UTILITIES,
+  VAT_OPTIONS as FALLBACK_VAT,
   INDEXATION_OPTIONS,
   CONTRACT_FORM_OPTIONS,
-  LANDLORD_TYPES,
+  LANDLORD_TYPES as FALLBACK_LANDLORD_TYPES,
   SUBLEASE_OPTIONS,
   PEDESTRIAN_TRAFFIC_LEVELS,
   TRANSPORT_HUB_OPTIONS,
   ENTRANCE_OPTIONS,
-  PURPOSE_OPTIONS,
+  PURPOSE_OPTIONS as FALLBACK_PURPOSE,
 } from "@/lib/propertyOptions";
 
 // Address suggestions for Irkutsk region
@@ -140,10 +142,26 @@ const emptyForm: PropertyForm = {
 };
 
 export default function Dashboard() {
-  const { user, signOut, hasRole } = useAuth();
+  const { user, loading, signOut, hasRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { byCategory } = useAllDictionaryValues();
+
+  const TYPES = byCategory("property_type").length > 0 ? byCategory("property_type") : [...FALLBACK_TYPES];
+  const CLASSES = byCategory("property_class").length > 0 ? byCategory("property_class") : [...FALLBACK_CLASSES];
+  const DEAL_TYPES = byCategory("deal_type").length > 0 ? byCategory("deal_type") : [...FALLBACK_DEAL_TYPES];
+  const DISTRICTS = byCategory("district").length > 0 ? byCategory("district") : [...FALLBACK_DISTRICTS];
+  const CONDITIONS = byCategory("condition").length > 0 ? byCategory("condition") : [...FALLBACK_CONDITIONS];
+  const LAYOUTS = byCategory("layout").length > 0 ? byCategory("layout") : [...FALLBACK_LAYOUTS];
+  const PARKING_OPTIONS = byCategory("parking").length > 0 ? byCategory("parking") : [...FALLBACK_PARKING];
+  const DEPOSIT_OPTIONS = byCategory("deposit").length > 0 ? byCategory("deposit") : [...FALLBACK_DEPOSIT];
+  const CONTRACT_TERMS = byCategory("contract_term").length > 0 ? byCategory("contract_term") : [...FALLBACK_CONTRACT_TERMS];
+  const UTILITIES_OPTIONS = byCategory("utilities").length > 0 ? byCategory("utilities") : [...FALLBACK_UTILITIES];
+  const VAT_OPTIONS = byCategory("vat").length > 0 ? byCategory("vat") : [...FALLBACK_VAT];
+  const LANDLORD_TYPES = byCategory("landlord_type").length > 0 ? byCategory("landlord_type") : [...FALLBACK_LANDLORD_TYPES];
+  const PURPOSE_OPTIONS = byCategory("purpose").length > 0 ? byCategory("purpose") : [...FALLBACK_PURPOSE];
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<PropertyForm>(emptyForm);
@@ -511,6 +529,13 @@ export default function Dashboard() {
   const isLandForm = isLandProperty(form.type);
   const sidebarVis = getSidebarVisibility(form.type, form.deal_type);
 
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen text-sm text-muted-foreground">Загрузка...</div>;
+  }
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -566,6 +591,7 @@ export default function Dashboard() {
               { value: "ads", label: "Реклама", icon: Megaphone },
               { value: "users", label: "Сотрудники", icon: Users },
               { value: "news", label: "Новости", icon: null },
+              { value: "dictionaries", label: "Справочники", icon: Settings2 },
               ...(hasRole("admin") ? [{ value: "tasks", label: "Задачи", icon: CheckSquare }] : []),
             ].map((t) => (
               <TabsTrigger
@@ -1292,6 +1318,10 @@ export default function Dashboard() {
           {/* Users / Staff Tab */}
           <TabsContent value="users">
             <UsersRolesTab isAdmin={hasRole("admin")} currentUserId={user?.id} />
+          </TabsContent>
+
+          <TabsContent value="dictionaries" className="space-y-4">
+            <DictionariesTab />
           </TabsContent>
 
           {/* Tasks shortcut Tab */}

@@ -208,6 +208,39 @@ export type Database = {
           },
         ]
       }
+      dictionaries: {
+        Row: {
+          id: string
+          category: string
+          value: string
+          label: string | null
+          parent: string | null
+          sort_order: number
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          category: string
+          value: string
+          label?: string | null
+          parent?: string | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          category?: string
+          value?: string
+          label?: string | null
+          parent?: string | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       crm_events: {
         Row: {
           created_at: string
