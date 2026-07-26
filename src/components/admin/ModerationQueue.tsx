@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
+import { getPropertyTypes, formatPropertyTypesLabel } from "@/lib/propertyTypes";
 import { Check, X, MapPin, Maximize2, User, Phone, Mail, Building2 } from "lucide-react";
 import {
   REQUEST_TYPE_LABELS,
@@ -194,7 +195,7 @@ export default function ModerationQueue() {
                     </Badge>
                   )}
                   <Badge variant="outline">{REQUEST_TYPE_LABELS[item.request_type || "free_listing"]}</Badge>
-                  <span className="text-xs text-muted-foreground">{item.type} · {item.deal_type}</span>
+                  <span className="text-xs text-muted-foreground">{formatPropertyTypesLabel(getPropertyTypes(item))} · {item.deal_type}</span>
                 </div>
                 <div>
                   <div className="font-semibold text-foreground">{item.address}</div>
@@ -210,7 +211,7 @@ export default function ModerationQueue() {
                   </div>
                 </div>
                 {item.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-2">{item.description}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-2 whitespace-pre-wrap">{item.description}</p>
                 )}
 
                 {item.submitter && (

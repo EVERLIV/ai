@@ -37,6 +37,13 @@ import {
 } from "@/lib/propertyLand";
 import { isSaleDeal } from "@/lib/propertyDeal";
 import {
+  getPropertyTypes,
+  togglePropertyType,
+  syncPropertyTypesPayload,
+  normalizePropertyTypes,
+} from "@/lib/propertyTypes";
+import { geocodeAddress, reverseGeocode } from "@/lib/yandexGeocoder";
+import {
   type PropertySidebarExtras,
   getSidebarVisibility,
   sanitizeSidebarExtras,
@@ -86,12 +93,14 @@ const ADDRESS_SUGGESTIONS = [
 interface PropertyExtras extends PropertySidebarExtras {}
 
 interface PropertyForm {
-  type: string;
+  types: string[];
   class: string;
   area: number;
   price: number;
   price_per_m2: number;
   address: string;
+  lat: number | null;
+  lng: number | null;
   district: string;
   floor: string;
   total_floors: number;
@@ -132,14 +141,17 @@ const emptyExtras: PropertyExtras = {
 };
 
 const emptyForm: PropertyForm = {
-  type: "Офис", class: "B", area: 0, price: 0, price_per_m2: 0,
-  address: "", district: "Кировский", floor: "1", total_floors: 1,
+  types: ["Офис"], class: "B", area: 0, price: 0, price_per_m2: 0,
+  address: "", lat: null, lng: null, district: "Кировский", floor: "1", total_floors: 1,
   ceiling_height: 3, parking: "Нет", condition: "Хороший ремонт", layout: "Open-space",
   deal_type: "Аренда", deposit: "1 месяц", contract_term: "от 1 года",
   description: "", features: [], manager_id: "", client_id: "",
   is_active: true,
   extras: { ...emptyExtras },
 };
+
+const propertyFormSection = "border border-border rounded-lg p-3";
+const sidebarSubBlock = "rounded-md p-2.5";
 
 export default function Dashboard() {
   const { user, loading, signOut, hasRole } = useAuth();
@@ -173,6 +185,7 @@ export default function Dashboard() {
   const [propSearch, setPropSearch] = useState("");
   const [addressQuery, setAddressQuery] = useState("");
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sorting
@@ -299,16 +312,21 @@ export default function Dashboard() {
 
   const saveMutation = useMutation({
     mutationFn: async (formData: PropertyForm) => {
-      const isLand = isLandProperty(formData.type);
+      const types = normalizePropertyTypes(formData.types);
+      if (types.length === 0) throw new Error("Выберите хотя бы один тип объекта");
+      const { type: primaryType, extras: typesExtras } = syncPropertyTypesPayload(types, formData.extras as Record<string, unknown>);
+      const isLand = isLandProperty(primaryType);
       const isSale = isSaleDeal(formData.deal_type);
       // Create property first to get ID, then upload photos
       const payload: any = {
-        type: formData.type,
+        type: primaryType,
         class: formData.class,
         area: formData.area,
         price: formData.price,
         price_per_m2: formData.area > 0 ? Math.round(formData.price / formData.area) : 0,
         address: formData.address,
+        lat: formData.lat,
+        lng: formData.lng,
         district: formData.district,
         floor: isLand ? LAND_BUILDING_FIELD_DEFAULTS.floor : formData.floor,
         total_floors: isLand ? LAND_BUILDING_FIELD_DEFAULTS.total_floors : formData.total_floors,
@@ -324,7 +342,7 @@ export default function Dashboard() {
         manager_id: formData.manager_id || null,
         client_id: formData.client_id || null,
         is_active: formData.is_active,
-        extras: sanitizeSidebarExtras(formData.extras || {}, formData.type, formData.deal_type),
+        extras: sanitizeSidebarExtras(typesExtras as PropertyExtras, primaryType, formData.deal_type),
       };
 
       setUploading(true);
@@ -385,8 +403,11 @@ export default function Dashboard() {
   const openEdit = (prop: any) => {
     setEditId(prop.id);
     setForm({
-      type: prop.type, class: prop.class, area: prop.area, price: prop.price,
-      price_per_m2: prop.price_per_m2, address: prop.address, district: prop.district,
+      types: getPropertyTypes(prop), class: prop.class, area: prop.area, price: prop.price,
+      price_per_m2: prop.price_per_m2, address: prop.address,
+      lat: typeof prop.lat === "number" ? prop.lat : null,
+      lng: typeof prop.lng === "number" ? prop.lng : null,
+      district: prop.district,
       floor: prop.floor || "", total_floors: prop.total_floors || 1,
       ceiling_height: prop.ceiling_height || 3, parking: prop.parking || "",
       condition: prop.condition || "", layout: prop.layout || "",
@@ -398,7 +419,7 @@ export default function Dashboard() {
       extras: {
         ...emptyExtras,
         ...(prop.extras || {}),
-        ...(isLandProperty(prop.type) ? {
+        ...(isLandProperty(prop) ? {
           land_use: (prop.extras as PropertyExtras)?.land_use || prop.layout || "",
           cadastral_number: (prop.extras as PropertyExtras)?.cadastral_number || "",
         } : {}),
@@ -421,6 +442,53 @@ export default function Dashboard() {
   const updateField = (key: keyof PropertyForm, value: any) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
+  const handleGeocodeFromAddress = async () => {
+    if (!form.address.trim()) {
+      toast({ title: "Укажите адрес в блоке «Локация»", variant: "destructive" });
+      return;
+    }
+    setGeocoding(true);
+    try {
+      const result = await geocodeAddress(form.address);
+      if (!result) {
+        toast({ title: "Координаты не найдены", description: "Проверьте адрес или введите широту и долготу вручную", variant: "destructive" });
+        return;
+      }
+      setForm((prev) => ({
+        ...prev,
+        lat: result.lat,
+        lng: result.lng,
+        address: result.address || prev.address,
+      }));
+      toast({ title: "Координаты определены" });
+    } catch (err) {
+      toast({ title: "Ошибка геокодирования", description: err instanceof Error ? err.message : undefined, variant: "destructive" });
+    } finally {
+      setGeocoding(false);
+    }
+  };
+
+  const handleReverseGeocodeFromCoords = async () => {
+    if (!isValidCoordPair(form.lat, form.lng)) {
+      toast({ title: "Укажите корректные координаты", variant: "destructive" });
+      return;
+    }
+    setGeocoding(true);
+    try {
+      const result = await reverseGeocode(form.lat, form.lng);
+      if (!result?.address) {
+        toast({ title: "Адрес не найден", description: "Координаты сохранены, адрес можно указать вручную", variant: "destructive" });
+        return;
+      }
+      setForm((prev) => ({ ...prev, address: result.address }));
+      toast({ title: "Адрес определён по координатам" });
+    } catch (err) {
+      toast({ title: "Ошибка геокодирования", description: err instanceof Error ? err.message : undefined, variant: "destructive" });
+    } finally {
+      setGeocoding(false);
+    }
+  };
+
   const handleDealTypeChange = (dealType: string) => {
     setForm((prev) => {
       const next = {
@@ -428,38 +496,42 @@ export default function Dashboard() {
         deal_type: dealType,
         deposit: isSaleDeal(dealType) ? "" : (prev.deposit || "1 месяц"),
         contract_term: isSaleDeal(dealType) ? "" : (prev.contract_term || "от 1 года"),
-        extras: sanitizeSidebarExtras(prev.extras, prev.type, dealType),
+        extras: sanitizeSidebarExtras(prev.extras, prev.types[0] || "Офис", dealType),
       };
       return next;
     });
   };
 
-  const handleTypeChange = (type: string) => {
-    if (isLandProperty(type)) {
-      setForm((prev) => ({
+  const handleTypeToggle = (type: string, checked: boolean) => {
+    setForm((prev) => {
+      const types = togglePropertyType(prev.types, type, checked);
+      const primaryType = types[0] || "Офис";
+      if (isLandProperty(primaryType)) {
+        return {
+          ...prev,
+          types,
+          class: "-",
+          ...LAND_BUILDING_FIELD_DEFAULTS,
+          extras: sanitizeSidebarExtras({
+            ...prev.extras,
+            land_use: prev.extras.land_use || prev.layout || "",
+            property_types: types,
+          }, primaryType, prev.deal_type),
+        };
+      }
+      return {
         ...prev,
-        type,
-        class: "-",
-        ...LAND_BUILDING_FIELD_DEFAULTS,
-        extras: sanitizeSidebarExtras({
-          ...prev.extras,
-          land_use: prev.extras.land_use || prev.layout || "",
-        }, type, prev.deal_type),
-      }));
-      return;
-    }
-    setForm((prev) => ({
-      ...prev,
-      type,
-      class: prev.class === "-" ? "B" : prev.class,
-      floor: prev.floor === "-" ? "1" : prev.floor,
-      total_floors: prev.total_floors || 1,
-      ceiling_height: prev.ceiling_height || 3,
-      parking: prev.parking === "-" ? "Нет" : prev.parking,
-      condition: prev.condition || "Хороший ремонт",
-      layout: prev.layout || "Open-space",
-      extras: sanitizeSidebarExtras(prev.extras, type, prev.deal_type),
-    }));
+        types,
+        class: prev.class === "-" ? "B" : prev.class,
+        floor: prev.floor === "-" ? "1" : prev.floor,
+        total_floors: prev.total_floors || 1,
+        ceiling_height: prev.ceiling_height || 3,
+        parking: prev.parking === "-" ? "Нет" : prev.parking,
+        condition: prev.condition || "Хороший ремонт",
+        layout: prev.layout || "Open-space",
+        extras: sanitizeSidebarExtras({ ...prev.extras, property_types: types }, primaryType, prev.deal_type),
+      };
+    });
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -507,7 +579,7 @@ export default function Dashboard() {
       list = list.filter((p: any) =>
         p.address?.toLowerCase().includes(q) ||
         p.district?.toLowerCase().includes(q) ||
-        p.type?.toLowerCase().includes(q) ||
+        getPropertyTypes(p).some((t) => t.toLowerCase().includes(q)) ||
         p.description?.toLowerCase().includes(q)
       );
     }
@@ -526,8 +598,8 @@ export default function Dashboard() {
   }, [properties, sortField, sortDir, propSearch]);
 
   const isSale = isSaleDeal(form.deal_type);
-  const isLandForm = isLandProperty(form.type);
-  const sidebarVis = getSidebarVisibility(form.type, form.deal_type);
+  const isLandForm = isLandProperty({ type: form.types[0], extras: { property_types: form.types } });
+  const sidebarVis = getSidebarVisibility(form.types[0] || "Офис", form.deal_type);
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen text-sm text-muted-foreground">Загрузка...</div>;
@@ -626,15 +698,27 @@ export default function Dashboard() {
                   </div>
                   <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }} className="p-4 space-y-4">
                     {/* Section: Основное */}
-                    <fieldset className="border border-border rounded-lg p-3 space-y-3">
+                    <fieldset className={`${propertyFormSection} space-y-3 bg-sky-500/10`}>
                       <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Основное</legend>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-2">
                         <div>
-                          <Label className="text-xs mb-1 block">Тип</Label>
-                          <Select value={form.type} onValueChange={handleTypeChange}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>{TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                          </Select>
+                          <Label className="text-xs mb-1 block">Тип объекта</Label>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-1.5 rounded-md border border-border/60 bg-background/40 p-2">
+                            {TYPES.map((t) => {
+                              const checked = form.types.includes(t);
+                              return (
+                                <label key={t} className="flex items-center gap-1.5 text-[11px] cursor-pointer py-0.5">
+                                  <Checkbox
+                                    className="h-3.5 w-3.5"
+                                    checked={checked}
+                                    onCheckedChange={(v) => handleTypeToggle(t, !!v)}
+                                  />
+                                  <span className={checked ? "text-foreground font-medium" : "text-muted-foreground"}>{t}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1">Можно выбрать несколько: офис + склад + торговая. «Земля» — только отдельно.</p>
                         </div>
                         <div>
                           <Label className="text-xs mb-1 block">Сделка</Label>
@@ -661,7 +745,7 @@ export default function Dashboard() {
                     </fieldset>
 
                     {/* Section: Локация */}
-                    <fieldset className="border border-border rounded-lg p-3 space-y-3">
+                    <fieldset className={`${propertyFormSection} space-y-3 bg-emerald-500/10`}>
                       <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Локация</legend>
                       <div className="relative">
                         <Label className="text-xs mb-1 block">Адрес</Label>
@@ -716,33 +800,88 @@ export default function Dashboard() {
                     </fieldset>
 
                     {/* Section: Характеристики */}
-                    <fieldset className="border border-border rounded-lg p-3 space-y-3">
+                    <fieldset className={`${propertyFormSection} space-y-3 bg-amber-500/10`}>
                       <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">
                         {isLandForm ? "Земельный участок" : "Характеристики"}
                       </legend>
                       {isLandForm ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div>
-                            <Label className="text-xs mb-1 block">Кадастровый номер</Label>
-                            <Input
-                              className="h-8 text-xs"
-                              placeholder="38:36:0000000:12345"
-                              value={form.extras.cadastral_number || ""}
-                              onChange={(e) => updateField("extras", { ...form.extras, cadastral_number: e.target.value })}
-                            />
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-xs mb-1 block">Кадастровый номер</Label>
+                              <Input
+                                className="h-8 text-xs"
+                                placeholder="38:36:0000000:12345"
+                                value={form.extras.cadastral_number || ""}
+                                onChange={(e) => updateField("extras", { ...form.extras, cadastral_number: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs mb-1 block">{LAND_TYPE_LABEL}</Label>
+                              <Select
+                                value={form.extras.land_use || "none"}
+                                onValueChange={(v) => updateField("extras", { ...form.extras, land_use: v === "none" ? "" : v })}
+                              >
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Выберите тип" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">—</SelectItem>
+                                  {LAND_USE_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
-                          <div>
-                            <Label className="text-xs mb-1 block">{LAND_TYPE_LABEL}</Label>
-                            <Select
-                              value={form.extras.land_use || "none"}
-                              onValueChange={(v) => updateField("extras", { ...form.extras, land_use: v === "none" ? "" : v })}
-                            >
-                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Выберите тип" /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">—</SelectItem>
-                                {LAND_USE_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
+
+                          <div className="rounded-md border border-border/60 bg-background/40 p-2.5 space-y-2">
+                            <div className="text-[11px] font-semibold text-muted-foreground">Координаты участка</div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-xs mb-1 block">Широта</Label>
+                                <Input
+                                  className="h-8 text-xs"
+                                  type="text"
+                                  inputMode="decimal"
+                                  placeholder="52.2869"
+                                  value={form.lat ?? ""}
+                                  onChange={(e) => updateField("lat", parseCoordInput(e.target.value))}
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs mb-1 block">Долгота</Label>
+                                <Input
+                                  className="h-8 text-xs"
+                                  type="text"
+                                  inputMode="decimal"
+                                  placeholder="104.2807"
+                                  value={form.lng ?? ""}
+                                  onChange={(e) => updateField("lng", parseCoordInput(e.target.value))}
+                                />
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs"
+                                disabled={geocoding}
+                                onClick={handleGeocodeFromAddress}
+                              >
+                                {geocoding ? "Определение..." : "Координаты по адресу"}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs"
+                                disabled={geocoding}
+                                onClick={handleReverseGeocodeFromCoords}
+                              >
+                                Адрес по координатам
+                              </Button>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground leading-snug">
+                              Адрес вводится в блоке «Локация». Здесь можно указать точку на карте вручную или определить её через Яндекс.
+                            </p>
                           </div>
                         </div>
                       ) : (
@@ -820,7 +959,7 @@ export default function Dashboard() {
                     </fieldset>
 
                     {/* Section: Назначение */}
-                    <fieldset className="border border-border rounded-lg p-3 space-y-3">
+                    <fieldset className={`${propertyFormSection} space-y-3 bg-violet-500/10`}>
                       <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Назначение</legend>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
@@ -840,12 +979,17 @@ export default function Dashboard() {
                       </div>
                       <div>
                         <Label className="text-xs mb-1 block">Описание</Label>
-                        <Textarea value={form.description} onChange={(e) => updateField("description", e.target.value)} rows={2} className="text-xs min-h-[60px]" />
+                        <Textarea
+                          value={form.description}
+                          onChange={(e) => updateField("description", e.target.value)}
+                          rows={10}
+                          className="text-xs min-h-[200px] whitespace-pre-wrap leading-relaxed"
+                        />
                       </div>
                     </fieldset>
 
                     {/* Section: Особенности */}
-                    <fieldset className="border border-border rounded-lg p-3 space-y-2">
+                    <fieldset className={`${propertyFormSection} space-y-2 bg-rose-500/10`}>
                       <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Особенности ({form.features.length})</legend>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-1 max-h-32 overflow-y-auto">
                         {FEATURES_LIST.map((feature) => {
@@ -865,7 +1009,7 @@ export default function Dashboard() {
                     </fieldset>
 
                     {/* Section: Сайдбар на странице объекта */}
-                    <fieldset className="border border-border rounded-lg p-3 space-y-4">
+                    <fieldset className={`${propertyFormSection} space-y-4 bg-indigo-500/10`}>
                       <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">
                         Сайдбар на странице объекта
                       </legend>
@@ -874,7 +1018,7 @@ export default function Dashboard() {
                       </p>
 
                       {sidebarVis.entrance && (
-                        <div>
+                        <div className={`${sidebarSubBlock} bg-sky-500/10`}>
                           <div className="text-[11px] font-semibold text-muted-foreground mb-2">Вход</div>
                           <Select value={form.extras.entrance_group || "none"} onValueChange={(v) => updateField("extras", { ...form.extras, entrance_group: v === "none" ? "" : v })}>
                             <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Не указано" /></SelectTrigger>
@@ -889,7 +1033,7 @@ export default function Dashboard() {
                         </div>
                       )}
 
-                      <div>
+                      <div className={`${sidebarSubBlock} bg-emerald-500/10`}>
                         <div className="text-[11px] font-semibold text-muted-foreground mb-2">Финансовые условия</div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           <div>
@@ -939,7 +1083,7 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      <div>
+                      <div className={`${sidebarSubBlock} bg-amber-500/10`}>
                         <div className="text-[11px] font-semibold text-muted-foreground mb-2">Трафик и локация</div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           {sidebarVis.pedestrianTraffic && (
@@ -974,7 +1118,7 @@ export default function Dashboard() {
                         <p className="text-[10px] text-muted-foreground mt-1.5">Район берётся из поля «Локация» выше.</p>
                       </div>
 
-                      <div>
+                      <div className={`${sidebarSubBlock} bg-violet-500/10`}>
                         <div className="text-[11px] font-semibold text-muted-foreground mb-2">Юридические условия</div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           {sidebarVis.contractForm && (
@@ -1031,7 +1175,7 @@ export default function Dashboard() {
                         )}
                       </div>
 
-                      <div className="border-t border-border pt-3">
+                      <div className={`${sidebarSubBlock} bg-rose-500/10`}>
                         <div className="text-[11px] font-semibold text-muted-foreground mb-2">Карточка агента</div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           <div>
@@ -1063,7 +1207,7 @@ export default function Dashboard() {
                     </fieldset>
 
 
-                    <fieldset className="border border-border rounded-lg p-3 space-y-2">
+                    <fieldset className={`${propertyFormSection} space-y-2 bg-cyan-500/10`}>
                       <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Фото ({totalPhotos}/15)</legend>
                       <input ref={fileInputRef} type="file" multiple accept="image/*" onChange={handleFileSelect} className="hidden" />
                       {totalPhotos === 0 ? (
@@ -1116,7 +1260,7 @@ export default function Dashboard() {
 
                     {/* Section: Помещения внутри объекта */}
                     {editId && (
-                      <fieldset className="border border-border rounded-lg p-3">
+                      <fieldset className={`${propertyFormSection} bg-orange-500/10`}>
                         <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">
                           Помещения внутри объекта
                         </legend>
@@ -1126,7 +1270,7 @@ export default function Dashboard() {
 
                     {/* Section: Реклама — только для уже сохранённых объектов */}
                     {editId && (
-                      <fieldset className="border border-border rounded-lg p-3">
+                      <fieldset className={`${propertyFormSection} bg-pink-500/10`}>
                         <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">
                           Реклама на объекте
                         </legend>
@@ -1181,7 +1325,11 @@ export default function Dashboard() {
                         )}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 mb-0.5">
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{p.type}</Badge>
+                            <div className="flex flex-wrap gap-1">
+                              {getPropertyTypes(p).map((t) => (
+                                <Badge key={t} variant="secondary" className="text-[10px] px-1.5 py-0">{t}</Badge>
+                              ))}
+                            </div>
                             {!p.is_active && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Скрыт</Badge>}
                           </div>
                           <p className="text-xs truncate">{p.address}</p>
@@ -1249,7 +1397,15 @@ export default function Dashboard() {
                                 </div>
                               )}
                             </TableCell>}
-                            {visibleCols.has("type") && <TableCell><Badge variant="secondary">{p.type}</Badge></TableCell>}
+                            {visibleCols.has("type") && (
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  {getPropertyTypes(p).map((t) => (
+                                    <Badge key={t} variant="secondary" className="text-[10px]">{t}</Badge>
+                                  ))}
+                                </div>
+                              </TableCell>
+                            )}
                             {visibleCols.has("address") && <TableCell className="text-xs whitespace-normal min-w-[220px]">{p.address}</TableCell>}
                             {visibleCols.has("district") && <TableCell className="text-xs">{p.district || "—"}</TableCell>}
                             {visibleCols.has("area") && <TableCell className="text-xs">{p.area} м²</TableCell>}

@@ -2,6 +2,22 @@ import type { DbProperty } from "@/hooks/useProperties";
 
 export type Coords = { lat: number; lng: number };
 
+export function parseCoordInput(value: string): number | null {
+  const normalized = value.trim().replace(",", ".");
+  if (!normalized) return null;
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function isValidCoordPair(lat: number | null, lng: number | null): lat is number {
+  if (lat === null || lng === null) return false;
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return false;
+  if (lat === 0 && lng === 0) return false;
+  if (lat < -90 || lat > 90) return false;
+  if (lng < -180 || lng > 180) return false;
+  return true;
+}
+
 /**
  * Returns valid coords or null. Guards against:
  * - missing values

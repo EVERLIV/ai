@@ -1,9 +1,10 @@
 import type { MyProperty } from "@/hooks/useMyProperties";
 import type { RequestType } from "@/lib/propertyModeration";
 import { isLandProperty } from "@/lib/propertyLand";
+import { getPropertyTypes, syncPropertyTypesPayload, normalizePropertyTypes } from "@/lib/propertyTypes";
 
 export interface PropertyFormState {
-  type: string;
+  types: string[];
   class: string;
   deal_type: string;
   area: number;
@@ -39,10 +40,10 @@ export interface PropertyFormState {
 
 export function propertyToFormState(property: MyProperty): PropertyFormState {
   const e = (property.extras || {}) as Record<string, unknown>;
-  const isLand = isLandProperty(property.type);
+  const isLand = isLandProperty(property);
 
   return {
-    type: property.type,
+    types: getPropertyTypes(property),
     class: property.class,
     deal_type: property.deal_type,
     area: Number(property.area) || 0,
@@ -104,8 +105,15 @@ export function buildPropertyPayload(
     purpose: form.purpose || undefined,
   };
 
+  const types = normalizePropertyTypes(form.types);
+  const { type: primaryType, extras: typesExtras } = syncPropertyTypesPayload(types, {
+    ...landExtras,
+    ...rentExtras,
+    ...commonExtras,
+  });
+
   const base = {
-    type: form.type,
+    type: primaryType,
     class: form.class,
     area: form.area,
     price: form.price,
@@ -125,7 +133,7 @@ export function buildPropertyPayload(
     features: form.features,
     request_type: form.request_type,
     client_id: userId,
-    extras: { ...landExtras, ...rentExtras, ...commonExtras },
+    extras: typesExtras,
   };
 
   if (options.isEdit) {

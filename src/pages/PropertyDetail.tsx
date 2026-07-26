@@ -22,6 +22,7 @@ import PropertyUnitsTable from "@/components/PropertyUnitsTable";
 import PropertySidebarExtras from "@/components/PropertySidebarExtras";
 import PKKMapModal from "@/components/PKKMapModal";
 import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL } from "@/lib/propertyLand";
+import { getPropertyTypes, getPrimaryPropertyType, formatPropertyTypesLabel } from "@/lib/propertyTypes";
 import { isSaleDeal } from "@/lib/propertyDeal";
 import { motion } from "framer-motion";
 import PropertyOGMeta from "@/components/PropertyOGMeta";
@@ -131,11 +132,13 @@ export default function PropertyDetail() {
     );
   }
 
-  const Icon = typeIcons[property.type] || Building2;
+  const propertyTypes = getPropertyTypes(property);
+  const primaryType = getPrimaryPropertyType(property);
+  const Icon = typeIcons[primaryType] || Building2;
   const photos = property.photos || [];
   const photosCount = photos.length || 1;
 
-  const isLand = isLandProperty(property.type);
+  const isLand = isLandProperty(property);
   const isSale = isSaleDeal(property.deal_type);
   const landExtras = (property.extras || {}) as Record<string, unknown>;
 
@@ -186,7 +189,7 @@ export default function PropertyDetail() {
         image={photos[0] || property.cover_photo}
         price={Number(property.price) || null}
         area={property.area}
-        type={property.type}
+        type={formatPropertyTypesLabel(propertyTypes)}
       />
 
       {/* ── Попап формы заявки ── */}
@@ -275,7 +278,7 @@ export default function PropertyDetail() {
           <nav className="flex-1 min-w-0 flex items-center gap-1.5 text-[11px] lg:text-xs text-muted-foreground whitespace-nowrap overflow-hidden">
             <Link to="/" className="hover:text-foreground transition-colors shrink-0">Главная</Link>
             <span className="shrink-0 opacity-50">/</span>
-            <Link to="/catalog" className="hover:text-foreground transition-colors shrink-0">{property.type}</Link>
+            <Link to="/catalog" className="hover:text-foreground transition-colors shrink-0">{formatPropertyTypesLabel(propertyTypes)}</Link>
             <span className="shrink-0 opacity-50">/</span>
             <span className="text-foreground truncate min-w-0">{property.address}</span>
           </nav>
@@ -387,7 +390,7 @@ export default function PropertyDetail() {
             <div className="mb-6">
               <div className="relative bg-muted aspect-[16/9] overflow-hidden">
                 <img
-                  src={photos.length > 0 ? photos[activePhoto] : getDefaultPropertyImage(property.type)}
+                  src={photos.length > 0 ? photos[activePhoto] : getDefaultPropertyImage(primaryType)}
                   alt={property.address}
                   className="w-full h-full object-cover"
                 />
@@ -404,7 +407,9 @@ export default function PropertyDetail() {
                   </>
                 )}
                 <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-                  <span className="px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium">{property.type}</span>
+                  {propertyTypes.map((t) => (
+                    <span key={t} className="px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium">{t}</span>
+                  ))}
                 </div>
                 <span className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-card/80 backdrop-blur text-foreground text-xs font-medium">
                   {activePhoto + 1} / {photosCount}
@@ -446,7 +451,7 @@ export default function PropertyDetail() {
 
             <section className="mb-8">
               <h2 className="font-display text-xl font-semibold text-foreground mb-3">Описание</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">{property.description}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{property.description}</p>
             </section>
 
             <PropertyUnitsTable propertyId={property.id} />
@@ -508,7 +513,7 @@ export default function PropertyDetail() {
         <NearbyPropertiesSlider
           district={property.district}
           excludeId={property.id}
-          type={property.type}
+          type={formatPropertyTypesLabel(propertyTypes)}
         />
 
       </motion.main>
@@ -545,7 +550,7 @@ function PropertyPriceBlock({ property }: { property: any }) {
         <div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Цена</div>
           <div className="text-xl font-bold text-foreground leading-none">По запросу</div>
-          <div className="text-xs text-muted-foreground mt-1.5">{property.area} м² · {property.type}</div>
+          <div className="text-xs text-muted-foreground mt-1.5">{property.area} м² · {formatPropertyTypesLabel(propertyTypes)}</div>
         </div>
       )}
 

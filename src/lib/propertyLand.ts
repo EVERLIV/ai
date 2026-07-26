@@ -16,8 +16,16 @@ export type PropertyExtrasLike = {
   [key: string]: unknown;
 };
 
-export function isLandProperty(type: string | null | undefined): boolean {
-  return type === LAND_PROPERTY_TYPE;
+export function isLandProperty(
+  typeOrProperty: string | { type?: string | null; extras?: PropertyExtrasLike | null } | null | undefined,
+): boolean {
+  if (!typeOrProperty) return false;
+  if (typeof typeOrProperty === "string") return typeOrProperty === LAND_PROPERTY_TYPE;
+
+  const extras = typeOrProperty.extras;
+  const fromExtras = extras?.property_types;
+  if (Array.isArray(fromExtras) && fromExtras.includes(LAND_PROPERTY_TYPE)) return true;
+  return typeOrProperty.type === LAND_PROPERTY_TYPE;
 }
 
 export function getLandCadastral(extras: PropertyExtrasLike | null | undefined): string | null {
@@ -32,7 +40,7 @@ export function getLandUse(property: {
   condition?: string | null;
   extras?: PropertyExtrasLike | null;
 }): string | null {
-  if (!isLandProperty(property.type)) return null;
+  if (!isLandProperty(property)) return null;
 
   const extras = property.extras as PropertyExtrasLike | null;
   if (extras?.land_use?.trim()) return extras.land_use.trim();

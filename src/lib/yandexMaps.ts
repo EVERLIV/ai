@@ -3,23 +3,46 @@
 
 let loadPromise: Promise<any> | null = null;
 
+export function getYandexMapsApiKey(): string {
+  return (
+    (import.meta.env.VITE_YANDEX_MAPS_API_KEY as string | undefined) ||
+    "2dc2b4a9-a9d1-46df-b148-e19a985512ac"
+  );
+}
+
+function configureYandexApiKeys(ymaps3: any) {
+  const apiKey = getYandexMapsApiKey();
+  try {
+    ymaps3.getDefaultConfig?.()?.setApikeys?.({ search: apiKey, suggest: apiKey });
+  } catch {
+    // ignore config errors — map may still work
+  }
+}
+
+async function resolveYmaps3(): Promise<any> {
+  // @ts-ignore
+  const ymaps3 = (window as any).ymaps3;
+  if (!ymaps3) throw new Error("Yandex Maps not available");
+  await ymaps3.ready;
+  configureYandexApiKeys(ymaps3);
+  return ymaps3;
+}
+
 export function loadYandexMaps(): Promise<any> {
   if (typeof window === "undefined") return Promise.reject(new Error("SSR"));
   // @ts-ignore
-  if (window.ymaps3) return Promise.resolve((window as any).ymaps3);
+  if ((window as any).ymaps3) {
+    return resolveYmaps3();
+  }
   if (loadPromise) return loadPromise;
 
-  const apiKey = (import.meta.env.VITE_YANDEX_MAPS_API_KEY as string | undefined) || "2dc2b4a9-a9d1-46df-b148-e19a985512ac";
+  const apiKey = getYandexMapsApiKey();
 
   loadPromise = new Promise((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>('script[data-ymaps3="true"]');
     const onReady = async () => {
       try {
-        // @ts-ignore
-        const ymaps3 = (window as any).ymaps3;
-        if (!ymaps3) return reject(new Error("Yandex Maps not available"));
-        await ymaps3.ready;
-        resolve(ymaps3);
+        resolve(await resolveYmaps3());
       } catch (e) {
         reject(e);
       }
@@ -28,6 +51,7 @@ export function loadYandexMaps(): Promise<any> {
     if (existing) {
       existing.addEventListener("load", onReady);
       existing.addEventListener("error", () => reject(new Error("Failed to load Yandex Maps")));
+      if ((window as any).ymaps3) onReady();
       return;
     }
 

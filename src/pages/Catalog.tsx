@@ -17,6 +17,7 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import ListingAgentFooter from "@/components/ListingAgentFooter";
 import PKKMapModal from "@/components/PKKMapModal";
 import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL, LAND_USE_OPTIONS } from "@/lib/propertyLand";
+import { getPropertyTypes, propertyMatchesTypes } from "@/lib/propertyTypes";
 
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
 const DEALS = ["Все", "Аренда", "Продажа"];
@@ -173,7 +174,7 @@ function isListingVerified(p: DbProperty): boolean {
 
 // ─── Карточка объекта (Variant 2) ───
 function GridCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK: (cad: string) => void }) {
-  const land = isLandProperty(p.type);
+  const land = isLandProperty(p);
   const landUse = getLandUse(p);
   const cadastral = getLandCadastral(p.extras as Record<string, unknown> | null);
   const price = formatPrice(p);
@@ -378,7 +379,7 @@ export default function Catalog() {
   // Виды использования только по земельным объектам — фильтр доступен лишь для типа «Земля».
   const landUses = useMemo(() => Array.from(new Set(
     properties.flatMap((p) => {
-      if (!isLandProperty(p.type)) return [];
+      if (!isLandProperty(p)) return [];
       const landUse = getLandUse(p);
       return landUse ? [landUse] : [];
     })
@@ -443,12 +444,12 @@ export default function Catalog() {
       result = result.filter((p) =>
         p.address.toLowerCase().includes(q) ||
         p.district.toLowerCase().includes(q) ||
-        p.type.toLowerCase().includes(q) ||
+        getPropertyTypes(p).some((t) => t.toLowerCase().includes(q)) ||
         (p.description || "").toLowerCase().includes(q)
       );
     }
     if (dealType !== "Все") result = result.filter((p) => p.deal_type === dealType);
-    if (selectedTypes.length > 0) result = result.filter((p) => selectedTypes.includes(p.type));
+    if (selectedTypes.length > 0) result = result.filter((p) => propertyMatchesTypes(p, selectedTypes));
     if (district !== "Все") result = result.filter((p) => p.district === district);
     if (propertyClass !== "Все") result = result.filter((p) => p.class === propertyClass);
     if (condition !== "Все") result = result.filter((p) => p.condition === condition);
@@ -458,10 +459,10 @@ export default function Catalog() {
     }
     if (areaMin > 0) result = result.filter((p) => Number(p.area) >= areaMin);
     if (areaMax < AREA_MAX_DEFAULT) result = result.filter((p) => Number(p.area) <= areaMax);
-    if (ceilingMin > 0) result = result.filter((p) => isLandProperty(p.type) || Number(p.ceiling_height) >= ceilingMin);
-    if (parkingOnly) result = result.filter((p) => isLandProperty(p.type) || (p.parking && p.parking !== "Нет" && p.parking !== "-"));
+    if (ceilingMin > 0) result = result.filter((p) => isLandProperty(p) || Number(p.ceiling_height) >= ceilingMin);
+    if (parkingOnly) result = result.filter((p) => isLandProperty(p) || (p.parking && p.parking !== "Нет" && p.parking !== "-"));
     if (selectedLayouts.length > 0) result = result.filter((p) => {
-      if (!isLandProperty(p.type)) return false;
+      if (!isLandProperty(p)) return false;
       const landUse = getLandUse(p);
       return landUse ? selectedLayouts.includes(landUse) : false;
     });
@@ -923,7 +924,7 @@ export default function Catalog() {
 
 // ─── List card ───
 function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK: (cad: string) => void }) {
-  const land = isLandProperty(p.type);
+  const land = isLandProperty(p);
   const landUse = getLandUse(p);
   const cadastral = getLandCadastral(p.extras as Record<string, unknown> | null);
   const price = formatPrice(p);

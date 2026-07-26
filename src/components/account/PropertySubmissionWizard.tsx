@@ -17,6 +17,7 @@ import {
 import type { RequestType } from "@/lib/propertyModeration";
 import { isSaleDeal } from "@/lib/propertyDeal";
 import { isLandProperty, LAND_USE_OPTIONS, LAND_TYPE_LABEL } from "@/lib/propertyLand";
+import { togglePropertyType } from "@/lib/propertyTypes";
 import type { MyProperty } from "@/hooks/useMyProperties";
 import { propertyToFormState, buildPropertyPayload, type PropertyFormState } from "@/lib/propertyFormMapper";
 import {
@@ -46,7 +47,7 @@ import {
 } from "@/lib/propertyOptions";
 
 const emptyForm: PropertyFormState = {
-  type: "Офис",
+  types: ["Офис"],
   class: "B",
   deal_type: "Аренда",
   area: 0,
@@ -137,7 +138,7 @@ export default function PropertySubmissionWizard({ open, onOpenChange, editPrope
   }, [open, editProperty]);
 
   const isSale = isSaleDeal(form.deal_type);
-  const isLand = isLandProperty(form.type);
+  const isLand = isLandProperty({ type: form.types[0], extras: { property_types: form.types } });
   const activeSteps = STEPS.filter((s) => s.key !== "conditions" || !isSale);
   const stepIndex = activeSteps.findIndex((s) => s.key === step);
   const currentStep = activeSteps[stepIndex] ?? activeSteps[0];
@@ -229,7 +230,7 @@ export default function PropertySubmissionWizard({ open, onOpenChange, editPrope
     mutationFn: async () => {
       if (!user) throw new Error("Необходима авторизация");
       if (!form.address.trim()) throw new Error("Укажите адрес");
-      if (form.area <= 0) throw new Error("Укажите площадь");
+      if (form.types.length === 0) throw new Error("Выберите хотя бы один тип объекта");
 
       setUploading(true);
 
@@ -322,14 +323,30 @@ export default function PropertySubmissionWizard({ open, onOpenChange, editPrope
         <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-6">
           {step === "basic" && (
             <>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs mb-1 block">Тип объекта</Label>
-                  <Select value={form.type} onValueChange={(v) => update("type", v)}>
-                    <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>{PROPERTY_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                  </Select>
+              <div>
+                <Label className="text-xs mb-1 block">Тип объекта</Label>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-md border border-border/60 p-3">
+                  {PROPERTY_TYPES.map((t) => {
+                    const checked = form.types.includes(t);
+                    return (
+                      <label key={t} className="flex items-center gap-2 text-sm cursor-pointer">
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) => {
+                            setForm((prev) => ({
+                              ...prev,
+                              types: togglePropertyType(prev.types, t, !!v),
+                            }));
+                          }}
+                        />
+                        <span>{t}</span>
+                      </label>
+                    );
+                  })}
                 </div>
+                <p className="text-[10px] text-muted-foreground mt-1">Можно выбрать несколько типов. «Земля» — только отдельно.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs mb-1 block">Категория</Label>
                   <Select value={form.deal_type} onValueChange={(v) => {

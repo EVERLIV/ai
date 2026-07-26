@@ -27,6 +27,7 @@ export type PropertySidebarExtras = {
   owner_user_id?: string;
   cadastral_number?: string;
   land_use?: string;
+  property_types?: string[];
 };
 
 export type ListingAgentDisplay = {
