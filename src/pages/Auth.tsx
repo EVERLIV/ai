@@ -12,7 +12,9 @@ const BENEFITS = [
 ];
 
 export default function Auth() {
-  const [tab, setTab] = useState<"login" | "register">("login");
+  const initialTab =
+    new URLSearchParams(window.location.search).get("tab") === "register" ? "register" : "login";
+  const [tab, setTab] = useState<"login" | "register">(initialTab);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");

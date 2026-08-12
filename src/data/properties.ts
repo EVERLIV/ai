@@ -60,7 +60,7 @@ export const properties: Property[] = [
     photos: 6,
     publishedDate: "2 дня назад",
     views: 187,
-    agent: { name: "Аренда Сити", company: "АрендаСити Иркутск", phone: "+7 (3952) 55-12-34" },
+    agent: { name: "Аренда Сити", company: "ИП Кореневский А. О.", phone: "+7 (908) 658-19-19" },
   },
   {
     id: 2,
@@ -88,7 +88,7 @@ export const properties: Property[] = [
     photos: 5,
     publishedDate: "1 день назад",
     views: 312,
-    agent: { name: "Аренда Сити", company: "АрендаСити Иркутск", phone: "+7 (3952) 55-12-34" },
+    agent: { name: "Аренда Сити", company: "ИП Кореневский А. О.", phone: "+7 (908) 658-19-19" },
   },
   {
     id: 3,
@@ -116,7 +116,7 @@ export const properties: Property[] = [
     photos: 4,
     publishedDate: "3 дня назад",
     views: 98,
-    agent: { name: "Аренда Сити", company: "АрендаСити Иркутск", phone: "+7 (3952) 55-12-34" },
+    agent: { name: "Аренда Сити", company: "ИП Кореневский А. О.", phone: "+7 (908) 658-19-19" },
   },
   {
     id: 4,
@@ -144,7 +144,7 @@ export const properties: Property[] = [
     photos: 5,
     publishedDate: "5 дней назад",
     views: 134,
-    agent: { name: "Аренда Сити", company: "АрендаСити Иркутск", phone: "+7 (3952) 55-12-34" },
+    agent: { name: "Аренда Сити", company: "ИП Кореневский А. О.", phone: "+7 (908) 658-19-19" },
   },
   {
     id: 5,
@@ -172,7 +172,7 @@ export const properties: Property[] = [
     photos: 3,
     publishedDate: "неделю назад",
     views: 76,
-    agent: { name: "Аренда Сити", company: "АрендаСити Иркутск", phone: "+7 (3952) 55-12-34" },
+    agent: { name: "Аренда Сити", company: "ИП Кореневский А. О.", phone: "+7 (908) 658-19-19" },
   },
   {
     id: 6,
@@ -200,7 +200,7 @@ export const properties: Property[] = [
     photos: 7,
     publishedDate: "сегодня",
     views: 45,
-    agent: { name: "Аренда Сити", company: "АрендаСити Иркутск", phone: "+7 (3952) 55-12-34" },
+    agent: { name: "Аренда Сити", company: "ИП Кореневский А. О.", phone: "+7 (908) 658-19-19" },
   },
 ];
 

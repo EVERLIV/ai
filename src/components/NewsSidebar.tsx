@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles, Phone } from "lucide-react";
+import { CONTACTS } from "@/config/company";
 
 export default function NewsSidebar() {
   return (
@@ -49,7 +50,7 @@ export default function NewsSidebar() {
           </p>
 
           <a
-            href="tel:+73952551234"
+            href={`tel:${CONTACTS.phoneTel}`}
             className="flex items-center justify-center gap-2 w-full h-9 bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity mt-auto"
           >
             <Phone className="w-3.5 h-3.5" /> Узнать подробнее

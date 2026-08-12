@@ -27,6 +27,8 @@ import { isSaleDeal } from "@/lib/propertyDeal";
 import { motion } from "framer-motion";
 import PropertyOGMeta from "@/components/PropertyOGMeta";
 import { supabase } from "@/integrations/supabase/client";
+import { CONTACTS } from "@/config/company";
+import PropertyDescription from "@/components/PropertyDescription";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
@@ -334,7 +336,7 @@ export default function PropertyDetail() {
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_24px_-12px_hsl(0_0%_0%/0.15)]">
         <div className="grid grid-cols-4 px-2 py-2 gap-1 max-w-md mx-auto">
           <a
-            href="tel:+73952551234"
+            href={`tel:${CONTACTS.phoneTel}`}
             aria-label="Позвонить"
             className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-primary hover:bg-primary/10 active:scale-95 transition-all"
           >
@@ -451,7 +453,7 @@ export default function PropertyDetail() {
 
             <section className="mb-8">
               <h2 className="font-display text-xl font-semibold text-foreground mb-3">Описание</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{property.description}</p>
+              <PropertyDescription text={property.description} />
             </section>
 
             <PropertyUnitsTable propertyId={property.id} />
@@ -573,7 +575,7 @@ function PropertyPriceBlock({ property }: { property: any }) {
           </button>
         )}
         <a
-          href="tel:+73952551234"
+          href={`tel:${CONTACTS.phoneTel}`}
           className={`${propertyCtaButtonClass} bg-foreground text-background`}
         >
           <Phone className="w-4 h-4 shrink-0" />
@@ -584,6 +586,7 @@ function PropertyPriceBlock({ property }: { property: any }) {
         propertyId={property.id}
         propertyAddress={property.address}
         basePrice={Number(property.price) || undefined}
+        dealType={property.deal_type}
         trigger={
           <button
             type="button"

@@ -19,6 +19,25 @@ export function useProperties() {
   });
 }
 
+/**
+ * Число активных объектов в каталоге. Используется в карточке агента
+ * агентства — запрашивает только счётчик, без самих строк.
+ */
+export function useActivePropertiesCount() {
+  return useQuery({
+    queryKey: ["properties-count"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("properties")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+}
+
 export function useProperty(id: string | undefined) {
   return useQuery({
     queryKey: ["property", id],

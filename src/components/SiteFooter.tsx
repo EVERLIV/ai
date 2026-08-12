@@ -1,3 +1,10 @@
+import { COMPANY, CONTACTS } from "@/config/company";
+
+const legalLinks = [
+  { label: "Политика конфиденциальности", href: "#" },
+  { label: "Условия использования", href: "#" },
+];
+
 const cols = [
   {
     title: "Разделы",
@@ -5,11 +12,11 @@ const cols = [
   },
   {
     title: "Города",
-    links: ["Иркутск", "Ангарск", "Шелехов", "Усолье-Сибирское", "Братск"],
+    links: ["Ангарск", "Иркутск", "Шелехов", "Усолье-Сибирское", "Братск"],
   },
   {
     title: "Контакты",
-    links: ["+7 (3952) 55-12-34", "info@arendacity-irk.ru", "Иркутск, ул. Ленина, 18, оф. 401"],
+    links: [CONTACTS.phone, CONTACTS.email, COMPANY.officeAddress],
   },
 ];
 
@@ -34,8 +41,18 @@ export default function SiteFooter() {
               </span>
             </div>
             <p className="text-sm leading-relaxed">
-              Агентство коммерческой недвижимости в Иркутске и Иркутской области. Профессиональный подбор и управление объектами.
+              Агентство коммерческой недвижимости в Ангарске и Иркутской области. Профессиональный подбор и управление объектами.
             </p>
+
+            <ul className="mt-4 space-y-2">
+              {legalLinks.map((l) => (
+                <li key={l.label}>
+                  <a href={l.href} className="text-sm hover:text-background transition-colors">
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
 
           {cols.map((col) => (
@@ -52,27 +69,26 @@ export default function SiteFooter() {
           ))}
         </div>
 
-        <div className="mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs">© 2025 АрендаСити Иркутск. Все права защищены.</p>
-          <div className="flex gap-4 text-xs">
-            <a href="#" className="hover:text-background transition-colors">Политика конфиденциальности</a>
-            <a href="#" className="hover:text-background transition-colors">Условия использования</a>
-          </div>
-        </div>
       </div>
-      {/* Made by */}
-      <div className="py-2.5">
-        <p className="text-center text-[11px] text-background/40">
-          Создано в{" "}
-          <a
-            href="https://2a-digital.com"
-            target="_blank"
-            rel="noreferrer"
-            className="text-background/60 hover:text-background transition-colors font-medium"
-          >
-            2А Цифровые Решения
-          </a>
-        </p>
+
+      {/* Bottom bar */}
+      <div>
+        <div className="container mx-auto px-4 lg:px-8 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <p className="text-[11px] text-background/40">
+            © 2025 {COMPANY.shortName} Все права защищены.
+          </p>
+          <p className="text-[11px] text-background/40">
+            Создано в{" "}
+            <a
+              href="https://2a-digital.com"
+              target="_blank"
+              rel="noreferrer"
+              className="text-background/60 hover:text-background transition-colors font-medium"
+            >
+              2А Цифровые Решения
+            </a>
+          </p>
+        </div>
       </div>
     </footer>
   );

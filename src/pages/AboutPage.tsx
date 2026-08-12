@@ -11,6 +11,7 @@ import PropertyAIChat from "@/components/PropertyAIChat";
 import managerPhoto from "@/assets/manager-arenda-city.jpg";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import heroImg from "@/assets/hero-commercial.jpg";
+import { COMPANY, CONTACTS } from "@/config/company";
 
 const stats = [
   { icon: TrendingUp, value: "12+", label: "лет на рынке" },
@@ -218,10 +219,10 @@ export default function AboutPage() {
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       {[
-                        { icon: Phone, label: "Телефон", value: "+7 (3952) 55-12-34", href: "tel:+73952551234" },
-                        { icon: Mail, label: "Email", value: "info@arendacity.ru", href: "mailto:info@arendacity.ru" },
-                        { icon: MapPin, label: "Адрес", value: "Иркутск, ул. Карла Маркса, 37", href: "#" },
-                        { icon: Clock, label: "Режим работы", value: "Пн–Пт: 9:00–19:00", href: "#" },
+                        { icon: Phone, label: "Телефон", value: CONTACTS.phone, href: `tel:${CONTACTS.phoneTel}` },
+                        { icon: Mail, label: "Email", value: CONTACTS.email, href: `mailto:${CONTACTS.email}` },
+                        { icon: MapPin, label: "Адрес", value: COMPANY.officeAddress, href: "#" },
+                        { icon: Clock, label: "Режим работы", value: CONTACTS.hours, href: "#" },
                       ].map(({ icon: Icon, label, value, href }) => (
                         <div key={label} className="flex items-start gap-3">
                           <div className="w-8 h-8 bg-primary/10 flex items-center justify-center shrink-0">
@@ -240,10 +241,10 @@ export default function AboutPage() {
                     </div>
                     <div className="space-y-3">
                       <p className="text-sm text-muted-foreground leading-relaxed">
-                        Работаем в Иркутске, Ангарске и Шелехове. Выезд на объект — бесплатно.
+                        Работаем в Ангарске, Иркутске и Шелехове. Выезд на объект — бесплатно.
                       </p>
                       <a
-                        href="tel:+73952551234"
+                        href={`tel:${CONTACTS.phoneTel}`}
                         className="inline-flex items-center gap-2 h-10 px-5 bg-foreground text-background text-sm font-semibold hover:opacity-90 transition-opacity"
                       >
                         <Phone className="w-4 h-4" /> Позвонить нам

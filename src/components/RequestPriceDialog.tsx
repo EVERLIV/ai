@@ -7,18 +7,21 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Send, CheckCircle, MessageSquareText, Tag, User, Phone, Mail, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { isSaleDeal } from "@/lib/propertyDeal";
 
 interface Props {
   propertyId?: string;
   propertyAddress?: string;
   basePrice?: number;
+  /** Тип сделки объекта — для продажи форма не спрашивает срок контракта. */
+  dealType?: string | null;
   trigger?: React.ReactNode;
   className?: string;
 }
 
 type Term = "12" | "36";
 
-export default function RequestPriceDialog({ propertyId, propertyAddress, basePrice, trigger, className }: Props) {
+export default function RequestPriceDialog({ propertyId, propertyAddress, basePrice, dealType, trigger, className }: Props) {
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,6 +29,8 @@ export default function RequestPriceDialog({ propertyId, propertyAddress, basePr
   const [term, setTerm] = useState<Term>("12");
   const [price, setPrice] = useState<string>("");
   const { toast } = useToast();
+
+  const isSale = isSaleDeal(dealType);
 
   const formatPrice = (v: string) => {
     const digits = v.replace(/\D/g, "").slice(0, 10);
@@ -57,7 +62,9 @@ export default function RequestPriceDialog({ propertyId, propertyAddress, basePr
         name,
         phone,
         email: email || null,
-        message: `Предложение цены: ${offerPrice.toLocaleString("ru-RU")} ₽/мес при контракте на ${term === "12" ? "1 год" : "3 года"}.${message ? `\nКомментарий: ${message}` : ""}`,
+        message: isSale
+          ? `Предложение цены (продажа): ${offerPrice.toLocaleString("ru-RU")} ₽.${message ? `\nКомментарий: ${message}` : ""}`
+          : `Предложение цены: ${offerPrice.toLocaleString("ru-RU")} ₽/мес при контракте на ${term === "12" ? "1 год" : "3 года"}.${message ? `\nКомментарий: ${message}` : ""}`,
         source: "price_offer",
         business_category: propertyAddress ?? null,
       });
@@ -118,39 +125,45 @@ export default function RequestPriceDialog({ propertyId, propertyAddress, basePr
             <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
               {/* Цена + срок */}
               <div className="space-y-2">
-                <Label className="text-xs font-medium text-foreground">Ваша цена за месяц</Label>
+                <Label className="text-xs font-medium text-foreground">
+                  {isSale ? "Ваша цена за объект" : "Ваша цена за месяц"}
+                </Label>
                 <div className="relative">
                   <Input
                     inputMode="numeric"
                     value={price}
                     onChange={(e) => setPrice(formatPrice(e.target.value))}
                     placeholder={basePrice ? Number(basePrice).toLocaleString("ru-RU") : "Например, 120 000"}
-                    className="h-11 pr-14 text-base font-semibold"
+                    className={`h-11 text-base font-semibold ${isSale ? "pr-9" : "pr-14"}`}
                     required
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₽/мес</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    {isSale ? "₽" : "₽/мес"}
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  {([
-                    { v: "12", label: "1 год" },
-                    { v: "36", label: "3 года" },
-                  ] as const).map((opt) => (
-                    <button
-                      key={opt.v}
-                      type="button"
-                      onClick={() => setTerm(opt.v)}
-                      className={`flex items-center justify-center gap-1.5 h-9 rounded-lg border text-xs font-medium transition-all ${
-                        term === opt.v
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border bg-card text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <Calendar className="w-3.5 h-3.5" />
-                      Контракт на {opt.label}
-                    </button>
-                  ))}
-                </div>
+                {!isSale && (
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    {([
+                      { v: "12", label: "1 год" },
+                      { v: "36", label: "3 года" },
+                    ] as const).map((opt) => (
+                      <button
+                        key={opt.v}
+                        type="button"
+                        onClick={() => setTerm(opt.v)}
+                        className={`flex items-center justify-center gap-1.5 h-9 rounded-lg border text-xs font-medium transition-all ${
+                          term === opt.v
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-card text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Calendar className="w-3.5 h-3.5" />
+                        Контракт на {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Контакты */}
@@ -171,7 +184,11 @@ export default function RequestPriceDialog({ propertyId, propertyAddress, basePr
 
               <Textarea
                 name="message"
-                placeholder="Комментарий: условия, сроки въезда, особые пожелания…"
+                placeholder={
+                  isSale
+                    ? "Комментарий: форма оплаты, сроки сделки, вопросы по объекту…"
+                    : "Комментарий: условия, сроки въезда, особые пожелания…"
+                }
                 rows={3}
                 className="resize-none text-sm"
               />

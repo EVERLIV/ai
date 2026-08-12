@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import AIWizardModal from "@/components/AIWizardModal";
 import { useAuth } from "@/hooks/useAuth";
+import { CONTACTS } from "@/config/company";
 
 type SubItem = { label: string; desc: string; href: string; icon: React.ElementType };
 type NavItem = { label: string; href: string; submenu?: SubItem[] };
@@ -39,7 +40,7 @@ const navItems: NavItem[] = [
 
 const socials = [
   { Icon: Send, href: "https://t.me/arendacity", label: "Telegram" },
-  { Icon: MessageCircle, href: "https://wa.me/73952551234", label: "WhatsApp" },
+  { Icon: MessageCircle, href: `https://wa.me/${CONTACTS.phoneDigits}`, label: "WhatsApp" },
   { Icon: Instagram, href: "https://instagram.com/arendacity", label: "Instagram" },
 ];
 
@@ -91,17 +92,17 @@ export default function SiteHeader() {
       <div className="hidden md:block bg-background border-b border-border/50">
         <div className="container mx-auto px-4 lg:px-8 h-10 flex items-center justify-between gap-4 text-[12px]">
           <div className="hidden md:flex items-center gap-4 text-muted-foreground">
-            <a href="tel:+73952551234" className="flex items-center gap-1.5 hover:text-foreground transition-colors duration-200">
+            <a href={`tel:${CONTACTS.phoneTel}`} className="flex items-center gap-1.5 hover:text-foreground transition-colors duration-200">
               <Phone className="w-3.5 h-3.5 text-primary" />
-              <span className="font-medium">+7 (3952) 55-12-34</span>
+              <span className="font-medium">{CONTACTS.phone}</span>
             </a>
-            <a href="mailto:info@arendacity.ru" className="hidden lg:flex items-center gap-1.5 hover:text-foreground transition-colors duration-200">
+            <a href={`mailto:${CONTACTS.email}`} className="hidden lg:flex items-center gap-1.5 hover:text-foreground transition-colors duration-200">
               <Mail className="w-3.5 h-3.5 text-primary" />
-              info@arendacity.ru
+              {CONTACTS.email}
             </a>
             <span className="hidden lg:flex items-center gap-1.5 text-muted-foreground/50">
               <MapPin className="w-3.5 h-3.5" />
-              Иркутск · Ангарск · Шелехов
+              Ангарск · Иркутск · Шелехов
             </span>
           </div>
           <div className="flex items-center gap-2 ml-auto">

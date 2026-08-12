@@ -3,6 +3,7 @@ import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { getListingAgentDisplay } from "@/lib/propertySidebar";
 import { cn } from "@/lib/utils";
+import { DEFAULT_AGENT } from "@/config/defaultAgent";
 
 interface Props {
   extras?: Record<string, unknown> | null;
@@ -21,10 +22,10 @@ export default function ListingAgentFooter({
   compact = false,
 }: Props) {
   const agent = getListingAgentDisplay(extras) ?? {
-    primaryLabel: "Анастасия Романова",
-    secondaryLabel: "Риелтор · «Аренда Сити»",
-    avatarUrl: consultantAvatar,
-    isVerified: true,
+    primaryLabel: DEFAULT_AGENT.name,
+    secondaryLabel: `Риелтор · «${DEFAULT_AGENT.agencyName}»`,
+    avatarUrl: DEFAULT_AGENT.avatar,
+    isVerified: DEFAULT_AGENT.isVerified,
     isRealtor: false,
     objectsCount: 0,
   };

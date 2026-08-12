@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { Phone, X, Send, Star, Clock3, BadgeCheck, CheckCircle2 } from "lucide-react";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 
-const PHONE = "+73952551234";
-const PHONE_DISPLAY = "+7 (3952) 55-12-34";
+import { CONTACTS } from "@/config/company";
+
+const PHONE = CONTACTS.phoneTel;
+const PHONE_DISPLAY = CONTACTS.phone;
 
 export default function ConsultationWidget() {
   const [open, setOpen] = useState(false);

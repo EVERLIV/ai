@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit *)",
+      "Bash(sed -i 's/className=\"border border-border p-6 space-y-4\"/className=\"border border-border p-5 space-y-3.5\"/g' src/pages/ContactsPage.tsx)",
+      "Bash(sed -i 's/className=\"p-6 ${/className=\"p-4 ${/g' src/pages/ContactsPage.tsx)",
+      "Bash(curl -s \"https://arendacity.com/assets/index-AaxllwOV.js\")",
+      "Bash(curl -s -w '\\\\nHTTP:%{http_code}' 'https://api.arendacity.com/rest/v1/properties?is_active=eq.true&limit=2&select=id,address' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4ODQyOTQwLCJleHAiOjE5MzY1MjI5NDB9.uK1BksB1rl0vNAlUc2nVpkqECeiWD9CKx0rIfHUlyWA')",
+      "Bash(curl -s -I 'https://api.arendacity.com/rest/v1/properties?is_active=eq.true&limit=1' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4ODQyOTQwLCJleHAiOjE5MzY1MjI5NDB9.uK1BksB1rl0vNAlUc2nVpkqECeiWD9CKx0rIfHUlyWA' -H 'Origin: https://arendacity.com')",
+      "Bash(/tmp/plink.exe -ssh root@72.56.247.221 -pw \"io@-DRo6XFvXPD\" -batch -hostkey \"ssh-ed25519 255 SHA256:9DLKUy+hcThymZmBSJ0slgZkwh4MsR4/CBhQ3lUTbKY\" \"cd /opt/supabase && docker compose ps --format '{{.Name}}\\\\t{{.Status}}' | grep -v healthy\")",
+      "Bash(curl -s \"https://arendacity.com\")",
+      "Bash(curl -s \"https://everliv-ai-dc0f.twc1.net\")",
+      "Bash(curl -sv 'https://api.arendacity.com/rest/v1/properties?is_active=eq.true&limit=1&select=id' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4ODQyOTQwLCJleHAiOjE5MzY1MjI5NDB9.uK1BksB1rl0vNAlUc2nVpkqECeiWD9CKx0rIfHUlyWA' -H 'Origin: https://arendacity.com')",
+      "Bash(npm install *)"
+    ]
+  }
+}

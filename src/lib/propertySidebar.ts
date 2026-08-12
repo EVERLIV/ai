@@ -49,7 +49,9 @@ export function getListingAgentDisplay(
   const hasAgent = !!(name || e.owner_user_id);
   if (!hasAgent) return null;
 
-  const isRealtor = e.agent_account_type === "realtor";
+  // Объекты агентства импортированы без agent_account_type: указана только
+  // компания. Наличие компании без аккаунта собственника — признак риелтора.
+  const isRealtor = e.agent_account_type === "realtor" || (!e.owner_user_id && !!company);
   const hasAgency = isRealtor && !!company && company !== "Риелтор";
 
   let primaryLabel: string;

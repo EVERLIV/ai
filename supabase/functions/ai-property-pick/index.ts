@@ -4,6 +4,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+/** Дешёвая текстовая модель: подбор идёт по готовому короткому списку. */
+const PICK_MODEL = "claude-haiku-4-5";
+
 interface Criteria {
   deal?: string;
   type?: string;
@@ -48,8 +51,8 @@ Deno.serve(async (req) => {
       properties: PropertyLite[];
     };
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not configured");
 
     if (!properties?.length) {
       return new Response(
@@ -80,107 +83,61 @@ ${shortlist
 
 Выбери лучшие варианты и обоснуй каждый.`;
 
-    const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
+    const PICK_SCHEMA = {
+      type: "object",
+      properties: {
+        summary: {
+          type: "string",
+          description: "Короткое резюме (2-3 предложения) — что подобрано и почему.",
         },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "recommend_properties",
-                description:
-                  "Возвращает 1-3 лучших объекта с обоснованием подбора и итоговую сводку.",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    summary: {
-                      type: "string",
-                      description:
-                        "Короткое резюме ИИ (2-3 предложения) — что подобрано и почему именно эти объекты.",
-                    },
-                    picks: {
-                      type: "array",
-                      maxItems: 3,
-                      items: {
-                        type: "object",
-                        properties: {
-                          id: {
-                            type: "string",
-                            description: "id объекта из переданного списка",
-                          },
-                          fit_score: {
-                            type: "number",
-                            description: "Соответствие 0-100",
-                          },
-                          reason: {
-                            type: "string",
-                            description:
-                              "1-2 предложения почему объект подходит клиенту",
-                          },
-                          highlights: {
-                            type: "array",
-                            items: { type: "string" },
-                            description:
-                              "2-4 ключевых плюса (короткие фразы)",
-                          },
-                        },
-                        required: ["id", "fit_score", "reason", "highlights"],
-                        additionalProperties: false,
-                      },
-                    },
-                  },
-                  required: ["summary", "picks"],
-                  additionalProperties: false,
-                },
+        picks: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string", description: "id объекта из переданного списка" },
+              fit_score: { type: "number", description: "Соответствие 0-100" },
+              reason: { type: "string", description: "1-2 предложения почему объект подходит" },
+              highlights: {
+                type: "array",
+                items: { type: "string" },
+                description: "2-4 ключевых плюса (короткие фразы)",
               },
             },
-          ],
-          tool_choice: {
-            type: "function",
-            function: { name: "recommend_properties" },
+            required: ["id", "fit_score", "reason", "highlights"],
+            additionalProperties: false,
           },
-        }),
+        },
       },
-    );
+      required: ["summary", "picks"],
+      additionalProperties: false,
+    };
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: PICK_MODEL,
+        max_tokens: 2000,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }],
+        output_config: { format: { type: "json_schema", schema: PICK_SCHEMA } },
+      }),
+    });
 
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({
-            error:
-              "Слишком много запросов к ИИ. Попробуйте через минуту.",
-          }),
-          {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({
-            error:
-              "Лимит ИИ исчерпан. Пополните баланс Lovable AI в настройках.",
-          }),
-          {
-            status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
+          JSON.stringify({ error: "Слишком много запросов к ИИ. Попробуйте через минуту." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
       const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
+      console.error("Anthropic error:", response.status, t);
       return new Response(JSON.stringify({ error: "Ошибка ИИ-сервиса" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -188,15 +145,29 @@ ${shortlist
     }
 
     const data = await response.json();
-    const toolCall = data?.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) {
+    const textBlock = (data?.content ?? []).find(
+      (b: { type: string }) => b.type === "text",
+    ) as { text?: string } | undefined;
+
+    if (data?.stop_reason === "refusal" || !textBlock?.text) {
+      console.error("Anthropic: нет структурированного ответа", data?.stop_reason);
       return new Response(
         JSON.stringify({ summary: "ИИ не вернул структурированный ответ.", picks: [] }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const args = JSON.parse(toolCall.function.arguments);
+    let args: unknown;
+    try {
+      args = JSON.parse(textBlock.text);
+    } catch {
+      console.error("Anthropic: ответ не JSON");
+      return new Response(
+        JSON.stringify({ summary: "ИИ не вернул структурированный ответ.", picks: [] }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     return new Response(JSON.stringify(args), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -5,6 +5,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+/** Дешёвая текстовая модель: отчёт — это сводка по готовым цифрам. */
+const REPORT_MODEL = "claude-haiku-4-5";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -14,8 +17,8 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const openaiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openaiKey) throw new Error("OPENAI_API_KEY не настроен");
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!anthropicKey) throw new Error("ANTHROPIC_API_KEY не настроен");
 
     // Дата для отчёта (сегодня или из тела запроса)
     const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
@@ -89,44 +92,69 @@ ${dueToday.slice(0, 10).map(t => `  • "${t.title}" — ${t.assignee || "не �
 Задачи высокого приоритета в работе:
 ${highPriority.filter(t => t.status === "in_progress").slice(0, 5).map(t => `  • "${t.title}" — ${t.assignee || "не назначена"}`).join("\n") || "  нет"}
 
-ТРЕБОВАНИЯ К ОТВЕТУ (строго JSON):
-{
-  "summary": "3-5 предложений — общий вывод о состоянии дел, ключевые проблемы и успехи",
-  "insights": [
-    {
-      "type": "warning|success|info|critical",
-      "title": "Краткий заголовок",
-      "text": "Детальное объяснение (1-2 предложения)",
-      "emoji": "подходящий эмодзи"
-    }
-  ]
-}
+ЧТО НУЖНО:
+• summary — 3–5 предложений: общий вывод о состоянии дел, ключевые проблемы и успехи.
+• insights — 4–6 пунктов. Для каждого: тип (warning, success, info или critical),
+  краткий заголовок, объяснение в 1–2 предложения и подходящий эмодзи.
 
-Insights должно быть 4-6 штук. Будь конкретным, указывай имена сотрудников и задачи где нужно. Тон — профессиональный, деловой, без воды.`;
+Указывай конкретные имена сотрудников и названия задач. Тон деловой, без воды.`;
 
-    // Вызов OpenAI
-    const aiResp = await fetch("https://api.openai.com/v1/chat/completions", {
+    // Вызов Anthropic. Схема гарантирует форму JSON — разбирать
+    // текст ответа вручную и надеяться на валидность не нужно.
+    const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${openaiKey}`,
-        "Content-Type": "application/json",
+        "x-api-key": anthropicKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: REPORT_MODEL,
+        max_tokens: 2000,
         messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
-        temperature: 0.4,
-        max_tokens: 1000,
+        output_config: {
+          format: {
+            type: "json_schema",
+            schema: {
+              type: "object",
+              properties: {
+                summary: { type: "string" },
+                insights: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      type: { type: "string", enum: ["warning", "success", "info", "critical"] },
+                      title: { type: "string" },
+                      text: { type: "string" },
+                      emoji: { type: "string" },
+                    },
+                    required: ["type", "title", "text", "emoji"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: ["summary", "insights"],
+              additionalProperties: false,
+            },
+          },
+        },
       }),
     });
 
     if (!aiResp.ok) {
       const err = await aiResp.text();
-      throw new Error(`OpenAI error: ${err}`);
+      console.error("Anthropic error:", aiResp.status, err);
+      throw new Error(`Anthropic error ${aiResp.status}`);
     }
 
     const aiData = await aiResp.json();
-    const parsed = JSON.parse(aiData.choices[0].message.content);
+    if (aiData.stop_reason === "refusal") {
+      throw new Error("Модель отклонила запрос");
+    }
+    const textBlock = (aiData.content ?? []).find((b: { type: string }) => b.type === "text");
+    if (!textBlock?.text) throw new Error("Пустой ответ модели");
+    const parsed = JSON.parse(textBlock.text);
 
     // Сохранить отчёт
     const { data: saved, error: saveErr } = await supabase

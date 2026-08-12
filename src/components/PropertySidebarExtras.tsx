@@ -1,12 +1,14 @@
 import {
   DoorOpen, Receipt, TrendingUp, MapPinned, Footprints, Train, ScrollText,
-  Building2, Home, Users,
+  Building2, Home, Users, Star, Clock3,
 } from "lucide-react";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import { resolveSidebarDisplay } from "@/lib/propertySidebar";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useOwnerListingCard } from "@/hooks/useOwnerListingCard";
 import { ACCOUNT_TYPE_LABELS } from "@/hooks/useProfile";
+import { useActivePropertiesCount } from "@/hooks/useProperties";
+import { DEFAULT_AGENT } from "@/config/defaultAgent";
 
 interface Props {
   property: {
@@ -40,15 +42,20 @@ export default function PropertySidebarExtras({ property }: Props) {
   const staffCount = liveOwner?.agency_staff_count;
 
   const hasOwnerData = !!ownerUserId && !!(agentName || liveOwner?.full_name);
+
+  // Объекты без собственника ведёт агент агентства — берём его данные
+  // из единого конфига, а число объектов из фактического каталога.
+  const { data: catalogCount } = useActivePropertiesCount();
+
   const showAgent = true;
-  const displayAgentName = hasOwnerData ? agentName : "Анастасия Романова";
-  const displayAgentAvatar = hasOwnerData ? agentAvatar : consultantAvatar;
-  const displayIsVerified = hasOwnerData ? isVerified : true;
+  const displayAgentName = hasOwnerData ? agentName : DEFAULT_AGENT.name;
+  const displayAgentAvatar = hasOwnerData ? agentAvatar : DEFAULT_AGENT.avatar;
+  const displayIsVerified = hasOwnerData ? isVerified : DEFAULT_AGENT.isVerified;
   const displayIsRealtor = hasOwnerData ? isRealtor : true;
-  const displayAgencyName = hasOwnerData ? agencyName : "Аренда Сити";
-  const displayObjectsCount = hasOwnerData ? objectsCount : 0;
-  const displayAgencyAbout = hasOwnerData ? agencyAbout : "Эксперт по коммерческой недвижимости. Более 200 сделок.";
-  const displayAccountType = hasOwnerData ? accountType : ("realtor" as const);
+  const displayAgencyName = hasOwnerData ? agencyName : DEFAULT_AGENT.agencyName;
+  const displayObjectsCount = hasOwnerData ? objectsCount : catalogCount ?? 0;
+  const displayAgencyAbout = hasOwnerData ? agencyAbout : DEFAULT_AGENT.about;
+  const displayAccountType = hasOwnerData ? accountType : DEFAULT_AGENT.accountType;
   const displayStaffCount = hasOwnerData ? staffCount : undefined;
 
   return (
@@ -119,7 +126,7 @@ export default function PropertySidebarExtras({ property }: Props) {
                 {displayIsVerified && <VerifiedBadge size="sm" showLabel={false} />}
               </div>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                {ACCOUNT_TYPE_LABELS[displayAccountType]}
+                {hasOwnerData ? ACCOUNT_TYPE_LABELS[displayAccountType] : DEFAULT_AGENT.position}
               </p>
               {displayIsRealtor && displayAgencyName && (
                 <p className="text-xs font-medium text-foreground mt-1 flex items-center gap-1 truncate">
@@ -131,15 +138,39 @@ export default function PropertySidebarExtras({ property }: Props) {
           </div>
 
           <div className="mt-3 grid gap-2">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="flex items-center gap-1.5 text-muted-foreground">
-                <Home className="w-3.5 h-3.5" />
-                Объектов в каталоге
-              </span>
-              <span className="font-semibold text-foreground tabular-nums">
-                {displayObjectsCount > 0 ? displayObjectsCount : 1}
-              </span>
-            </div>
+            {displayObjectsCount > 0 && (
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <Home className="w-3.5 h-3.5" />
+                  Объектов в каталоге
+                </span>
+                <span className="font-semibold text-foreground tabular-nums">
+                  {displayObjectsCount}
+                </span>
+              </div>
+            )}
+            {!hasOwnerData && (
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <Star className="w-3.5 h-3.5" />
+                  Рейтинг
+                </span>
+                <span className="font-semibold text-foreground tabular-nums">
+                  {DEFAULT_AGENT.rating.toLocaleString("ru-RU")}
+                </span>
+              </div>
+            )}
+            {!hasOwnerData && (
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <Clock3 className="w-3.5 h-3.5" />
+                  Среднее время ответа
+                </span>
+                <span className="font-semibold text-foreground tabular-nums">
+                  ~{DEFAULT_AGENT.responseMinutes} мин
+                </span>
+              </div>
+            )}
             {displayIsRealtor && displayStaffCount != null && displayStaffCount > 0 && (
               <div className="flex items-center justify-between text-[11px]">
                 <span className="flex items-center gap-1.5 text-muted-foreground">

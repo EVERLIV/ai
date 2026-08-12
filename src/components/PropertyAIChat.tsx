@@ -3,9 +3,13 @@ import ReactMarkdown from "react-markdown";
 import { Send, Loader2, X, PhoneCall, Mic, Check, CheckCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
+import { CONTACTS } from "@/config/company";
 
-const SUPABASE_URL = "https://api.arendacity.com";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4ODQyOTQwLCJleHAiOjE5MzY1MjI5NDB9.uK1BksB1rl0vNAlUc2nVpkqECeiWD9CKx0rIfHUlyWA";
+/**
+ * Бэкенд чата. По умолчанию тот же домен через Caddy (/api/chat),
+ * для локальной разработки можно указать VITE_CHAT_API_URL.
+ */
+const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL || "/api/chat";
 
 type Status = "sent" | "read";
 type Msg = { role: "user" | "assistant"; content: string; time: string; status?: Status };
@@ -13,7 +17,12 @@ type Stage = "ask_name" | "ask_phone" | "chat";
 
 const ts = () => new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
-const STARTERS = ["Офисы до 100К/мес", "Склад с пандусом", "Условия аренды", "Аналоги объектов"];
+const STARTERS = ["Что есть в аренду?", "Офис до 50 000 ₽/мес", "Самое дешёвое помещение", "Условия аренды"];
+
+/** Ответ, когда ИИ недоступен: не оставляем человека без реакции. */
+const FALLBACK_REPLY =
+  `Извините, не получается ответить прямо сейчас — сбой на нашей стороне.\n\n` +
+  `Позвоните нам, поможем сразу: ${CONTACTS.phone}`;
 
 interface Props { propertyId?: string; propertyAddress?: string; }
 
@@ -29,7 +38,11 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const honeypotRef = useRef<HTMLInputElement>(null);
   const initialized = useRef(false);
+  /** Время открытия чата и последней отправки — простая защита от ботов. */
+  const openedAt = useRef(0);
+  const lastSentAt = useRef(0);
 
   // Wiggle
   useEffect(() => {
@@ -53,7 +66,9 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
 
   // Focus on open
   useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 350);
+    if (!open) return;
+    if (!openedAt.current) openedAt.current = Date.now();
+    setTimeout(() => inputRef.current?.focus(), 350);
   }, [open]);
 
   // Scroll to bottom
@@ -76,7 +91,7 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
           time: ts(),
           content: propertyAddress
             ? `Здравствуйте! Я Анастасия, консультант АРЕНДА СИТИ.\nПомогу с вопросами по объекту «${propertyAddress}».\n\nКак вас зовут?`
-            : "Здравствуйте! Я Анастасия, консультант АРЕНДА СИТИ.\nПомогу подобрать офис, склад или торговое помещение.\n\nКак вас зовут?",
+            : "Здравствуйте! Я Анастасия, консультант АРЕНДА СИТИ.\nПомогу подобрать помещение в аренду — офис, склад или торговое.\n\nКак вас зовут?",
         }]);
       }, 1400);
     }, delay);
@@ -98,60 +113,74 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
   const sendAI = async (history: Msg[], name: string) => {
     setLoading(true);
     setThinking(true);
-    const systemNote = name ? `Пользователя зовут ${name}. Обращайся к нему по имени.` : "";
     let result = "";
 
     try {
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/ai-chat`, {
+      const resp = await fetch(CHAT_API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${SUPABASE_KEY}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: history.map(({ role, content }) => ({ role, content })),
-          propertyId, systemNote,
+          propertyId,
+          userName: name,
+          // Honeypot: у людей поле остаётся пустым, боты его заполняют.
+          website: honeypotRef.current?.value || "",
         }),
       });
 
-      if (!resp.ok || !resp.body) throw new Error("bad response");
+      if (!resp.ok) {
+        const { error } = await resp.json().catch(() => ({ error: "" }));
+        throw new Error(error || "bad response");
+      }
+      if (!resp.body) throw new Error("bad response");
 
+      // Формат NDJSON: одна строка — один JSON-объект {text} или {done}.
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
-      let buf = "", done = false;
-      while (!done) {
-        const r = await reader.read();
-        if (r.done) break;
-        buf += decoder.decode(r.value, { stream: true });
+      let buf = "";
+      for (;;) {
+        const { done: streamDone, value } = await reader.read();
+        if (streamDone) break;
+        buf += decoder.decode(value, { stream: true });
         let idx: number;
         while ((idx = buf.indexOf("\n")) !== -1) {
-          let line = buf.slice(0, idx);
+          const line = buf.slice(0, idx).trim();
           buf = buf.slice(idx + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (!line.startsWith("data: ")) continue;
-          const json = line.slice(6).trim();
-          if (json === "[DONE]") { done = true; break; }
+          if (!line) continue;
           try {
-            const parsed = JSON.parse(json);
-            const c = parsed.choices?.[0]?.delta?.content as string | undefined;
-            if (c) result += c;
-          } catch { buf = line + "\n" + buf; break; }
+            const parsed = JSON.parse(line) as { text?: string };
+            if (parsed.text) result += parsed.text;
+          } catch {
+            // Строка повреждена — пропускаем, поток продолжается.
+          }
         }
       }
-    } catch {
-      toast({ title: "Ошибка сети", variant: "destructive" });
+    } catch (e) {
+      const msg = e instanceof Error && e.message && e.message !== "bad response" ? e.message : "Ошибка сети";
+      toast({ title: msg, variant: "destructive" });
     } finally {
       setLoading(false);
       setThinking(false);
-      if (result) {
-        setMsgs((p) => {
-          const updated = p.map((m) => m.role === "user" ? { ...m, status: "read" as Status } : m);
-          return [...updated, { role: "assistant", content: result, time: ts() }];
-        });
-      }
+      setMsgs((p) => {
+        const updated = p.map((m) => (m.role === "user" ? { ...m, status: "read" as Status } : m));
+        // Пустой ответ — сбой сети или сервиса. Молчание выглядит так,
+        // будто консультант проигнорировал вопрос: отвечаем и даём телефон.
+        const content = result || FALLBACK_REPLY;
+        return [...updated, { role: "assistant", content, time: ts() }];
+      });
     }
   };
 
   const send = async (text: string) => {
-    const t = text.trim();
+    const t = text.trim().slice(0, 1000);
     if (!t || loading || thinking) return;
+
+    // Бот отвечает мгновенно после открытия и шлёт сообщения очередью.
+    const now = Date.now();
+    if (openedAt.current && now - openedAt.current < 1500) return;
+    if (now - lastSentAt.current < 700) return;
+    lastSentAt.current = now;
+
     setInput("");
 
     const userMsg: Msg = { role: "user", content: t, time: ts(), status: "sent" };
@@ -254,7 +283,7 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
           </div>
 
           {/* Call */}
-          <a href="tel:+73952551234"
+          <a href={`tel:${CONTACTS.phoneTel}`}
             className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white text-xs font-medium px-3 h-8 transition-colors">
             <PhoneCall className="w-3.5 h-3.5" />
             Позвонить
@@ -344,10 +373,21 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
             className="shrink-0 w-9 h-9 flex items-center justify-center text-muted-foreground/60 hover:text-primary transition-colors">
             <Mic className="w-5 h-5" />
           </button>
+          {/* Honeypot — скрыт от людей, виден ботам-автозаполнителям */}
+          <input
+            ref={honeypotRef}
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="absolute w-px h-px opacity-0 -z-10 pointer-events-none"
+          />
           <input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            maxLength={1000}
             placeholder={
               stage === "ask_name" ? "Введите ваше имя…"
               : stage === "ask_phone" ? "Номер (или пропустить)…"

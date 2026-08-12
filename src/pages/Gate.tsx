@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Lock, ArrowRight } from "lucide-react";
 import heroImg from "@/assets/hero-warehouses.jpg";
+import { COMPANY, CONTACTS } from "@/config/company";
 
 const SITE_PASSWORD = "arenda2026";
 
@@ -96,8 +97,8 @@ export default function Gate({ onUnlock }: GateProps) {
 
         {/* Footer */}
         <div className="flex items-center justify-between text-[11px] text-muted-foreground/50">
-          <span>© 2025 АрендаСити</span>
-          <a href="tel:+73952551234" className="hover:text-muted-foreground transition-colors">+7 (3952) 55-12-34</a>
+          <span>© 2025 {COMPANY.shortName}</span>
+          <a href={`tel:${CONTACTS.phoneTel}`} className="hover:text-muted-foreground transition-colors">{CONTACTS.phone}</a>
         </div>
       </div>
 

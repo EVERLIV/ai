@@ -1,17 +1,14 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   ShieldCheck, TrendingUp, Camera, FileText, Users,
-  CheckCircle2, Send, User, Phone as PhoneIcon, Mail,
+  CheckCircle2, Phone as PhoneIcon, UserPlus,
   Star, BadgeCheck, Clock3, ArrowRight, Building2, KeyRound, BarChart3,
 } from "lucide-react";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
+import { CONTACTS } from "@/config/company";
 
 type Mode = "management" | "rent";
 
@@ -75,6 +72,21 @@ const perks = [
   },
 ];
 
+const addSteps = [
+  {
+    title: "Зарегистрируйтесь на сайте",
+    body: "Укажите имя, телефон и email — займёт меньше минуты.",
+  },
+  {
+    title: "Заполните карточку объекта",
+    body: "Адрес, площадь, ставка, фотографии и описание — прямо в личном кабинете.",
+  },
+  {
+    title: "Дождитесь проверки",
+    body: "Модератор проверит данные, после чего объект появится в каталоге и начнёт получать заявки.",
+  },
+];
+
 const stats = [
   { value: "320+", label: "объектов под управлением" },
   { value: "14 дн.", label: "средний срок сдачи" },
@@ -83,46 +95,14 @@ const stats = [
 
 export default function ListPropertyBlock({ variant = "section" }: Props) {
   const [mode, setMode] = useState<Mode>("management");
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-  const { toast } = useToast();
   const { ref, isVisible } = useScrollReveal();
   const { search } = useLocation();
+  const { user } = useAuth();
 
   useEffect(() => {
     const m = new URLSearchParams(search).get("mode");
     if (m === "rent" || m === "management") setMode(m);
   }, [search]);
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const name = String(fd.get("name") || "").trim();
-    const phone = String(fd.get("phone") || "").trim();
-    const email = String(fd.get("email") || "").trim();
-    const address = String(fd.get("address") || "").trim();
-    const area = String(fd.get("area") || "").trim();
-    const message = String(fd.get("message") || "").trim();
-    if (name.length < 2 || phone.length < 6) {
-      toast({ title: "Заполните имя и телефон" });
-      return;
-    }
-    setLoading(true);
-    try {
-      await supabase.from("crm_leads").insert({
-        name, phone,
-        email: email || null,
-        message: `Тип: ${mode === "management" ? "Управление" : "Сдача"}\nАдрес: ${address}\nПлощадь: ${area} м²\n${message}`,
-        source: mode === "management" ? "list_property_management" : "list_property_rent",
-      });
-      setSent(true);
-      toast({ title: "Заявка отправлена", description: "Менеджер свяжется в течение 30 минут." });
-    } catch {
-      toast({ title: "Не удалось отправить", description: "Попробуйте ещё раз или позвоните нам." });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const isPage = variant === "page";
 
@@ -137,10 +117,11 @@ export default function ListPropertyBlock({ variant = "section" }: Props) {
               Сдайте на АрендаСити
             </p>
             <h1 className="font-display text-4xl lg:text-5xl font-bold leading-tight text-foreground mb-6">
-              Передайте объект —<br />мы возьмём управление
+              Добавьте объект —<br />найдём арендатора
             </h1>
             <p className="text-muted-foreground text-base leading-relaxed mb-8 max-w-xl">
-              АрендаСити берёт под контроль поиск арендаторов, юридическое сопровождение, контроль платежей и обслуживание — вы получаете доход без забот.
+              Разместите объект самостоятельно через личный кабинет — бесплатно и без звонков.
+              Нужно больше, чем публикация? АрендаСити возьмёт на себя поиск арендаторов, документы и контроль платежей.
             </p>
 
             {/* Mode switcher */}
@@ -238,7 +219,7 @@ export default function ListPropertyBlock({ variant = "section" }: Props) {
         </div>
       </section>
 
-      {/* ── ФОРМА + КОНСУЛЬТАНТ ──────────────────────────── */}
+      {/* ── РЕГИСТРАЦИЯ + КОНСУЛЬТАНТ ────────────────────── */}
       <section className="py-16 bg-background" id="list-property">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-8 items-start">
@@ -247,10 +228,11 @@ export default function ListPropertyBlock({ variant = "section" }: Props) {
             <div className="space-y-6">
               <div>
                 <h2 className="font-display text-2xl font-bold text-foreground mb-2">
-                  Оставьте заявку — перезвоним за 30 минут
+                  Добавьте объект самостоятельно
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Персональный менеджер ответит на все вопросы и подберёт оптимальный формат сотрудничества.
+                  Зарегистрируйтесь на сайте и разместите объект через личный кабинет — это бесплатно.
+                  После проверки модератором объявление появится в каталоге.
                 </p>
               </div>
 
@@ -286,10 +268,10 @@ export default function ListPropertyBlock({ variant = "section" }: Props) {
               {/* Checklist */}
               <ul className="space-y-3">
                 {[
-                  "Бесплатная оценка объекта",
-                  "Фотосъёмка за наш счёт",
-                  "Договор без скрытых платежей",
-                  "Поиск арендатора за 14 дней",
+                  "Размещение объекта бесплатно",
+                  "Объявление можно отредактировать в любой момент",
+                  "Заявки от арендаторов приходят в личный кабинет",
+                  "Нужна помощь — подключим персонального менеджера",
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-sm text-foreground">
                     <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
@@ -299,82 +281,67 @@ export default function ListPropertyBlock({ variant = "section" }: Props) {
               </ul>
 
               <a
-                href="tel:+73952551234"
+                href={`tel:${CONTACTS.phoneTel}`}
                 className="inline-flex items-center gap-2 px-5 py-3 bg-foreground text-background text-sm font-semibold hover:opacity-90 transition-opacity"
               >
                 <PhoneIcon className="w-4 h-4" />
-                +7 (3952) 55-12-34
+                {CONTACTS.phone}
               </a>
             </div>
 
-            {/* Form */}
+            {/* Как разместить объект */}
             <div className="bg-card border border-border p-7">
-              {sent ? (
-                <div className="py-12 flex flex-col items-center gap-4 text-center">
-                  <CheckCircle2 className="w-14 h-14 text-primary" />
-                  <h3 className="font-display text-xl font-bold text-foreground">Заявка принята</h3>
-                  <p className="text-sm text-muted-foreground">Менеджер свяжется с вами в течение 30 минут.</p>
-                  <Button variant="outline" onClick={() => setSent(false)}>Отправить ещё одну</Button>
-                </div>
-              ) : (
-                <>
-                  <div className="mb-6">
-                    <div className="flex gap-2 mb-5">
-                      <button
-                        type="button"
-                        onClick={() => setMode("management")}
-                        className={`flex-1 py-2 text-xs font-semibold border transition-colors ${
-                          mode === "management"
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-background text-muted-foreground border-border hover:border-primary/40"
-                        }`}
-                      >
-                        <Building2 className="w-3.5 h-3.5 inline mr-1.5" />
-                        Управление
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setMode("rent")}
-                        className={`flex-1 py-2 text-xs font-semibold border transition-colors ${
-                          mode === "rent"
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-background text-muted-foreground border-border hover:border-primary/40"
-                        }`}
-                      >
-                        <KeyRound className="w-3.5 h-3.5 inline mr-1.5" />
-                        Каталог
-                      </button>
-                    </div>
-                  </div>
+              <h3 className="font-display text-lg font-bold text-foreground mb-1">
+                Как разместить объект
+              </h3>
+              <p className="text-xs text-muted-foreground mb-6">
+                Три шага — от регистрации до публикации в каталоге
+              </p>
 
-                  <form onSubmit={handleSubmit} className="space-y-3">
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input name="name" placeholder="Ваше имя" required className="h-11 pl-9" />
+              <ol className="space-y-5 mb-7">
+                {addSteps.map((s, i) => (
+                  <li key={s.title} className="flex gap-4">
+                    <span className="shrink-0 w-7 h-7 bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                      {i + 1}
+                    </span>
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">{s.title}</div>
+                      <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{s.body}</p>
                     </div>
-                    <div className="relative">
-                      <PhoneIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input name="phone" type="tel" placeholder="+7 (___) ___-__-__" required className="h-11 pl-9" />
-                    </div>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input name="email" type="email" placeholder="Email (необязательно)" className="h-11 pl-9" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <Input name="address" placeholder="Адрес объекта" className="h-11" />
-                      <Input name="area" placeholder="Площадь, м²" inputMode="numeric" className="h-11" />
-                    </div>
-                    <Textarea name="message" placeholder="Тип объекта, желаемая ставка, особенности…" rows={3} className="resize-none text-sm" />
-                    <Button type="submit" disabled={loading} className="w-full h-11 gap-2">
-                      <Send className="w-4 h-4" />
-                      {loading ? "Отправка…" : mode === "management" ? "Передать в управление" : "Разместить объект"}
-                    </Button>
-                    <p className="text-[10px] text-muted-foreground text-center">
-                      Нажимая кнопку, вы соглашаетесь с обработкой персональных данных
-                    </p>
-                  </form>
-                </>
+                  </li>
+                ))}
+              </ol>
+
+              {user ? (
+                <Link
+                  to="/account#properties"
+                  className="w-full h-11 flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+                >
+                  <Building2 className="w-4 h-4" />
+                  Добавить объект
+                </Link>
+              ) : (
+                <Link
+                  to="/auth?tab=register&redirect=/account%23properties"
+                  className="w-full h-11 flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Зарегистрироваться и добавить объект
+                </Link>
               )}
+
+              {!user && (
+                <p className="text-xs text-muted-foreground text-center mt-3">
+                  Уже есть аккаунт?{" "}
+                  <Link to="/auth?redirect=/account%23properties" className="text-primary hover:underline">
+                    Войти
+                  </Link>
+                </p>
+              )}
+
+              <p className="text-[10px] text-muted-foreground text-center mt-4">
+                Размещение объектов на сайте бесплатное
+              </p>
             </div>
           </div>
         </div>

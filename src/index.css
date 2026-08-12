@@ -382,3 +382,17 @@
 .mapboxgl-ctrl-group button { border-radius: 0 !important; }
 .mapboxgl-canvas { outline: none; }
 .mapbox-marker-strict { cursor: pointer; }
+
+/* === Global border removal (requested) ===
+   This rule neutralizes Tailwind utility borders site-wide so the
+   app shows no outlines. It's intentionally specific and uses
+   !important to override utility classes. Remove if finer control
+   is desired. */
+.border,
+[class*="border-"],
+.divide-border,
+[class*="divide-border"] {
+  border-width: 0 !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}

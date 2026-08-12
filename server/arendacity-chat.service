@@ -1,0 +1,26 @@
+[Unit]
+Description=AI chat backend for arendacity.com
+After=network.target
+
+[Service]
+Type=simple
+# Путь к клону репозитория на сервере.
+WorkingDirectory=/opt/arendacity
+ExecStart=/usr/bin/node server/chat-server.mjs
+Restart=always
+RestartSec=5
+
+# Секреты и настройки. Файл должен быть с правами 600.
+EnvironmentFile=/etc/arendacity-chat.env
+
+# Базовая изоляция.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

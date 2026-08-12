@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Send, Phone, Mail, CheckCircle } from "lucide-react";
+import { CONTACTS } from "@/config/company";
 
 interface Props {
   category: string;
@@ -38,7 +39,7 @@ export default function CategoryContactForm({ category }: Props) {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Телефон</p>
-                  <p className="font-medium text-foreground">+7 (3952) 00-00-00</p>
+                  <p className="font-medium text-foreground">{CONTACTS.phone}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -47,7 +48,7 @@ export default function CategoryContactForm({ category }: Props) {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium text-foreground">info@arendacity.ru</p>
+                  <p className="font-medium text-foreground">{CONTACTS.email}</p>
                 </div>
               </div>
             </div>
