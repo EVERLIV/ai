@@ -5,15 +5,13 @@ import { useToast } from "@/hooks/use-toast";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import { CONTACTS } from "@/config/company";
 
-/**
- * Бэкенд чата. По умолчанию тот же домен через Caddy (/api/chat),
- * для локальной разработки можно указать VITE_CHAT_API_URL.
- */
-const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL || "/api/chat";
+/** Edge-функция чата в облачном проекте Supabase. */
+const CHAT_API_URL =
+  import.meta.env.VITE_CHAT_API_URL ||
+  "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/ai-chat";
 
 type Status = "sent" | "read";
 type Msg = { role: "user" | "assistant"; content: string; time: string; status?: Status };
-type Stage = "ask_name" | "ask_phone" | "chat";
 
 const ts = () => new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
@@ -30,8 +28,6 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [wiggle, setWiggle] = useState(false);
-  const [stage, setStage] = useState<Stage>("ask_name");
-  const [userName, setUserName] = useState("");
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [thinking, setThinking] = useState(false); // три точки
   const [input, setInput] = useState("");
@@ -90,8 +86,8 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
           role: "assistant",
           time: ts(),
           content: propertyAddress
-            ? `Здравствуйте! Я Анастасия, консультант АРЕНДА СИТИ.\nПомогу с вопросами по объекту «${propertyAddress}».\n\nКак вас зовут?`
-            : "Здравствуйте! Я Анастасия, консультант АРЕНДА СИТИ.\nПомогу подобрать помещение в аренду — офис, склад или торговое.\n\nКак вас зовут?",
+            ? `Здравствуйте! Я Анастасия, консультант АРЕНДА СИТИ.\nПомогу с вопросами по объекту «${propertyAddress}».\n\nЧто подсказать?`
+            : "Здравствуйте! Я Анастасия, консультант АРЕНДА СИТИ.\nПомогу подобрать помещение в аренду — офис, склад или торговое.\n\nЧто ищете?",
         }]);
       }, 1400);
     }, delay);
@@ -128,33 +124,9 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
         }),
       });
 
-      if (!resp.ok) {
-        const { error } = await resp.json().catch(() => ({ error: "" }));
-        throw new Error(error || "bad response");
-      }
-      if (!resp.body) throw new Error("bad response");
-
-      // Формат NDJSON: одна строка — один JSON-объект {text} или {done}.
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = "";
-      for (;;) {
-        const { done: streamDone, value } = await reader.read();
-        if (streamDone) break;
-        buf += decoder.decode(value, { stream: true });
-        let idx: number;
-        while ((idx = buf.indexOf("\n")) !== -1) {
-          const line = buf.slice(0, idx).trim();
-          buf = buf.slice(idx + 1);
-          if (!line) continue;
-          try {
-            const parsed = JSON.parse(line) as { text?: string };
-            if (parsed.text) result += parsed.text;
-          } catch {
-            // Строка повреждена — пропускаем, поток продолжается.
-          }
-        }
-      }
+      const data = (await resp.json().catch(() => ({}))) as { reply?: string; error?: string };
+      if (!resp.ok) throw new Error(data.error || "bad response");
+      result = data.reply || "";
     } catch (e) {
       const msg = e instanceof Error && e.message && e.message !== "bad response" ? e.message : "Ошибка сети";
       toast({ title: msg, variant: "destructive" });
@@ -185,31 +157,12 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
 
     const userMsg: Msg = { role: "user", content: t, time: ts(), status: "sent" };
 
-    if (stage === "ask_name") {
-      setUserName(t);
-      setMsgs((p) => [...p, userMsg]);
-      setStage("ask_phone");
-      replyAfterPause(`Приятно познакомиться, ${t}! 😊\n\nОставите номер телефона? Так смогу перезвонить — это необязательно.`);
-      return;
-    }
-
-    if (stage === "ask_phone") {
-      setMsgs((p) => [...p, userMsg]);
-      setStage("chat");
-      const isSkip = /^(нет|пропустить|skip|не хочу|—|-|\.+)$/i.test(t);
-      replyAfterPause(isSkip
-        ? `Хорошо! Спрашивайте — отвечу на любой вопрос по недвижимости.`
-        : `Записала! Чем могу помочь, ${userName}?`
-      );
-      return;
-    }
-
     const next = [...msgs, userMsg];
     setMsgs(next);
-    await sendAI(next, userName);
+    await sendAI(next, "");
   };
 
-  const showStarters = stage === "chat" && !loading && !thinking && msgs.filter((m) => m.role === "user").length <= 1;
+  const showStarters = !loading && !thinking && msgs.filter((m) => m.role === "user").length <= 1;
 
   return (
     <>
@@ -389,9 +342,7 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
             onChange={(e) => setInput(e.target.value)}
             maxLength={1000}
             placeholder={
-              stage === "ask_name" ? "Введите ваше имя…"
-              : stage === "ask_phone" ? "Номер (или пропустить)…"
-              : "Сообщение…"
+"Спросите про объекты…"
             }
             disabled={loading || thinking}
             className="flex-1 px-4 py-2.5 bg-muted rounded-full text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none disabled:opacity-50 min-w-0"
