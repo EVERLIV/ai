@@ -1,14 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useConversation } from "@elevenlabs/react";
-import { Sparkles, X, Send, Phone, PhoneOff, Mic, MicOff } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useState, useRef, useEffect } from "react";
+import { Sparkles, X, Send, Phone, PhoneOff, Mic } from "lucide-react";
+import { useElevenLabsVoice } from "@/hooks/useElevenLabsVoice";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
 const quickChips = ["Офис до 100 м² в Иркутске", "Склад в Ангарске", "Торговое на Карла Маркса"];
-
-const ELEVENLABS_AGENT_ID = "agent_7301kmyt4jxxf8etgj0av5x43qb4"; // TODO: paste your ElevenLabs agent ID here
 
 export default function AIAssistant({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const [messages, setMessages] = useState<Msg[]>([
@@ -20,95 +16,19 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isVoiceMode, setIsVoiceMode] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [voiceTranscripts, setVoiceTranscripts] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
-
-  const conversation = useConversation({
-    onConnect: () => {
-      console.log("ElevenLabs agent connected");
-      setIsConnecting(false);
-      setVoiceTranscripts([]);
-    },
-    onDisconnect: () => {
-      console.log("ElevenLabs agent disconnected");
-      setIsVoiceMode(false);
-    },
-    onMessage: (message: any) => {
-      if (message.type === "agent_response") {
-        const text = message.agent_response_event?.agent_response;
-        if (text) {
-          setVoiceTranscripts((prev) => [...prev, `🤖 ${text}`]);
-        }
-      }
-      if (message.type === "user_transcript") {
-        const text = message.user_transcription_event?.user_transcript;
-        if (text) {
-          setVoiceTranscripts((prev) => [...prev, `👤 ${text}`]);
-        }
-      }
-    },
-    onError: (error) => {
-      console.error("ElevenLabs error:", error);
-      toast({
-        title: "Ошибка голосового агента",
-        description: "Не удалось подключиться. Попробуйте позже.",
-        variant: "destructive",
-      });
-      setIsConnecting(false);
-      setIsVoiceMode(false);
-    },
-  });
+  const {
+    isVoiceMode,
+    isConnecting,
+    isSpeaking,
+    transcripts,
+    startVoiceCall,
+    endVoiceCall,
+  } = useElevenLabsVoice();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading, voiceTranscripts]);
-
-  const startVoiceCall = useCallback(async () => {
-    if (!ELEVENLABS_AGENT_ID) {
-      toast({
-        title: "Агент не настроен",
-        description: "Укажите ELEVENLABS_AGENT_ID в настройках компонента.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsConnecting(true);
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token", {
-        body: { agent_id: ELEVENLABS_AGENT_ID },
-      });
-
-      if (error || !data?.token) {
-        throw new Error(error?.message || "Не удалось получить токен");
-      }
-
-      await conversation.startSession({
-        conversationToken: data.token,
-        connectionType: "webrtc",
-      });
-
-      setIsVoiceMode(true);
-    } catch (err: any) {
-      console.error("Voice call error:", err);
-      const msg =
-        err?.name === "NotAllowedError"
-          ? "Разрешите доступ к микрофону для голосового звонка."
-          : err?.message || "Не удалось начать звонок";
-      toast({ title: "Ошибка", description: msg, variant: "destructive" });
-      setIsConnecting(false);
-    }
-  }, [conversation, toast]);
-
-  const endVoiceCall = useCallback(async () => {
-    await conversation.endSession();
-    setIsVoiceMode(false);
-  }, [conversation]);
+  }, [messages, loading, transcripts, isVoiceMode]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
@@ -132,7 +52,6 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
 
   return (
     <>
-      {/* FAB */}
       {!open && (
         <button
           onClick={onToggle}
@@ -145,10 +64,8 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
         </button>
       )}
 
-      {/* Drawer */}
       {open && (
         <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[420px] bg-card shadow-float flex flex-col border-l border-border">
-          {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <div className="flex items-center gap-3">
               <div
@@ -164,7 +81,7 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${isVoiceMode ? "bg-primary animate-pulse" : "bg-green-500"} status-pulse`}
                   />
-                  {isVoiceMode ? (conversation.isSpeaking ? "говорит..." : "слушает...") : "онлайн"}
+                  {isVoiceMode ? (isSpeaking ? "говорит..." : "слушает...") : "онлайн"}
                 </div>
               </div>
             </div>
@@ -176,37 +93,34 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
             </button>
           </div>
 
-          {/* Voice Mode */}
           {isVoiceMode ? (
             <div className="flex-1 flex flex-col">
-              {/* Transcripts */}
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-                {voiceTranscripts.length === 0 && (
+                {transcripts.length === 0 && (
                   <div className="text-center text-muted-foreground text-sm py-8">
                     <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Mic className={`w-8 h-8 text-primary ${conversation.isSpeaking ? "" : "animate-pulse"}`} />
+                      <Mic className={`w-8 h-8 text-primary ${isSpeaking ? "" : "animate-pulse"}`} />
                     </div>
                     <p className="font-medium">Говорите — агент слушает</p>
-                    <p className="text-xs mt-1">Задайте вопрос о коммерческой недвижимости</p>
+                    <p className="text-xs mt-1">Каталог объектов подгружен в контекст</p>
                   </div>
                 )}
-                {voiceTranscripts.map((t, i) => (
+                {transcripts.map((t, i) => (
                   <div
                     key={i}
                     className={`text-sm px-4 py-2.5 rounded-xl ${
-                      t.startsWith("👤") ? "bg-primary/10 text-foreground ml-8" : "bg-muted text-foreground mr-8"
+                      t.role === "user" ? "bg-primary/10 text-foreground ml-8" : "bg-muted text-foreground mr-8"
                     }`}
                   >
-                    {t.slice(2)}
+                    {t.content}
                   </div>
                 ))}
                 <div ref={bottomRef} />
               </div>
 
-              {/* End Call Button */}
               <div className="px-5 py-4 border-t border-border flex justify-center">
                 <button
-                  onClick={endVoiceCall}
+                  onClick={() => void endVoiceCall()}
                   className="flex items-center gap-2 px-6 py-3 rounded-full bg-destructive text-destructive-foreground hover:opacity-90 transition-opacity font-medium"
                 >
                   <PhoneOff className="w-5 h-5" />
@@ -216,7 +130,6 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
             </div>
           ) : (
             <>
-              {/* Messages */}
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
                 {messages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -243,7 +156,6 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
                 <div ref={bottomRef} />
               </div>
 
-              {/* Quick chips */}
               {messages.length <= 1 && (
                 <div className="px-5 pb-2 flex flex-wrap gap-2">
                   {quickChips.map((c) => (
@@ -258,7 +170,6 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
                 </div>
               )}
 
-              {/* Input + Call Button */}
               <div className="px-4 py-3 border-t border-border space-y-2">
                 <form
                   onSubmit={(e) => {
@@ -282,9 +193,8 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
                   </button>
                 </form>
 
-                {/* Voice Call CTA */}
                 <button
-                  onClick={startVoiceCall}
+                  onClick={() => void startVoiceCall()}
                   disabled={isConnecting}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/30 text-primary hover:bg-primary/5 transition-colors text-sm font-medium disabled:opacity-50"
                 >

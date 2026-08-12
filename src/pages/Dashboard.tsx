@@ -19,6 +19,7 @@ import {
   Building2, Plus, LogOut, Users, Home, Edit, Trash2,
   BarChart3, Eye, MapPin, ArrowLeft, Upload, X, Star, ImageIcon, Search,
   ArrowUpDown, ArrowUp, ArrowDown, Settings2, Check, Megaphone, CheckSquare, Shield, UserCircle,
+  Inbox,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import AdPlacementsManager from "@/components/admin/AdPlacementsManager";
@@ -26,6 +27,7 @@ import AdPlacementsTab from "@/components/admin/AdPlacementsTab";
 import PropertyUnitsManager from "@/components/admin/PropertyUnitsManager";
 import ModerationQueue from "@/components/admin/ModerationQueue";
 import VerificationUsersTab from "@/components/admin/VerificationUsersTab";
+import CrmLeadsTab from "@/components/admin/CrmLeadsTab";
 import NewsAdminPanel from "@/components/NewsAdminPanel";
 import DictionariesTab from "@/components/admin/DictionariesTab";
 import { supabaseAdmin, SUPABASE_URL, SERVICE_ROLE_KEY } from "@/integrations/supabase/adminClient";
@@ -658,6 +660,7 @@ export default function Dashboard() {
           <TabsList className="h-auto w-full justify-start gap-1 bg-transparent p-0 flex-wrap">
             {[
               { value: "properties", label: "Объекты", icon: Home },
+              { value: "leads", label: "Заявки", icon: Inbox },
               { value: "moderation", label: "Модерация", icon: Shield },
               { value: "clients", label: "Собственники и риелторы", icon: UserCircle },
               { value: "ads", label: "Реклама", icon: Megaphone },
@@ -1451,6 +1454,10 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="leads" className="space-y-4">
+            <CrmLeadsTab />
           </TabsContent>
 
           <TabsContent value="moderation" className="space-y-4">

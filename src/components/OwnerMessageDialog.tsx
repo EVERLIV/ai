@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Send, CheckCircle, MessageSquareText, User, Phone, Mail } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { submitLead } from "@/lib/submitLead";
 
 /** Единый стиль CTA-кнопок в сайдбаре объекта */
 export const propertyCtaButtonClass =
@@ -50,7 +50,7 @@ export default function OwnerMessageDialog({
 
     setLoading(true);
     try {
-      await supabase.from("crm_leads").insert({
+      await submitLead({
         object_id: propertyId,
         name,
         phone,

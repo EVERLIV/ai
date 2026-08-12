@@ -23,3 +23,12 @@ verify_jwt = false
 
 [functions.ai-chat]
 verify_jwt = false
+
+[functions.notify-lead]
+verify_jwt = false
+
+[functions.telegram-bot]
+verify_jwt = false
+
+[functions.elevenlabs-conversation-token]
+verify_jwt = false

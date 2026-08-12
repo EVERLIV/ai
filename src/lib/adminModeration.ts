@@ -58,12 +58,26 @@ export async function adminUpdateProperty(id: string, payload: Record<string, un
 export async function adminInsertCrmLead(payload: Record<string, unknown>) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/crm_leads`, {
     method: "POST",
-    headers: { ...adminHeaders, Prefer: "return=minimal" },
+    headers: { ...adminHeaders, Prefer: "return=representation" },
     body: JSON.stringify(payload),
   });
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
     throw new Error(parseAdminError(data, res));
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  const notifyUrl =
+    (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_NOTIFY_LEAD_URL) ||
+    "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/notify-lead";
+  try {
+    await fetch(notifyUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(row || payload),
+    });
+  } catch {
+    // best-effort
   }
 }
 

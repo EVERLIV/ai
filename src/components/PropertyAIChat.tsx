@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
-import { Send, Loader2, X, PhoneCall, Mic, Check, CheckCheck } from "lucide-react";
+import { Send, Loader2, X, PhoneCall, PhoneOff, Mic, Check, CheckCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useElevenLabsVoice } from "@/hooks/useElevenLabsVoice";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import { CONTACTS } from "@/config/company";
 
@@ -26,6 +27,14 @@ interface Props { propertyId?: string; propertyAddress?: string; }
 
 export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
   const { toast } = useToast();
+  const {
+    isVoiceMode,
+    isConnecting,
+    isSpeaking,
+    transcripts,
+    startVoiceCall,
+    endVoiceCall,
+  } = useElevenLabsVoice();
   const [open, setOpen] = useState(false);
   const [wiggle, setWiggle] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -70,7 +79,7 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
   // Scroll to bottom
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [msgs, thinking]);
+  }, [msgs, thinking, transcripts, isVoiceMode]);
 
   // Greeting on first open
   useEffect(() => {
@@ -219,7 +228,12 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-foreground leading-tight truncate">Анастасия</p>
             <p className="text-xs text-muted-foreground leading-tight mt-0.5">
-              {thinking ? (
+              {isVoiceMode ? (
+                <span className="inline-flex items-center gap-1.5 text-emerald-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {isSpeaking ? "говорит…" : "слушает…"}
+                </span>
+              ) : thinking ? (
                 <span className="inline-flex items-center gap-1.5 text-emerald-600">
                   <span className="inline-flex gap-[3px]">
                     {[0, 0.2, 0.4].map((d) => (
@@ -235,14 +249,76 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
             </p>
           </div>
 
-          {/* Call */}
-          <a href={`tel:${CONTACTS.phoneTel}`}
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white text-xs font-medium px-3 h-8 transition-colors">
-            <PhoneCall className="w-3.5 h-3.5" />
-            Позвонить
-          </a>
+          {/* Call → ElevenLabs agent */}
+          {isVoiceMode ? (
+            <button
+              type="button"
+              onClick={() => void endVoiceCall()}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-destructive hover:bg-destructive/90 text-destructive-foreground text-xs font-medium px-3 h-8 transition-colors"
+            >
+              <PhoneOff className="w-3.5 h-3.5" />
+              Завершить
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={isConnecting}
+              onClick={() => void startVoiceCall({ propertyId, propertyAddress })}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white text-xs font-medium px-3 h-8 transition-colors disabled:opacity-60"
+            >
+              <PhoneCall className="w-3.5 h-3.5" />
+              {isConnecting ? "Соединение…" : "Позвонить"}
+            </button>
+          )}
         </div>
 
+        {/* VOICE MODE */}
+        {isVoiceMode ? (
+          <div className="flex-1 flex flex-col min-h-0">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-2"
+              style={{ background: "hsl(var(--muted)/0.15)" }}>
+              {transcripts.length === 0 && (
+                <div className="text-center text-muted-foreground text-sm py-10 px-4">
+                  <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                    <Mic className={`w-7 h-7 text-emerald-600 ${isSpeaking ? "" : "animate-pulse"}`} />
+                  </div>
+                  <p className="font-medium text-foreground">Говорите — консультант слушает</p>
+                  <p className="text-xs mt-1">Агент видит актуальный каталог объектов АрендаСити</p>
+                </div>
+              )}
+              {transcripts.map((t, i) => (
+                <div key={i} className={`flex ${t.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[78%] px-3.5 py-2 rounded-2xl text-[13px] leading-relaxed ${
+                      t.role === "user"
+                        ? "bg-primary/[0.13] text-foreground rounded-tr-sm"
+                        : "bg-card text-foreground shadow-sm border border-border/30 rounded-tl-sm"
+                    }`}
+                  >
+                    {t.content}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div
+              className="shrink-0 bg-card border-t border-border/60 flex flex-col items-center gap-2 px-3 py-3"
+              style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+            >
+              <button
+                type="button"
+                onClick={() => void endVoiceCall()}
+                className="inline-flex items-center gap-2 rounded-full bg-destructive text-destructive-foreground px-5 py-2.5 text-sm font-medium"
+              >
+                <PhoneOff className="w-4 h-4" />
+                Завершить звонок
+              </button>
+              <a href={`tel:${CONTACTS.phoneTel}`} className="text-[11px] text-muted-foreground hover:text-foreground">
+                Или на номер {CONTACTS.phone}
+              </a>
+            </div>
+          </div>
+        ) : (
+        <>
         {/* MESSAGES */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 px-3 py-4"
           style={{ background: "hsl(var(--muted)/0.15)" }}>
@@ -321,9 +397,13 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
         <form onSubmit={(e) => { e.preventDefault(); send(input); }}
           className="shrink-0 bg-card border-t border-border/60 flex items-center gap-2 px-3"
           style={{ paddingTop: "8px", paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>
-          <button type="button"
-            onClick={() => toast({ title: "Голосовой ввод", description: "Скоро появится через FAL AI" })}
-            className="shrink-0 w-9 h-9 flex items-center justify-center text-muted-foreground/60 hover:text-primary transition-colors">
+          <button
+            type="button"
+            onClick={() => void startVoiceCall({ propertyId, propertyAddress })}
+            disabled={isConnecting}
+            className="shrink-0 w-9 h-9 flex items-center justify-center text-muted-foreground/60 hover:text-emerald-600 transition-colors disabled:opacity-50"
+            title="Позвонить ИИ-консультанту"
+          >
             <Mic className="w-5 h-5" />
           </button>
           {/* Honeypot — скрыт от людей, виден ботам-автозаполнителям */}
@@ -352,6 +432,8 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </form>
+        </>
+        )}
       </div>
 
       <style>{`

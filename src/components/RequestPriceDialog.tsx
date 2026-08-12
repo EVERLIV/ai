@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Send, CheckCircle, MessageSquareText, Tag, User, Phone, Mail, Calendar } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { isSaleDeal } from "@/lib/propertyDeal";
+import { submitLead } from "@/lib/submitLead";
 
 interface Props {
   propertyId?: string;
@@ -57,7 +57,7 @@ export default function RequestPriceDialog({ propertyId, propertyAddress, basePr
 
     setLoading(true);
     try {
-      await supabase.from("crm_leads").insert({
+      await submitLead({
         object_id: propertyId ?? null,
         name,
         phone,

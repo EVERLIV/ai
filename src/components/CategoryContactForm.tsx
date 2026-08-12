@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Phone, Mail, CheckCircle } from "lucide-react";
+import { Send, Phone, Mail, CheckCircle, Loader2 } from "lucide-react";
 import { CONTACTS } from "@/config/company";
+import { submitLead } from "@/lib/submitLead";
 
 interface Props {
   category: string;
@@ -12,12 +13,39 @@ interface Props {
 
 export default function CategoryContactForm({ category }: Props) {
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSent(true);
-    toast({ title: "Заявка отправлена!", description: "Мы свяжемся с вами в ближайшее время." });
+    const fd = new FormData(e.currentTarget);
+    const name = String(fd.get("name") || "").trim();
+    const phone = String(fd.get("phone") || "").trim();
+    const email = String(fd.get("email") || "").trim();
+    const message = String(fd.get("message") || "").trim();
+
+    if (name.length < 2 || phone.length < 6) {
+      toast({ title: "Заполните имя и телефон" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await submitLead({
+        name,
+        phone,
+        email: email || null,
+        message: message || null,
+        source: "category_contact",
+        business_category: category,
+      });
+      setSent(true);
+      toast({ title: "Заявка отправлена!", description: "Мы свяжемся с вами в ближайшее время." });
+    } catch {
+      toast({ title: "Не удалось отправить", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -29,7 +57,7 @@ export default function CategoryContactForm({ category }: Props) {
               Подберём {category} под ваши задачи
             </h2>
             <p className="text-muted-foreground leading-relaxed">
-              Оставьте заявку — наш менеджер свяжется с вами в течение 15 минут в рабочее время. 
+              Оставьте заявку — наш менеджер свяжется с вами в течение 15 минут в рабочее время.
               Мы подберём оптимальный вариант с учётом ваших требований к расположению, площади и бюджету.
             </p>
             <div className="space-y-4">
@@ -65,12 +93,16 @@ export default function CategoryContactForm({ category }: Props) {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <h3 className="text-lg font-semibold text-foreground mb-2">Оставить заявку</h3>
-                <Input placeholder="Ваше имя" required />
-                <Input type="tel" placeholder="+7 (___) ___-__-__" required />
-                <Input type="email" placeholder="Email" />
-                <Textarea placeholder={`Требования к ${category.toLowerCase()}: площадь, район, бюджет...`} rows={3} />
-                <Button type="submit" className="w-full gap-2" size="lg">
-                  <Send className="w-4 h-4" />
+                <Input name="name" placeholder="Ваше имя" required />
+                <Input name="phone" type="tel" placeholder="+7 (___) ___-__-__" required />
+                <Input name="email" type="email" placeholder="Email" />
+                <Textarea
+                  name="message"
+                  placeholder={`Требования к ${category.toLowerCase()}: площадь, район, бюджет...`}
+                  rows={3}
+                />
+                <Button type="submit" className="w-full gap-2" size="lg" disabled={loading}>
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   Отправить заявку
                 </Button>
                 <p className="text-xs text-muted-foreground text-center">

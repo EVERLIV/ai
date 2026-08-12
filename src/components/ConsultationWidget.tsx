@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { Phone, X, Send, Star, Clock3, BadgeCheck, CheckCircle2 } from "lucide-react";
+import { Phone, X, Send, Star, Clock3, BadgeCheck, CheckCircle2, Loader2 } from "lucide-react";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
-
 import { CONTACTS } from "@/config/company";
+import { submitLead } from "@/lib/submitLead";
 
 const PHONE = CONTACTS.phoneTel;
 const PHONE_DISPLAY = CONTACTS.phone;
@@ -11,8 +11,10 @@ export default function ConsultationWidget() {
   const [open, setOpen] = useState(false);
   const [wiggle, setWiggle] = useState(false);
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   // Wiggle animation: triggers after 4s, then every 12s
   useEffect(() => {
@@ -30,10 +32,25 @@ export default function ConsultationWidget() {
     return () => clearTimeout(t);
   }, [wiggle]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !phone.trim()) return;
-    setSent(true);
+    setError(null);
+    setLoading(true);
+    try {
+      await submitLead({
+        name: name.trim(),
+        phone: phone.trim(),
+        source: "consultation_widget",
+        business_category: "Обратный звонок",
+        message: "Заявка из виджета консультации на главной",
+      });
+      setSent(true);
+    } catch {
+      setError("Не удалось отправить. Позвоните нам.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -148,11 +165,13 @@ export default function ConsultationWidget() {
                 />
                 <button
                   type="submit"
-                  className="w-full h-9 flex items-center justify-center gap-1.5 bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity"
+                  disabled={loading}
+                  className="w-full h-9 flex items-center justify-center gap-1.5 bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
-                  <Send className="w-3 h-3" />
+                  {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
                   Перезвоните мне
                 </button>
+                {error && <p className="text-[11px] text-destructive">{error}</p>}
               </form>
             </>
           )}

@@ -7,7 +7,7 @@ import {
   Building2, Warehouse, Megaphone, Settings, MessageCircle, AlertCircle,
 } from "lucide-react";
 import { COMPANY, CONTACTS } from "@/config/company";
-import { supabase } from "@/integrations/supabase/client";
+import { submitLead } from "@/lib/submitLead";
 
 /** Направления работы — без вымышленных контактов отделов. */
 const services = [
@@ -71,7 +71,7 @@ export default function ContactsPage() {
     setError(null);
     setLoading(true);
     try {
-      const { error: insertError } = await supabase.from("crm_leads").insert({
+      await submitLead({
         name,
         phone,
         email: form.email.trim() || null,
@@ -79,7 +79,6 @@ export default function ContactsPage() {
         source: "contacts_page",
         business_category: form.subject,
       });
-      if (insertError) throw insertError;
       setSent(true);
     } catch {
       setError("Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам.");
