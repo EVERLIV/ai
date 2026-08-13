@@ -4,9 +4,32 @@ export type Coords = { lat: number; lng: number };
 
 export function parseCoordInput(value: string): number | null {
   const normalized = value.trim().replace(",", ".");
-  if (!normalized) return null;
+  if (!normalized || normalized === "-" || normalized === "." || normalized === "-.") return null;
   const n = Number(normalized);
   return Number.isFinite(n) ? n : null;
+}
+
+export function formatCoord(n: number | null | undefined): string {
+  if (typeof n !== "number" || Number.isNaN(n)) return "";
+  return String(n);
+}
+
+/** «52.2869, 104.2807» или «104.2807 52.2869» — пара для вставки в одно поле. */
+export function parseCoordPair(value: string): { lat: number; lng: number } | null {
+  const parts = value
+    .trim()
+    .replace(/;/g, ",")
+    .split(/[,\s]+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (parts.length < 2) return null;
+  const a = parseCoordInput(parts[0]);
+  const b = parseCoordInput(parts[1]);
+  if (a === null || b === null) return null;
+  if (Math.abs(a) > 90 && Math.abs(b) <= 90 && Math.abs(a) <= 180) {
+    return isValidCoordPair(b, a) ? { lat: b, lng: a } : null;
+  }
+  return isValidCoordPair(a, b) ? { lat: a, lng: b } : null;
 }
 
 export function isValidCoordPair(lat: number | null, lng: number | null): lat is number {

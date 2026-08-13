@@ -15,6 +15,16 @@ export const supabaseAdmin = {
       if (!res.ok) return { data: null as any, error: data };
       return { data, error: null };
     },
+    async insert(table: string, row: Record<string, any>) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+        method: "POST",
+        headers: { ...authHeaders, Prefer: "return=representation" },
+        body: JSON.stringify(row),
+      });
+      const data = await res.json();
+      if (!res.ok) return { data: null as any, error: data };
+      return { data: Array.isArray(data) ? data[0] : data, error: null };
+    },
     async upsert(table: string, row: Record<string, any>) {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
         method: "POST",

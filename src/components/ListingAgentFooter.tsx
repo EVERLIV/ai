@@ -23,7 +23,7 @@ export default function ListingAgentFooter({
 }: Props) {
   const agent = getListingAgentDisplay(extras) ?? {
     primaryLabel: DEFAULT_AGENT.name,
-    secondaryLabel: `Риелтор · «${DEFAULT_AGENT.agencyName}»`,
+    secondaryLabel: `Менеджер · «${DEFAULT_AGENT.agencyName}»`,
     avatarUrl: DEFAULT_AGENT.avatar,
     isVerified: DEFAULT_AGENT.isVerified,
     isRealtor: false,

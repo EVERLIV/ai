@@ -76,13 +76,12 @@ export default function Auth() {
       if (error) {
         const isTimeout = error.message.includes("timed out") || (error as { status?: number }).status === 504;
         toast({
-          title: isTimeout ? "Письмо отправляется" : "Ошибка регистрации",
+          title: isTimeout ? "Почта не отправилась" : "Ошибка регистрации",
           description: isTimeout
-            ? "Аккаунт создан. Если письмо не пришло в течение 5 минут — попробуйте войти или восстановить пароль."
+            ? "Auth на VPS завис на SMTP (504). На сервере проверьте порт 587/465 до smtp.timeweb.ru и логи контейнера auth."
             : error.message,
-          variant: isTimeout ? "default" : "destructive",
+          variant: "destructive",
         });
-        if (isTimeout) setRegistered(true);
         setLoading(false);
         return;
       }

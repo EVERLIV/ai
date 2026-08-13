@@ -3,8 +3,25 @@ import ReactMarkdown from "react-markdown";
 import { Send, Loader2, X, PhoneCall, PhoneOff, Mic, Check, CheckCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useElevenLabsVoice } from "@/hooks/useElevenLabsVoice";
+import { submitLead } from "@/lib/submitLead";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import { CONTACTS } from "@/config/company";
+
+const VISITOR_KEY = "ac_chat_visitor";
+
+type Visitor = { name: string; phone: string };
+
+function loadVisitor(): Visitor | null {
+  try {
+    const raw = sessionStorage.getItem(VISITOR_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as Visitor;
+    if (v?.name?.trim().length >= 2) return { name: v.name.trim(), phone: v.phone?.trim() || "" };
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
 
 /** Edge-функция чата в облачном проекте Supabase. */
 const CHAT_API_URL =
@@ -37,12 +54,18 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
   } = useElevenLabsVoice();
   const [open, setOpen] = useState(false);
   const [wiggle, setWiggle] = useState(false);
+  const [visitor, setVisitor] = useState<Visitor | null>(() => loadVisitor());
+  const [introName, setIntroName] = useState("");
+  const [introPhone, setIntroPhone] = useState("");
+  const [introError, setIntroError] = useState("");
+  const [introSaving, setIntroSaving] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [thinking, setThinking] = useState(false); // три точки
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
   const honeypotRef = useRef<HTMLInputElement>(null);
   const initialized = useRef(false);
   /** Время открытия чата и последней отправки — простая защита от ботов. */
@@ -73,34 +96,34 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
   useEffect(() => {
     if (!open) return;
     if (!openedAt.current) openedAt.current = Date.now();
-    setTimeout(() => inputRef.current?.focus(), 350);
-  }, [open]);
+    setTimeout(() => (visitor ? inputRef : nameRef).current?.focus(), 350);
+  }, [open, visitor]);
 
   // Scroll to bottom
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [msgs, thinking, transcripts, isVoiceMode]);
 
-  // Greeting on first open
+  // Greeting after intro
   useEffect(() => {
-    if (!open || initialized.current) return;
+    if (!open || !visitor || initialized.current) return;
     initialized.current = true;
-    // Пауза → показываем точки → пауза → показываем сообщение
-    const delay = 900;
+    const delay = 500;
     setTimeout(() => {
       setThinking(true);
       setTimeout(() => {
         setThinking(false);
+        const hello = visitor.name ? `${visitor.name}, здравствуйте!` : "Здравствуйте!";
         setMsgs([{
           role: "assistant",
           time: ts(),
           content: propertyAddress
-            ? `Здравствуйте! Я Анастасия, консультант АРЕНДА СИТИ.\nПомогу с вопросами по объекту «${propertyAddress}».\n\nЧто подсказать?`
-            : "Здравствуйте! Я Анастасия, консультант АРЕНДА СИТИ.\nПомогу подобрать помещение в аренду — офис, склад или торговое.\n\nЧто ищете?",
+            ? `${hello} Я Анастасия, консультант АРЕНДА СИТИ.\nПомогу с вопросами по объекту «${propertyAddress}».\n\nЧто подсказать?`
+            : `${hello} Я Анастасия, консультант АРЕНДА СИТИ.\nПомогу подобрать помещение в аренду — офис, склад или торговое.\n\nЧто ищете?`,
         }]);
-      }, 1400);
+      }, 1100);
     }, delay);
-  }, [open]); // eslint-disable-line
+  }, [open, visitor, propertyAddress]);
 
   // Показать ответ ассистента с паузой (имитация набора)
   const replyAfterPause = useCallback((text: string, pauseMs = 1200) => {
@@ -168,7 +191,39 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
 
     const next = [...msgs, userMsg];
     setMsgs(next);
-    await sendAI(next, "");
+    await sendAI(next, visitor?.name || "");
+  };
+
+  const startChat = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = introName.trim();
+    const phone = introPhone.trim();
+    if (name.length < 2) {
+      setIntroError("Укажите имя");
+      return;
+    }
+    setIntroError("");
+    setIntroSaving(true);
+    const next: Visitor = { name, phone };
+    try {
+      sessionStorage.setItem(VISITOR_KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+    try {
+      await submitLead({
+        name,
+        phone,
+        source: "ai-chat",
+        object_id: propertyId || null,
+        message: propertyAddress ? `Чат по объекту: ${propertyAddress}` : "ИИ-чат",
+      });
+    } catch (err) {
+      console.warn("chat intro lead", err);
+    }
+    setVisitor(next);
+    setIntroSaving(false);
+    openedAt.current = Date.now();
   };
 
   const showStarters = !loading && !thinking && msgs.filter((m) => m.role === "user").length <= 1;
@@ -250,7 +305,7 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
           </div>
 
           {/* Call → ElevenLabs agent */}
-          {isVoiceMode ? (
+          {visitor && (isVoiceMode ? (
             <button
               type="button"
               onClick={() => void endVoiceCall()}
@@ -269,11 +324,53 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
               <PhoneCall className="w-3.5 h-3.5" />
               {isConnecting ? "Соединение…" : "Позвонить"}
             </button>
-          )}
+          ))}
         </div>
 
-        {/* VOICE MODE */}
-        {isVoiceMode ? (
+        {!visitor ? (
+          <form
+            onSubmit={startChat}
+            className="flex-1 flex flex-col min-h-0 px-5 py-6"
+            style={{ background: "hsl(var(--muted)/0.15)" }}
+          >
+            <p className="text-sm font-semibold text-foreground">Представьтесь</p>
+            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+              Чтобы консультант мог обратиться к вам по имени. Телефон — по желанию.
+            </p>
+            <label className="mt-5 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+              Имя
+            </label>
+            <input
+              ref={nameRef}
+              value={introName}
+              onChange={(e) => { setIntroName(e.target.value); setIntroError(""); }}
+              maxLength={80}
+              autoComplete="name"
+              placeholder="Как к вам обращаться"
+              className="mt-1.5 h-11 px-3.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <label className="mt-3 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+              Телефон <span className="normal-case tracking-normal font-normal">(необязательно)</span>
+            </label>
+            <input
+              value={introPhone}
+              onChange={(e) => setIntroPhone(e.target.value)}
+              maxLength={24}
+              type="tel"
+              autoComplete="tel"
+              placeholder="+7 …"
+              className="mt-1.5 h-11 px-3.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            {introError && <p className="mt-2 text-xs text-destructive">{introError}</p>}
+            <button
+              type="submit"
+              disabled={introSaving || introName.trim().length < 2}
+              className="mt-5 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-40"
+            >
+              {introSaving ? "Открываем…" : "Начать чат"}
+            </button>
+          </form>
+        ) : isVoiceMode ? (
           <div className="flex-1 flex flex-col min-h-0">
             <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-2"
               style={{ background: "hsl(var(--muted)/0.15)" }}>

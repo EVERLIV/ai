@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabasePublic } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type DbProperty = Tables<"properties">;
@@ -8,7 +8,7 @@ export function useProperties() {
   return useQuery({
     queryKey: ["properties"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await supabasePublic
         .from("properties")
         .select("*")
         .eq("is_active", true)
@@ -28,7 +28,7 @@ export function useActivePropertiesCount() {
     queryKey: ["properties-count"],
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { count, error } = await supabase
+      const { count, error } = await supabasePublic
         .from("properties")
         .select("id", { count: "exact", head: true })
         .eq("is_active", true);
@@ -43,7 +43,7 @@ export function useProperty(id: string | undefined) {
     queryKey: ["property", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await supabasePublic
         .from("properties")
         .select("*")
         .eq("id", id!)

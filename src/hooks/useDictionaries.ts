@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabasePublic } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/adminClient";
 
 export interface DictionaryItem {
   id: string;
@@ -28,11 +29,19 @@ export const DICTIONARY_CATEGORIES: { key: string; title: string; hasParent: boo
   { key: "landlord_type", title: "Тип арендодателя", hasParent: false },
 ];
 
+function adminError(error: unknown, fallback: string) {
+  const msg =
+    error && typeof error === "object" && "message" in error
+      ? String((error as { message?: string }).message)
+      : "";
+  return new Error(msg || fallback);
+}
+
 export function useAllDictionaryValues() {
   const query = useQuery({
     queryKey: ["dictionaries"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await supabasePublic
         .from("dictionaries")
         .select("*")
         .eq("is_active", true)
@@ -51,43 +60,50 @@ export function useAllDictionaryValues() {
   return { all, byCategory, isLoading: query.isLoading };
 }
 
+/** Админка «Справочники» — через service_role, user JWT Kong отклоняет. */
 export function useDictionaries(category?: string) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: ["dictionaries", category],
     queryFn: async () => {
-      let q = supabase
-        .from("dictionaries")
-        .select("*")
-        .order("sort_order", { ascending: true });
-      if (category) q = q.eq("category", category);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data as DictionaryItem[];
+      const params = new URLSearchParams({
+        select: "*",
+        order: "sort_order.asc",
+      });
+      if (category) params.set("category", `eq.${category}`);
+      const { data, error } = await supabaseAdmin.db.select("dictionaries", params.toString());
+      if (error) throw adminError(error, "Не удалось загрузить справочник");
+      return (data || []) as DictionaryItem[];
     },
   });
 
   const addMutation = useMutation({
-    mutationFn: async (item: { category: string; value: string; label?: string; parent?: string; sort_order: number }) => {
-      const { error } = await supabase.from("dictionaries").insert(item);
-      if (error) throw error;
+    mutationFn: async (item: {
+      category: string;
+      value: string;
+      label?: string;
+      parent?: string;
+      sort_order: number;
+    }) => {
+      const { error } = await supabaseAdmin.db.insert("dictionaries", item);
+      if (error) throw adminError(error, "Не удалось добавить значение");
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dictionaries"] }),
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<DictionaryItem> & { id: string }) => {
-      const { error } = await supabase.from("dictionaries").update(updates).eq("id", id);
-      if (error) throw error;
+      const { error } = await supabaseAdmin.db.update("dictionaries", `id=eq.${id}`, updates);
+      if (error) throw adminError(error, "Не удалось сохранить значение");
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dictionaries"] }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("dictionaries").delete().eq("id", id);
-      if (error) throw error;
+      const { error } = await supabaseAdmin.db.delete("dictionaries", `id=eq.${id}`);
+      if (error) throw adminError(error, "Не удалось удалить значение");
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dictionaries"] }),
   });

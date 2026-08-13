@@ -46,6 +46,12 @@ import {
 } from "@/lib/propertyTypes";
 import { geocodeAddress, reverseGeocode } from "@/lib/yandexGeocoder";
 import {
+  formatCoord,
+  isValidCoordPair,
+  parseCoordInput,
+  parseCoordPair,
+} from "@/lib/propertyGeo";
+import {
   type PropertySidebarExtras,
   getSidebarVisibility,
   sanitizeSidebarExtras,
@@ -188,6 +194,8 @@ export default function Dashboard() {
   const [addressQuery, setAddressQuery] = useState("");
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
+  const [latText, setLatText] = useState("");
+  const [lngText, setLngText] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sorting
@@ -258,11 +266,11 @@ export default function Dashboard() {
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ["dashboard-properties"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("properties")
-        .select("*, manager:profiles!properties_manager_id_fkey(id, full_name), client:profiles!properties_client_id_fkey(id, full_name)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
+      const { data, error } = await supabaseAdmin.db.select(
+        "properties",
+        "select=*,manager:profiles!properties_manager_id_fkey(id,full_name),client:profiles!properties_client_id_fkey(id,full_name)&order=created_at.desc",
+      );
+      if (error) throw new Error(error.message || "Не удалось загрузить объекты");
       return data;
     },
   });
@@ -270,8 +278,8 @@ export default function Dashboard() {
   const { data: users = [] } = useQuery({
     queryKey: ["dashboard-users"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id, full_name, email");
-      if (error) throw error;
+      const { data, error } = await supabaseAdmin.db.select("profiles", "select=id,full_name,email");
+      if (error) throw new Error(error.message || "Не удалось загрузить профили");
       return data;
     },
   });
@@ -327,8 +335,8 @@ export default function Dashboard() {
         price: formData.price,
         price_per_m2: formData.area > 0 ? Math.round(formData.price / formData.area) : 0,
         address: formData.address,
-        lat: formData.lat,
-        lng: formData.lng,
+        lat: parseCoordInput(latText) ?? formData.lat,
+        lng: parseCoordInput(lngText) ?? formData.lng,
         district: formData.district,
         floor: isLand ? LAND_BUILDING_FIELD_DEFAULTS.floor : formData.floor,
         total_floors: isLand ? LAND_BUILDING_FIELD_DEFAULTS.total_floors : formData.total_floors,
@@ -355,17 +363,16 @@ export default function Dashboard() {
         payload.photos = urls;
         payload.cover_photo = cover;
         payload.photos_count = urls.length;
-        const { error } = await supabase.from("properties").update(payload).eq("id", editId);
-        if (error) throw error;
+        const { error } = await supabaseAdmin.db.update("properties", `id=eq.${editId}`, payload);
+        if (error) throw new Error(error.message || "Не удалось обновить объект");
       } else {
-        const { data, error } = await supabase.from("properties").insert(payload).select("id").single();
-        if (error) throw error;
-        // Upload photos for new property
+        const { data, error } = await supabaseAdmin.db.insert("properties", payload);
+        if (error) throw new Error(error.message || "Не удалось добавить объект");
         if (photoFiles.length > 0) {
           const { urls, cover } = await uploadPhotos(data.id);
-          await supabase.from("properties").update({
+          await supabaseAdmin.db.update("properties", `id=eq.${data.id}`, {
             photos: urls, cover_photo: cover, photos_count: urls.length,
-          }).eq("id", data.id);
+          });
         }
       }
       setUploading(false);
@@ -384,8 +391,8 @@ export default function Dashboard() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("properties").delete().eq("id", id);
-      if (error) throw error;
+      const { error } = await supabaseAdmin.db.delete("properties", `id=eq.${id}`);
+      if (error) throw new Error(error.message || "Не удалось удалить объект");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dashboard-properties"] });
@@ -396,6 +403,8 @@ export default function Dashboard() {
   const resetForm = () => {
     setEditId(null);
     setForm(emptyForm);
+    setLatText("");
+    setLngText("");
     setPhotoFiles([]);
     setPhotoPreviews([]);
     setExistingPhotos([]);
@@ -427,6 +436,8 @@ export default function Dashboard() {
         } : {}),
       },
     });
+    setLatText(formatCoord(typeof prop.lat === "number" ? prop.lat : null));
+    setLngText(formatCoord(typeof prop.lng === "number" ? prop.lng : null));
     const existing = prop.photos || [];
     setExistingPhotos(existing);
     setPhotoFiles([]);
@@ -462,6 +473,8 @@ export default function Dashboard() {
         lng: result.lng,
         address: result.address || prev.address,
       }));
+      setLatText(formatCoord(result.lat));
+      setLngText(formatCoord(result.lng));
       toast({ title: "Координаты определены" });
     } catch (err) {
       toast({ title: "Ошибка геокодирования", description: err instanceof Error ? err.message : undefined, variant: "destructive" });
@@ -470,14 +483,33 @@ export default function Dashboard() {
     }
   };
 
+  const applyCoordTexts = (nextLat: string, nextLng: string) => {
+    const pair = parseCoordPair(`${nextLat} ${nextLng}`) || parseCoordPair(nextLat) || parseCoordPair(nextLng);
+    if (pair) {
+      setLatText(formatCoord(pair.lat));
+      setLngText(formatCoord(pair.lng));
+      setForm((prev) => ({ ...prev, lat: pair.lat, lng: pair.lng }));
+      return;
+    }
+    setLatText(nextLat);
+    setLngText(nextLng);
+    setForm((prev) => ({
+      ...prev,
+      lat: parseCoordInput(nextLat),
+      lng: parseCoordInput(nextLng),
+    }));
+  };
+
   const handleReverseGeocodeFromCoords = async () => {
-    if (!isValidCoordPair(form.lat, form.lng)) {
+    const lat = parseCoordInput(latText) ?? form.lat;
+    const lng = parseCoordInput(lngText) ?? form.lng;
+    if (!isValidCoordPair(lat, lng)) {
       toast({ title: "Укажите корректные координаты", variant: "destructive" });
       return;
     }
     setGeocoding(true);
     try {
-      const result = await reverseGeocode(form.lat, form.lng);
+      const result = await reverseGeocode(lat, lng);
       if (!result?.address) {
         toast({ title: "Адрес не найден", description: "Координаты сохранены, адрес можно указать вручную", variant: "destructive" });
         return;
@@ -800,6 +832,60 @@ export default function Dashboard() {
                           </>
                         )}
                       </div>
+                      <div className="rounded-md border border-border/60 bg-background/40 p-2.5 space-y-2">
+                        <div className="text-[11px] font-semibold text-muted-foreground">Координаты (Яндекс)</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs mb-1 block">Широта</Label>
+                            <Input
+                              className="h-8 text-xs"
+                              type="text"
+                              inputMode="decimal"
+                              autoComplete="off"
+                              placeholder="52.2869"
+                              value={latText}
+                              onChange={(e) => applyCoordTexts(e.target.value, lngText)}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs mb-1 block">Долгота</Label>
+                            <Input
+                              className="h-8 text-xs"
+                              type="text"
+                              inputMode="decimal"
+                              autoComplete="off"
+                              placeholder="104.2807"
+                              value={lngText}
+                              onChange={(e) => applyCoordTexts(latText, e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            disabled={geocoding}
+                            onClick={handleGeocodeFromAddress}
+                          >
+                            {geocoding ? "Определение..." : "Координаты по адресу"}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            disabled={geocoding}
+                            onClick={handleReverseGeocodeFromCoords}
+                          >
+                            Адрес по координатам
+                          </Button>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground leading-snug">
+                          Можно вписать широту и долготу вручную или вставить пару «52.28, 104.28». Кнопки дергают Яндекс.Гео.
+                        </p>
+                      </div>
                     </fieldset>
 
                     {/* Section: Характеристики */}
@@ -834,58 +920,6 @@ export default function Dashboard() {
                             </div>
                           </div>
 
-                          <div className="rounded-md border border-border/60 bg-background/40 p-2.5 space-y-2">
-                            <div className="text-[11px] font-semibold text-muted-foreground">Координаты участка</div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <Label className="text-xs mb-1 block">Широта</Label>
-                                <Input
-                                  className="h-8 text-xs"
-                                  type="text"
-                                  inputMode="decimal"
-                                  placeholder="52.2869"
-                                  value={form.lat ?? ""}
-                                  onChange={(e) => updateField("lat", parseCoordInput(e.target.value))}
-                                />
-                              </div>
-                              <div>
-                                <Label className="text-xs mb-1 block">Долгота</Label>
-                                <Input
-                                  className="h-8 text-xs"
-                                  type="text"
-                                  inputMode="decimal"
-                                  placeholder="104.2807"
-                                  value={form.lng ?? ""}
-                                  onChange={(e) => updateField("lng", parseCoordInput(e.target.value))}
-                                />
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-7 text-xs"
-                                disabled={geocoding}
-                                onClick={handleGeocodeFromAddress}
-                              >
-                                {geocoding ? "Определение..." : "Координаты по адресу"}
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-7 text-xs"
-                                disabled={geocoding}
-                                onClick={handleReverseGeocodeFromCoords}
-                              >
-                                Адрес по координатам
-                              </Button>
-                            </div>
-                            <p className="text-[10px] text-muted-foreground leading-snug">
-                              Адрес вводится в блоке «Локация». Здесь можно указать точку на карте вручную или определить её через Яндекс.
-                            </p>
-                          </div>
                         </div>
                       ) : (
                         <>

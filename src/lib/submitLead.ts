@@ -22,7 +22,11 @@ const NOTIFY_URL =
 export async function submitLead(input: LeadInput): Promise<{ id: string | null }> {
   const name = input.name.trim();
   const phone = input.phone.trim();
-  if (name.length < 2 || phone.length < 6) {
+  if (name.length < 2) {
+    throw new Error("Укажите имя");
+  }
+  const phoneOptional = input.source === "ai-chat";
+  if (!phoneOptional && phone.length < 6) {
     throw new Error("Укажите имя и телефон");
   }
 
