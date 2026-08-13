@@ -40,12 +40,8 @@ export default defineConfig(() => ({
       workbox: {
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        navigateFallbackDenylist: [/^https:\/\/api\.arendacity\.com\//],
         runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/api\.arendacity\.com\/.*/i,
-            handler: "NetworkFirst",
-            options: { cacheName: "api-cache", networkTimeoutSeconds: 5 },
-          },
           {
             urlPattern: /^https:\/\/images\.unsplash\.com\/.*/i,
             handler: "CacheFirst",
