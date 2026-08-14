@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { ConversationProvider } from "@elevenlabs/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
@@ -7,7 +7,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
-import Gate from "./pages/Gate.tsx";
 
 // Ленивая загрузка — не попадает в основной бандл
 const TasksPage          = lazy(() => import("./pages/TasksPage"));
@@ -37,21 +36,6 @@ import CookieBanner from "@/components/CookieBanner";
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [unlocked, setUnlocked] = useState(() => {
-    // v2: новый пароль — сбрасываем старые сессии
-    if (localStorage.getItem("site_unlock_v") !== "3") {
-      localStorage.removeItem("site_unlocked");
-    }
-    return localStorage.getItem("site_unlocked") === "true";
-  });
-
-  if (!unlocked) {
-    return <Gate onUnlock={() => {
-      localStorage.setItem("site_unlock_v", "3");
-      setUnlocked(true);
-    }} />;
-  }
-
   return (
     <ConversationProvider>
       <QueryClientProvider client={queryClient}>
