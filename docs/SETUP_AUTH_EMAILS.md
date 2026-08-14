@@ -61,7 +61,7 @@ grep -E 'GOTRUE_SMTP_|GOTRUE_MAILER_' /opt/supabase/.env
 
 | Файл | Шаблон в Dashboard / GoTrue | Тема письма |
 |------|-----------------------------|-------------|
-| `confirm.html` | Confirm signup | Подтвердите аккаунт — АрендаСити |
+| `confirm.html` | Confirm signup | Подтвердите email — АрендаСити |
 | `recovery.html` | Reset password | Сброс пароля — АрендаСити |
 | `magic_link.html` | Magic Link | Вход в кабинет — АрендаСити |
 | `invite.html` | Invite user | Приглашение в АрендаСити |
@@ -69,6 +69,10 @@ grep -E 'GOTRUE_SMTP_|GOTRUE_MAILER_' /opt/supabase/.env
 | `reauthentication.html` | Reauthentication | Код подтверждения — АрендаСити |
 
 Переменные GoTrue: `{{ .ConfirmationURL }}`, `{{ .Email }}`, `{{ .NewEmail }}`, `{{ .Token }}`.
+
+В письме подтверждения есть и кнопка, и **код** `{{ .Token }}`.
+
+Письма по объекту (не Auth) — HTML в `public/email/property-submitted.html` и `property-approved.html`, отправка через cloud-функцию `notify-property-email`.
 
 ## Куда вставить
 
@@ -83,7 +87,7 @@ SMTP: Settings → Auth → Custom SMTP (см. `supabase/SMTP_TIMEWEB_SETUP.md`)
 Темы:
 
 ```
-GOTRUE_MAILER_SUBJECTS_CONFIRMATION=Подтвердите аккаунт — АрендаСити
+GOTRUE_MAILER_SUBJECTS_CONFIRMATION=Подтвердите email — АрендаСити
 GOTRUE_MAILER_SUBJECTS_RECOVERY=Сброс пароля — АрендаСити
 GOTRUE_MAILER_SUBJECTS_MAGIC_LINK=Вход в кабинет — АрендаСити
 GOTRUE_MAILER_SUBJECTS_INVITE=Приглашение в АрендаСити
@@ -91,22 +95,67 @@ GOTRUE_MAILER_SUBJECTS_EMAIL_CHANGE=Подтвердите новый email — 
 GOTRUE_MAILER_SUBJECTS_REAUTHENTICATION=Код подтверждения — АрендаСити
 ```
 
-Шаблоны — URL на HTML (или путь, если GoTrue отдаёт файлы). Проще положить файлы на сайт и указать:
+Шаблоны — URL на HTML. Official docker-compose **не прокидывает** `GOTRUE_MAILER_TEMPLATES_*` из `.env` сам. Нужен `docker-compose.override.yml` (скрипт `scripts/setup-gottrue-templates.sh` его создаёт) и переменные `MAILER_TEMPLATES_*` / `MAILER_SUBJECTS_*`.
+
+Проще положить файлы на сайт и указать:
 
 ```
-GOTRUE_MAILER_TEMPLATES_CONFIRMATION=https://arendacity.com/email/confirm.html
-GOTRUE_MAILER_TEMPLATES_RECOVERY=https://arendacity.com/email/recovery.html
-GOTRUE_MAILER_TEMPLATES_MAGIC_LINK=https://arendacity.com/email/magic_link.html
-GOTRUE_MAILER_TEMPLATES_INVITE=https://arendacity.com/email/invite.html
-GOTRUE_MAILER_TEMPLATES_EMAIL_CHANGE=https://arendacity.com/email/email_change.html
-GOTRUE_MAILER_TEMPLATES_REAUTHENTICATION=https://arendacity.com/email/reauthentication.html
+MAILER_TEMPLATES_CONFIRMATION=https://arendacity.com/email/confirm.html
+MAILER_TEMPLATES_RECOVERY=https://arendacity.com/email/recovery.html
+MAILER_TEMPLATES_MAGIC_LINK=https://arendacity.com/email/magic_link.html
+MAILER_TEMPLATES_INVITE=https://arendacity.com/email/invite.html
+MAILER_TEMPLATES_EMAIL_CHANGE=https://arendacity.com/email/email_change.html
+MAILER_TEMPLATES_REAUTHENTICATION=https://arendacity.com/email/reauthentication.html
 ```
 
-После правок `.env` перезапустить контейнер `auth` / `gotrue`.
+Если SMTP уже настроен, достаточно шаблонов:
+
+```bash
+bash scripts/setup-gottrue-templates.sh
+```
+
+После этого: `docker compose up -d --force-recreate auth` и проверка `docker exec supabase-auth env | grep MAILER_TEMPLATES`.
+
+## Письма по объекту (модерация)
+
+Их шлёт cloud Edge Function `notify-property-email` (не GoTrue):
+
+- заявка принята → «Объект отправлен на проверку — АрендаСити»
+- модератор одобрил → «Поздравляем: объект одобрен — АрендаСити»
+
+Секреты cloud-проекта (пароль ящика не в git):
+
+```
+SMTP_HOST=smtp.timeweb.ru
+SMTP_PORT=587
+SMTP_USER=noreply@arendacity.com
+SMTP_PASS=...
+SMTP_FROM=noreply@arendacity.com
+SMTP_FROM_NAME=АрендаСити
+```
+
+Деплой:
+
+```bash
+npx supabase functions deploy notify-property-email \
+  --project-ref xbdwapunrlnxcuxjhaca \
+  --no-verify-jwt
+
+npx supabase secrets set \
+  SMTP_HOST=smtp.timeweb.ru \
+  SMTP_PORT=587 \
+  SMTP_USER=noreply@arendacity.com \
+  SMTP_FROM=noreply@arendacity.com \
+  SMTP_FROM_NAME=АрендаСити \
+  SMTP_PASS='пароль ящика Timeweb' \
+  --project-ref xbdwapunrlnxcuxjhaca
+```
+
+Новые HTML из `public/email/` нужно выложить на сайт (тот же URL, который читает GoTrue). После деплоя фронта письмо подтверждения будет с кнопкой, кодом и контактами.
 
 ## Проверка
 
-1. Зарегистрировать тестовый ящик → письмо «Подтвердите аккаунт».
+1. Зарегистрировать тестовый ящик → письмо «Подтвердите email — АрендаСити».
 2. Клик → `/auth`, вход работает.
 3. «Сброс пароля» → письмо → новый пароль.
 4. В суперадмине у пользователя `confirmed = да`.

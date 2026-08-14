@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { describeAuthError } from "@/lib/authErrors";
 import { Eye, EyeOff, ArrowRight, ArrowLeft, Building2, ShieldCheck, Heart, FileText } from "lucide-react";
 import heroImg from "@/assets/hero-commercial.jpg";
 
@@ -25,6 +26,8 @@ export default function Auth() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const [loginHint, setLoginHint] = useState<{ title: string; description: string; kind: string } | null>(null);
+  const [resendBusy, setResendBusy] = useState(false);
   const navigate = useNavigate();
   const { search } = useLocation();
   const redirectTo = new URLSearchParams(search).get("redirect") || "/";
@@ -45,13 +48,32 @@ export default function Auth() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setLoginHint(null);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      toast({ title: "Ошибка входа", description: "Неверный email или пароль", variant: "destructive" });
+      const hint = describeAuthError(error);
+      setLoginHint(hint);
+      toast({ title: hint.title, description: hint.description, variant: "destructive" });
     } else {
       navigate(redirectTo);
     }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email.trim()) return;
+    setResendBusy(true);
+    const { error } = await supabase.auth.resend({ type: "signup", email: email.trim() });
+    setResendBusy(false);
+    if (error) {
+      const hint = describeAuthError(error);
+      toast({ title: hint.title, description: hint.description, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: "Письмо отправлено",
+      description: `Проверьте ${email.trim()} и папку «Спам».`,
+    });
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -159,7 +181,7 @@ export default function Auth() {
           {([["login", "Вход"], ["register", "Регистрация"]] as const).map(([key, label]) => (
             <button
               key={key}
-              onClick={() => setTab(key)}
+              onClick={() => { setTab(key); setLoginHint(null); }}
               className={`text-sm font-semibold transition-colors outline-none ${
                 tab === key ? "text-primary" : "text-muted-foreground hover:text-foreground"
               }`}
@@ -196,6 +218,22 @@ export default function Auth() {
                 className="w-full h-11 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
                 {loading ? "Вход..." : <><ArrowRight className="w-4 h-4" /> Войти</>}
               </button>
+              {loginHint && (
+                <div className="rounded-sm border border-destructive/30 bg-destructive/5 px-3 py-2.5">
+                  <p className="text-sm font-semibold text-destructive">{loginHint.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{loginHint.description}</p>
+                  {loginHint.kind === "unconfirmed" && (
+                    <button
+                      type="button"
+                      onClick={handleResendConfirmation}
+                      disabled={resendBusy}
+                      className="mt-2 text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                    >
+                      {resendBusy ? "Отправляем…" : "Отправить письмо ещё раз"}
+                    </button>
+                  )}
+                </div>
+              )}
               <div className="text-center">
                 <Link to="/reset-password" className="text-xs text-muted-foreground hover:text-primary transition-colors">
                   Забыли пароль?

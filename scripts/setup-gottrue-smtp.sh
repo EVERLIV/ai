@@ -59,12 +59,20 @@ upsert GOTRUE_SMTP_SENDER_NAME "$SMTP_SENDER"
 upsert GOTRUE_MAILER_AUTOCONFIRM false
 upsert GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED true
 
-upsert GOTRUE_MAILER_SUBJECTS_CONFIRMATION "Подтвердите аккаунт — АрендаСити"
+upsert GOTRUE_MAILER_SUBJECTS_CONFIRMATION "Подтвердите email — АрендаСити"
 upsert GOTRUE_MAILER_SUBJECTS_RECOVERY "Сброс пароля — АрендаСити"
 upsert GOTRUE_MAILER_SUBJECTS_MAGIC_LINK "Вход в кабинет — АрендаСити"
 upsert GOTRUE_MAILER_SUBJECTS_INVITE "Приглашение в АрендаСити"
 upsert GOTRUE_MAILER_SUBJECTS_EMAIL_CHANGE "Подтвердите новый email — АрендаСити"
 upsert GOTRUE_MAILER_SUBJECTS_REAUTHENTICATION "Код подтверждения — АрендаСити"
+
+# Имена, которые подхватывает docker-compose official (не GOTRUE_* напрямую)
+upsert MAILER_SUBJECTS_CONFIRMATION "Подтвердите email — АрендаСити"
+upsert MAILER_SUBJECTS_RECOVERY "Сброс пароля — АрендаСити"
+upsert MAILER_SUBJECTS_MAGIC_LINK "Вход в кабинет — АрендаСити"
+upsert MAILER_SUBJECTS_INVITE "Приглашение в АрендаСити"
+upsert MAILER_SUBJECTS_EMAIL_CHANGE "Подтвердите новый email — АрендаСити"
+upsert MAILER_SUBJECTS_REAUTHENTICATION "Код подтверждения — АрендаСити"
 
 upsert GOTRUE_MAILER_TEMPLATES_CONFIRMATION "${SITE_URL}/email/confirm.html"
 upsert GOTRUE_MAILER_TEMPLATES_RECOVERY "${SITE_URL}/email/recovery.html"
@@ -72,6 +80,13 @@ upsert GOTRUE_MAILER_TEMPLATES_MAGIC_LINK "${SITE_URL}/email/magic_link.html"
 upsert GOTRUE_MAILER_TEMPLATES_INVITE "${SITE_URL}/email/invite.html"
 upsert GOTRUE_MAILER_TEMPLATES_EMAIL_CHANGE "${SITE_URL}/email/email_change.html"
 upsert GOTRUE_MAILER_TEMPLATES_REAUTHENTICATION "${SITE_URL}/email/reauthentication.html"
+
+upsert MAILER_TEMPLATES_CONFIRMATION "${SITE_URL}/email/confirm.html"
+upsert MAILER_TEMPLATES_RECOVERY "${SITE_URL}/email/recovery.html"
+upsert MAILER_TEMPLATES_MAGIC_LINK "${SITE_URL}/email/magic_link.html"
+upsert MAILER_TEMPLATES_INVITE "${SITE_URL}/email/invite.html"
+upsert MAILER_TEMPLATES_EMAIL_CHANGE "${SITE_URL}/email/email_change.html"
+upsert MAILER_TEMPLATES_REAUTHENTICATION "${SITE_URL}/email/reauthentication.html"
 
 echo "Записано в $ENV_FILE (пароль не печатаем)."
 echo "SMTP: $SMTP_USER @ $SMTP_HOST:$SMTP_PORT"

@@ -19,15 +19,21 @@ import {
   REQUEST_TYPE_SHORT,
   type RequestType,
 } from "@/lib/propertyModeration";
+import { notifyPropertyEmail } from "@/lib/notifyPropertyEmail";
 
 type QueueItem = {
   id: string;
+  public_id?: string | null;
   type: string;
   deal_type: string;
   area: number;
   price: number;
   address: string;
   district: string;
+  floor?: string | number | null;
+  deposit?: string | null;
+  contract_term?: string | null;
+  extras?: Record<string, unknown> | null;
   cover_photo: string | null;
   description: string | null;
   request_type: RequestType | null;
@@ -102,6 +108,29 @@ export default function ModerationQueue() {
           message: `Заявка на управление объектом: ${item.address}\n${item.description || ""}`,
           source: "management_request",
           business_category: item.address,
+        });
+      }
+
+      if (submitter?.email) {
+        await notifyPropertyEmail({
+          event: "approved",
+          to: submitter.email,
+          name: submitter.full_name,
+          property: {
+            id: item.id,
+            public_id: item.public_id,
+            address: item.address,
+            district: item.district,
+            type: formatPropertyTypesLabel(getPropertyTypes(item)),
+            deal_type: item.deal_type,
+            area: item.area,
+            price: item.price,
+            floor: item.floor,
+            deposit: item.deposit,
+            contract_term: item.contract_term,
+            request_type: item.request_type,
+            description: item.description,
+          },
         });
       }
     },

@@ -20,6 +20,7 @@ import { isLandProperty, LAND_USE_OPTIONS, LAND_TYPE_LABEL } from "@/lib/propert
 import { togglePropertyType } from "@/lib/propertyTypes";
 import type { MyProperty } from "@/hooks/useMyProperties";
 import { propertyToFormState, buildPropertyPayload, type PropertyFormState } from "@/lib/propertyFormMapper";
+import { notifyPropertyEmail } from "@/lib/notifyPropertyEmail";
 import {
   PROPERTY_TYPES,
   PROPERTY_CLASSES,
@@ -241,6 +242,9 @@ export default function PropertySubmissionWizard({ open, onOpenChange, editPrope
         resubmit: !!editId && wasRejected,
       });
 
+      let propertyId = editId;
+      let publicId = editProperty?.public_id || null;
+
       if (editId) {
         const { urls, cover } = await uploadPhotos(editId);
         const { error } = await supabase.from("properties").update({
@@ -251,8 +255,11 @@ export default function PropertySubmissionWizard({ open, onOpenChange, editPrope
         }).eq("id", editId);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase.from("properties").insert(payload).select("id").single();
+        const { data, error } = await supabase.from("properties").insert(payload).select("id, public_id").single();
         if (error) throw error;
+
+        propertyId = data.id;
+        publicId = data.public_id;
 
         if (photoFiles.length > 0 || existingPhotos.length > 0) {
           const { urls, cover } = await uploadPhotos(data.id);
@@ -262,6 +269,30 @@ export default function PropertySubmissionWizard({ open, onOpenChange, editPrope
             photos_count: urls.length,
           }).eq("id", data.id);
         }
+      }
+
+      const shouldNotify = !editId || wasRejected;
+      if (shouldNotify && user.email && propertyId) {
+        await notifyPropertyEmail({
+          event: "submitted",
+          to: user.email,
+          name: typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : "",
+          property: {
+            id: propertyId,
+            public_id: publicId,
+            address: form.address.trim(),
+            district: form.district,
+            type: form.types.join(", "),
+            deal_type: form.deal_type,
+            area: form.area,
+            price: form.price,
+            floor: isLand ? null : form.floor,
+            deposit: isSale ? null : form.deposit,
+            contract_term: isSale ? null : form.contract_term,
+            request_type: form.request_type,
+            description: form.description,
+          },
+        });
       }
 
       setUploading(false);
