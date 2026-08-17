@@ -24,7 +24,10 @@ import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL } from "@
 import { getPropertyTypes, getPrimaryPropertyType, formatPropertyTypesLabel } from "@/lib/propertyTypes";
 import { isSaleDeal } from "@/lib/propertyDeal";
 import { motion } from "framer-motion";
-import PropertyOGMeta from "@/components/PropertyOGMeta";
+import SeoHead from "@/components/SeoHead";
+import PropertyJsonLd from "@/components/PropertyJsonLd";
+import { buildPropertySeoDescription, buildPropertySeoTitle } from "@/lib/seo/propertySeoTitle";
+import { absoluteUrl } from "@/config/site";
 import { CONTACTS } from "@/config/company";
 import PropertyDescription from "@/components/PropertyDescription";
 import { submitLead } from "@/lib/submitLead";
@@ -147,17 +150,31 @@ export default function PropertyDetail() {
         ...rentTerms,
       ];
 
+  const seoTitle = buildPropertySeoTitle(property);
+  const seoDescription = buildPropertySeoDescription(property);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
 
-      <PropertyOGMeta
-        title={property.address}
-        description={property.description || ""}
+      <SeoHead
+        title={seoTitle}
+        description={seoDescription}
         image={photos[0] || property.cover_photo}
+        url={absoluteUrl(`/property/${property.id}`)}
+      />
+      <PropertyJsonLd
+        id={property.id}
+        deal_type={property.deal_type}
+        type={property.type}
+        extras={property.extras as Record<string, unknown> | null}
+        address={property.address}
+        district={property.district}
         price={Number(property.price) || null}
         area={property.area}
-        type={formatPropertyTypesLabel(propertyTypes)}
+        description={property.description}
+        coverPhoto={property.cover_photo}
+        photos={photos}
       />
 
       {/* ── Попап формы заявки ── */}
@@ -324,6 +341,8 @@ export default function PropertyDetail() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         className="container mx-auto px-4 lg:px-8 py-6 lg:py-10 pt-16 lg:pt-20 pb-28 lg:pb-10 flex-1">
+
+        <h1 className="sr-only">{seoTitle}</h1>
 
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 min-w-0">

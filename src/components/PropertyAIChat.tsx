@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import { Send, Loader2, X, PhoneCall, PhoneOff, Mic, Check, CheckCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useElevenLabsVoice } from "@/hooks/useElevenLabsVoice";
+import { useElevenLabsVoice, stripVoiceStageDirections } from "@/hooks/useElevenLabsVoice";
 import { submitLead } from "@/lib/submitLead";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import { CONTACTS } from "@/config/company";
@@ -133,7 +133,7 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
       setMsgs((p) => {
         // Mark all user msgs as read
         const updated = p.map((m) => m.role === "user" ? { ...m, status: "read" as Status } : m);
-        return [...updated, { role: "assistant", content: text, time: ts() }];
+        return [...updated, { role: "assistant", content: stripVoiceStageDirections(text), time: ts() }];
       });
     }, pauseMs);
   }, []);
@@ -169,7 +169,7 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
         const updated = p.map((m) => (m.role === "user" ? { ...m, status: "read" as Status } : m));
         // Пустой ответ — сбой сети или сервиса. Молчание выглядит так,
         // будто консультант проигнорировал вопрос: отвечаем и даём телефон.
-        const content = result || FALLBACK_REPLY;
+        const content = stripVoiceStageDirections(result) || FALLBACK_REPLY;
         return [...updated, { role: "assistant", content, time: ts() }];
       });
     }

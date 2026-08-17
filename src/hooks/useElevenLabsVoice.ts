@@ -13,6 +13,17 @@ const ELEVENLABS_TOKEN_URL =
 
 type VoiceMsg = { role: "user" | "assistant"; content: string };
 
+/** ElevenLabs v3 пишет в транскрипт ремарки вроде [enthusiastic] */
+export function stripVoiceStageDirections(text: string): string {
+  return text
+    .replace(/\[[^\]]{1,48}\]/g, (tag) => (/\d/.test(tag) ? tag : ""))
+    .replace(/\((?:laughs|laughing|sighs|sighing|whispers|pauses|clears throat)\)/gi, "")
+    .replace(/https?:\/\/\S+/gi, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 type StartOpts = {
   propertyId?: string;
   propertyAddress?: string;
@@ -69,18 +80,24 @@ export function useElevenLabsVoice() {
       };
 
       if (m.type === "agent_response") {
-        const text = m.agent_response_event?.agent_response || m.message;
+        const text = stripVoiceStageDirections(
+          m.agent_response_event?.agent_response || m.message || "",
+        );
         if (text) setTranscripts((prev) => [...prev, { role: "assistant", content: text }]);
         return;
       }
       if (m.type === "user_transcript") {
-        const text = m.user_transcription_event?.user_transcript || m.message;
+        const text = stripVoiceStageDirections(
+          m.user_transcription_event?.user_transcript || m.message || "",
+        );
         if (text) setTranscripts((prev) => [...prev, { role: "user", content: text }]);
         return;
       }
       if (typeof m.message === "string" && m.message.trim()) {
+        const text = stripVoiceStageDirections(m.message);
+        if (!text) return;
         const role = m.source === "user" || m.role === "user" ? "user" : "assistant";
-        setTranscripts((prev) => [...prev, { role, content: m.message! }]);
+        setTranscripts((prev) => [...prev, { role, content: text }]);
       }
     },
     onError: (error) => {
@@ -156,10 +173,10 @@ export function useElevenLabsVoice() {
         } as Parameters<typeof conversation.startSession>[0]);
 
         const catalogBlock = [
-          "Актуальный каталог АрендаСити (только эти объекты — не выдумывай):",
+          "Актуальный каталог АрендаСити. Называй только эти объекты, не выдумывай.",
           data.catalog?.summary || "",
           data.catalog?.text || "",
-          "Если нужно уточнить подбор — вызови tool search_properties.",
+          "Голосом: адрес, площадь, цена. Ссылки не читай. На просмотр переведи на Марию через transfer_to_number.",
           opts.propertyAddress
             ? `Клиент смотрит объект: ${opts.propertyAddress}${opts.propertyId ? ` (id ${opts.propertyId})` : ""}.`
             : "",

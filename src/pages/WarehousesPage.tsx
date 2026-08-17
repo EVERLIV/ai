@@ -8,6 +8,8 @@ import PropertyAIChat from "@/components/PropertyAIChat";
 import heroImg from "@/assets/hero-warehouses.jpg";
 import { Warehouse, Truck, Shield, Ruler, CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import SeoHead from "@/components/SeoHead";
+import { absoluteUrl } from "@/config/site";
 
 const benefits = [
   { icon: Truck, title: "Логистика", desc: "Объекты рядом с федеральными трассами и ж/д узлами" },
@@ -28,6 +30,11 @@ const features = [
 export default function WarehousesPage() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
+      <SeoHead
+        title="Аренда и продажа складов в Иркутске"
+        description="Складские и производственные помещения от 100 м². Иркутск и Иркутская область — АрендаСити."
+        url={absoluteUrl("/warehouses")}
+      />
       <SiteHeader />
 
       {/* Hero */}

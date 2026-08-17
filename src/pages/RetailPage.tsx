@@ -8,6 +8,8 @@ import PropertyAIChat from "@/components/PropertyAIChat";
 import heroImg from "@/assets/hero-retail.jpg";
 import { Store, MapPin, TrendingUp, Users, CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import SeoHead from "@/components/SeoHead";
+import { absoluteUrl } from "@/config/site";
 
 const benefits = [
   { icon: MapPin, title: "Высокий трафик", desc: "Помещения на первых линиях с потоком от 5 000 человек в день" },
@@ -28,6 +30,11 @@ const features = [
 export default function RetailPage() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
+      <SeoHead
+        title="Аренда и продажа торговых площадей в Иркутске"
+        description="Торговые помещения, street retail и помещения в ТЦ. Иркутск и область — подбор от АрендаСити."
+        url={absoluteUrl("/retail")}
+      />
       <SiteHeader />
 
       {/* Hero */}

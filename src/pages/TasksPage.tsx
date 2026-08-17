@@ -14,6 +14,7 @@ import {
   type Task, type TaskStatus,
 } from "@/hooks/useTasks";
 import { useStaffMembers } from "@/hooks/useTasks";
+import SeoHead from "@/components/SeoHead";
 
 const COLUMNS: { id: TaskStatus; label: string; dot: string; headerColor: string }[] = [
   { id: "todo",        label: "К выполнению", dot: "bg-gray-400",  headerColor: "text-gray-600" },
@@ -87,6 +88,7 @@ export default function TasksPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
+      <SeoHead title="Задачи" description="Внутренняя доска задач АрендаСити." noindex />
       <TasksSidebar />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden pt-12 md:pt-0">

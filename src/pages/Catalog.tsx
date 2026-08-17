@@ -18,6 +18,8 @@ import ListingAgentFooter from "@/components/ListingAgentFooter";
 import PKKMapModal from "@/components/PKKMapModal";
 import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL, LAND_USE_OPTIONS } from "@/lib/propertyLand";
 import { getPropertyTypes, propertyMatchesTypes } from "@/lib/propertyTypes";
+import SeoHead from "@/components/SeoHead";
+import { absoluteUrl } from "@/config/site";
 
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
 const DEALS = ["Все", "Аренда", "Продажа"];
@@ -588,6 +590,11 @@ export default function Catalog() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
+      <SeoHead
+        title="Каталог коммерческой недвижимости"
+        description="Офисы, торговые площади, склады и земля в Иркутске и области. Фильтры по цене, площади и району."
+        url={absoluteUrl("/catalog")}
+      />
       <SiteHeader />
 
       <div className="pt-[100px] flex-1 flex flex-col">

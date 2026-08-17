@@ -8,6 +8,8 @@ import PropertyAIChat from "@/components/PropertyAIChat";
 import heroImg from "@/assets/hero-offices.jpg";
 import { Building2, MapPin, Shield, Clock, Users, CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import SeoHead from "@/components/SeoHead";
+import { absoluteUrl } from "@/config/site";
 
 const benefits = [
   { icon: MapPin, title: "Центральные районы", desc: "Офисы в деловых центрах Кировского, Октябрьского и Свердловского районов" },
@@ -28,6 +30,11 @@ const features = [
 export default function OfficesPage() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
+      <SeoHead
+        title="Аренда и продажа офисов в Иркутске"
+        description="Офисы класса A, B+, B и C в Иркутске и Иркутской области. Площади от 15 до 5 000 м². Подбор от АрендаСити."
+        url={absoluteUrl("/offices")}
+      />
       <SiteHeader />
 
       {/* Hero */}

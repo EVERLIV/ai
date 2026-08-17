@@ -8,6 +8,8 @@ import NewsSidebar from "@/components/NewsSidebar";
 import PropertyAIChat from "@/components/PropertyAIChat";
 import { useNewsPost, useNewsPosts, type NewsPost } from "@/hooks/useNews";
 import { supabase } from "@/integrations/supabase/client";
+import SeoHead from "@/components/SeoHead";
+import { absoluteUrl } from "@/config/site";
 
 const CATEGORY_COLORS: Record<string, string> = {
   "Рынок": "bg-blue-100 text-blue-700",
@@ -122,6 +124,15 @@ export default function NewsPostPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      {post && (
+        <SeoHead
+          title={post.title}
+          description={post.excerpt || post.title}
+          image={post.cover_url}
+          url={absoluteUrl(`/news/${post.slug}`)}
+          type="article"
+        />
+      )}
       <SiteHeader />
 
       <div className="sticky top-[56px] md:top-[98px] z-30 mt-[56px] md:mt-[98px] bg-card/90 backdrop-blur-xl shadow-[0_1px_0_0_hsl(var(--border)/0.5)]">

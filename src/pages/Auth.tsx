@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { describeAuthError } from "@/lib/authErrors";
 import { Eye, EyeOff, ArrowRight, ArrowLeft, Building2, ShieldCheck, Heart, FileText } from "lucide-react";
 import heroImg from "@/assets/hero-commercial.jpg";
+import SeoHead from "@/components/SeoHead";
 
 const BENEFITS = [
   { icon: Heart, text: "Сохраняйте понравившиеся объекты в избранное" },
@@ -158,6 +159,7 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex">
+      <SeoHead title="Вход" description="Вход и регистрация в личном кабинете АрендаСити." noindex />
       {/* Left: form */}
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-12 max-w-lg mx-auto w-full">
         {/* Logo + back */}

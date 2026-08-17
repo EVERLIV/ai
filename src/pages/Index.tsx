@@ -13,12 +13,17 @@ import NewsSection from "@/components/NewsSection";
 import PopularPropertiesSlider from "@/components/PopularPropertiesSlider";
 import ConsultationWidget from "@/components/ConsultationWidget";
 import SiteFooter from "@/components/SiteFooter";
+import SeoHead from "@/components/SeoHead";
+import OrganizationJsonLd from "@/components/OrganizationJsonLd";
+import { SITE } from "@/config/site";
 
 export default function Index() {
   const [filters, setFilters] = useState<PropertyFilters>(defaultFilters);
 
   return (
     <div className="min-h-screen bg-background">
+      <SeoHead title={SITE.title} description={SITE.description} />
+      <OrganizationJsonLd />
       <SiteHeader />
       <HeroSection />
       <NewsSection />

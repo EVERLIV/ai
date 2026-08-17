@@ -26,14 +26,42 @@ function sheetRange() {
 }
 
 function parseSa(): SaJson {
-  const raw = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON") || "";
-  const parsed = JSON.parse(raw) as SaJson;
-  if (!parsed.client_email || !parsed.private_key) {
+  let raw = (Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON") || "").trim().replace(/^\uFEFF/, "");
+  if (!raw) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON пуст");
+
+  const tryParse = (s: string): unknown => JSON.parse(s);
+
+  let parsed: unknown;
+  try {
+    parsed = tryParse(raw);
+  } catch {
+    // Секрет из dotenv часто приходит как {\"type\":...} или в лишних кавычках
+    const unwrapped =
+      (raw.startsWith("'") && raw.endsWith("'")) || (raw.startsWith('"') && raw.endsWith('"'))
+        ? raw.slice(1, -1)
+        : raw;
+    const unescaped = unwrapped.replace(/\\"/g, '"');
+    try {
+      parsed = tryParse(unescaped);
+    } catch {
+      throw new Error("Ключ Google Sheets битый (JSON). Нужно заново вставить GOOGLE_SERVICE_ACCOUNT_JSON.");
+    }
+  }
+
+  if (typeof parsed === "string") {
+    try {
+      parsed = tryParse(parsed);
+    } catch {
+      throw new Error("Ключ Google Sheets битый (JSON). Нужно заново вставить GOOGLE_SERVICE_ACCOUNT_JSON.");
+    }
+  }
+
+  const sa = parsed as SaJson;
+  if (!sa?.client_email || !sa?.private_key) {
     throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON некорректен");
   }
-  // В секретах \n часто приходит как \\n
-  parsed.private_key = parsed.private_key.replace(/\\n/g, "\n");
-  return parsed;
+  sa.private_key = sa.private_key.replace(/\\n/g, "\n");
+  return sa;
 }
 
 function b64url(data: ArrayBuffer | Uint8Array | string) {
@@ -99,7 +127,13 @@ async function getAccessToken() {
   });
   const data = await resp.json();
   if (!resp.ok || !data.access_token) {
-    throw new Error(data.error_description || data.error || `Google token ${resp.status}`);
+    const desc = String(data.error_description || data.error || `Google token ${resp.status}`);
+    if (/account not found/i.test(desc)) {
+      throw new Error(
+        "Google не находит service account (ключ удалён или битый). Нужен новый JSON-ключ.",
+      );
+    }
+    throw new Error(desc);
   }
   cachedToken = { access: data.access_token, exp: Date.now() + (data.expires_in || 3600) * 1000 };
   return cachedToken.access;

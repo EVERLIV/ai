@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import SeoHead from "@/components/SeoHead";
+import { absoluteUrl } from "@/config/site";
 import NewsSidebar from "@/components/NewsSidebar";
 import PropertyAIChat from "@/components/PropertyAIChat";
 import managerPhoto from "@/assets/manager-arenda-city.jpg";
@@ -66,6 +68,11 @@ const services = [
 export default function AboutPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
+      <SeoHead
+        title="О компании АрендаСити"
+        description="Агентство коммерческой недвижимости в Иркутске. Аренда и продажа офисов, торговых и складских помещений."
+        url={absoluteUrl("/about")}
+      />
       <SiteHeader />
 
       {/* Breadcrumbs */}

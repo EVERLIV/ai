@@ -9,7 +9,7 @@ import {
   type AdTypeKey, type TrafficKey, type AvailabilityKey,
 } from "@/lib/adTypes";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getAdTypeImage } from "@/lib/adImages";
+import PropertyImage from "@/components/PropertyImage";
 import {
   MapPin, SlidersHorizontal, X, Maximize2, ChevronDown, Search, Megaphone,
 } from "lucide-react";
@@ -351,19 +351,18 @@ function AdCard({ placement }: { placement: any }) {
   const meta = AD_TYPE_MAP[placement.ad_type as AdTypeKey];
   const Icon = meta?.icon || Megaphone;
   const property = placement.property;
-  // Prefer the placement's own photo, then a representative photo for the ad type
-  const cover = placement.photo || getAdTypeImage(placement.ad_type);
+  const cover = typeof placement.photo === "string" ? placement.photo : null;
   const traffic = placement.traffic as TrafficKey;
   const availability = placement.availability as AvailabilityKey;
 
   return (
     <article className="group bg-card border border-border overflow-hidden flex flex-col hover:border-foreground/30 transition-colors">
       <div className="relative aspect-[4/3] bg-muted overflow-hidden">
-        <img
+        <PropertyImage
           src={cover}
           alt={meta?.label || "Реклама"}
-          loading="lazy"
-          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+          placeholderLabel="Фото отсутствует"
+          imgClassName="group-hover:scale-[1.03] transition-transform duration-500"
         />
         <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-1 bg-background/90 backdrop-blur text-[10px] font-medium uppercase tracking-wide border border-border">
           <Icon className="w-3 h-3" />

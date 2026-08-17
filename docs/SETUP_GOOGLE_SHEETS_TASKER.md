@@ -12,8 +12,8 @@
 ## 2. Откройте доступ к таблице
 
 1. Откройте вашу Google Sheet (`team_kanban_planner_v3` или другая)  
-2. **Share** → добавьте email service account:  
-   `project-1285666415996898989@appspot.gserviceaccount.com`  
+2. **Share** → добавьте email **нового** service account  
+   (вид `имя@проект.iam.gserviceaccount.com`)  
 3. Права: **Editor**  
 
 ID таблицы — из URL:

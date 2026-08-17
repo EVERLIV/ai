@@ -25,7 +25,11 @@ jobs:
           npx tsc --noEmit
           npm test
 
-      - run: npm run build
+      - name: Сборка (sitemap, RSS, dist)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: npm run build
 
       # Готовый сайт можно скачать из вкладки Actions и выложить на сервер.
       - uses: actions/upload-artifact@v4

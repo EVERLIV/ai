@@ -39,18 +39,22 @@ export function loadYandexMaps(): Promise<any> {
   const apiKey = getYandexMapsApiKey();
 
   loadPromise = new Promise((resolve, reject) => {
+    const fail = (err: Error) => {
+      loadPromise = null;
+      reject(err);
+    };
     const existing = document.querySelector<HTMLScriptElement>('script[data-ymaps3="true"]');
     const onReady = async () => {
       try {
         resolve(await resolveYmaps3());
       } catch (e) {
-        reject(e);
+        fail(e instanceof Error ? e : new Error("Yandex Maps not available"));
       }
     };
 
     if (existing) {
       existing.addEventListener("load", onReady);
-      existing.addEventListener("error", () => reject(new Error("Failed to load Yandex Maps")));
+      existing.addEventListener("error", () => fail(new Error("Failed to load Yandex Maps")));
       if ((window as any).ymaps3) onReady();
       return;
     }
@@ -64,7 +68,7 @@ export function loadYandexMaps(): Promise<any> {
     script.defer = true;
     script.dataset.ymaps3 = "true";
     script.addEventListener("load", onReady);
-    script.addEventListener("error", () => reject(new Error("Failed to load Yandex Maps")));
+    script.addEventListener("error", () => fail(new Error("Failed to load Yandex Maps")));
     document.head.appendChild(script);
   });
 

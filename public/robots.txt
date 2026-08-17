@@ -10,5 +10,16 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+User-agent: Yandex
+Allow: /
+
 User-agent: *
 Allow: /
+Disallow: /auth
+Disallow: /dashboard
+Disallow: /account
+Disallow: /reset-password
+Disallow: /tasks
+
+Host: arendacity.com
+Sitemap: https://arendacity.com/sitemap.xml

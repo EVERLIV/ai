@@ -11,6 +11,7 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import { Heart, FileText, User, LogOut, MapPin, Maximize2, ChevronRight, Building2, BarChart3 } from "lucide-react";
 import { useProperties } from "@/hooks/useProperties";
 import { useProfile, ACCOUNT_TYPE_LABELS, isProfileVerified } from "@/hooks/useProfile";
+import SeoHead from "@/components/SeoHead";
 
 const TABS = [
   { key: "favorites", label: "Избранное", icon: Heart },
@@ -61,6 +62,7 @@ export default function AccountPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <SeoHead title="Личный кабинет" description="Избранное, заявки и профиль пользователя АрендаСити." noindex />
       <SiteHeader />
 
       {/* Breadcrumbs */}

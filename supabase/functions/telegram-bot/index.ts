@@ -137,34 +137,21 @@ async function loadCatalog() {
     limit: "300",
   });
 
+  if (!CATALOG_ANON_KEY) throw new Error("CATALOG_ANON_KEY не задан");
+
   const resp = await fetch(`${CATALOG_URL}/rest/v1/properties?${params}`, {
     headers: {
       apikey: CATALOG_ANON_KEY,
       Authorization: `Bearer ${CATALOG_ANON_KEY}`,
     },
   });
-  if (!resp.ok) throw new Error(`catalog ${resp.status}`);
+  if (!resp.ok) {
+    const detail = await resp.text().catch(() => "");
+    throw new Error(`catalog ${resp.status}${detail ? `: ${detail.slice(0, 120)}` : ""}`);
+  }
 
   const rows = (await resp.json()) as CatalogRow[];
-  const text = rows
-    .map((p) => {
-      const link = `${SITE_URL}/property/${p.id}`;
-      const parts = [
-        `${p.deal_type || "Аренда"} · ${p.type || "—"} · ${p.address}${p.district ? ` (${p.district})` : ""}`,
-        `${num(p.area)} м²`,
-        num(p.price) > 0
-          ? `${fmt(num(p.price))} ₽${(p.deal_type || "").includes("Продаж") ? "" : "/мес"}`
-          : "по запросу",
-      ];
-      if (num(p.price_per_m2) > 0) parts.push(`${fmt(num(p.price_per_m2))} ₽/м²`);
-      if (p.class) parts.push(`класс ${p.class}`);
-      if (p.condition) parts.push(String(p.condition));
-      if (p.floor) parts.push(`этаж ${p.floor}/${p.total_floors ?? "—"}`);
-      if (p.deposit) parts.push(`депозит ${p.deposit}`);
-      if (Array.isArray(p.features) && p.features.length) parts.push(p.features.slice(0, 6).join(", "));
-      return `• [${p.public_id || p.id.slice(0, 8)}] ${parts.join(" · ")}\n  Ссылка: ${link}`;
-    })
-    .join("\n") || "Сейчас опубликованных объектов нет.";
+  const text = formatCatalogRows(rows);
 
   const prices = rows.map((p) => num(p.price)).filter((v) => v > 0);
   const areas = rows.map((p) => num(p.area)).filter((v) => v > 0);
@@ -184,41 +171,134 @@ async function loadCatalog() {
   return catalogCache;
 }
 
-function consultantPrompt(cat: { text: string; summary: string }, userName: string) {
+function formatCatalogRows(rows: CatalogRow[]) {
+  return (
+    rows
+      .map((p) => {
+        const link = `${SITE_URL}/property/${p.id}`;
+        const parts = [
+          `${p.deal_type || "Аренда"} · ${p.type || "—"} · ${p.address}${p.district ? ` (${p.district})` : ""}`,
+          `${num(p.area)} м²`,
+          num(p.price) > 0
+            ? `${fmt(num(p.price))} ₽${(p.deal_type || "").includes("Продаж") ? "" : "/мес"}`
+            : "по запросу",
+        ];
+        if (num(p.price_per_m2) > 0) parts.push(`${fmt(num(p.price_per_m2))} ₽/м²`);
+        if (p.class) parts.push(`класс ${p.class}`);
+        if (p.condition) parts.push(String(p.condition));
+        if (p.floor) parts.push(`этаж ${p.floor}/${p.total_floors ?? "—"}`);
+        if (p.deposit) parts.push(`депозит ${p.deposit}`);
+        if (Array.isArray(p.features) && p.features.length) parts.push(p.features.slice(0, 6).join(", "));
+        return `• [${p.public_id || p.id.slice(0, 8)}] ${parts.join(" · ")}\n  Ссылка: ${link}`;
+      })
+      .join("\n") || "Сейчас опубликованных объектов нет."
+  );
+}
+
+function normalizeSpeech(q: string) {
+  return q
+    .toLowerCase()
+    .replace(/ё/g, "е")
+    .replace(/обект/g, "объект")
+    .replace(/оффис/g, "офис")
+    .replace(/анг+р+с/g, "ангарс")
+    .replace(/ирк+утс/g, "иркутс");
+}
+
+function parseMoney(q: string): number | null {
+  const m =
+    q.match(
+      /(?:за|до|не\s+дороже|бюджет[аеу]?\s*(?:до)?)?\s*(\d{1,3}(?:[\s\u00a0]?\d{3}){1,3}|\d{2,7})\s*(тыс(?:яч)?|т\.?\s*р\.?|руб(?:лей)?|₽|к)?/i,
+    ) || q.match(/(\d{1,3}(?:[\s\u00a0]?\d{3}){1,2})\s*(?:руб|₽)/i);
+  if (!m) return null;
+  let n = Number(String(m[1]).replace(/\s/g, ""));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const unit = (m[2] || "").toLowerCase();
+  if (/тыс|^к$|т\.?\s*р/.test(unit) && n < 10_000) n *= 1000;
+  if (n < 1000) return null;
+  return n;
+}
+
+type PropertyFilters = { place: string | null; maxPrice: number | null; type: string | null };
+
+function extractPropertyFilters(question: string): PropertyFilters {
+  const q = normalizeSpeech(question);
+  const placeMatch = q.match(/\b(?:в|во|на|по)\s+([а-яa-z-]{4,24})/i);
+  let place: string | null = null;
+  if (placeMatch) {
+    const stem = placeMatch[1].replace(/(ске|цке|ке|е|и|у|а|я|ой|ом|ем)$/i, "");
+    if (stem.length >= 4) place = stem;
+  }
+  const typeMatch = q.match(/\b(офис\w*|склад\w*|торгов\w*|производ\w*|помещен\w*|земл\w*|здан\w*)/i);
+  return {
+    place,
+    maxPrice: parseMoney(q),
+    type: typeMatch ? typeMatch[1].replace(/(а|у|е|ом|ов|ы|и)$/i, "").slice(0, 6) : null,
+  };
+}
+
+function applyPropertyFilters(rows: CatalogRow[], f: PropertyFilters) {
+  return rows.filter((p) => {
+    const hay = `${p.district || ""} ${p.address || ""} ${p.type || ""}`.toLowerCase().replace(/ё/g, "е");
+    if (f.place && !hay.includes(f.place)) return false;
+    if (f.type && !hay.includes(f.type) && !(p.type || "").toLowerCase().includes(f.type)) return false;
+    if (f.maxPrice && num(p.price) > 0 && num(p.price) > f.maxPrice) return false;
+    return true;
+  });
+}
+
+function describeFilters(f: PropertyFilters) {
+  const bits = [
+    f.place ? `место: ${f.place}*` : "",
+    f.maxPrice ? `до ${fmt(f.maxPrice)} ₽/мес` : "",
+    f.type ? `тип: ${f.type}*` : "",
+  ].filter(Boolean);
+  return bits.join(", ") || "без жёсткого фильтра";
+}
+
+function isPropertyIntent(q: string) {
+  const t = normalizeSpeech(q);
+  return /(объект|офис|склад|торг|помещ|аренда|продаж|м²|м2|руб|бюджет|ангар|иркут|шелех|усолье|подобрать|подбер|нужен|ищу|найд|вариант|площад|помещение|лот)/i.test(t);
+}
+
+function consultantPrompt(
+  cat: { text: string; summary: string },
+  userName: string,
+  filters?: PropertyFilters,
+) {
   return `Ты — Катя, консультант агентства АРЕНДА СИТИ в Telegram.
-К Вам обращаются по имени: «Катя …». Отвечайте от первого лица коротко, по-человечески.
+Люди пишут свободно, с опечатками, без команд. Сами выделите из фразы: город/район, бюджет, тип объекта, площадь.
 
-## Стиль общения (обязательно)
-- Обращайтесь к собеседнику только на «Вы» (Вы, Вам, Ваш, Ваши). Никогда на «ты».
-- Коротко, по делу, как в деловом мессенджере.
-- Без рекламных штампов и канцелярита.
+## Стиль
+- На «Вы». Коротко, как в мессенджере.
 - Не выдумывайте объекты, цены и площади — только каталог ниже.
-- Если просят только число / количество / «кол-во» — ответьте ОДНОЙ цифрой (или одной короткой фразой с числом), без списка и ссылок.
-- Если просят КП / коммерческое предложение — оформите текст КП:
-  объект, адрес, площадь, ставка/цена, ключевые условия, ссылка на сайт,
-  контакты: +7 (908) 658-19-19, info@arendacity.ru.
-- Когда просят варианты (не «только число») — добавляйте ссылки ${SITE_URL}/property/<id> из каталога.
-- Можно предложить 2–3 лучших варианта, не весь список.
-- Если нет подходящего — скажите прямо.
+- «за 50 000» / «до 50 тыс» = ставка не выше этой суммы ₽/мес.
+- Опечатки: ангрск = Ангарск, обект = объект.
+- Если просят число / кол-во — одна цифра.
+- Если просят КП — объект, адрес, площадь, ставка, ссылка, +7 (908) 658-19-19, info@arendacity.ru.
+- Варианты: 2–3 лучших, со ссылками ${SITE_URL}/property/<id>.
+- Нет подходящего — скажите прямо, без выдуманных лотов.
 
+${filters ? `## Уже извлечено из фразы\n${describeFilters(filters)}\n` : ""}
 ## Сводка
 ${cat.summary}
 
-## Каталог (код · детали · ссылка)
+## Каталог
 ${cat.text}
 
 ${userName ? `Собеседника зовут ${userName}.` : ""}`;
 }
 
-/** «Катя …» / «Катя, …» / «Катяи …» — свободное обращение к боту */
+/** «Катя …» в начале или рядом с началом фразы */
 function parseKatyaAddress(text: string): { addressed: boolean; question: string } {
   const t = text.trim();
-  // Катя / Катяи / Кате в начале
   const m = t.match(/^катя(?:и|е|ю|й)?(?:\s*[,.:;!\-—–]+\s*|\s+)(.+)$/iu);
   if (m) return { addressed: true, question: m[1].trim() };
   if (/^катя(?:и|е|ю|й)?[!?.…]*$/iu.test(t)) {
     return { addressed: true, question: "" };
   }
+  const anywhere = t.match(/^(.{0,20}?)катя(?:и|е|ю|й)?\s*[,.:;!\-—–]?\s+(.+)$/iu);
+  if (anywhere) return { addressed: true, question: anywhere[2].trim() };
   return { addressed: false, question: t };
 }
 
@@ -247,13 +327,31 @@ function tryCountOnlyAnswer(question: string, rows: CatalogRow[]): string | null
 
 async function handlePropertyQuestion(msg: TgMessage, text: string) {
   const cat = await loadCatalog();
-  const quick = tryCountOnlyAnswer(text, cat.rows);
+  const filters = extractPropertyFilters(text);
+  const matched = applyPropertyFilters(cat.rows, filters);
+  const hasFilter = Boolean(filters.place || filters.maxPrice || filters.type);
+  const pack =
+    hasFilter && matched.length
+      ? {
+          text: formatCatalogRows(matched.slice(0, 40)),
+          summary: `По фразе (${describeFilters(filters)}) найдено ${matched.length} из ${cat.rows.length}.`,
+        }
+      : {
+          text: cat.text,
+          summary:
+            cat.summary +
+            (hasFilter && !matched.length
+              ? ` По фильтрам (${describeFilters(filters)}) прямых совпадений нет — не выдумывайте лоты.`
+              : ""),
+        };
+
+  const quick = tryCountOnlyAnswer(text, hasFilter && matched.length ? matched : cat.rows);
   if (quick != null) {
     await reply(msg.chat.id, quick, msg.message_id);
     return;
   }
   const name = msg.from?.first_name || "";
-  const answer = await askClaude(consultantPrompt(cat, name), text);
+  const answer = await askClaude(consultantPrompt(pack, name, hasFilter ? filters : undefined), text);
   await reply(msg.chat.id, toTelegramHtml(answer), msg.message_id);
 }
 
@@ -720,21 +818,77 @@ async function patchTask(
   if (!resp.ok) throw new Error(`task update ${resp.status}`);
 }
 
+function cell(v: string | null | undefined) {
+  const s = String(v || "").replace(/\s+/g, " ").trim();
+  if (!s || /^[-—–•·.]+$/.test(s)) return "";
+  return s;
+}
+
+function isOverdue(t: TaskRow) {
+  const due = parseDueDate(t.due_date);
+  if (!due || isDoneStatus(t.status)) return false;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return due < now;
+}
+
+function taskGroup(t: TaskRow) {
+  if (isOverdue(t)) return "Просрочено";
+  const st = cell(t.status);
+  if (isDoneStatus(st)) return "Готово";
+  return st || "Без статуса";
+}
+
+function groupRank(name: string) {
+  if (name === "Просрочено") return 0;
+  if (/работ|progress|делаю/i.test(name)) return 1;
+  if (/назнач|todo|к выполн|новая|открыт/i.test(name)) return 2;
+  if (name === "Готово") return 9;
+  return 3;
+}
+
+function formatTaskCard(t: TaskRow, n: number) {
+  const meta = [cell(t.assignee), cell(t.due_date), cell(t.priority)].filter(Boolean);
+  const title = escapeHtml(cell(t.title) || "Без названия");
+  const line = `<b>${n}.</b> ${title}`;
+  return meta.length ? `${line}\n${escapeHtml(meta.join(" · "))}` : line;
+}
+
 function tasksAsTable(tasks: TaskRow[], source: string) {
-  if (!tasks.length) return "Записей в таблице сейчас нет.";
-  const lines = [
-    `<b>Задачи · ${source === "sheets" ? "team_kanban_planner_v3" : "БД"}</b>`,
-  ];
+  if (!tasks.length) return "Открытых задач сейчас нет.";
+
+  const limit = 30;
+  const shown = tasks.slice(0, limit);
+  const groups = new Map<string, TaskRow[]>();
+  for (const t of shown) {
+    const key = taskGroup(t);
+    const list = groups.get(key) || [];
+    list.push(t);
+    groups.set(key, list);
+  }
+
+  const ordered = [...groups.keys()].sort((a, b) => groupRank(a) - groupRank(b) || a.localeCompare(b, "ru"));
+  const lines = [`<b>Задачи</b> · ${tasks.length}`];
   if (source === "sheets" && sheetPublicUrl()) {
-    lines.push(`<a href="${sheetPublicUrl()}">Открыть таблицу</a>`);
+    lines.push(`<a href="${sheetPublicUrl()}">Таблица</a>`);
   }
-  for (const t of tasks.slice(0, 40)) {
-    lines.push(
-      `<code>${escapeHtml(t.status || "—")}</code> · ${escapeHtml(t.priority || "—")} · ${escapeHtml(t.assignee || "—")} · ${escapeHtml(t.due_date || "—")} · ${escapeHtml(t.title)}`,
-    );
+
+  let n = 1;
+  for (const name of ordered) {
+    const list = (groups.get(name) || []).slice().sort((a, b) => {
+      const da = parseDueDate(a.due_date)?.getTime() ?? Number.POSITIVE_INFINITY;
+      const db = parseDueDate(b.due_date)?.getTime() ?? Number.POSITIVE_INFINITY;
+      return da - db;
+    });
+    lines.push("", `<b>${escapeHtml(name)} · ${list.length}</b>`, "");
+    for (const t of list) {
+      lines.push(formatTaskCard(t, n), "");
+      n += 1;
+    }
   }
-  if (tasks.length > 40) lines.push(`… ещё ${tasks.length - 40}`);
-  return lines.join("\n");
+
+  if (tasks.length > limit) lines.push(`… ещё ${tasks.length - limit}`);
+  return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 function parseDueDate(raw: string | null): Date | null {
@@ -856,9 +1010,9 @@ function filterTasksByQuestion(tasks: TaskRow[], q: string): TaskRow[] {
       const due = parseDueDate(t.due_date);
       return due && !isDoneStatus(t.status) && due < now;
     });
-  } else if (/готов|done|выполнен/i.test(q)) {
+  } else if (/готов|done|выполнен/i.test(q) && !/(не\s*готов|не\s*выполн)/i.test(q)) {
     list = list.filter((t) => isDoneStatus(t.status));
-  } else if (/открыт|в работе|создан|назначен|не\s*закрыт/i.test(q)) {
+  } else if (!/(все|всё)\s+задач|архив|включая\s+готов/i.test(q)) {
     list = list.filter((t) => !isDoneStatus(t.status));
   }
 
@@ -1091,11 +1245,11 @@ Deno.serve(async (req) => {
         msg.chat.id,
         [
           "<b>Катя · АрендаСити</b>",
-          "Пишите свободно, начиная с имени (общаюсь на Вы):",
-          "<code>Катя какие объекты в Ангарске, напишите кол-во только</code>",
-          "<code>Катя задача для Марии — согласовать вывеску до 14.05</code>",
+          "Пишите как обычно, начиная с имени. Команды не нужны:",
+          "<code>Катя нужен объект в Ангарске за 50 000 руб</code>",
+          "<code>Катя офис до 80 м² в Кировском</code>",
           "<code>Катя покажите задачи</code>",
-          "<code>Катя аналитика по задачам</code>",
+          "<code>Катя запишите в задачи — согласовать вывеску до 14.05 задача Марии</code>",
           "",
           "В личке можно без имени. Tasker: <code>#tasker help</code>",
         ].join("\n"),
@@ -1139,7 +1293,7 @@ Deno.serve(async (req) => {
     if (katya.addressed && !question) {
       await reply(
         msg.chat.id,
-        "Да, я здесь. Могу подобрать объекты, показать список/аналитику задач или записать новую.\nНапример: «Катя аналитика по задачам» или «Катя запишите в задачи — …»",
+        "Да, я здесь. Напишите, что подобрать — город, бюджет, тип. Или задачи: показать / записать.",
         msg.message_id,
       );
       return new Response(JSON.stringify({ ok: true }), {
@@ -1149,12 +1303,24 @@ Deno.serve(async (req) => {
 
     await tg("sendChatAction", { chat_id: msg.chat.id, action: "typing" });
 
-    if (isTaskReadIntent(question)) {
-      await handleKatyaTaskQuery(msg, question);
-    } else if (isTaskWriteIntent(question)) {
-      await handleKatyaTaskCreate(msg, question);
-    } else {
-      await handlePropertyQuestion(msg, question);
+    try {
+      const property = isPropertyIntent(question);
+      if (isTaskReadIntent(question) && !property) {
+        await handleKatyaTaskQuery(msg, question);
+      } else if (isTaskWriteIntent(question) && !property) {
+        await handleKatyaTaskCreate(msg, question);
+      } else {
+        await handlePropertyQuestion(msg, question);
+      }
+    } catch (inner) {
+      console.error("telegram-bot handler:", inner);
+      const hint = String(inner);
+      const friendly = hint.includes("catalog")
+        ? "Сейчас не вижу каталог (api.arendacity.com). Напишите ещё раз через минуту."
+        : hint.includes("Модель")
+          ? "Модель сейчас не отвечает. Напишите ещё раз через минуту."
+          : "Сейчас не смогла ответить. Напишите ещё раз через минуту.";
+      await reply(msg.chat.id, friendly, msg.message_id).catch(() => {});
     }
 
     return new Response(JSON.stringify({ ok: true }), {
@@ -1162,11 +1328,6 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("telegram-bot:", e);
-    try {
-      // best-effort error to chat if we can parse body again — skip
-    } catch {
-      /* ignore */
-    }
     // Telegram retries on non-200; return 200 to avoid loops, log error
     return new Response(JSON.stringify({ ok: false, error: String(e) }), {
       status: 200,

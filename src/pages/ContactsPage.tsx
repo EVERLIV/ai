@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { COMPANY, CONTACTS } from "@/config/company";
 import { submitLead } from "@/lib/submitLead";
+import SeoHead from "@/components/SeoHead";
+import { absoluteUrl } from "@/config/site";
 
 /** Направления работы — без вымышленных контактов отделов. */
 const services = [
@@ -92,6 +94,11 @@ export default function ContactsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
+      <SeoHead
+        title="Контакты АрендаСити"
+        description="Телефон, адрес офиса и форма заявки. Агентство коммерческой недвижимости в Иркутске."
+        url={absoluteUrl("/contacts")}
+      />
       <SiteHeader />
 
       {/* Breadcrumbs */}

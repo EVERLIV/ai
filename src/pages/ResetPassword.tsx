@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, ArrowRight, Building2, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import SeoHead from "@/components/SeoHead";
 
 export default function ResetPassword() {
   const [step, setStep] = useState<"request" | "new-password">("request");
@@ -56,6 +57,7 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <SeoHead title="Сброс пароля" description="Восстановление доступа к личному кабинету АрендаСити." noindex />
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex items-center justify-between mb-10">

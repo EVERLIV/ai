@@ -30,6 +30,7 @@ import VerificationUsersTab from "@/components/admin/VerificationUsersTab";
 import CrmLeadsTab from "@/components/admin/CrmLeadsTab";
 import NewsAdminPanel from "@/components/NewsAdminPanel";
 import DictionariesTab from "@/components/admin/DictionariesTab";
+import SeoHead from "@/components/SeoHead";
 import { supabaseAdmin, SUPABASE_URL, SERVICE_ROLE_KEY } from "@/integrations/supabase/adminClient";
 import {
   isLandProperty,
@@ -644,6 +645,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SeoHead title="Панель управления" description="Административная панель АрендаСити." noindex />
       {/* Header */}
       <header className="border-b bg-card sticky top-0 z-30">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
