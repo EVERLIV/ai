@@ -4,6 +4,7 @@ import { useProperties, type DbProperty } from "@/hooks/useProperties";
 import { List, Map as MapIcon, MapPin, ArrowRight, Eye, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getPropertyCover } from "@/lib/propertyImages";
+import { buildPropertyDisplayTitle } from "@/lib/propertyCard";
 import { getCoords, hasStreetView, type Coords } from "@/lib/propertyGeo";
 import { loadYandexMaps, IRKUTSK_CENTER_LNGLAT } from "@/lib/yandexMaps";
 import StreetViewModal from "./StreetViewModal";
@@ -112,7 +113,7 @@ export default function MapSection() {
         ? (price >= 1000000 ? (price / 1000000).toFixed(1) + " млн ₽" : (price / 1000).toFixed(0) + "к ₽")
         : p.type;
       el.className = `ms-pin${activeId === p.id ? " is-active" : ""}`;
-      el.setAttribute("aria-label", p.address);
+      el.setAttribute("aria-label", buildPropertyDisplayTitle(p));
       el.innerHTML = `
         <span class="ms-pin__label">${priceLabel}</span>
         <span class="ms-pin__tail"></span>
@@ -244,7 +245,7 @@ export default function MapSection() {
                       </div>
                       <div className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
                         <MapPin className="w-3 h-3 shrink-0" />
-                        {p.address}
+                        {buildPropertyDisplayTitle(p)}
                       </div>
                     </div>
                   </Link>
@@ -410,7 +411,7 @@ function PropertyCard({
         </div>
         <div className="flex items-start gap-1 text-xs text-muted-foreground mb-3">
           <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
-          <span className="line-clamp-2">{p.address}</span>
+          <span className="line-clamp-2">{buildPropertyDisplayTitle(p)}</span>
         </div>
         <div className="flex gap-2">
           {showStreetView && (

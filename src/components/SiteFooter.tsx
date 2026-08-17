@@ -1,23 +1,16 @@
+import { Link } from "react-router-dom";
 import { COMPANY, CONTACTS } from "@/config/company";
+import { footerCityLinks, footerSectionLinks } from "@/lib/catalogLinks";
 
 const legalLinks = [
   { label: "Политика конфиденциальности", href: "#" },
   { label: "Условия использования", href: "#" },
 ];
 
-const cols = [
-  {
-    title: "Разделы",
-    links: ["Офисы", "Торговые площади", "Склады", "Земельные участки", "Жилая аренда"],
-  },
-  {
-    title: "Города",
-    links: ["Ангарск", "Иркутск", "Шелехов", "Усолье-Сибирское", "Братск"],
-  },
-  {
-    title: "Контакты",
-    links: [CONTACTS.phone, CONTACTS.email, COMPANY.officeAddress],
-  },
+const contactLinks = [
+  { label: CONTACTS.phone, href: `tel:${CONTACTS.phoneTel}` },
+  { label: CONTACTS.email, href: `mailto:${CONTACTS.email}` },
+  { label: COMPANY.officeAddress, href: "/contacts" },
 ];
 
 export default function SiteFooter() {
@@ -25,7 +18,6 @@ export default function SiteFooter() {
     <footer className="bg-foreground text-background/70">
       <div className="container mx-auto px-4 lg:px-8 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Brand */}
           <div>
             <div className="flex items-center gap-2.5 mb-4">
               <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
@@ -55,23 +47,53 @@ export default function SiteFooter() {
             </ul>
           </div>
 
-          {cols.map((col) => (
-            <div key={col.title}>
-              <h4 className="text-sm font-semibold text-background mb-4">{col.title}</h4>
-              <ul className="space-y-2">
-                {col.links.map((l) => (
-                  <li key={l}>
-                    <a href="#" className="text-sm hover:text-background transition-colors">{l}</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+          <div>
+            <h4 className="text-sm font-semibold text-background mb-4">Разделы</h4>
+            <ul className="space-y-2">
+              {footerSectionLinks.map((l) => (
+                <li key={l.label}>
+                  <Link to={l.href} className="text-sm hover:text-background transition-colors">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
 
+          <div>
+            <h4 className="text-sm font-semibold text-background mb-4">Города</h4>
+            <ul className="space-y-2">
+              {footerCityLinks.map((l) => (
+                <li key={l.label}>
+                  <Link to={l.href} className="text-sm hover:text-background transition-colors">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-semibold text-background mb-4">Контакты</h4>
+            <ul className="space-y-2">
+              {contactLinks.map((l) => (
+                <li key={l.label}>
+                  {l.href.startsWith("/") ? (
+                    <Link to={l.href} className="text-sm hover:text-background transition-colors">
+                      {l.label}
+                    </Link>
+                  ) : (
+                    <a href={l.href} className="text-sm hover:text-background transition-colors">
+                      {l.label}
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </div>
 
-      {/* Bottom bar */}
       <div>
         <div className="container mx-auto px-4 lg:px-8 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <p className="text-[11px] text-background/40">

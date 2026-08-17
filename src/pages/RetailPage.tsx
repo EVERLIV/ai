@@ -9,6 +9,7 @@ import heroImg from "@/assets/hero-retail.jpg";
 import { Store, MapPin, TrendingUp, Users, CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SeoHead from "@/components/SeoHead";
+import { buildCatalogUrl } from "@/lib/catalogLinks";
 import { absoluteUrl } from "@/config/site";
 
 const benefits = [
@@ -56,7 +57,7 @@ export default function RetailPage() {
                   Стрит-ритейл, островки в моллах и отдельно стоящие объекты — от&nbsp;20&nbsp;м².
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <Link to="/catalog?type=Торговое">
+                  <Link to={buildCatalogUrl({ types: "Торговая" })}>
                     <Button size="lg" className="gap-2">
                       Смотреть площади <ArrowRight className="w-4 h-4" />
                     </Button>
@@ -116,7 +117,7 @@ export default function RetailPage() {
                   ))}
                 </div>
               </div>
-              <CategoryPropertySlider type="Торговое" title="Торговые помещения в каталоге" />
+              <CategoryPropertySlider type="Торговая" title="Торговые помещения в каталоге" />
               <div id="contact-form">
                 <CategoryContactForm category="торговое помещение" />
               </div>

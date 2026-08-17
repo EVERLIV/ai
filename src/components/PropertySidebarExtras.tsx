@@ -9,6 +9,7 @@ import { useOwnerListingCard } from "@/hooks/useOwnerListingCard";
 import { ACCOUNT_TYPE_LABELS } from "@/hooks/useProfile";
 import { useActivePropertiesCount } from "@/hooks/useProperties";
 import { DEFAULT_AGENT } from "@/config/defaultAgent";
+import { AGENCY_OBJECTS_FLOOR, formatAgentObjectsLabel } from "@/lib/propertyCard";
 
 interface Props {
   property: {
@@ -53,7 +54,12 @@ export default function PropertySidebarExtras({ property }: Props) {
   const displayIsVerified = hasOwnerData ? isVerified : DEFAULT_AGENT.isVerified;
   const displayIsRealtor = hasOwnerData ? isRealtor : true;
   const displayAgencyName = hasOwnerData ? agencyName : DEFAULT_AGENT.agencyName;
-  const displayObjectsCount = hasOwnerData ? objectsCount : catalogCount ?? 0;
+  const displayObjectsCount = hasOwnerData
+    ? objectsCount
+    : Math.max(catalogCount ?? 0, AGENCY_OBJECTS_FLOOR);
+  const displayObjectsLabel = formatAgentObjectsLabel(displayObjectsCount, {
+    isAgency: !hasOwnerData || isRealtor,
+  });
   const displayAgencyAbout = hasOwnerData ? agencyAbout : DEFAULT_AGENT.about;
   const displayAccountType = hasOwnerData ? accountType : DEFAULT_AGENT.accountType;
   const displayStaffCount = hasOwnerData ? staffCount : undefined;
@@ -138,14 +144,14 @@ export default function PropertySidebarExtras({ property }: Props) {
           </div>
 
           <div className="mt-3 grid gap-2">
-            {displayObjectsCount > 0 && (
+            {displayObjectsLabel && (
               <div className="flex items-center justify-between text-[11px]">
                 <span className="flex items-center gap-1.5 text-muted-foreground">
                   <Home className="w-3.5 h-3.5" />
                   Объектов в каталоге
                 </span>
                 <span className="font-semibold text-foreground tabular-nums">
-                  {displayObjectsCount}
+                  {displayObjectsLabel}
                 </span>
               </div>
             )}

@@ -54,6 +54,8 @@ export default function SeoHead({
     setMeta("property", "og:title", title);
     setMeta("property", "og:description", desc);
     setMeta("property", "og:image", ogImage);
+    setMeta("property", "og:image:secure_url", ogImage);
+    setMeta("property", "og:image:alt", title);
     setMeta("property", "og:url", canonical);
     setMeta("property", "og:type", type);
     setMeta("property", "og:site_name", SITE.name);

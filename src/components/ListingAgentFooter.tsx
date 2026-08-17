@@ -2,6 +2,8 @@ import { Building2, MapPin } from "lucide-react";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { getListingAgentDisplay } from "@/lib/propertySidebar";
+import { formatAgentObjectsLabel } from "@/lib/propertyCard";
+import { useActivePropertiesCount } from "@/hooks/useProperties";
 import { cn } from "@/lib/utils";
 import { DEFAULT_AGENT } from "@/config/defaultAgent";
 
@@ -21,6 +23,8 @@ export default function ListingAgentFooter({
   className,
   compact = false,
 }: Props) {
+  const { data: catalogCount } = useActivePropertiesCount();
+  const extrasRecord = extras as Record<string, unknown> | null;
   const agent = getListingAgentDisplay(extras) ?? {
     primaryLabel: DEFAULT_AGENT.name,
     secondaryLabel: `Менеджер · «${DEFAULT_AGENT.agencyName}»`,
@@ -30,11 +34,13 @@ export default function ListingAgentFooter({
     objectsCount: 0,
   };
 
+  const isAgencyListing = agent.isRealtor && !extrasRecord?.owner_user_id;
+  const objectsCount = isAgencyListing
+    ? Math.max(agent.objectsCount, catalogCount ?? 0)
+    : agent.objectsCount;
+
   const avatar = agent.avatarUrl || consultantAvatar;
-  const objectsLabel =
-    agent.objectsCount > 0
-      ? `${agent.objectsCount} ${agent.objectsCount === 1 ? "объект" : agent.objectsCount < 5 ? "объекта" : "объектов"}`
-      : null;
+  const objectsLabel = formatAgentObjectsLabel(objectsCount, { isAgency: isAgencyListing });
 
   return (
     <div className={cn("mt-auto pt-3", className)}>

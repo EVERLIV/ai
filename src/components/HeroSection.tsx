@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
 import { useProperties } from "@/hooks/useProperties";
 import heroImg from "@/assets/hero-warehouses.jpg";
+import { buildPropertyDisplayTitle } from "@/lib/propertyCard";
 
 const stats = [
   { value: 1850, suffix: "+", label: "объектов" },
@@ -84,7 +85,7 @@ export default function HeroSection() {
   return (
     <section ref={ref} className="relative min-h-screen flex items-center pt-14 md:pt-16">
       <div className="absolute inset-0">
-        <img src={heroImg} alt="" width={1920} height={1080} className="w-full h-full object-cover" fetchPriority="high" />
+        <img src={heroImg} alt="" width={1920} height={1080} className="w-full h-full object-cover" fetchpriority="high" />
         <div className="absolute inset-0" style={{ background: "rgba(255,255,255,0.88)" }} />
       </div>
 
@@ -199,7 +200,7 @@ export default function HeroSection() {
                       </div>
                       <MapPin className="sm:hidden w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       <div className="flex-1 min-w-0 text-left">
-                        <div className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{p.address}</div>
+                        <div className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">{buildPropertyDisplayTitle(p)}</div>
                         <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
                           <span className="text-primary font-medium">{p.type}</span>
                           <span className="opacity-40">·</span>

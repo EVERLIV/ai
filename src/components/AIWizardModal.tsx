@@ -27,7 +27,7 @@ export default function AIWizardModal({ open, onClose }: AIWizardModalProps) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[9999] flex items-end justify-center p-0 sm:items-center sm:p-4"
       style={{ animation: "ai-backdrop-in 200ms ease forwards" }}
     >
       {/* Backdrop */}
@@ -38,18 +38,21 @@ export default function AIWizardModal({ open, onClose }: AIWizardModalProps) {
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-lg bg-card shadow-[0_24px_64px_-12px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-lg bg-card shadow-[0_24px_64px_-12px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col h-[92dvh] rounded-t-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-none"
         style={{ animation: "ai-modal-in 250ms cubic-bezier(0.34,1.56,0.64,1) forwards" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 sm:px-5 sm:py-4">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-primary flex items-center justify-center">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
                 <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
               </svg>
             </div>
-            <span className="text-sm font-bold text-foreground">ИИ-подбор объекта</span>
+            <div>
+              <span className="text-sm font-bold text-foreground">ИИ-подбор объекта</span>
+              <p className="text-[11px] text-muted-foreground">Подбор по параметрам за 1 минуту</p>
+            </div>
           </div>
           <button
             onClick={onClose}

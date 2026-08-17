@@ -9,6 +9,7 @@ import heroImg from "@/assets/hero-warehouses.jpg";
 import { Warehouse, Truck, Shield, Ruler, CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SeoHead from "@/components/SeoHead";
+import { buildCatalogUrl } from "@/lib/catalogLinks";
 import { absoluteUrl } from "@/config/site";
 
 const benefits = [
@@ -56,7 +57,7 @@ export default function WarehousesPage() {
                   Отапливаемые и холодные — от&nbsp;50&nbsp;м² до&nbsp;50&nbsp;000&nbsp;м².
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <Link to="/catalog?type=Склад">
+                  <Link to={buildCatalogUrl({ types: "Склад" })}>
                     <Button size="lg" className="gap-2">
                       Смотреть склады <ArrowRight className="w-4 h-4" />
                     </Button>

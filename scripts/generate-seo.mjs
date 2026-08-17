@@ -2,7 +2,7 @@
  * Prebuild: sitemap.xml, feed.xml, robots.txt from Supabase catalog.
  * Env: VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY
  */
-import { writeFileSync } from "fs";
+import { writeFileSync, mkdirSync, rmSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
@@ -29,6 +29,7 @@ const STATIC_PATHS = [
   "/offices",
   "/retail",
   "/warehouses",
+  "/land",
   "/about",
   "/contacts",
   "/news",
@@ -316,6 +317,60 @@ ${items.join("\n")}
   console.log(`✓ public/feed.xml (${feedProperties.length} properties, ${feedNews.length} news)`);
 }
 
+function writePropertyOgPages(properties) {
+  const ogDir = join(publicDir, "og", "property");
+  try {
+    rmSync(join(publicDir, "og"), { recursive: true, force: true });
+  } catch {
+    // ignore
+  }
+  mkdirSync(ogDir, { recursive: true });
+
+  for (const p of properties) {
+    const title = buildPropertySeoTitle(p);
+    const description = buildPropertySeoDescription(p);
+    const url = absoluteUrl(`/property/${p.id}`);
+    const image =
+      p.cover_photo && (p.cover_photo.startsWith("http://") || p.cover_photo.startsWith("https://"))
+        ? p.cover_photo
+        : absoluteUrl("/og-default.jpg");
+    const cta = "Больше объектов на АрендаСити → " + absoluteUrl("/catalog");
+    const ogDescription = `${description}\n\n${cta}`.slice(0, 300);
+
+    const html = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeXml(title)} — АрендаСити</title>
+  <meta name="description" content="${escapeXml(ogDescription)}" />
+  <link rel="canonical" href="${escapeXml(url)}" />
+  <meta property="og:title" content="${escapeXml(title)}" />
+  <meta property="og:description" content="${escapeXml(ogDescription)}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="${escapeXml(url)}" />
+  <meta property="og:site_name" content="АрендаСити" />
+  <meta property="og:locale" content="ru_RU" />
+  <meta property="og:image" content="${escapeXml(image)}" />
+  <meta property="og:image:secure_url" content="${escapeXml(image)}" />
+  <meta property="og:image:alt" content="${escapeXml(title)}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${escapeXml(title)}" />
+  <meta name="twitter:description" content="${escapeXml(ogDescription)}" />
+  <meta name="twitter:image" content="${escapeXml(image)}" />
+  <meta http-equiv="refresh" content="0;url=${escapeXml(url)}" />
+</head>
+<body>
+  <p><a href="${escapeXml(url)}">${escapeXml(title)}</a></p>
+</body>
+</html>
+`;
+    writeFileSync(join(ogDir, `${p.id}.html`), html, "utf8");
+  }
+
+  console.log(`✓ public/og/property (${properties.length} OG pages)`);
+}
+
 console.log("[generate-seo] Starting…");
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
@@ -337,5 +392,6 @@ const newsPosts = await fetchAll(
 writeRobotsTxt();
 writeSitemap(properties, newsPosts);
 writeFeed(properties, newsPosts);
+writePropertyOgPages(properties);
 
 console.log("[generate-seo] Done.");

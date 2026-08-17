@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, MapPin, Maximize } from "lucide-react";
 import { useProperties } from "@/hooks/useProperties";
+import { buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
 
 interface Props {
   district: string;
@@ -101,10 +102,15 @@ export default function NearbyPropertiesSlider({ district, excludeId, type }: Pr
               </span>
             </div>
             <div className="p-3 space-y-1.5">
-              <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
-                <MapPin className="w-3 h-3 shrink-0" />
-                <span className="truncate">{p.address}</span>
+              <div className="font-semibold text-xs text-foreground line-clamp-2 leading-snug">
+                {buildPropertyDisplayTitle(p)}
               </div>
+              {formatPropertyAddressShort(p.address) && (
+                <div className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
+                  <MapPin className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{formatPropertyAddressShort(p.address)}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="font-bold text-base text-foreground">
                   {fmt(p.price)} ₽

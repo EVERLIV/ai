@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, MapPin, ArrowRight, TrendingUp } from "lucid
 import { useProperties } from "@/hooks/useProperties";
 import PropertyImage from "@/components/PropertyImage";
 import { getPropertyCover } from "@/lib/propertyImages";
+import { buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
 
 const TYPE_LABELS: Record<string, string> = {
   "Офис": "Офис",
@@ -120,10 +121,15 @@ export default function PopularPropertiesSlider() {
                   <div className="text-[11px] text-muted-foreground">
                     {p.area} м²
                   </div>
-                  <div className="flex items-start gap-1 text-[11px] text-muted-foreground">
-                    <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
-                    <span className="line-clamp-1">{p.address}</span>
+                  <div className="text-[11px] font-medium text-foreground line-clamp-2 leading-snug">
+                    {buildPropertyDisplayTitle(p)}
                   </div>
+                  {formatPropertyAddressShort(p.address) && (
+                    <div className="flex items-start gap-1 text-[11px] text-muted-foreground">
+                      <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
+                      <span className="line-clamp-1">{formatPropertyAddressShort(p.address)}</span>
+                    </div>
+                  )}
                 </div>
               </Link>
             ))}

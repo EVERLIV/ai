@@ -10,16 +10,19 @@ import {
 } from "lucide-react";
 import { Buildings as PhBuildings } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
-import { Skeleton } from "@/components/ui/skeleton";
 import CatalogMap from "@/components/CatalogMap";
 import PropertyImage from "@/components/PropertyImage";
-import VerifiedBadge from "@/components/VerifiedBadge";
+import PropertyGridCard, { PropertyGridCardSkeleton } from "@/components/PropertyGridCard";
 import ListingAgentFooter from "@/components/ListingAgentFooter";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import PKKMapModal from "@/components/PKKMapModal";
+import { formatPropertyPrice, formatListingViews, isListingVerified, buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
 import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL, LAND_USE_OPTIONS } from "@/lib/propertyLand";
 import { getPropertyTypes, propertyMatchesTypes } from "@/lib/propertyTypes";
+import { readCatalogFiltersFromSearchParams } from "@/lib/catalogLinks";
 import SeoHead from "@/components/SeoHead";
 import { absoluteUrl } from "@/config/site";
+import ctaRentOutBg from "@/assets/cta-rent-out.jpg";
 
 const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
 const DEALS = ["Все", "Аренда", "Продажа"];
@@ -162,123 +165,6 @@ function FadeIn({ children, delay = 0, className }: { children: React.ReactNode;
   );
 }
 
-// ─── Формат цены под макет: "6 300 000 ₽" / "400 000 ₽/мес" ───
-function formatPrice(p: DbProperty): string | null {
-  const price = Number(p.price);
-  if (!price) return null;
-  return `${price.toLocaleString("ru-RU")} ₽${p.deal_type === "Аренда" ? "/мес" : ""}`;
-}
-
-function isListingVerified(p: DbProperty): boolean {
-  const extras = p.extras as Record<string, unknown> | null;
-  return !!extras?.agent_verified;
-}
-
-// ─── Карточка объекта (Variant 2) ───
-function GridCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK: (cad: string) => void }) {
-  const land = isLandProperty(p);
-  const landUse = getLandUse(p);
-  const cadastral = getLandCadastral(p.extras as Record<string, unknown> | null);
-  const price = formatPrice(p);
-  const description = p.description?.slice(0, 200) || "";
-
-  return (
-    <Link
-      to={`/property/${p.id}`}
-      className="group flex flex-col h-full bg-card border border-border/60 rounded-lg overflow-hidden hover:shadow-lg hover:border-border transition-all duration-200"
-    >
-      <div className="relative h-44 bg-muted overflow-hidden">
-        <PropertyImage src={p.cover_photo} alt={p.address} imgClassName="transition-transform duration-500 group-hover:scale-[1.04]" />
-        {/* Бейдж типа сделки */}
-        <div className="absolute top-2.5 left-2.5 inline-block px-2 py-1 rounded-md bg-primary/90 text-primary-foreground text-[10px] font-bold">
-          {p.deal_type || "Аренда"}
-        </div>
-        <div className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded bg-black/50 backdrop-blur text-[10px] text-white">
-          <Eye className="w-3 h-3" /> {p.views_count || 0}
-        </div>
-        {/* Красная плашка цены поверх нижнего края фото */}
-        <div className="absolute bottom-0 left-0">
-          <span className="inline-block bg-primary text-primary-foreground text-sm font-bold px-3 py-1.5 leading-none">
-            {price ?? "Цена по запросу"}
-          </span>
-        </div>
-      </div>
-
-      <div className="flex flex-col flex-1 p-4">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="text-sm font-bold text-foreground leading-snug group-hover:text-primary transition-colors flex-1">
-            {p.address}
-          </h3>
-          {isListingVerified(p) && <VerifiedBadge showLabel={false} className="shrink-0" />}
-        </div>
-        {description && (
-          <p className="text-[10px] text-muted-foreground mb-3 leading-relaxed line-clamp-3">
-            {description}
-          </p>
-        )}
-
-        <div className="grid grid-cols-3 gap-3 pb-3">
-          <div className="min-w-0 flex items-start gap-2">
-            <Square className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-            <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground mb-0.5">Площадь</p>
-              <p className="text-xs font-semibold text-foreground truncate">{p.area} м²</p>
-            </div>
-          </div>
-          {land ? (
-            <div className="col-span-2 min-w-0 flex items-start gap-2">
-              <Landmark className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-              <div className="min-w-0">
-                <p className="text-[10px] text-muted-foreground mb-0.5">{LAND_TYPE_LABEL}</p>
-                <p className="text-xs font-semibold text-foreground truncate">{landUse || "—"}</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="min-w-0 flex items-start gap-2">
-                <Layers className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                <div className="min-w-0">
-                  <p className="text-[10px] text-muted-foreground mb-0.5">Этаж</p>
-                  <p className="text-xs font-semibold text-foreground truncate">
-                    {p.floor && p.floor !== "-" ? `${p.floor}${p.total_floors ? `/${p.total_floors}` : ""}` : "—"}
-                  </p>
-                </div>
-              </div>
-              <div className="min-w-0 flex items-start gap-2">
-                <Maximize2 className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                <div className="min-w-0">
-                  <p className="text-[10px] text-muted-foreground mb-0.5">Потолок</p>
-                  <p className="text-xs font-semibold text-foreground truncate">
-                    {p.ceiling_height && Number(p.ceiling_height) > 0 ? `${p.ceiling_height} м` : "—"}
-                  </p>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        <ListingAgentFooter
-          extras={p.extras as Record<string, unknown> | null}
-          district={land && cadastral ? undefined : p.district}
-          trailing={
-            land && cadastral ? (
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  onOpenPKK(cadastral);
-                }}
-                className="text-[10px] text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
-              >
-                к/н {cadastral}
-              </button>
-            ) : undefined
-          }
-        />
-      </div>
-    </Link>
-  );
-}
-
 // ─── Тёмная промо-карточка в сетке ───
 function PromoCard() {
   return (
@@ -308,22 +194,33 @@ function CtaBanner() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.3 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative overflow-hidden rounded-xl bg-[#141414] text-white">
+        className="relative overflow-hidden rounded-xl text-white min-h-[240px]"
+      >
+        <img
+          src={ctaRentOutBg}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover object-[center_35%] scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#141414]/95 via-[#141414]/82 to-[#141414]/45" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#141414]/40 via-transparent to-transparent" />
         <span
-          className="absolute right-0 top-0 h-full w-56 hidden md:block"
-          style={{ background: "repeating-linear-gradient(115deg, hsl(var(--primary)) 0 28px, transparent 28px 72px)" }}
+          className="absolute right-0 top-0 h-full w-40 hidden lg:block bg-gradient-to-l from-primary/25 to-transparent pointer-events-none"
           aria-hidden
         />
-        <div className="relative grid md:grid-cols-[1.2fr_1fr_auto] gap-6 items-center px-6 md:px-10 py-8">
+
+        <div className="relative grid md:grid-cols-[1.2fr_1fr_auto] gap-6 items-center px-6 md:px-10 py-8 md:py-10">
           <div>
+            <p className="text-[10px] font-bold tracking-[0.2em] text-primary uppercase mb-2">Для собственников</p>
             <h2 className="font-display text-xl md:text-2xl font-bold mb-2">Сдайте объект за 14 дней</h2>
-            <p className="text-xs text-white/50 leading-relaxed max-w-sm">
+            <p className="text-xs text-white/60 leading-relaxed max-w-sm">
               Создадим эффективную презентацию, качественный показ и быстрый выход на сделку с проверенными арендаторами.
             </p>
           </div>
           <ul className="space-y-2">
             {["Выведем объект на рынок за 14 дней", "Проверенные арендаторы", "Сопровождение сделки под ключ", "Юридическая чистота договора"].map((t) => (
-              <li key={t} className="flex items-start gap-2 text-xs text-white/80">
+              <li key={t} className="flex items-start gap-2 text-xs text-white/85">
                 <Check className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
                 {t}
               </li>
@@ -331,7 +228,7 @@ function CtaBanner() {
           </ul>
           <Link
             to="/list-property"
-            className="justify-self-start md:justify-self-end inline-flex items-center h-11 px-6 rounded-md bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors"
+            className="justify-self-start md:justify-self-end inline-flex items-center h-11 px-6 rounded-md bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
           >
             Разместить объект
           </Link>
@@ -346,35 +243,49 @@ export default function Catalog() {
   const { data: properties = [], isLoading } = useProperties();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const initialFilters = readCatalogFiltersFromSearchParams(searchParams);
+
   const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
   const [mobileFilters, setMobileFilters] = useState(false);
   const [activePKK, setActivePKK] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const [dealType, setDealType] = useState(() => searchParams.get("deal") || "Все");
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(() => {
-    const t = searchParams.get("types");
-    return t ? t.split(",").filter(Boolean) : [];
-  });
-  const [district, setDistrict] = useState(() => searchParams.get("district") || "Все");
-  const [propertyClass, setPropertyClass] = useState(() => searchParams.get("cls") || "Все");
-  const [condition, setCondition] = useState(() => searchParams.get("cond") || "Все");
-  const [sort, setSort] = useState(() => searchParams.get("sort") || "date");
-  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") || "");
+  const [dealType, setDealType] = useState(initialFilters.dealType);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(initialFilters.selectedTypes);
+  const [district, setDistrict] = useState(initialFilters.district);
+  const [propertyClass, setPropertyClass] = useState(initialFilters.propertyClass);
+  const [condition, setCondition] = useState(initialFilters.condition);
+  const [sort, setSort] = useState(initialFilters.sort);
+  const [searchQuery, setSearchQuery] = useState(initialFilters.searchQuery);
 
-  const [priceMin, setPriceMin] = useState(() => Number(searchParams.get("priceMin") || 0));
-  const [priceMax, setPriceMax] = useState(() => Number(searchParams.get("priceMax") || PRICE_MAX_DEFAULT));
-  const [areaMin, setAreaMin] = useState(() => Number(searchParams.get("areaMin") || 0));
-  const [areaMax, setAreaMax] = useState(() => Number(searchParams.get("areaMax") || AREA_MAX_DEFAULT));
+  const [priceMin, setPriceMin] = useState(initialFilters.priceMin);
+  const [priceMax, setPriceMax] = useState(initialFilters.priceMax);
+  const [areaMin, setAreaMin] = useState(initialFilters.areaMin);
+  const [areaMax, setAreaMax] = useState(initialFilters.areaMax);
 
-  const [ceilingMin, setCeilingMin] = useState(() => Number(searchParams.get("ceil") || 0));
-  const [parkingOnly, setParkingOnly] = useState(() => searchParams.get("parking") === "1");
-  const [selectedLayouts, setSelectedLayouts] = useState<string[]>(() => {
-    const l = searchParams.get("layouts");
-    return l ? l.split(",").filter(Boolean) : [];
-  });
+  const [ceilingMin, setCeilingMin] = useState(initialFilters.ceilingMin);
+  const [parkingOnly, setParkingOnly] = useState(initialFilters.parkingOnly);
+  const [selectedLayouts, setSelectedLayouts] = useState<string[]>(initialFilters.selectedLayouts);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  useEffect(() => {
+    const next = readCatalogFiltersFromSearchParams(searchParams);
+    setDealType(next.dealType);
+    setSelectedTypes(next.selectedTypes);
+    setDistrict(next.district);
+    setPropertyClass(next.propertyClass);
+    setCondition(next.condition);
+    setSort(next.sort);
+    setSearchQuery(next.searchQuery);
+    setPriceMin(next.priceMin);
+    setPriceMax(next.priceMax);
+    setAreaMin(next.areaMin);
+    setAreaMax(next.areaMax);
+    setCeilingMin(next.ceilingMin);
+    setParkingOnly(next.parkingOnly);
+    setSelectedLayouts(next.selectedLayouts);
+  }, [searchParams]);
 
   const districts = useMemo(() => ["Все", ...Array.from(new Set(properties.map((p) => p.district).filter(Boolean)))], [properties]);
   const conditions = useMemo(() => ["Все", ...Array.from(new Set(properties.map((p) => p.condition).filter(Boolean) as string[]))], [properties]);
@@ -580,7 +491,7 @@ export default function Catalog() {
       if (i === 3) items.push(<FadeIn key="promo" delay={0.18} className="h-full"><PromoCard /></FadeIn>);
       items.push(
         <FadeIn key={p.id} delay={(i % 4) * 0.06} className="h-full">
-          <GridCard property={p} onOpenPKK={setActivePKK} />
+          <PropertyGridCard property={p} onOpenPKK={setActivePKK} />
         </FadeIn>
       );
     });
@@ -892,7 +803,7 @@ export default function Catalog() {
             <div className="px-6 lg:px-12 xl:px-20 py-6">
               {isLoading ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {Array.from({ length: 8 }).map((_, i) => <GridCardSkeleton key={i} />)}
+                  {Array.from({ length: 8 }).map((_, i) => <PropertyGridCardSkeleton key={i} />)}
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="text-center py-20">
@@ -934,13 +845,15 @@ function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
   const land = isLandProperty(p);
   const landUse = getLandUse(p);
   const cadastral = getLandCadastral(p.extras as Record<string, unknown> | null);
-  const price = formatPrice(p);
+  const price = formatPropertyPrice(p);
+  const title = buildPropertyDisplayTitle(p);
+  const addressShort = formatPropertyAddressShort(p.address);
   const description = p.description?.slice(0, 250) || "";
   return (
     <Link to={`/property/${p.id}`}
       className="group flex bg-card overflow-hidden hover:shadow-md transition-shadow duration-200 border border-border/60 rounded-lg">
       <div className="relative w-48 shrink-0 bg-muted hidden sm:block overflow-hidden">
-        <PropertyImage src={p.cover_photo} alt={p.address} imgClassName="transition-transform duration-500 group-hover:scale-[1.03]" />
+        <PropertyImage src={p.cover_photo} alt={title} imgClassName="transition-transform duration-500 group-hover:scale-[1.03]" />
         {/* Бейдж типа сделки */}
         <div className="absolute top-2 left-2 inline-block px-2 py-1 rounded-md bg-primary/90 text-primary-foreground text-[10px] font-bold">
           {p.deal_type || "Аренда"}
@@ -958,10 +871,13 @@ function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
               <div className="font-display text-base font-bold text-foreground group-hover:text-primary transition-colors sm:hidden">
                 {price ?? "Цена по запросу"}
               </div>
-              <div className="text-sm font-bold text-foreground mb-2 flex items-center gap-2 flex-wrap">
-                {p.address}
+              <div className="text-sm font-bold text-foreground mb-1 flex items-center gap-2 flex-wrap">
+                {title}
                 {isListingVerified(p) && <VerifiedBadge showLabel={false} className="shrink-0" />}
               </div>
+              {addressShort && (
+                <p className="text-[10px] text-muted-foreground mb-2 line-clamp-1">{addressShort}</p>
+              )}
               <span className="inline-block px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold mb-2 sm:hidden">
                 {p.deal_type || "Аренда"}
               </span>
@@ -971,7 +887,7 @@ function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
                 </p>
               )}
             </div>
-            <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0"><Eye className="w-3 h-3" />{p.views_count || 0}</span>
+            <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0"><Eye className="w-3 h-3" />{formatListingViews(p.views_count)}</span>
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-foreground mt-2">
             <span className="flex items-center gap-1.5">
@@ -1034,29 +950,3 @@ function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK:
   );
 }
 
-// ─── Skeleton ───
-function GridCardSkeleton() {
-  return (
-    <div className="bg-card overflow-hidden border border-border/60 rounded-lg">
-      <div className="relative h-44 overflow-hidden">
-        <Skeleton className="absolute inset-0 rounded-none" />
-        <div className="absolute bottom-0 left-0">
-          <Skeleton className="h-7 w-28 rounded-none" />
-        </div>
-      </div>
-      <div className="p-4 space-y-3">
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-3 w-1/2" />
-        <div className="grid grid-cols-3 gap-2">
-          <Skeleton className="h-8" />
-          <Skeleton className="h-8" />
-          <Skeleton className="h-8" />
-        </div>
-        <div className="flex items-center justify-between pt-1">
-          <Skeleton className="h-3 w-16" />
-          <Skeleton className="h-3 w-14" />
-        </div>
-      </div>
-    </div>
-  );
-}

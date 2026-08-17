@@ -4,8 +4,45 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-/** Дешёвая текстовая модель: подбор идёт по готовому короткому списку. */
 const PICK_MODEL = "claude-haiku-4-5";
+const ANTHROPIC_TIMEOUT_MS = 25_000;
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
+  });
+}
+
+/** Deno fetch запрещает CR/LF и не-ASCII в заголовках (ByteString). */
+function readAnthropicKey(): string {
+  return (Deno.env.get("ANTHROPIC_API_KEY") ?? "")
+    .replace(/^\uFEFF/, "")
+    .replace(/[\r\n\t]/g, "")
+    .trim()
+    .replace(/^["']+|["']+$/g, "")
+    .split("#")[0]
+    .trim()
+    .replace(/[^\x20-\x7E]/g, "");
+}
+
+function parseJsonObject(text: string): Record<string, unknown> | null {
+  const trimmed = text.trim();
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const raw = fenced?.[1]?.trim() ?? trimmed;
+  try {
+    return JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    const start = raw.indexOf("{");
+    const end = raw.lastIndexOf("}");
+    if (start < 0 || end <= start) return null;
+    try {
+      return JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  }
+}
 
 interface Criteria {
   deal?: string;
@@ -41,9 +78,7 @@ interface PropertyLite {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const { criteria, properties } = (await req.json()) as {
@@ -51,136 +86,78 @@ Deno.serve(async (req) => {
       properties: PropertyLite[];
     };
 
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not configured");
-
-    if (!properties?.length) {
-      return new Response(
-        JSON.stringify({ picks: [], reason: "Нет объектов для выбора" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+    const ANTHROPIC_API_KEY = readAnthropicKey();
+    if (!ANTHROPIC_API_KEY) return json({ error: "ANTHROPIC_API_KEY is not configured" }, 500);
+    if (!ANTHROPIC_API_KEY.startsWith("sk-ant-")) {
+      return json({ error: "ANTHROPIC_API_KEY имеет неверный формат" }, 500);
     }
 
-    // Trim to keep prompt small
-    const shortlist = properties.slice(0, 60);
+    if (!properties?.length) return json({ picks: [], summary: "Нет объектов для выбора" });
+
+    const shortlist = properties.slice(0, 40);
 
     const systemPrompt = `Ты — эксперт по коммерческой недвижимости в Иркутске.
-Тебе дают критерии клиента и список объектов из CRM.
-Выбери до 3 объектов, которые ЛУЧШЕ всего подходят под запрос (учитывая вид деятельности, бюджет, площадь, район, класс, состояние, удобства).
-Для каждого выбранного объекта объясни КОРОТКО (1-2 предложения) почему он подходит — на русском, по-деловому, без воды.
-Если ничего идеально не подходит — выбери близкие варианты и честно скажи, в чём компромисс.`;
+Выбери до 3 объектов, которые лучше всего подходят под запрос.
+Ответь ТОЛЬКО JSON без markdown:
+{"summary":"2 предложения на русском","picks":[{"id":"...","fit_score":0,"reason":"1-2 предложения","highlights":["плюс","плюс"]}]}
+id бери только из списка. fit_score — число 0-100.`;
 
-    const userPrompt = `КРИТЕРИИ КЛИЕНТА:
-${JSON.stringify(criteria, null, 2)}
+    const userPrompt = `КРИТЕРИИ:
+${JSON.stringify(criteria)}
 
-ОБЪЕКТЫ (id | тип | сделка | район | адрес | цена ₽ | ₽/м² | площадь м² | класс | состояние | удобства):
+ОБЪЕКТЫ:
 ${shortlist
   .map(
     (p) =>
-      `${p.id} | ${p.type} | ${p.deal_type} | ${p.district} | ${p.address} | ${p.price} | ${p.price_per_m2} | ${p.area} | ${p.class} | ${p.condition ?? "-"} | ${(p.features ?? []).join(", ") || "-"}`,
+      `${p.id} | ${p.type} | ${p.deal_type} | ${p.district} | ${p.address} | ${p.price} | ${p.area}м² | ${p.class} | ${p.condition ?? "-"} | ${(p.features ?? []).slice(0, 6).join(",") || "-"}`,
   )
-  .join("\n")}
+  .join("\n")}`;
 
-Выбери лучшие варианты и обоснуй каждый.`;
-
-    const PICK_SCHEMA = {
-      type: "object",
-      properties: {
-        summary: {
-          type: "string",
-          description: "Короткое резюме (2-3 предложения) — что подобрано и почему.",
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort("timeout"), ANTHROPIC_TIMEOUT_MS);
+    let response: Response;
+    try {
+      response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
         },
-        picks: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              id: { type: "string", description: "id объекта из переданного списка" },
-              fit_score: { type: "number", description: "Соответствие 0-100" },
-              reason: { type: "string", description: "1-2 предложения почему объект подходит" },
-              highlights: {
-                type: "array",
-                items: { type: "string" },
-                description: "2-4 ключевых плюса (короткие фразы)",
-              },
-            },
-            required: ["id", "fit_score", "reason", "highlights"],
-            additionalProperties: false,
-          },
-        },
-      },
-      required: ["summary", "picks"],
-      additionalProperties: false,
-    };
-
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: PICK_MODEL,
-        max_tokens: 2000,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userPrompt }],
-        output_config: { format: { type: "json_schema", schema: PICK_SCHEMA } },
-      }),
-    });
+        signal: ac.signal,
+        body: JSON.stringify({
+          model: PICK_MODEL,
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: [{ role: "user", content: userPrompt }],
+        }),
+      });
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Слишком много запросов к ИИ. Попробуйте через минуту." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-      const t = await response.text();
-      console.error("Anthropic error:", response.status, t);
-      return new Response(JSON.stringify({ error: "Ошибка ИИ-сервиса" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const detail = await response.text();
+      console.error("Anthropic error:", response.status, detail.slice(0, 400));
+      if (response.status === 429) return json({ error: "Слишком много запросов к ИИ. Попробуйте через минуту." }, 429);
+      return json({ error: "Ошибка ИИ-сервиса" }, 502);
     }
 
     const data = await response.json();
-    const textBlock = (data?.content ?? []).find(
-      (b: { type: string }) => b.type === "text",
-    ) as { text?: string } | undefined;
-
-    if (data?.stop_reason === "refusal" || !textBlock?.text) {
-      console.error("Anthropic: нет структурированного ответа", data?.stop_reason);
-      return new Response(
-        JSON.stringify({ summary: "ИИ не вернул структурированный ответ.", picks: [] }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+    const text = (data?.content ?? []).find((b: { type: string }) => b.type === "text")?.text ?? "";
+    const parsed = parseJsonObject(text);
+    if (!parsed || !Array.isArray(parsed.picks)) {
+      console.error("Anthropic: нет JSON", data?.stop_reason, String(text).slice(0, 200));
+      return json({ summary: "ИИ не вернул структурированный ответ.", picks: [] });
     }
 
-    let args: unknown;
-    try {
-      args = JSON.parse(textBlock.text);
-    } catch {
-      console.error("Anthropic: ответ не JSON");
-      return new Response(
-        JSON.stringify({ summary: "ИИ не вернул структурированный ответ.", picks: [] }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    return new Response(JSON.stringify(args), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json(parsed);
   } catch (e) {
+    const message = e instanceof Error ? e.message : "Неизвестная ошибка";
     console.error("ai-property-pick error:", e);
-    return new Response(
-      JSON.stringify({
-        error: e instanceof Error ? e.message : "Неизвестная ошибка",
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    if (message.includes("abort") || message.includes("Timeout") || message.includes("timed out")) {
+      return json({ error: "ИИ не ответил вовремя. Проверьте исходящий доступ к api.anthropic.com" }, 504);
+    }
+    return json({ error: message }, 500);
   }
 });

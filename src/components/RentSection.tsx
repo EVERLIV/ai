@@ -2,7 +2,9 @@ import { ArrowRight, MapPin, Building2, Store, Warehouse, TreePine, KeyRound } f
 import { Link, useNavigate } from "react-router-dom";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useProperties } from "@/hooks/useProperties";
+import { buildCatalogUrl } from "@/lib/catalogLinks";
 import { getPropertyCover } from "@/lib/propertyImages";
+import { buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
 import PropertyImage from "@/components/PropertyImage";
 
 const typeIcons: Record<string, React.ElementType> = {
@@ -38,7 +40,7 @@ export default function RentSection() {
             </p>
           </div>
           <Link
-            to="/catalog?deal=rent"
+            to={buildCatalogUrl({ deal: "Аренда" })}
             className="hidden sm:flex items-center gap-1 text-sm font-medium text-primary hover:underline"
           >
             Все объекты в аренду <ArrowRight className="w-4 h-4" />
@@ -92,7 +94,12 @@ export default function RentSection() {
                     </div>
                     <div className="flex items-start gap-1 text-[11px] text-muted-foreground mt-2">
                       <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
-                      <span className="line-clamp-1">{p.address}</span>
+                      <span className="line-clamp-2">
+                        <span className="block font-medium text-foreground/90">{buildPropertyDisplayTitle(p)}</span>
+                        {formatPropertyAddressShort(p.address) && (
+                          <span className="block mt-0.5">{formatPropertyAddressShort(p.address)}</span>
+                        )}
+                      </span>
                     </div>
                   </div>
                 </article>
@@ -103,7 +110,7 @@ export default function RentSection() {
 
         <div className="sm:hidden mt-6 text-center">
           <Link
-            to="/catalog?deal=rent"
+            to={buildCatalogUrl({ deal: "Аренда" })}
             className="inline-flex items-center gap-1 text-sm font-medium text-primary"
           >
             Все объекты в аренду <ArrowRight className="w-4 h-4" />

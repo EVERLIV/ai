@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { DbProperty } from "@/hooks/useProperties";
 import { MapPin, Maximize2, X, List, Eye } from "lucide-react";
 import { getPropertyCover } from "@/lib/propertyImages";
+import { buildPropertyDisplayTitle } from "@/lib/propertyCard";
 import { getCoords, hasStreetView, type Coords } from "@/lib/propertyGeo";
 import { loadYandexMaps, IRKUTSK_CENTER_LNGLAT } from "@/lib/yandexMaps";
 import StreetViewModal from "./StreetViewModal";
@@ -85,7 +86,7 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
       const el = document.createElement("button");
       el.type = "button";
       el.className = `cm-pin${activeId === p.id ? " is-active" : ""}`;
-      el.setAttribute("aria-label", p.address);
+      el.setAttribute("aria-label", buildPropertyDisplayTitle(p));
       el.innerHTML = `
         <span class="cm-pin__label">${priceLabel}</span>
         <span class="cm-pin__tail"></span>
@@ -323,7 +324,7 @@ function MapListItem({ p, active, onClick }: { p: DbProperty; active: boolean; o
         </div>
         <div className="flex items-center gap-1 text-[11px] text-muted-foreground truncate">
           <MapPin className="w-3 h-3 shrink-0" />
-          <span className="truncate">{p.address}</span>
+          <span className="truncate">{buildPropertyDisplayTitle(p)}</span>
         </div>
         <div className="text-[11px] text-foreground mt-0.5 flex items-center gap-1">
           <Maximize2 className="w-3 h-3 text-muted-foreground" /> {p.area} м²
@@ -358,7 +359,7 @@ function ActiveCard({
               </div>
               <div className="flex items-center gap-1 text-[11px] text-muted-foreground truncate">
                 <MapPin className="w-3 h-3 shrink-0" />
-                <span className="truncate">{p.address}</span>
+                <span className="truncate">{buildPropertyDisplayTitle(p)}</span>
               </div>
               <div className="text-[11px] text-foreground mt-0.5">{p.area} м² · {p.district}</div>
             </div>
@@ -398,7 +399,7 @@ function MobileCard({ p }: { p: DbProperty }) {
         <div className="font-display text-sm font-bold text-foreground truncate">
           {Number(p.price).toLocaleString("ru-RU")} ₽
         </div>
-        <div className="text-[10px] text-muted-foreground truncate">{p.address}</div>
+        <div className="text-[10px] text-muted-foreground truncate">{buildPropertyDisplayTitle(p)}</div>
       </div>
     </>
   );

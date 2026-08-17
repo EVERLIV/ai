@@ -22,6 +22,7 @@ import Dashboard from "./pages/Dashboard.tsx";
 import OfficesPage from "./pages/OfficesPage.tsx";
 import RetailPage from "./pages/RetailPage.tsx";
 import WarehousesPage from "./pages/WarehousesPage.tsx";
+import LandPage from "./pages/LandPage.tsx";
 import AdsCatalog from "./pages/AdsCatalog.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ListProperty from "./pages/ListProperty.tsx";
@@ -56,6 +57,7 @@ const App = () => {
                 <Route path="/offices" element={<OfficesPage />} />
                 <Route path="/retail" element={<RetailPage />} />
                 <Route path="/warehouses" element={<WarehousesPage />} />
+                <Route path="/land" element={<LandPage />} />
                 <Route path="/ads" element={<AdsCatalog />} />
                 <Route path="/list-property" element={<ListProperty />} />
                 <Route path="/news" element={<NewsPage />} />

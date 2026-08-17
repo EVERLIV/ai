@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles, Phone } from "lucide-react";
 import { CONTACTS } from "@/config/company";
+import ctaRentOutBg from "@/assets/cta-rent-out.jpg";
 
 export default function NewsSidebar() {
   return (
@@ -60,19 +61,30 @@ export default function NewsSidebar() {
       </div>
 
       {/* ── CTA banner ── */}
-      <div className="bg-muted/60 border border-border p-5">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Для собственников</p>
-        <h4 className="font-display text-base font-bold text-foreground mb-1">Сдайте объект за 14 дней</h4>
-        <p className="text-[11px] text-muted-foreground leading-relaxed mb-4">
-          Профессиональный маркетинг, проверенные арендаторы, юридическое сопровождение — всё включено.
-        </p>
-        <Link
-          to="/list-property"
-          className="flex items-center justify-center gap-1.5 h-8 w-full bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity"
-        >
-          Разместить объект <ArrowRight className="w-3 h-3" />
-        </Link>
-        <p className="text-[9px] text-muted-foreground/50 text-center mt-2 uppercase tracking-widest">Реклама</p>
+      <div className="relative overflow-hidden text-background" style={{ minHeight: 260 }}>
+        <img
+          src={ctaRentOutBg}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover object-[center_35%]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/75 to-foreground/55" />
+
+        <div className="relative p-5 flex flex-col h-full" style={{ minHeight: 260 }}>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-primary mb-2">Для собственников</p>
+          <h4 className="font-display text-base font-bold text-background mb-1">Сдайте объект за 14 дней</h4>
+          <p className="text-[11px] text-background/75 leading-relaxed mb-4">
+            Профессиональный маркетинг, проверенные арендаторы, юридическое сопровождение — всё включено.
+          </p>
+          <Link
+            to="/list-property"
+            className="flex items-center justify-center gap-1.5 h-9 w-full bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity mt-auto"
+          >
+            Разместить объект <ArrowRight className="w-3 h-3" />
+          </Link>
+          <p className="text-[9px] text-background/35 text-center mt-2 uppercase tracking-widest">Реклама</p>
+        </div>
       </div>
 
     </aside>

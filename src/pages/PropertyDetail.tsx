@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useProperty } from "@/hooks/useProperties";
 import {
-  ArrowLeft, Heart, Share2, MapPin, Clock, Eye, Phone, Mail,
+  ArrowLeft, Heart, MapPin, Clock, Eye, Phone, Mail,
   Building2, Ruler, Layers, Car, Paintbrush, LayoutGrid, FileText,
   Shield, Calendar, ChevronLeft, ChevronRight, Store, Warehouse, TreePine,
   MessageSquareText, Tag, Download, X, Send, ChevronDown,
@@ -26,9 +26,11 @@ import { isSaleDeal } from "@/lib/propertyDeal";
 import { motion } from "framer-motion";
 import SeoHead from "@/components/SeoHead";
 import PropertyJsonLd from "@/components/PropertyJsonLd";
-import { buildPropertySeoDescription, buildPropertySeoTitle } from "@/lib/seo/propertySeoTitle";
+import { buildPropertyShareOgDescription, buildPropertySharePayload } from "@/lib/propertyShare";
+import { formatListingViews, buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
 import { absoluteUrl } from "@/config/site";
 import { CONTACTS } from "@/config/company";
+import PropertyShareButton from "@/components/PropertyShareButton";
 import PropertyDescription from "@/components/PropertyDescription";
 import { submitLead } from "@/lib/submitLead";
 
@@ -150,8 +152,11 @@ export default function PropertyDetail() {
         ...rentTerms,
       ];
 
-  const seoTitle = buildPropertySeoTitle(property);
-  const seoDescription = buildPropertySeoDescription(property);
+  const seoTitle = buildPropertyDisplayTitle(property);
+  const seoDescription = buildPropertyShareOgDescription(property);
+  const sharePayload = buildPropertySharePayload(property);
+  const displayTitle = seoTitle;
+  const addressShort = formatPropertyAddressShort(property.address);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -160,8 +165,9 @@ export default function PropertyDetail() {
       <SeoHead
         title={seoTitle}
         description={seoDescription}
-        image={photos[0] || property.cover_photo}
-        url={absoluteUrl(`/property/${property.id}`)}
+        image={sharePayload.imageUrl || photos[0] || property.cover_photo}
+        url={sharePayload.url}
+        type="website"
       />
       <PropertyJsonLd
         id={property.id}
@@ -265,7 +271,7 @@ export default function PropertyDetail() {
             <span className="shrink-0 opacity-50">/</span>
             <Link to="/catalog" className="hover:text-foreground transition-colors shrink-0">{formatPropertyTypesLabel(propertyTypes)}</Link>
             <span className="shrink-0 opacity-50">/</span>
-            <span className="text-foreground truncate min-w-0">{property.address}</span>
+            <span className="text-foreground truncate min-w-0">{displayTitle}</span>
           </nav>
 
           <div className="shrink-0 hidden lg:flex items-center gap-1">
@@ -278,12 +284,7 @@ export default function PropertyDetail() {
             >
               <Heart className="w-4 h-4" fill={saved ? "currentColor" : "none"} />
             </button>
-            <button
-              aria-label="Поделиться"
-              className="flex items-center justify-center w-8 h-8 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
+            <PropertyShareButton property={property} />
           </div>
         </div>
       </div>
@@ -318,20 +319,7 @@ export default function PropertyDetail() {
             <Heart className="w-6 h-6" strokeWidth={2.2} fill={saved ? "currentColor" : "none"} />
             <span className="text-[10px] font-medium">Сохранить</span>
           </button>
-          <button
-            onClick={() => {
-              if (navigator.share) {
-                navigator.share({ title: property.address, url: window.location.href }).catch(() => {});
-              } else {
-                navigator.clipboard?.writeText(window.location.href);
-              }
-            }}
-            aria-label="Поделиться"
-            className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-foreground hover:bg-muted active:scale-95 transition-all"
-          >
-            <Share2 className="w-6 h-6" strokeWidth={2.2} />
-            <span className="text-[10px] font-medium">Поделиться</span>
-          </button>
+          <PropertyShareButton property={property} variant="bar" />
         </div>
         <div className="h-[env(safe-area-inset-bottom)]" />
       </div>
@@ -340,9 +328,17 @@ export default function PropertyDetail() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="container mx-auto px-4 lg:px-8 py-6 lg:py-10 pt-16 lg:pt-20 pb-28 lg:pb-10 flex-1">
+        className="container mx-auto px-4 lg:px-8 pt-4 lg:pt-6 pb-24 lg:pb-10 flex-1">
 
-        <h1 className="sr-only">{seoTitle}</h1>
+        <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground leading-tight mb-1.5">
+          {displayTitle}
+        </h1>
+        {addressShort && (
+          <p className="mb-4 lg:mb-5 text-sm text-muted-foreground flex items-start gap-1.5">
+            <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-primary" />
+            <span>{addressShort}</span>
+          </p>
+        )}
 
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 min-w-0">
@@ -397,10 +393,7 @@ export default function PropertyDetail() {
               </span>
               <span className="flex items-center gap-1.5">
                 <Eye className="w-3.5 h-3.5" />
-                {property.views_count > 0
-                  ? property.views_count
-                  : 200 + (parseInt(property.id.slice(-4), 16) % 301)
-                } просмотров
+                {formatListingViews(property.views_count)} просмотров
               </span>
               <span className="text-muted-foreground/60">ID: {property.id.slice(0, 8)}</span>
             </div>

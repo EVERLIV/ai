@@ -1,9 +1,13 @@
 import { useRef } from "react";
 import { Link } from "react-router-dom";
+import { buildCatalogUrl } from "@/lib/catalogLinks";
 import { ChevronLeft, ChevronRight, MapPin, Maximize, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProperties } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
+import { propertyMatchesTypes } from "@/lib/propertyTypes";
+import { getPropertyCover } from "@/lib/propertyImages";
+import { buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
 
 interface Props {
   type: string;
@@ -14,7 +18,7 @@ export default function CategoryPropertySlider({ type, title = "Объекты �
   const { data: allProperties, isLoading } = useProperties();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const properties = allProperties?.filter((p) => p.type === type) ?? [];
+  const properties = allProperties?.filter((p) => propertyMatchesTypes(p, [type])) ?? [];
 
   const scroll = (dir: "left" | "right") => {
     if (!scrollRef.current) return;
@@ -29,9 +33,9 @@ export default function CategoryPropertySlider({ type, title = "Объекты �
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl font-display font-bold text-foreground mb-8">{title}</h2>
-          <div className="flex gap-6 overflow-hidden">
+          <div className="flex gap-4 overflow-hidden sm:gap-6">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="min-w-[350px] h-[320px] rounded-xl" />
+              <Skeleton key={i} className="min-w-[280px] h-[320px] rounded-xl sm:min-w-[350px]" />
             ))}
           </div>
         </div>
@@ -74,21 +78,15 @@ export default function CategoryPropertySlider({ type, title = "Объекты �
             <Link
               key={p.id}
               to={`/property/${p.id}`}
-              className="group min-w-[340px] max-w-[340px] snap-start rounded-xl border border-border bg-card overflow-hidden hover:shadow-lg transition-all duration-300"
+              className="group min-w-[280px] max-w-[280px] snap-start rounded-xl border border-border bg-card overflow-hidden hover:shadow-lg transition-all duration-300 sm:min-w-[340px] sm:max-w-[340px]"
             >
               <div className="relative h-48 overflow-hidden bg-muted">
-                {p.cover_photo ? (
-                  <img
-                    src={p.cover_photo}
-                    alt={p.address}
-                    loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                    Нет фото
-                  </div>
-                )}
+                <img
+                  src={getPropertyCover(p.cover_photo, p.type)}
+                  alt={p.address}
+                  loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
                 <div className="absolute top-3 left-3">
                   <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-primary text-primary-foreground">
                     {p.deal_type === "Продажа" ? "Продажа" : "Аренда"}
@@ -96,10 +94,15 @@ export default function CategoryPropertySlider({ type, title = "Объекты �
                 </div>
               </div>
               <div className="p-4 space-y-2">
-                <div className="flex items-start gap-1.5 text-muted-foreground text-sm">
-                  <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                  <span className="line-clamp-2 leading-snug">{p.address}</span>
+                <div className="font-semibold text-sm text-foreground line-clamp-2 leading-snug">
+                  {buildPropertyDisplayTitle(p)}
                 </div>
+                {formatPropertyAddressShort(p.address) && (
+                  <div className="flex items-start gap-1.5 text-muted-foreground text-xs">
+                    <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                    <span className="line-clamp-1 leading-snug">{formatPropertyAddressShort(p.address)}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1 text-muted-foreground text-xs">
                   <Maximize className="w-3.5 h-3.5 shrink-0" />
                   <span className="shrink-0">{p.area} м²</span>
@@ -116,7 +119,7 @@ export default function CategoryPropertySlider({ type, title = "Объекты �
         </div>
 
         <div className="mt-8 text-center">
-          <Link to={`/catalog?type=${encodeURIComponent(type)}`}>
+          <Link to={buildCatalogUrl({ types: type })}>
             <Button variant="outline" size="lg" className="gap-2">
               Смотреть все объекты
               <ArrowRight className="w-4 h-4" />

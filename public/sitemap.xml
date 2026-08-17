@@ -31,6 +31,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://arendacity.com/land</loc>
+    <lastmod>2026-08-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://arendacity.com/about</loc>
     <lastmod>2026-08-17</lastmod>
     <changefreq>weekly</changefreq>

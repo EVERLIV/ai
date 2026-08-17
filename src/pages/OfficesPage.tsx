@@ -9,6 +9,7 @@ import heroImg from "@/assets/hero-offices.jpg";
 import { Building2, MapPin, Shield, Clock, Users, CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SeoHead from "@/components/SeoHead";
+import { buildCatalogUrl } from "@/lib/catalogLinks";
 import { absoluteUrl } from "@/config/site";
 
 const benefits = [
@@ -56,7 +57,7 @@ export default function OfficesPage() {
                   Класс&nbsp;А, B+ и B — от&nbsp;15&nbsp;м² для стартапов до 5&nbsp;000&nbsp;м² для крупных компаний.
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <Link to="/catalog?type=Офис">
+                  <Link to={buildCatalogUrl({ types: "Офис" })}>
                     <Button size="lg" className="gap-2">
                       Смотреть офисы <ArrowRight className="w-4 h-4" />
                     </Button>
