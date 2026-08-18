@@ -1,0 +1,14 @@
+.git
+.github
+.claude
+node_modules
+dist
+docs
+sql
+supabase
+server
+playwright-fixture.ts
+playwright.config.ts
+*.md
+bun.lock
+bun.lockb

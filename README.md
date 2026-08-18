@@ -29,3 +29,9 @@ npm run preview
 ```sh
 npm test
 ```
+
+## Timeweb App Platform
+
+Do not use the **Frontend / React** app type. Timeweb's generated image runs `apt-get install curl` from `deb.debian.org`, which their builders often cannot reach.
+
+Use the repo `Dockerfile` (type **Dockerfile**, port 8080). Details: [docs/SETUP_TIMEWEB.md](docs/SETUP_TIMEWEB.md).

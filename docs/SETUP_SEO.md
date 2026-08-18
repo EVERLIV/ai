@@ -12,7 +12,7 @@
 | `feed.xml` | RSS-лента последних 50 объектов (+ до 10 новостей) |
 | `robots.txt` | Правила обхода + ссылка на sitemap |
 
-После `npm run build` файлы попадают в `dist/` и публикуются на Timeweb вместе с сайтом.
+После `npm run build` файлы попадают в `dist/` и публикуются на Timeweb вместе с сайтом. Сборка на App Platform должна идти через корневой `Dockerfile` (тип приложения **Dockerfile**), а не через Frontend/React — см. [SETUP_TIMEWEB.md](SETUP_TIMEWEB.md).
 
 ### Переменные окружения
 
