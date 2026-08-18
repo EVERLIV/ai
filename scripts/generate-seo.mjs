@@ -32,6 +32,7 @@ const STATIC_PATHS = [
   "/land",
   "/about",
   "/contacts",
+  "/vacancies",
   "/news",
   "/list-property",
 ];

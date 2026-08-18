@@ -37,6 +37,7 @@ const SOURCE_LABELS: Record<string, string> = {
   property_contact: "Форма на объекте",
   consultation_widget: "Виджет консультации",
   homepage_owner: "Главная — сдать объект",
+  vacancies_page: "Отклик на вакансию",
   category_contact: "Заявка по категории",
   management_request: "Передача в управление",
   website: "Сайт",

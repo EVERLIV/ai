@@ -4,7 +4,7 @@ import {
   Phone, Mail,
   Send, MessageCircle, Instagram, ChevronDown, Sparkles, User,
   Heart, FileText, LogOut, LayoutGrid, Settings, Building2,
-  ArrowUpRight, Newspaper, Info, BookOpen, Settings2, Shield,
+  ArrowUpRight, Newspaper, Info, BookOpen, Settings2, Shield, Briefcase,
 } from "lucide-react";
 import AIWizardModal from "@/components/AIWizardModal";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,6 +36,7 @@ const navItems: NavItem[] = [
       { label: "О нас", desc: "История, команда и ценности АрендаСити", href: "/about", icon: Info },
       { label: "Новости", desc: "Аналитика и события рынка недвижимости", href: "/news", icon: Newspaper },
       { label: "Контакты", desc: "Адрес, телефон, режим работы", href: "/contacts", icon: BookOpen },
+      { label: "Вакансии", desc: "Работа в агентстве коммерческой недвижимости", href: "/vacancies", icon: Briefcase },
     ],
   },
 ];
