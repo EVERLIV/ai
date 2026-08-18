@@ -251,7 +251,7 @@ export default function ListPropertyBlock({ variant = "section" }: Props) {
                     <span className="font-semibold text-foreground">Анастасия Романова</span>
                     <BadgeCheck className="w-4 h-4 text-primary shrink-0" />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">Менеджер по коммерческой недвижимости</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Менеджер по аренде</p>
                   <div className="flex items-center gap-3 mt-2">
                     <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />

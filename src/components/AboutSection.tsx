@@ -43,7 +43,7 @@ export default function AboutSection() {
                 <div className="w-10 h-px bg-primary" />
                 <div>
                   <div className="text-sm font-semibold">Анастасия Зорина</div>
-                  <div className="text-xs text-background/70">Директор АрендаСити</div>
+                  <div className="text-xs text-background/70">Менеджер по аренде</div>
                 </div>
               </div>
             </div>

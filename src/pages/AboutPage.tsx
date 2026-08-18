@@ -32,14 +32,14 @@ const values = [
 const team = [
   {
     name: "Анастасия Зорина",
-    role: "Директор",
+    role: "Менеджер по аренде",
     desc: "12 лет в коммерческой недвижимости. Специализируется на офисных и торговых объектах.",
     img: managerPhoto,
     rating: 4.9,
   },
   {
     name: "Анастасия Романова",
-    role: "Ведущий консультант",
+    role: "Менеджер по аренде",
     desc: "Эксперт по складской и производственной недвижимости. Более 200 сделок.",
     img: consultantAvatar,
     rating: 4.9,
@@ -152,7 +152,7 @@ export default function AboutPage() {
                         <div className="w-8 h-px bg-primary" />
                         <div>
                           <div className="text-sm font-semibold">Анастасия Зорина</div>
-                          <div className="text-xs text-background/50">Директор АрендаСити</div>
+                          <div className="text-xs text-background/50">Менеджер по аренде</div>
                         </div>
                       </div>
                     </div>
