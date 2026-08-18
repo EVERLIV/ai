@@ -1,79 +1,45 @@
 import { ArrowRight, Newspaper, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
+import { FALLBACK_NEWS_POSTS, sortNewsByDate } from "@/data/newsFallback";
 
-const news = [
-  {
-    id: 1,
-    tag: "Рынок",
-    date: "14 мая 2026",
-    title: "ГК «А101» вывела на рынок коммерческие площади в «Прокшино»",
-    excerpt: "Девелопер представил 51 помещение общей площадью почти 5,8 тыс. кв. м — от магазинов до кафе — в новом доме жилого района в ТиНАО.",
-    href: "/news/gk-a101-prokshino-kommercheskiye-ploshchadi",
-    cover: "https://cre.ru/media/files/20260514_065548_195.jpeg",
-  },
-  {
-    id: 2,
-    tag: "Рынок",
-    date: "14 мая 2026",
-    title: "БЦ «Вернадский» получил разрешение на строительство",
-    excerpt: "Группа «Абсолют» получила разрешение на строительство делового центра класса А у метро «Университет». Общая площадь объекта составит 45,5 тыс. кв. м, объём инвестиций — 10 млрд рублей. Ввод в эксплуатацию запланирован на 2027 год.",
-    href: "/news/bts-vernadskiy-razreshenie-na-stroitelstvo",
-    cover: "https://cre.ru/media/files/20260514_034452_617.jpeg",
-  },
-  {
-    id: 3,
-    tag: "Рынок",
-    date: "14 мая 2026",
-    title: "Wildberries ведёт переговоры об офисе у Павелецкого вокзала",
-    excerpt: "RWB рассматривает покупку или долгосрочную аренду бывшего офиса банка «Открытие» в бизнес-центре Vivaldi Plaza площадью 24,4 тыс. кв. м. Сделка может стать одной из крупнейших на рынке офисной недвижимости Москвы в этом году.",
-    href: "/news/wildberries-office-paveletsky",
-    cover: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80",
-  },
-  {
-    id: 4,
-    tag: "Новости компании",
-    date: "14 мая 2026",
-    title: "«Атол» перенёс серверные мощности в дата-центр MOS5",
-    excerpt: "Компания арендовала стойки с энергопотреблением 13 кВт у IXcellerate и зарезервировала дополнительную ёмкость под дальнейшее расширение инфраструктуры. Переезд позволил сократить операционные расходы на 18%.",
-    href: "/news/atol-datacenter-mos5-ixcellerate",
-    cover: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&q=80",
-  },
-  {
-    id: 5,
-    tag: "Рынок",
-    date: "13 мая 2026",
-    title: "«Северные Врата»: два склада выходят на финальный этап строительства",
-    excerpt: "Строительная готовность первых двух блоков индустриального парка достигла 80% — в мае начнётся заливка 7 тыс. кубометров промышленных полов. Первые арендаторы смогут въехать уже в третьем квартале 2026 года.",
-    href: "/news/severnye-vrata-finalnyy-etap-stroitelstva",
-    cover: "https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&q=80",
-  },
-];
+const news = sortNewsByDate(FALLBACK_NEWS_POSTS).slice(0, 5).map((post) => ({
+  id: post.id,
+  tag: post.category,
+  date: new Date(post.published_at || post.created_at).toLocaleDateString("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }),
+  title: post.title,
+  excerpt: post.excerpt || "",
+  href: `/news/${post.slug}`,
+  cover: post.cover_url,
+}));
 
 const tagColor: Record<string, string> = {
-  "Рынок":            "bg-blue-500/10 text-blue-600",
-  "Советы":           "bg-emerald-500/10 text-emerald-600",
+  "Рынок": "bg-blue-500/10 text-blue-600",
+  "Советы": "bg-emerald-500/10 text-emerald-600",
   "Новости компании": "bg-primary/10 text-primary",
-  "Законы":           "bg-amber-500/10 text-amber-600",
+  "Законы": "bg-amber-500/10 text-amber-600",
 };
 const tagDot: Record<string, string> = {
-  "Рынок":            "bg-blue-500",
-  "Советы":           "bg-emerald-500",
+  "Рынок": "bg-blue-500",
+  "Советы": "bg-emerald-500",
   "Новости компании": "bg-primary",
-  "Законы":           "bg-amber-500",
+  "Законы": "bg-amber-500",
 };
 
 export default function NewsSection() {
   return (
     <section className="py-14 bg-card border-b border-border">
       <div className="container mx-auto px-4 lg:px-8">
-
         <div className="flex items-end justify-between mb-8 flex-wrap gap-3">
           <div>
             <p className="text-[11px] font-semibold tracking-widest uppercase text-primary mb-1.5 inline-flex items-center gap-1.5">
               <Newspaper className="w-3.5 h-3.5" /> Медиа
             </p>
             <h2 className="font-display text-2xl font-bold text-foreground">Новости рынка</h2>
-            <p className="text-sm text-muted-foreground mt-1">Аналитика и события коммерческой недвижимости</p>
+            <p className="text-sm text-muted-foreground mt-1">Актуальная подборка по офисам, складам и торговой недвижимости</p>
           </div>
           <Link to="/news" className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
             Все новости <ArrowRight className="w-4 h-4" />
@@ -81,7 +47,6 @@ export default function NewsSection() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-5">
-          {/* Featured */}
           <Link
             to={news[0].href}
             className="group flex flex-col bg-background border border-border overflow-hidden hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 lg:row-span-2"
@@ -118,7 +83,6 @@ export default function NewsSection() {
             </div>
           </Link>
 
-          {/* Compact cards */}
           {news.slice(1).map((item) => (
             <Link
               key={item.id}
