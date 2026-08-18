@@ -169,7 +169,7 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
       </aside>
 
       <div className="flex-1 relative bg-muted">
-        <div ref={containerRef} className="absolute inset-0" style={{ filter: "grayscale(0.6) contrast(0.92) brightness(1.08)" }} />
+        <div ref={containerRef} className="absolute inset-0 map-canvas-muted" />
 
         {mapFailed && (
           <YandexMapFallback
@@ -258,11 +258,12 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
           transform: translate(-50%, -100%);
           transition: transform 160ms ease, z-index 0s;
           position: relative;
+          filter: none;
         }
         .cm-pin__label {
           display: block;
-          background: hsl(0, 72%, 51%);
-          color: #fff;
+          background: hsl(var(--primary));
+          color: hsl(var(--primary-foreground));
           font-size: 11px;
           font-weight: 700;
           font-family: inherit;
@@ -279,17 +280,17 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
           height: 0;
           border-left: 5px solid transparent;
           border-right: 5px solid transparent;
-          border-top: 6px solid hsl(0, 72%, 51%);
+          border-top: 6px solid hsl(var(--primary));
         }
         .cm-pin:hover { transform: translate(-50%, -100%) scale(1.06); z-index: 5; }
         .cm-pin:hover .cm-pin__label { box-shadow: 0 4px 14px rgba(0,0,0,0.28); }
         .cm-pin.is-active { z-index: 10; transform: translate(-50%, -100%) scale(1.12); }
         .cm-pin.is-active .cm-pin__label {
-          background: hsl(220, 25%, 10%);
+          background: hsl(0 72% 42%);
           box-shadow: 0 4px 16px rgba(0,0,0,0.35);
         }
         .cm-pin.is-active .cm-pin__tail {
-          border-top-color: hsl(220, 25%, 10%);
+          border-top-color: hsl(0 72% 42%);
         }
         .scrollbar-none::-webkit-scrollbar { display: none; }
         .scrollbar-none { scrollbar-width: none; }

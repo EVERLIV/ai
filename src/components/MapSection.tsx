@@ -206,7 +206,7 @@ export default function MapSection() {
           <div className="flex-1 relative bg-muted min-h-[360px] lg:min-h-0">
             {view === "map" ? (
               <>
-                <div ref={containerRef} className="absolute inset-0" style={{ filter: "grayscale(0.6) contrast(0.92) brightness(1.08)" }} />
+                <div ref={containerRef} className="absolute inset-0 map-canvas-muted" />
 
                 {mapFailed && (
                   <YandexMapFallback
@@ -343,11 +343,12 @@ export default function MapSection() {
           align-items: center;
           transform: translate(-50%, -100%);
           transition: transform 180ms cubic-bezier(.2,.8,.2,1);
+          filter: none;
         }
         .ms-pin__label {
           display: block;
-          background: hsl(0, 72%, 51%);
-          color: #fff;
+          background: hsl(var(--primary));
+          color: hsl(var(--primary-foreground));
           font-size: 11px;
           font-weight: 700;
           font-family: inherit;
@@ -362,13 +363,13 @@ export default function MapSection() {
           height: 0;
           border-left: 5px solid transparent;
           border-right: 5px solid transparent;
-          border-top: 6px solid hsl(0, 72%, 51%);
+          border-top: 6px solid hsl(var(--primary));
         }
         .ms-pin:hover { transform: translate(-50%, -100%) scale(1.06); z-index: 5; }
         .ms-pin:hover .ms-pin__label { box-shadow: 0 4px 14px rgba(0,0,0,0.28); }
         .ms-pin.is-active { z-index: 10; transform: translate(-50%, -100%) scale(1.12); }
-        .ms-pin.is-active .ms-pin__label { background: hsl(220, 25%, 10%); }
-        .ms-pin.is-active .ms-pin__tail { border-top-color: hsl(220, 25%, 10%); }
+        .ms-pin.is-active .ms-pin__label { background: hsl(0 72% 42%); }
+        .ms-pin.is-active .ms-pin__tail { border-top-color: hsl(0 72% 42%); }
       `}</style>
     </section>
   );

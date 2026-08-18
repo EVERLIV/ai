@@ -90,7 +90,7 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
   return (
     <div className="space-y-3">
       <div className="relative bg-muted overflow-hidden rounded-xl" style={{ height }}>
-        <div ref={containerRef} className="absolute inset-0" style={{ filter: "grayscale(0.6) contrast(0.92) brightness(1.08)" }} />
+        <div ref={containerRef} className="absolute inset-0 map-canvas-muted" />
 
         {mapFailed && (
           <YandexMapFallback
@@ -146,14 +146,13 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
           align-items: center;
           transform: translate(-50%, -100%);
           pointer-events: none;
-          filter: drop-shadow(0 4px 12px rgba(0,0,0,0.28));
         }
         .pm-pin__bubble {
           display: flex;
           align-items: center;
           gap: 5px;
-          background: #c0392b;
-          color: #fff;
+          background: hsl(var(--primary));
+          color: hsl(var(--primary-foreground));
           font-size: 12px;
           font-weight: 600;
           font-family: system-ui, -apple-system, sans-serif;
@@ -162,6 +161,7 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
           letter-spacing: 0.01em;
           line-height: 1;
           border-radius: 2px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.28);
         }
         .pm-pin__icon {
           display: flex;
@@ -179,7 +179,7 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
           height: 0;
           border-left: 7px solid transparent;
           border-right: 7px solid transparent;
-          border-top: 8px solid #c0392b;
+          border-top: 8px solid hsl(var(--primary));
         }
       `}</style>
     </div>

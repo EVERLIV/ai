@@ -383,6 +383,12 @@
 .mapboxgl-canvas { outline: none; }
 .mapbox-marker-strict { cursor: pointer; }
 
+/* Mute Yandex map tiles only — HTML price flags stay brand red */
+.map-canvas-muted canvas,
+.map-canvas-muted img {
+  filter: grayscale(0.55) contrast(0.92) brightness(1.08);
+}
+
 /* === Global border removal (requested) ===
    This rule neutralizes Tailwind utility borders site-wide so the
    app shows no outlines. It's intentionally specific and uses
