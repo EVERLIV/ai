@@ -46,9 +46,9 @@ export default function Index() {
                 <Home className="w-4 h-4" />
                 Новый раздел
               </div>
-              <h2 className="font-display text-2xl font-bold text-foreground">Жилая недвижимость на ArendaCity</h2>
+              <h2 className="font-display text-2xl font-bold text-foreground">Квартиры, дома и комнаты</h2>
               <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
-                Отдельный раздел `/zhilaya` для квартир, домов и комнат с общим кабинетом и бесплатным размещением объектов.
+                Отдельный раздел для жилья в Иркутске и области: снять, купить или сдать квартиру, дом или комнату. Тот же личный кабинет, что и для коммерции, а размещение для собственников — бесплатно.
               </p>
             </div>
             <Link to="/zhilaya" className="inline-flex items-center justify-center h-11 px-5 rounded-md bg-foreground text-background text-sm font-semibold hover:opacity-90 transition-opacity">

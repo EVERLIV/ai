@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Phone, Mail,
-  Send, MessageCircle, Instagram, ChevronDown, Sparkles, User,
+  MessageCircle, Instagram, ChevronDown, Sparkles, User,
   Heart, FileText, LogOut, LayoutGrid, Settings, Building2,
   ArrowUpRight, Newspaper, Info, BookOpen, Settings2, Shield, Briefcase,
 } from "lucide-react";
@@ -66,9 +66,8 @@ function getNavItems(isResidential: boolean): NavItem[] {
 }
 
 const socials = [
-  { Icon: Send, href: "https://t.me/arendacity", label: "Telegram" },
   { Icon: MessageCircle, href: `https://wa.me/${CONTACTS.phoneDigits}`, label: "WhatsApp" },
-  { Icon: Instagram, href: "https://instagram.com/arendacity", label: "Instagram" },
+  { Icon: Instagram, href: "https://www.instagram.com/arendacity38/", label: "Instagram" },
 ];
 
 export default function SiteHeader() {
