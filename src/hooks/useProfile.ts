@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { fetchMyProfileApi, updateMyProfileApi } from "@/lib/userPropertyApi";
 
 export type ProfileAccountType = "owner" | "realtor";
 export type VerificationStatus = "unverified" | "pending" | "verified" | "rejected";
@@ -43,12 +43,7 @@ export function useProfile() {
     queryKey: ["profile", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user!.id)
-        .single();
-      if (error) throw error;
+      const data = await fetchMyProfileApi(user!.id);
       return data as UserProfile;
     },
   });
@@ -61,8 +56,7 @@ export function useUpdateProfile() {
   return useMutation({
     mutationFn: async (payload: Partial<UserProfile>) => {
       if (!user) throw new Error("Не авторизован");
-      const { error } = await supabase.from("profiles").update(payload).eq("id", user.id);
-      if (error) throw error;
+      await updateMyProfileApi(user.id, payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
@@ -77,11 +71,7 @@ export function useRequestVerification() {
   return useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Не авторизован");
-      const { error } = await supabase
-        .from("profiles")
-        .update({ verification_status: "pending" })
-        .eq("id", user.id);
-      if (error) throw error;
+      await updateMyProfileApi(user.id, { verification_status: "pending" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });

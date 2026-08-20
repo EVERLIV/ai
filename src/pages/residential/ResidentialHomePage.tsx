@@ -94,7 +94,7 @@ export default function ResidentialHomePage() {
                 <Link to="/zhilaya/catalog" className="inline-flex h-11 items-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
                   Смотреть каталог <ArrowRight className="w-4 h-4" />
                 </Link>
-                <Link to="/zhilaya/list-property" className="inline-flex h-11 items-center gap-2 rounded-md border border-white/25 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white/15">
+                <Link to="/zhilaya/list-property?mode=rent" className="inline-flex h-11 items-center gap-2 rounded-md border border-white/25 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white/15">
                   <KeyRound className="w-4 h-4" />
                   Разместить объект за 0 ₽
                 </Link>
@@ -125,7 +125,7 @@ export default function ResidentialHomePage() {
               <Link to={buildCatalogUrl({ segment: "residential", deal: "Аренда" })} className="inline-flex h-10 items-center rounded-full border border-white/15 bg-white/10 px-4 text-sm font-medium text-white">
                 Снять надолго
               </Link>
-              <Link to="/zhilaya/list-property" className="inline-flex h-10 items-center rounded-full border border-primary/30 bg-primary/15 px-4 text-sm font-semibold text-white">
+              <Link to="/zhilaya/list-property?mode=rent" className="inline-flex h-10 items-center rounded-full border border-primary/30 bg-primary/15 px-4 text-sm font-semibold text-white">
                 Сдать жильё за 0 ₽
               </Link>
               <div className="ml-auto text-sm text-white/70">
@@ -211,7 +211,7 @@ export default function ResidentialHomePage() {
             </div>
 
             <aside className="space-y-4">
-              <Link to="/zhilaya/list-property" className="group block overflow-hidden rounded-2xl border border-border bg-card">
+              <Link to="/zhilaya/list-property?mode=rent" className="group block overflow-hidden rounded-2xl border border-border bg-card">
                 <div className="relative h-56 overflow-hidden">
                   <img src={residentialBannerFree} alt="Бесплатное размещение жилья" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,20,0.04)_0%,rgba(8,12,20,0.8)_100%)]" />
@@ -254,7 +254,7 @@ export default function ResidentialHomePage() {
               <h2 className="mt-2 text-2xl font-display font-bold text-foreground">Разместите жильё бесплатно и получайте заявки</h2>
               <p className="mt-2 text-sm text-muted-foreground">Публикация занимает несколько минут.</p>
             </div>
-            <Link to="/zhilaya/list-property" className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 lg:mt-0">
+            <Link to="/zhilaya/list-property?mode=rent" className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 lg:mt-0">
               Добавить объект
             </Link>
           </div>

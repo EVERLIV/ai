@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Building2, Pencil, XCircle, ExternalLink, MapPin, Maximize2, Archive, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { updateMyPropertyApi, deleteMyPropertyApi } from "@/lib/userPropertyApi";
 import { useMyProperties, type MyProperty } from "@/hooks/useMyProperties";
 import PropertySubmissionWizard from "@/components/account/PropertySubmissionWizard";
 import PropertyImage from "@/components/PropertyImage";
@@ -188,24 +189,45 @@ function PropertyCard({
   );
 }
 
-export default function MyPropertiesTab({ defaultSegment = "commercial" }: { defaultSegment?: PropertySegment }) {
+export default function MyPropertiesTab({
+  defaultSegment = "commercial",
+  initialRequestType,
+}: {
+  defaultSegment?: PropertySegment;
+  initialRequestType?: RequestType;
+}) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { data: properties = [], isLoading } = useMyProperties();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editProperty, setEditProperty] = useState<MyProperty | null>(null);
+  const [wizardRequestType, setWizardRequestType] = useState<RequestType | undefined>(undefined);
   const [cancelTarget, setCancelTarget] = useState<MyProperty | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<MyProperty | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MyProperty | null>(null);
+  const autoOpenedRef = useRef(false);
+
+  useEffect(() => {
+    if (!initialRequestType || autoOpenedRef.current) return;
+    autoOpenedRef.current = true;
+    setEditProperty(null);
+    setWizardRequestType(initialRequestType);
+    setWizardOpen(true);
+
+    const params = new URLSearchParams(location.search);
+    params.delete("request_type");
+    const qs = params.toString();
+    navigate(`/account${qs ? `?${qs}` : ""}#properties`, { replace: true });
+  }, [initialRequestType, location.search, navigate]);
 
   const archiveMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("properties")
-        .update({ moderation_status: "archived", is_active: false })
-        .eq("id", id);
-      if (error) throw error;
+      if (!user) throw new Error("Не авторизован");
+      await updateMyPropertyApi(user.id, id, { moderation_status: "cancelled", is_active: false });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-properties"] });
@@ -220,11 +242,8 @@ export default function MyPropertiesTab({ defaultSegment = "commercial" }: { def
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("properties")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
+      if (!user) throw new Error("Не авторизован");
+      await deleteMyPropertyApi(user.id, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-properties"] });
@@ -239,11 +258,8 @@ export default function MyPropertiesTab({ defaultSegment = "commercial" }: { def
 
   const cancelMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("properties")
-        .update({ moderation_status: "cancelled", is_active: false })
-        .eq("id", id);
-      if (error) throw error;
+      if (!user) throw new Error("Не авторизован");
+      await updateMyPropertyApi(user.id, id, { moderation_status: "cancelled", is_active: false });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-properties"] });
@@ -258,11 +274,13 @@ export default function MyPropertiesTab({ defaultSegment = "commercial" }: { def
 
   const openNew = () => {
     setEditProperty(null);
+    setWizardRequestType(undefined);
     setWizardOpen(true);
   };
 
   const openEdit = (property: MyProperty) => {
     setEditProperty(property);
+    setWizardRequestType(undefined);
     setWizardOpen(true);
   };
 
@@ -309,9 +327,16 @@ export default function MyPropertiesTab({ defaultSegment = "commercial" }: { def
 
       <PropertySubmissionWizard
         open={wizardOpen}
-        onOpenChange={(o) => { setWizardOpen(o); if (!o) setEditProperty(null); }}
+        onOpenChange={(o) => {
+          setWizardOpen(o);
+          if (!o) {
+            setEditProperty(null);
+            setWizardRequestType(undefined);
+          }
+        }}
         editProperty={editProperty}
         segment={editProperty?.segment === "residential" ? "residential" : defaultSegment}
+        initialRequestType={wizardRequestType}
       />
 
       <AlertDialog open={!!cancelTarget} onOpenChange={(o) => { if (!o) setCancelTarget(null); }}>

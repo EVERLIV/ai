@@ -52,7 +52,7 @@ export default function ResidentialCategoryPage({
               <Link to={buildCatalogUrl({ segment: "residential", types: type })} className="inline-flex items-center gap-2 h-11 px-5 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
                 Смотреть в каталоге <ArrowRight className="w-4 h-4" />
               </Link>
-              <Link to="/zhilaya/list-property" className="inline-flex items-center gap-2 h-11 px-5 rounded-md border border-border text-sm font-semibold hover:bg-muted/50 transition-colors">
+              <Link to="/zhilaya/list-property?mode=rent" className="inline-flex items-center gap-2 h-11 px-5 rounded-md border border-border text-sm font-semibold hover:bg-muted/50 transition-colors">
                 Разместить объект за 0 ₽
               </Link>
             </div>

@@ -26,26 +26,43 @@ type Tab = typeof TABS[number]["key"];
 const VALID_TABS = new Set<string>(TABS.map((t) => t.key));
 
 export default function AccountPage() {
-  const { user, signOut } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [tab, setTab] = useState<Tab>("favorites");
   const { data: properties = [] } = useProperties();
   const { data: profile } = useProfile();
-  const requestedSegment = new URLSearchParams(location.search).get("segment") === "residential" ? "residential" : "commercial";
+  const searchParams = new URLSearchParams(location.search);
+  const requestedSegment = searchParams.get("segment") === "residential" ? "residential" : "commercial";
+  const requestTypeParam = searchParams.get("request_type");
+  const initialRequestType =
+    requestTypeParam === "free_listing" || requestTypeParam === "management"
+      ? requestTypeParam
+      : undefined;
 
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
     if (VALID_TABS.has(hash)) setTab(hash as Tab);
-  }, []);
+    else if (initialRequestType) setTab("properties");
+  }, [initialRequestType]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      const redirect = `${location.pathname}${location.search}${location.hash || "#properties"}`;
+      navigate(`/auth?tab=register&redirect=${encodeURIComponent(redirect)}`, { replace: true });
+    }
+  }, [authLoading, user, navigate, location.pathname, location.search, location.hash]);
 
   const switchTab = (key: Tab) => {
     setTab(key);
-    window.history.replaceState(null, "", `/account#${key}`);
+    const params = new URLSearchParams(location.search);
+    params.delete("request_type");
+    const qs = params.toString();
+    window.history.replaceState(null, "", `/account${qs ? `?${qs}` : ""}#${key}`);
   };
 
-  if (!user) {
-    navigate("/auth");
+  if (authLoading || !user) {
     return null;
   }
 
@@ -174,7 +191,12 @@ export default function AccountPage() {
               </div>
             )}
 
-            {tab === "properties" && <MyPropertiesTab defaultSegment={requestedSegment} />}
+            {tab === "properties" && (
+              <MyPropertiesTab
+                defaultSegment={requestedSegment}
+                initialRequestType={initialRequestType}
+              />
+            )}
 
             {tab === "requests" && <MyLeadsTab />}
 

@@ -177,6 +177,22 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const { byCategory } = useAllDictionaryValues();
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState<PropertyForm>(emptyForm);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
+  const [coverIndex, setCoverIndex] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [propSearch, setPropSearch] = useState("");
+  const [addressQuery, setAddressQuery] = useState("");
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+  const [latText, setLatText] = useState("");
+  const [lngText, setLngText] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const allPropertyTypes = byCategory("property_type");
   const TYPES = form.segment === "residential"
     ? (
@@ -201,22 +217,6 @@ export default function Dashboard() {
   const VAT_OPTIONS = byCategory("vat").length > 0 ? byCategory("vat") : [...FALLBACK_VAT];
   const LANDLORD_TYPES = byCategory("landlord_type").length > 0 ? byCategory("landlord_type") : [...FALLBACK_LANDLORD_TYPES];
   const PURPOSE_OPTIONS = byCategory("purpose").length > 0 ? byCategory("purpose") : [...FALLBACK_PURPOSE];
-
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<PropertyForm>(emptyForm);
-  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
-  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
-  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
-  const [coverIndex, setCoverIndex] = useState(0);
-  const [uploading, setUploading] = useState(false);
-  const [propSearch, setPropSearch] = useState("");
-  const [addressQuery, setAddressQuery] = useState("");
-  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
-  const [geocoding, setGeocoding] = useState(false);
-  const [latText, setLatText] = useState("");
-  const [lngText, setLngText] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sorting
   const [sortField, setSortField] = useState<string | null>(null);

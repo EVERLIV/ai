@@ -194,7 +194,7 @@ function PromoCard() {
         Профессиональная фотосъёмка, экспертная оценка и продвижение вашей коммерческой недвижимости.
       </p>
       <Link
-        to="/list-property"
+        to="/list-property?mode=rent"
         className="relative mt-auto inline-flex items-center justify-center h-10 px-4 rounded-md bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-colors"
       >
         Узнать подробнее
@@ -245,7 +245,7 @@ function CtaBanner() {
             ))}
           </ul>
           <Link
-            to="/list-property"
+            to="/list-property?mode=management"
             className="justify-self-start md:justify-self-end inline-flex items-center h-11 px-6 rounded-md bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
           >
             Разместить объект

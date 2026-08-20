@@ -61,7 +61,7 @@ export default function LandPage() {
                       Смотреть участки <ArrowRight className="w-4 h-4" />
                     </Button>
                   </Link>
-                  <Link to="/list-property?type=Земля">
+                  <Link to="/list-property?mode=rent&type=Земля">
                     <Button size="lg" variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20">
                       Разместить свою землю за 0 ₽
                     </Button>
@@ -140,7 +140,7 @@ export default function LandPage() {
                       от арендаторов или покупателей без долгой ручной переписки.
                     </p>
                   </div>
-                  <Link to="/list-property?type=Земля">
+                  <Link to="/list-property?mode=rent&type=Земля">
                     <Button size="lg" className="gap-2 whitespace-nowrap">
                       Разместить свою землю за 0 ₽
                       <ArrowRight className="w-4 h-4" />

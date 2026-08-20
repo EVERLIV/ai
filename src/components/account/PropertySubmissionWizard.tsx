@@ -1,8 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import {
+  insertMyPropertyApi,
+  updateMyPropertyApi,
+  uploadMyPropertyPhotoApi,
+} from "@/lib/userPropertyApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -128,6 +132,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   editProperty?: MyProperty | null;
   segment?: PropertySegment;
+  initialRequestType?: RequestType;
 }
 
 export default function PropertySubmissionWizard({
@@ -135,6 +140,7 @@ export default function PropertySubmissionWizard({
   onOpenChange,
   editProperty = null,
   segment = "commercial",
+  initialRequestType,
 }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -169,6 +175,7 @@ export default function PropertySubmissionWizard({
         ...emptyForm,
         segment,
         types: [isResidentialSegment(segment) ? "Квартира" : "Офис"],
+        request_type: initialRequestType || "free_listing",
       });
       setExistingPhotos([]);
       setPhotoPreviews([]);
@@ -176,11 +183,11 @@ export default function PropertySubmissionWizard({
       setCoverIndex(0);
       setStep("basic");
     }
-  }, [open, editProperty]);
+  }, [open, editProperty, segment, initialRequestType]);
 
   const isSale = isSaleDeal(form.deal_type);
-  const dealTypeOptions = isResidential ? RESIDENTIAL_DEAL_TYPES : DEAL_TYPES;
   const isResidential = form.segment === "residential";
+  const dealTypeOptions = isResidential ? RESIDENTIAL_DEAL_TYPES : DEAL_TYPES;
   const isLand = isLandProperty({ type: form.types[0], extras: { property_types: form.types } });
   const typeOptions = isResidential ? RESIDENTIAL_PROPERTY_TYPES : COMMERCIAL_PROPERTY_TYPES;
   const conditionOptions = isResidential ? RESIDENTIAL_CONDITIONS : CONDITIONS;
@@ -266,11 +273,7 @@ export default function PropertySubmissionWizard({
 
     for (const file of photoFiles) {
       const compressed = await compressImage(file);
-      const path = `${propertyId}/${crypto.randomUUID()}.jpg`;
-      const { error } = await supabase.storage.from("property-photos").upload(path, compressed);
-      if (error) throw error;
-      const { data } = supabase.storage.from("property-photos").getPublicUrl(path);
-      urls.push(data.publicUrl);
+      urls.push(await uploadMyPropertyPhotoApi(propertyId, compressed));
     }
     const cover = urls[coverIndex] || urls[0] || "";
     return { urls, cover };
@@ -296,27 +299,25 @@ export default function PropertySubmissionWizard({
 
       if (editId) {
         const { urls, cover } = await uploadPhotos(editId);
-        const { error } = await supabase.from("properties").update({
+        await updateMyPropertyApi(user.id, editId, {
           ...payload,
           photos: urls,
           cover_photo: cover || null,
           photos_count: urls.length,
-        }).eq("id", editId);
-        if (error) throw error;
+        });
       } else {
-        const { data, error } = await supabase.from("properties").insert(payload).select("id, public_id").single();
-        if (error) throw error;
+        const data = await insertMyPropertyApi(user.id, payload);
 
         propertyId = data.id;
         publicId = data.public_id;
 
         if (photoFiles.length > 0 || existingPhotos.length > 0) {
           const { urls, cover } = await uploadPhotos(data.id);
-          await supabase.from("properties").update({
+          await updateMyPropertyApi(user.id, data.id, {
             photos: urls,
             cover_photo: cover,
             photos_count: urls.length,
-          }).eq("id", data.id);
+          });
         }
       }
 

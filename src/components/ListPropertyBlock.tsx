@@ -1,161 +1,210 @@
-import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ShieldCheck, TrendingUp, Camera, FileText, Users,
   CheckCircle2, Phone as PhoneIcon, UserPlus,
-  Star, BadgeCheck, Clock3, ArrowRight, Building2, KeyRound, BarChart3,
+  Star, BadgeCheck, Clock3, ArrowRight, Building2, BarChart3,
+  Megaphone, Settings2, ChevronLeft,
 } from "lucide-react";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useAuth } from "@/hooks/useAuth";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import { CONTACTS } from "@/config/company";
 import type { PropertySegment } from "@/config/propertySegments";
-
-type Mode = "management" | "rent";
+import {
+  type ListPropertyMode,
+  listPropertyPath,
+  placementCtaPath,
+  loginToAddPropertyPath,
+  modeToRequestType,
+} from "@/lib/listPropertyLinks";
 
 interface Props {
   variant?: "page" | "section";
   segment?: PropertySegment;
 }
 
-const steps = [
+const freeStepsCommercial = [
+  { title: "Зарегистрируйтесь", body: "Имя, телефон и email — меньше минуты." },
+  { title: "Заполните карточку объекта", body: "Адрес, площадь, ставка, фото и описание в кабинете." },
+  { title: "Дождитесь проверки", body: "После модерации объявление появится в каталоге и начнёт получать заявки." },
+];
+
+const freeStepsResidential = [
+  { title: "Зарегистрируйтесь", body: "Имя, телефон и email — меньше минуты." },
+  { title: "Добавьте квартиру, дом или комнату", body: "Адрес, площадь, цена, фото и описание в кабинете." },
+  { title: "Дождитесь проверки", body: "После модерации жильё появится в каталоге и начнёт получать отклики." },
+];
+
+const freePerksCommercial = [
+  "Размещение в каталоге бесплатно",
+  "Редактируйте объявление в любой момент",
+  "Заявки приходят в личный кабинет",
+  "Нужна помощь — подключим менеджера",
+];
+
+const freePerksResidential = [
+  "Размещение жилья бесплатно",
+  "Редактируйте объявление в любой момент",
+  "Отклики приходят в личный кабинет",
+  "Нужна помощь — подключим менеджера",
+];
+
+const managementSteps = [
   {
     n: "1",
-    title: "Подберём лучшего менеджера",
-    body: "Персональный менеджер изучит ваш объект и предложит оптимальную стратегию сдачи — цену, условия, целевую аудиторию.",
+    title: "Подберём менеджера",
+    body: "Персональный менеджер изучит объект и предложит цену, условия и аудиторию.",
   },
   {
     n: "2",
-    title: "Подготовим объект к успешной аренде",
-    body: "Сделаем профессиональные фото, напишем продающее описание и оценим рыночную стоимость аренды.",
+    title: "Подготовим к сдаче",
+    body: "Профессиональные фото, продающее описание и оценка рыночной ставки.",
   },
   {
     n: "3",
-    title: "Ваше объявление увидят все",
-    body: "Размещаем объект в нашем каталоге, SEO-страницах и партнёрских площадках — чтобы найти арендатора быстрее.",
+    title: "Разместим и продвинем",
+    body: "Каталог, SEO и партнёрские площадки — чтобы найти арендатора быстрее.",
   },
   {
     n: "4",
-    title: "Звонки и просмотры — взяли на себя",
-    body: "Менеджер сам принимает звонки, организует показы и отсеивает неподходящих кандидатов. Вам только принять решение.",
+    title: "Звонки и показы — на нас",
+    body: "Принимаем звонки, организуем показы и отсеиваем неподходящих кандидатов.",
   },
 ];
 
-const perks = [
+const managementPerks = [
   {
     icon: ShieldCheck,
     title: "Проверенные арендаторы",
-    body: "Проверяем платёжеспособность и деловую репутацию каждого кандидата перед показом.",
+    body: "Проверяем платёжеспособность и репутацию перед показом.",
   },
   {
     icon: FileText,
     title: "Договор и документы",
-    body: "Юридическое сопровождение от А до Я: договор, акты, контроль оплат и индексации.",
+    body: "Юридическое сопровождение: договор, акты, контроль оплат.",
   },
   {
     icon: Camera,
     title: "Фото и маркетинг",
-    body: "Профессиональная съёмка и продающее описание объекта — за наш счёт.",
+    body: "Профессиональная съёмка и описание — за наш счёт.",
   },
   {
     icon: BarChart3,
     title: "Аналитика и отчёты",
-    body: "Ежемесячный отчёт о состоянии объекта, платежах и рыночной ситуации.",
+    body: "Ежемесячный отчёт о платежах и состоянии объекта.",
   },
   {
     icon: Users,
     title: "Поток заявок",
-    body: "Целевые арендаторы из каталога, SEO и партнёрских каналов — без лишних звонков для вас.",
+    body: "Целевые арендаторы из каталога и партнёрских каналов.",
   },
   {
     icon: TrendingUp,
     title: "Доход без простоев",
-    body: "Средний срок сдачи — 14 дней. Контролируем заполняемость и вовремя начинаем поиск нового арендатора.",
-  },
-];
-
-const addSteps = [
-  {
-    title: "Зарегистрируйтесь на сайте",
-    body: "Укажите имя, телефон и email — займёт меньше минуты.",
-  },
-  {
-    title: "Заполните карточку объекта",
-    body: "Адрес, площадь, ставка, фотографии и описание — прямо в личном кабинете.",
-  },
-  {
-    title: "Дождитесь проверки",
-    body: "Модератор проверит данные, после чего объект появится в каталоге и начнёт получать заявки.",
+    body: "Средний срок сдачи — 14 дней. Контролируем заполняемость.",
   },
 ];
 
 const stats = [
   { value: "320+", label: "объектов под управлением" },
   { value: "14 дн.", label: "средний срок сдачи" },
-  { value: "98%", label: "клиентов возвращаются" },
+  { value: "0 ₽", label: "размещение в каталоге" },
 ];
 
+function parseMode(search: string): ListPropertyMode | null {
+  const m = new URLSearchParams(search).get("mode");
+  if (m === "rent" || m === "management") return m;
+  return null;
+}
+
 export default function ListPropertyBlock({ variant = "section", segment = "commercial" }: Props) {
-  const [mode, setMode] = useState<Mode>("management");
   const { ref, isVisible } = useScrollReveal();
   const { search } = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
-
-  useEffect(() => {
-    const m = new URLSearchParams(search).get("mode");
-    if (m === "rent" || m === "management") setMode(m);
-  }, [search]);
+  const mode = parseMode(search);
 
   const isPage = variant === "page";
   const isResidential = segment === "residential";
+  const basePath = listPropertyPath(segment);
+
+  const setMode = (next: ListPropertyMode | null) => {
+    if (!next) {
+      navigate(basePath, { replace: true });
+      return;
+    }
+    navigate(`${basePath}?mode=${next}`, { replace: true });
+  };
+
+  const freeSteps = isResidential ? freeStepsResidential : freeStepsCommercial;
+  const freePerks = isResidential ? freePerksResidential : freePerksCommercial;
 
   return (
-    <div ref={ref} className={`${isPage ? "pt-0" : ""} ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
-
+    <div
+      ref={ref}
+      className={`${isPage ? "pt-0 pb-24 md:pb-0" : ""} ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}
+    >
       {/* ── HERO ─────────────────────────────────────────── */}
-      <section className="bg-muted/60 border-b border-border py-16 lg:py-20">
+      <section className="bg-muted/60 border-b border-border py-12 lg:py-16">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="max-w-2xl">
+          <div className="max-w-3xl">
+            {mode && (
+              <button
+                type="button"
+                onClick={() => setMode(null)}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground mb-4 transition-colors"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                Выбрать другой способ
+              </button>
+            )}
             <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-3">
               {isResidential ? "Жильё на АрендаСити" : "Сдайте на АрендаСити"}
             </p>
-            <h1 className="font-display text-4xl lg:text-5xl font-bold leading-tight text-foreground mb-6">
-              {isResidential ? "Добавьте жильё —" : "Добавьте объект —"}<br />
-              {isResidential ? "найдём жильца или покупателя" : "найдём арендатора"}
+            <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight text-foreground mb-4">
+              {!mode && (isResidential ? "Как разместить жильё?" : "Как разместить объект?")}
+              {mode === "rent" && (isResidential ? "Сдайте жильё бесплатно" : "Сдайте объект бесплатно")}
+              {mode === "management" && "Передайте в управление"}
             </h1>
             <p className="text-muted-foreground text-base leading-relaxed mb-8 max-w-xl">
-              {isResidential
-                ? "Разместите квартиру, дом или комнату самостоятельно через личный кабинет — бесплатно и без лишних посредников. Нужно больше, чем публикация? АрендаСити поможет с показами, заявками и сопровождением."
-                : "Разместите объект самостоятельно через личный кабинет — бесплатно и без звонков. Нужно больше, чем публикация? АрендаСити возьмёт на себя поиск арендаторов, документы и контроль платежей."}
+              {!mode &&
+                (isResidential
+                  ? "Выберите: опубликовать самостоятельно в каталоге за 0 ₽ или передать АрендаСити полное сопровождение."
+                  : "Выберите: опубликовать самостоятельно в каталоге за 0 ₽ или передать АрендаСити поиск арендаторов и документы.")}
+              {mode === "rent" &&
+                (isResidential
+                  ? "Сами заполняете карточку в кабинете — после модерации жильё появляется в каталоге и получает отклики."
+                  : "Сами заполняете карточку в кабинете — после модерации объект появляется в каталоге и получает заявки.")}
+              {mode === "management" &&
+                "Мы берём объект на полное сопровождение: фото, показы, договор и контроль платежей."}
             </p>
 
-            {/* Mode switcher */}
-            <div className="flex gap-3 flex-wrap mb-8">
-              <button
-                onClick={() => setMode("management")}
-                className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold border transition-all ${
-                  mode === "management"
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-background text-muted-foreground border-border hover:border-foreground/40"
-                }`}
-              >
-                <ShieldCheck className="w-4 h-4" />
-                Передать в управление
-              </button>
-              <button
-                onClick={() => setMode("rent")}
-                className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold border transition-all ${
-                  mode === "rent"
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-background text-muted-foreground border-border hover:border-foreground/40"
-                }`}
-              >
-                <KeyRound className="w-4 h-4" />
-                Разместить в каталоге
-              </button>
-            </div>
+            {!mode && (
+              <div className="grid sm:grid-cols-2 gap-4 mb-8">
+                <PathCard
+                  icon={Megaphone}
+                  title="Сдать бесплатно"
+                  badge="0 ₽"
+                  body={
+                    isResidential
+                      ? "Сами публикуете квартиру, дом или комнату в каталоге. Заявки — в личный кабинет."
+                      : "Сами публикуете объект в каталоге. Заявки от арендаторов — в личный кабинет."
+                  }
+                  cta="Выбрать бесплатное размещение"
+                  onClick={() => setMode("rent")}
+                  primary
+                />
+                <PathCard
+                  icon={Settings2}
+                  title="Передать в управление"
+                  badge="Под ключ"
+                  body="Менеджер ведёт показы, документы и поиск. Вам — только решения по кандидатам."
+                  cta="Выбрать управление"
+                  onClick={() => setMode("management")}
+                />
+              </div>
+            )}
 
-            {/* Stats row */}
             <div className="flex flex-wrap gap-8">
               {stats.map((s) => (
                 <div key={s.label}>
@@ -168,17 +217,196 @@ export default function ListPropertyBlock({ variant = "section", segment = "comm
         </div>
       </section>
 
-      {/* ── ЧТО ВЫ ПОЛУЧИТЕ ─────────────────────────────── */}
-      <section className="py-16 bg-background">
+      {mode === "rent" && (
+        <FreeListingContent
+          segment={segment}
+          isResidential={isResidential}
+          steps={freeSteps}
+          perks={freePerks}
+          user={!!user}
+        />
+      )}
+
+      {mode === "management" && (
+        <ManagementContent
+          segment={segment}
+          isResidential={isResidential}
+          user={!!user}
+        />
+      )}
+
+      {!mode && variant === "section" && (
+        <div className="container mx-auto px-4 lg:px-8 py-10">
+          <p className="text-sm text-muted-foreground text-center">
+            Выберите способ размещения выше — дальше покажем шаги и кнопку действия.
+          </p>
+        </div>
+      )}
+
+      {mode && (
+        <StickyCta
+          segment={segment}
+          mode={mode}
+          isLoggedIn={!!user}
+        />
+      )}
+    </div>
+  );
+}
+
+function PathCard({
+  icon: Icon,
+  title,
+  badge,
+  body,
+  cta,
+  onClick,
+  primary,
+}: {
+  icon: React.ElementType;
+  title: string;
+  badge: string;
+  body: string;
+  cta: string;
+  onClick: () => void;
+  primary?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-left p-5 sm:p-6 border transition-all hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+        primary
+          ? "bg-foreground text-background border-foreground"
+          : "bg-card text-foreground border-border"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className={`w-10 h-10 flex items-center justify-center ${primary ? "bg-background/15" : "bg-primary/10"}`}>
+          <Icon className={`w-5 h-5 ${primary ? "text-background" : "text-primary"}`} />
+        </div>
+        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${
+          primary ? "bg-background/15 text-background" : "bg-primary/10 text-primary"
+        }`}>
+          {badge}
+        </span>
+      </div>
+      <h2 className={`font-display text-xl font-bold mb-2 ${primary ? "text-background" : "text-foreground"}`}>
+        {title}
+      </h2>
+      <p className={`text-sm leading-relaxed mb-5 ${primary ? "text-background/75" : "text-muted-foreground"}`}>
+        {body}
+      </p>
+      <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${primary ? "text-background" : "text-primary"}`}>
+        {cta}
+        <ArrowRight className="w-4 h-4" />
+      </span>
+    </button>
+  );
+}
+
+function FreeListingContent({
+  segment,
+  isResidential,
+  steps,
+  perks,
+  user,
+}: {
+  segment: PropertySegment;
+  isResidential: boolean;
+  steps: { title: string; body: string }[];
+  perks: string[];
+  user: boolean;
+}) {
+  const ctaTo = placementCtaPath(segment, "rent", user);
+  const loginTo = loginToAddPropertyPath(segment, "free_listing");
+
+  return (
+    <>
+      <section className="py-12 lg:py-16 bg-background" id="list-property">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-8 items-start">
+            <div className="space-y-6">
+              <div>
+                <h2 className="font-display text-2xl font-bold text-foreground mb-2">
+                  {isResidential ? "Бесплатное размещение жилья" : "Бесплатное размещение в каталоге"}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Три шага — от регистрации до публикации. Без звонков менеджеру, если справляетесь сами.
+                </p>
+              </div>
+
+              <ul className="space-y-3">
+                {perks.map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-sm text-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+
+              <PrimaryCta to={ctaTo} loggedIn={user} mode="rent" className="hidden md:inline-flex" />
+              {!user && (
+                <p className="text-xs text-muted-foreground hidden md:block">
+                  Уже есть аккаунт?{" "}
+                  <Link to={loginTo} className="text-primary hover:underline">Войти</Link>
+                </p>
+              )}
+            </div>
+
+            <div className="bg-card border border-border p-6 sm:p-7">
+              <h3 className="font-display text-lg font-bold text-foreground mb-1">Как это работает</h3>
+              <p className="text-xs text-muted-foreground mb-6">Быстрый старт для собственника</p>
+              <ol className="space-y-5 mb-7">
+                {steps.map((s, i) => (
+                  <li key={s.title} className="flex gap-4">
+                    <span className="shrink-0 w-7 h-7 bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                      {i + 1}
+                    </span>
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">{s.title}</div>
+                      <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{s.body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <PrimaryCta to={ctaTo} loggedIn={user} mode="rent" className="w-full md:hidden" />
+              {!user && (
+                <p className="text-xs text-muted-foreground text-center mt-3 md:hidden">
+                  Уже есть аккаунт?{" "}
+                  <Link to={loginTo} className="text-primary hover:underline">Войти</Link>
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function ManagementContent({
+  segment,
+  isResidential,
+  user,
+}: {
+  segment: PropertySegment;
+  isResidential: boolean;
+  user: boolean;
+}) {
+  const ctaTo = placementCtaPath(segment, "management", user);
+  const loginTo = loginToAddPropertyPath(segment, "management");
+
+  return (
+    <>
+      <section className="py-12 lg:py-16 bg-background">
         <div className="container mx-auto px-4 lg:px-8">
           <h2 className="font-display text-2xl font-bold text-foreground mb-2">Что вы получите</h2>
           <p className="text-sm text-muted-foreground mb-10">
-            {mode === "management"
-              ? "Полное операционное управление — от поиска до контроля платежей"
-              : "Профессиональное размещение и поток целевых заявок"}
+            Полное операционное управление — от поиска до контроля платежей
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {perks.map(({ icon: Icon, title, body }) => (
+            {managementPerks.map(({ icon: Icon, title, body }) => (
               <div key={title} className="bg-card border border-border p-6 flex flex-col gap-3">
                 <div className="w-10 h-10 bg-primary/10 flex items-center justify-center">
                   <Icon className="w-5 h-5 text-primary" />
@@ -191,20 +419,18 @@ export default function ListPropertyBlock({ variant = "section", segment = "comm
         </div>
       </section>
 
-      {/* ── ПРОЙДЁМ С ВАМИ ВЕСЬ ПУТЬ ────────────────────── */}
-      <section className="py-16 bg-card border-y border-border">
+      <section className="py-12 lg:py-16 bg-card border-y border-border">
         <div className="container mx-auto px-4 lg:px-8">
           <h2 className="font-display text-2xl font-bold text-foreground mb-2">Пройдём с вами весь путь</h2>
           <p className="text-sm text-muted-foreground mb-12">
             Прозрачный процесс от заявки до подписания договора
           </p>
           <div className="space-y-0">
-            {steps.map((step, i) => (
+            {managementSteps.map((step, i) => (
               <div
                 key={step.n}
                 className={`grid lg:grid-cols-2 gap-0 border border-border ${i > 0 ? "border-t-0" : ""}`}
               >
-                {/* Text side */}
                 <div className={`p-8 lg:p-10 flex gap-6 items-start ${i % 2 === 1 ? "lg:order-2" : ""}`}>
                   <div className="shrink-0 w-10 h-10 bg-primary flex items-center justify-center">
                     <span className="text-primary-foreground font-bold text-sm">{step.n}</span>
@@ -214,7 +440,6 @@ export default function ListPropertyBlock({ variant = "section", segment = "comm
                     <p className="text-sm text-muted-foreground leading-relaxed">{step.body}</p>
                   </div>
                 </div>
-                {/* Visual side */}
                 <div className={`hidden lg:flex bg-muted items-center justify-center min-h-[200px] border-l border-border ${i % 2 === 1 ? "lg:order-1 border-l-0 border-r border-border" : ""}`}>
                   <StepVisual n={step.n} />
                 </div>
@@ -224,25 +449,21 @@ export default function ListPropertyBlock({ variant = "section", segment = "comm
         </div>
       </section>
 
-      {/* ── РЕГИСТРАЦИЯ + КОНСУЛЬТАНТ ────────────────────── */}
-      <section className="py-16 bg-background" id="list-property">
+      <section className="py-12 lg:py-16 bg-background" id="list-property">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-8 items-start">
-
-            {/* Consultant card */}
             <div className="space-y-6">
               <div>
                 <h2 className="font-display text-2xl font-bold text-foreground mb-2">
-                  Добавьте объект самостоятельно
+                  Заявка на управление
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   {isResidential
-                    ? "Зарегистрируйтесь на сайте и разместите жилой объект через личный кабинет — это бесплатно. После проверки модератором объявление появится в каталоге."
-                    : "Зарегистрируйтесь на сайте и разместите объект через личный кабинет — это бесплатно. После проверки модератором объявление появится в каталоге."}
+                    ? "Зарегистрируйтесь и оставьте заявку на управление жильём — менеджер свяжется и предложит план сдачи."
+                    : "Зарегистрируйтесь и оставьте заявку на управление объектом — менеджер свяжется и предложит план сдачи."}
                 </p>
               </div>
 
-              {/* Agent */}
               <div className="flex items-center gap-4 p-5 border border-border bg-card">
                 <div className="relative shrink-0">
                   <img
@@ -258,7 +479,7 @@ export default function ListPropertyBlock({ variant = "section", segment = "comm
                     <BadgeCheck className="w-4 h-4 text-primary shrink-0" />
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">Менеджер по аренде</p>
-                  <div className="flex items-center gap-3 mt-2">
+                  <div className="flex items-center gap-3 mt-2 flex-wrap">
                     <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                       <span className="font-semibold text-foreground">4.9</span>
@@ -266,92 +487,91 @@ export default function ListPropertyBlock({ variant = "section", segment = "comm
                     <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                       <Clock3 className="w-3.5 h-3.5" /> ~12 мин ответ
                     </span>
-                    <span className="text-xs text-muted-foreground">47 объектов</span>
                   </div>
                 </div>
               </div>
 
-              {/* Checklist */}
-              <ul className="space-y-3">
-                {[
-                  "Размещение объекта бесплатно",
-                  "Объявление можно отредактировать в любой момент",
-                  "Заявки от арендаторов приходят в личный кабинет",
-                  "Нужна помощь — подключим персонального менеджера",
-                ].map((item) => (
-                  <li key={item} className="flex items-center gap-3 text-sm text-foreground">
-                    <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-
               <a
                 href={`tel:${CONTACTS.phoneTel}`}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-foreground text-background text-sm font-semibold hover:opacity-90 transition-opacity"
+                className="inline-flex items-center gap-2 px-5 py-3 border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors"
               >
                 <PhoneIcon className="w-4 h-4" />
                 {CONTACTS.phone}
               </a>
             </div>
 
-            {/* Как разместить объект */}
-            <div className="bg-card border border-border p-7">
-              <h3 className="font-display text-lg font-bold text-foreground mb-1">
-                Как разместить объект
-              </h3>
+            <div className="bg-card border border-border p-6 sm:p-7">
+              <h3 className="font-display text-lg font-bold text-foreground mb-1">Начать с заявки</h3>
               <p className="text-xs text-muted-foreground mb-6">
-                Три шага — от регистрации до публикации в каталоге
+                После регистрации откроется форма объекта с типом «Передать в управление»
               </p>
-
-              <ol className="space-y-5 mb-7">
-                {addSteps.map((s, i) => (
-                  <li key={s.title} className="flex gap-4">
-                    <span className="shrink-0 w-7 h-7 bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
-                      {i + 1}
-                    </span>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">{s.title}</div>
-                      <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{s.body}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-
-              {user ? (
-                <Link
-                  to={isResidential ? "/account?segment=residential#properties" : "/account#properties"}
-                  className="w-full h-11 flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
-                >
-                  <Building2 className="w-4 h-4" />
-                  Добавить объект
-                </Link>
-              ) : (
-                <Link
-                  to={isResidential ? "/auth?tab=register&redirect=/account%3Fsegment%3Dresidential%23properties" : "/auth?tab=register&redirect=/account%23properties"}
-                  className="w-full h-11 flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  Зарегистрироваться и добавить объект
-                </Link>
-              )}
-
+              <PrimaryCta to={ctaTo} loggedIn={user} mode="management" className="w-full" />
               {!user && (
                 <p className="text-xs text-muted-foreground text-center mt-3">
                   Уже есть аккаунт?{" "}
-                  <Link to="/auth?redirect=/account%23properties" className="text-primary hover:underline">
-                    Войти
-                  </Link>
+                  <Link to={loginTo} className="text-primary hover:underline">Войти</Link>
                 </p>
               )}
-
-              <p className="text-[10px] text-muted-foreground text-center mt-4">
-                Размещение объектов на сайте бесплатное
-              </p>
             </div>
           </div>
         </div>
       </section>
+    </>
+  );
+}
+
+function PrimaryCta({
+  to,
+  loggedIn,
+  mode,
+  className = "",
+}: {
+  to: string;
+  loggedIn: boolean;
+  mode: ListPropertyMode;
+  className?: string;
+}) {
+  const label = loggedIn
+    ? mode === "rent"
+      ? "Добавить объект"
+      : "Оставить заявку на управление"
+    : mode === "rent"
+      ? "Зарегистрироваться и добавить объект"
+      : "Зарегистрироваться и оставить заявку";
+
+  return (
+    <Link
+      to={to}
+      className={`h-11 px-5 inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity ${className}`}
+    >
+      {loggedIn ? <Building2 className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+      {label}
+    </Link>
+  );
+}
+
+function StickyCta({
+  segment,
+  mode,
+  isLoggedIn,
+}: {
+  segment: PropertySegment;
+  mode: ListPropertyMode;
+  isLoggedIn: boolean;
+}) {
+  const to = placementCtaPath(segment, mode, isLoggedIn);
+  const requestType = modeToRequestType(mode);
+  const loginTo = loginToAddPropertyPath(segment, requestType);
+
+  return (
+    <div className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur-md p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <PrimaryCta to={to} loggedIn={isLoggedIn} mode={mode} className="w-full" />
+      {!isLoggedIn && (
+        <p className="text-[11px] text-muted-foreground text-center mt-2">
+          Уже есть аккаунт?{" "}
+          <Link to={loginTo} className="text-primary hover:underline">Войти</Link>
+        </p>
+      )}
     </div>
   );
 }

@@ -55,7 +55,7 @@ export default function CompanyStatsSidebar() {
             Профессиональный маркетинг, проверенные арендаторы и юридическая поддержка — без комиссии для собственников.
           </p>
           <Link
-            to="/list-property"
+            to="/list-property?mode=management"
             className="flex items-center justify-center gap-1.5 h-9 w-full bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity mt-auto"
           >
             Разместить объект <ArrowRight className="w-3 h-3" />

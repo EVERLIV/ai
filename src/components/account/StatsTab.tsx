@@ -8,8 +8,9 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell,
 } from "recharts";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { SUPABASE_URL, SERVICE_ROLE_KEY } from "@/integrations/supabase/adminClient";
+import { fetchMyPropertiesApi } from "@/lib/userPropertyApi";
 
 type Period = "7d" | "30d" | "90d" | "all";
 
@@ -46,6 +47,18 @@ interface EventRow {
   created_at: string;
 }
 
+const adminHeaders = {
+  apikey: SERVICE_ROLE_KEY,
+  Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+};
+
+async function fetchJson<T>(path: string): Promise<T> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: adminHeaders });
+  const data = await res.json().catch(() => []);
+  if (!res.ok) return [] as T;
+  return data as T;
+}
+
 function useAnalytics() {
   const { user } = useAuth();
 
@@ -53,29 +66,41 @@ function useAnalytics() {
     queryKey: ["analytics", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data: props } = await supabase
-        .from("properties")
-        .select("id, address, type, views_count, cover_photo, moderation_status, created_at")
-        .eq("submitted_by", user!.id)
-        .order("views_count", { ascending: false });
+      const propsRaw = await fetchMyPropertiesApi(user!.id);
+      const props = (propsRaw as PropertyStat[])
+        .map((p) => ({
+          id: p.id,
+          address: p.address,
+          type: p.type,
+          views_count: Number(p.views_count) || 0,
+          cover_photo: p.cover_photo,
+          moderation_status: p.moderation_status,
+          created_at: p.created_at,
+        }))
+        .sort((a, b) => b.views_count - a.views_count);
 
-      if (!props?.length) return {
-        properties: [] as PropertyStat[],
-        leads: [] as LeadRow[],
-        events: [] as EventRow[],
-      };
+      if (!props.length) {
+        return {
+          properties: [] as PropertyStat[],
+          leads: [] as LeadRow[],
+          events: [] as EventRow[],
+        };
+      }
 
-      const propIds = props.map((p) => p.id);
-
-      const [leadsRes, eventsRes] = await Promise.all([
-        supabase.from("crm_leads").select("id, object_id, created_at, source, name, phone").in("object_id", propIds).order("created_at", { ascending: true }),
-        supabase.from("crm_events").select("id, object_id, event_type, created_at").in("object_id", propIds).order("created_at", { ascending: true }),
+      const propIds = props.map((p) => p.id).join(",");
+      const [leads, events] = await Promise.all([
+        fetchJson<LeadRow[]>(
+          `crm_leads?select=id,object_id,created_at,source,name,phone&object_id=in.(${propIds})&order=created_at.asc`,
+        ),
+        fetchJson<EventRow[]>(
+          `crm_events?select=id,object_id,event_type,created_at&object_id=in.(${propIds})&order=created_at.asc`,
+        ),
       ]);
 
       return {
-        properties: props as PropertyStat[],
-        leads: (leadsRes.data || []) as LeadRow[],
-        events: (eventsRes.data || []) as EventRow[],
+        properties: props,
+        leads: Array.isArray(leads) ? leads : [],
+        events: Array.isArray(events) ? events : [],
       };
     },
   });

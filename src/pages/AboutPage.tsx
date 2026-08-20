@@ -258,7 +258,7 @@ export default function AboutPage() {
                       </a>
                       <div className="pt-1">
                         <Link
-                          to="/list-property"
+                          to="/list-property?mode=rent"
                           className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                         >
                           Разместить объект <ArrowRight className="w-3.5 h-3.5" />

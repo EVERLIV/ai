@@ -159,7 +159,7 @@ export default function SiteHeader() {
                 Жилая
               </Link>
             </div>
-            <Link to={isResidential ? SEGMENT_ROUTES.residential.listProperty : SEGMENT_ROUTES.commercial.listProperty}
+            <Link to={isResidential ? `${SEGMENT_ROUTES.residential.listProperty}?mode=rent` : `${SEGMENT_ROUTES.commercial.listProperty}?mode=rent`}
               className="hidden sm:flex items-center h-7 px-3 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity whitespace-nowrap">
               + Разместить за 0 ₽
             </Link>
@@ -463,7 +463,7 @@ export default function SiteHeader() {
               Жилая
             </Link>
           </div>
-          <Link to={isResidential ? SEGMENT_ROUTES.residential.listProperty : SEGMENT_ROUTES.commercial.listProperty} onClick={() => setMobileOpen(false)}
+          <Link to={isResidential ? `${SEGMENT_ROUTES.residential.listProperty}?mode=rent` : `${SEGMENT_ROUTES.commercial.listProperty}?mode=rent`} onClick={() => setMobileOpen(false)}
             className="flex items-center justify-center h-9 bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity">
             Разместить за 0 ₽
           </Link>
