@@ -23,6 +23,7 @@ import { readCatalogFiltersFromSearchParams } from "@/lib/catalogLinks";
 import SeoHead from "@/components/SeoHead";
 import { absoluteUrl } from "@/config/site";
 import ctaRentOutBg from "@/assets/cta-rent-out.jpg";
+import residentialBannerDomnd from "@/assets/residential-banner-domnd.png";
 import type { PropertySegment } from "@/config/propertySegments";
 import {
   COMMERCIAL_PROPERTY_TYPES,
@@ -183,23 +184,38 @@ function FadeIn({ children, delay = 0, className }: { children: React.ReactNode;
   );
 }
 
-// ─── Тёмная промо-карточка в сетке ───
+// ─── Партнёрский баннер в сетке каталога ───
 function PromoCard() {
   return (
-    <div className="relative flex flex-col h-full bg-[#141414] text-white rounded-lg overflow-hidden p-5 min-h-[320px]">
-      <span className="absolute top-0 left-0 w-16 h-16 bg-primary [clip-path:polygon(0_0,100%_0,0_100%)]" aria-hidden />
-      <p className="relative text-[10px] font-bold tracking-[0.2em] text-primary uppercase mt-6 mb-3">Сдайте объект</p>
-      <h3 className="relative font-display text-xl font-bold leading-tight mb-3">Разместите объект за 0 ₽</h3>
-      <p className="relative text-xs text-white/60 leading-relaxed mb-4">
-        Профессиональная фотосъёмка, экспертная оценка и продвижение вашей коммерческой недвижимости.
-      </p>
-      <Link
-        to="/list-property?mode=rent"
-        className="relative mt-auto inline-flex items-center justify-center h-10 px-4 rounded-md bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-colors"
-      >
-        Узнать подробнее
-      </Link>
-    </div>
+    <a
+      href="https://domnd.ru/"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group relative flex flex-col h-full min-h-[320px] rounded-lg overflow-hidden"
+    >
+      <img
+        src={residentialBannerDomnd}
+        alt="Строительство деревянных домов и бань под ключ — Надёжный дом"
+        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,20,0.12)_0%,rgba(8,12,20,0.82)_100%)]" />
+      <div className="absolute left-4 top-4 z-10">
+        <span className="inline-flex rounded bg-black/45 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+          Партнёр
+        </span>
+      </div>
+      <div className="relative mt-auto flex flex-col p-5 text-white">
+        <h3 className="font-display text-xl font-bold leading-snug">
+          Строительство деревянных домов и бань под ключ
+        </h3>
+        <p className="mt-1.5 text-xs text-white/78">
+          в Иркутске и Иркутской области
+        </p>
+        <span className="mt-4 inline-flex h-10 w-fit items-center justify-center rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground transition-colors group-hover:bg-primary/90">
+          Перейти
+        </span>
+      </div>
+    </a>
   );
 }
 
