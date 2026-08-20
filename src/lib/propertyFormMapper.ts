@@ -2,8 +2,12 @@ import type { MyProperty } from "@/hooks/useMyProperties";
 import type { RequestType } from "@/lib/propertyModeration";
 import { isLandProperty } from "@/lib/propertyLand";
 import { getPropertyTypes, syncPropertyTypesPayload, normalizePropertyTypes } from "@/lib/propertyTypes";
+import type { PropertySegment } from "@/config/propertySegments";
+import { getPropertySegment } from "@/lib/propertyTypes";
+import { RESIDENTIAL_EXTRAS_KEYS } from "@/lib/propertyResidential";
 
 export interface PropertyFormState {
+  segment: PropertySegment;
   types: string[];
   class: string;
   deal_type: string;
@@ -36,6 +40,19 @@ export interface PropertyFormState {
   transport_hub: string;
   entrance_group: string;
   purpose: string;
+  rooms: string;
+  building_type: string;
+  year_built: string;
+  balcony: string;
+  furniture: string;
+  bathroom: string;
+  market: string;
+  window_view: string;
+  living_area: string;
+  kitchen_area: string;
+  mortgage: boolean;
+  pets_allowed: boolean;
+  children_allowed: boolean;
 }
 
 export function propertyToFormState(property: MyProperty): PropertyFormState {
@@ -43,6 +60,7 @@ export function propertyToFormState(property: MyProperty): PropertyFormState {
   const isLand = isLandProperty(property);
 
   return {
+    segment: getPropertySegment(property),
     types: getPropertyTypes(property),
     class: property.class,
     deal_type: property.deal_type,
@@ -75,6 +93,19 @@ export function propertyToFormState(property: MyProperty): PropertyFormState {
     transport_hub: String(e.transport_hub || ""),
     entrance_group: String(e.entrance_group || ""),
     purpose: String(e.purpose || ""),
+    rooms: String(e[RESIDENTIAL_EXTRAS_KEYS.rooms] || ""),
+    building_type: String(e[RESIDENTIAL_EXTRAS_KEYS.buildingType] || ""),
+    year_built: String(e[RESIDENTIAL_EXTRAS_KEYS.yearBuilt] || ""),
+    balcony: String(e[RESIDENTIAL_EXTRAS_KEYS.balcony] || ""),
+    furniture: String(e[RESIDENTIAL_EXTRAS_KEYS.furniture] || ""),
+    bathroom: String(e[RESIDENTIAL_EXTRAS_KEYS.bathroom] || ""),
+    market: String(e[RESIDENTIAL_EXTRAS_KEYS.market] || (property.type === "Новостройка" ? "Новостройка" : "")),
+    window_view: String(e[RESIDENTIAL_EXTRAS_KEYS.windowView] || ""),
+    living_area: String(e[RESIDENTIAL_EXTRAS_KEYS.livingArea] || ""),
+    kitchen_area: String(e[RESIDENTIAL_EXTRAS_KEYS.kitchenArea] || ""),
+    mortgage: Boolean(e[RESIDENTIAL_EXTRAS_KEYS.mortgage]),
+    pets_allowed: Boolean(e[RESIDENTIAL_EXTRAS_KEYS.petsAllowed]),
+    children_allowed: Boolean(e[RESIDENTIAL_EXTRAS_KEYS.childrenAllowed]),
   };
 }
 
@@ -105,14 +136,34 @@ export function buildPropertyPayload(
     purpose: form.purpose || undefined,
   };
 
+  const residentialExtras = form.segment === "residential"
+    ? {
+        [RESIDENTIAL_EXTRAS_KEYS.rooms]: form.rooms || undefined,
+        [RESIDENTIAL_EXTRAS_KEYS.buildingType]: form.building_type || undefined,
+        [RESIDENTIAL_EXTRAS_KEYS.yearBuilt]: form.year_built ? Number(form.year_built) : undefined,
+        [RESIDENTIAL_EXTRAS_KEYS.balcony]: form.balcony || undefined,
+        [RESIDENTIAL_EXTRAS_KEYS.furniture]: form.furniture || undefined,
+        [RESIDENTIAL_EXTRAS_KEYS.bathroom]: form.bathroom || undefined,
+        [RESIDENTIAL_EXTRAS_KEYS.market]: form.market || undefined,
+        [RESIDENTIAL_EXTRAS_KEYS.windowView]: form.window_view || undefined,
+        [RESIDENTIAL_EXTRAS_KEYS.livingArea]: form.living_area ? Number(form.living_area) : undefined,
+        [RESIDENTIAL_EXTRAS_KEYS.kitchenArea]: form.kitchen_area ? Number(form.kitchen_area) : undefined,
+        [RESIDENTIAL_EXTRAS_KEYS.mortgage]: form.mortgage || undefined,
+        [RESIDENTIAL_EXTRAS_KEYS.petsAllowed]: form.pets_allowed || undefined,
+        [RESIDENTIAL_EXTRAS_KEYS.childrenAllowed]: form.children_allowed || undefined,
+      }
+    : {};
+
   const types = normalizePropertyTypes(form.types);
   const { type: primaryType, extras: typesExtras } = syncPropertyTypesPayload(types, {
     ...landExtras,
     ...rentExtras,
     ...commonExtras,
-  });
+    ...residentialExtras,
+  }, form.segment);
 
   const base = {
+    segment: form.segment,
     type: primaryType,
     class: form.class,
     area: form.area,

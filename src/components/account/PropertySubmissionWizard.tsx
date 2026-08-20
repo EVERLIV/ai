@@ -22,9 +22,18 @@ import type { MyProperty } from "@/hooks/useMyProperties";
 import { propertyToFormState, buildPropertyPayload, type PropertyFormState } from "@/lib/propertyFormMapper";
 import { notifyPropertyEmail } from "@/lib/notifyPropertyEmail";
 import {
+  type PropertySegment,
+  COMMERCIAL_PROPERTY_TYPES,
+  RESIDENTIAL_PROPERTY_TYPES,
+  isResidentialSegment,
+} from "@/config/propertySegments";
+import {
   PROPERTY_TYPES,
   PROPERTY_CLASSES,
   DEAL_TYPES,
+  RESIDENTIAL_DEAL_TYPES,
+  MARKET_OPTIONS,
+  WINDOW_VIEW_OPTIONS,
   DISTRICTS,
   FLOORS,
   TOTAL_FLOORS_OPTIONS,
@@ -45,9 +54,17 @@ import {
   TRANSPORT_HUB_OPTIONS,
   ENTRANCE_OPTIONS,
   PURPOSE_OPTIONS,
+  RESIDENTIAL_CONDITIONS,
+  RESIDENTIAL_FEATURE_GROUPS,
+  ROOMS_OPTIONS,
+  BUILDING_TYPES,
+  BALCONY_OPTIONS,
+  FURNITURE_OPTIONS,
+  BATHROOM_OPTIONS,
 } from "@/lib/propertyOptions";
 
 const emptyForm: PropertyFormState = {
+  segment: "commercial",
   types: ["Офис"],
   class: "B",
   deal_type: "Аренда",
@@ -80,6 +97,19 @@ const emptyForm: PropertyFormState = {
   transport_hub: "",
   entrance_group: "",
   purpose: "",
+  rooms: "",
+  building_type: "",
+  year_built: "",
+  balcony: "",
+  furniture: "",
+  bathroom: "",
+  market: "",
+  window_view: "",
+  living_area: "",
+  kitchen_area: "",
+  mortgage: false,
+  pets_allowed: false,
+  children_allowed: false,
 };
 
 const STEPS = [
@@ -97,9 +127,15 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editProperty?: MyProperty | null;
+  segment?: PropertySegment;
 }
 
-export default function PropertySubmissionWizard({ open, onOpenChange, editProperty = null }: Props) {
+export default function PropertySubmissionWizard({
+  open,
+  onOpenChange,
+  editProperty = null,
+  segment = "commercial",
+}: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -129,7 +165,11 @@ export default function PropertySubmissionWizard({ open, onOpenChange, editPrope
       setStep("basic");
     } else {
       setEditId(null);
-      setForm(emptyForm);
+      setForm({
+        ...emptyForm,
+        segment,
+        types: [isResidentialSegment(segment) ? "Квартира" : "Офис"],
+      });
       setExistingPhotos([]);
       setPhotoPreviews([]);
       setPhotoFiles([]);
@@ -139,7 +179,12 @@ export default function PropertySubmissionWizard({ open, onOpenChange, editPrope
   }, [open, editProperty]);
 
   const isSale = isSaleDeal(form.deal_type);
+  const dealTypeOptions = isResidential ? RESIDENTIAL_DEAL_TYPES : DEAL_TYPES;
+  const isResidential = form.segment === "residential";
   const isLand = isLandProperty({ type: form.types[0], extras: { property_types: form.types } });
+  const typeOptions = isResidential ? RESIDENTIAL_PROPERTY_TYPES : COMMERCIAL_PROPERTY_TYPES;
+  const conditionOptions = isResidential ? RESIDENTIAL_CONDITIONS : CONDITIONS;
+  const featureGroups = isResidential ? RESIDENTIAL_FEATURE_GROUPS : FEATURE_GROUPS;
   const activeSteps = STEPS.filter((s) => s.key !== "conditions" || !isSale);
   const stepIndex = activeSteps.findIndex((s) => s.key === step);
   const currentStep = activeSteps[stepIndex] ?? activeSteps[0];
@@ -147,7 +192,11 @@ export default function PropertySubmissionWizard({ open, onOpenChange, editPrope
   const reset = () => {
     setStep("basic");
     setEditId(null);
-    setForm(emptyForm);
+    setForm({
+      ...emptyForm,
+      segment,
+      types: [isResidentialSegment(segment) ? "Квартира" : "Офис"],
+    });
     setPhotoFiles([]);
     setPhotoPreviews([]);
     setExistingPhotos([]);
@@ -355,9 +404,40 @@ export default function PropertySubmissionWizard({ open, onOpenChange, editPrope
           {step === "basic" && (
             <>
               <div>
+                <Label className="text-xs mb-1 block">Сегмент</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { value: "commercial", label: "Коммерческая" },
+                    { value: "residential", label: "Жилая" },
+                  ] as const).map((item) => (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => {
+                        setForm((prev) => ({
+                          ...prev,
+                          segment: item.value,
+                          types: [item.value === "residential" ? "Квартира" : "Офис"],
+                          class: item.value === "residential" ? "-" : "B",
+                          condition: item.value === "residential" ? "Хороший ремонт" : "Хороший ремонт",
+                          layout: item.value === "residential" ? "-" : "Open-space",
+                        }));
+                      }}
+                      className={`h-10 rounded-md border text-sm font-medium transition-colors ${
+                        form.segment === item.value
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background text-foreground"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
                 <Label className="text-xs mb-1 block">Тип объекта</Label>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-md border border-border/60 p-3">
-                  {PROPERTY_TYPES.map((t) => {
+                  {typeOptions.map((t) => {
                     const checked = form.types.includes(t);
                     return (
                       <label key={t} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -375,9 +455,13 @@ export default function PropertySubmissionWizard({ open, onOpenChange, editPrope
                     );
                   })}
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-1">Можно выбрать несколько типов. «Земля» — только отдельно.</p>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {isResidential
+                    ? "Можно выбрать несколько жилых типов для одного объявления."
+                    : "Можно выбрать несколько типов. «Земля» — только отдельно."}
+                </p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`grid gap-3 ${isResidential ? "grid-cols-2" : "grid-cols-1"}`}>
                 <div>
                   <Label className="text-xs mb-1 block">Категория</Label>
                   <Select value={form.deal_type} onValueChange={(v) => {
@@ -385,24 +469,38 @@ export default function PropertySubmissionWizard({ open, onOpenChange, editPrope
                     if (isSaleDeal(v) && step === "conditions") setStep("location");
                   }}>
                     <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>{DEAL_TYPES.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                    <SelectContent>{dealTypeOptions.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
+                {isResidential && isSale && (
+                  <div>
+                    <Label className="text-xs mb-1 block">Рынок</Label>
+                    <Select value={form.market || "none"} onValueChange={(v) => update("market", v === "none" ? "" : v)}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Выберите" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        {MARKET_OPTIONS.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <Label className="text-xs mb-1 block">Класс</Label>
-                  <Select value={form.class} onValueChange={(v) => update("class", v)}>
-                    <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>{PROPERTY_CLASSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
+              <div className={`grid gap-3 ${isResidential ? "grid-cols-2" : "grid-cols-3"}`}>
+                {!isResidential && (
+                  <div>
+                    <Label className="text-xs mb-1 block">Класс</Label>
+                    <Select value={form.class} onValueChange={(v) => update("class", v)}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>{PROPERTY_CLASSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div>
                   <Label className="text-xs mb-1 block">Площадь, м²</Label>
                   <Input type="number" className="h-9" value={form.area || ""} onChange={(e) => update("area", Number(e.target.value))} />
                 </div>
                 <div>
-                  <Label className="text-xs mb-1 block">{isSale ? "Цена, ₽" : "Цена, ₽/мес"}</Label>
+                  <Label className="text-xs mb-1 block">{isSale ? "Цена, ₽" : form.deal_type === "Посуточно" ? "Цена, ₽/сут" : "Цена, ₽/мес"}</Label>
                   <Input type="number" className="h-9" value={form.price || ""} onChange={(e) => update("price", Number(e.target.value))} />
                 </div>
               </div>
@@ -426,7 +524,127 @@ export default function PropertySubmissionWizard({ open, onOpenChange, editPrope
 
           {step === "details" && (
             <>
-              {isLand ? (
+              {isResidential ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs mb-1 block">Комнат</Label>
+                      <Select value={form.rooms || "none"} onValueChange={(v) => update("rooms", v === "none" ? "" : v)}>
+                        <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Выберите" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {ROOMS_OPTIONS.map((room) => <SelectItem key={room} value={room}>{room}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs mb-1 block">Тип дома</Label>
+                      <Select value={form.building_type || "none"} onValueChange={(v) => update("building_type", v === "none" ? "" : v)}>
+                        <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Выберите" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {BUILDING_TYPES.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs mb-1 block">Этаж</Label>
+                      <Select value={form.floor} onValueChange={(v) => update("floor", v)}>
+                        <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>{FLOORS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs mb-1 block">Этажей в доме</Label>
+                      <Select value={String(form.total_floors)} onValueChange={(v) => update("total_floors", Number(v))}>
+                        <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>{TOTAL_FLOORS_OPTIONS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs mb-1 block">Состояние</Label>
+                      <Select value={form.condition} onValueChange={(v) => update("condition", v)}>
+                        <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>{conditionOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs mb-1 block">Год постройки</Label>
+                      <Input className="h-9" value={form.year_built} onChange={(e) => update("year_built", e.target.value)} placeholder="например, 2018" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-xs mb-1 block">Балкон</Label>
+                      <Select value={form.balcony || "none"} onValueChange={(v) => update("balcony", v === "none" ? "" : v)}>
+                        <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {BALCONY_OPTIONS.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs mb-1 block">Мебель</Label>
+                      <Select value={form.furniture || "none"} onValueChange={(v) => update("furniture", v === "none" ? "" : v)}>
+                        <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {FURNITURE_OPTIONS.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs mb-1 block">Санузел</Label>
+                      <Select value={form.bathroom || "none"} onValueChange={(v) => update("bathroom", v === "none" ? "" : v)}>
+                        <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {BATHROOM_OPTIONS.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-xs mb-1 block">Вид из окон</Label>
+                      <Select value={form.window_view || "none"} onValueChange={(v) => update("window_view", v === "none" ? "" : v)}>
+                        <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {WINDOW_VIEW_OPTIONS.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs mb-1 block">Жилая площадь, м²</Label>
+                      <Input className="h-9" type="number" value={form.living_area} onChange={(e) => update("living_area", e.target.value)} placeholder="—" />
+                    </div>
+                    <div>
+                      <Label className="text-xs mb-1 block">Площадь кухни, м²</Label>
+                      <Input className="h-9" type="number" value={form.kitchen_area} onChange={(e) => update("kitchen_area", e.target.value)} placeholder="—" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2 cursor-pointer">
+                      <Checkbox checked={form.mortgage} onCheckedChange={(v) => update("mortgage", !!v)} />
+                      <span className="text-xs">Ипотека</span>
+                    </label>
+                    <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2 cursor-pointer">
+                      <Checkbox checked={form.pets_allowed} onCheckedChange={(v) => update("pets_allowed", !!v)} />
+                      <span className="text-xs">Можно с животными</span>
+                    </label>
+                    <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2 cursor-pointer">
+                      <Checkbox checked={form.children_allowed} onCheckedChange={(v) => update("children_allowed", !!v)} />
+                      <span className="text-xs">Можно с детьми</span>
+                    </label>
+                  </div>
+                </>
+              ) : isLand ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs mb-1 block">Кадастровый номер</Label>
@@ -487,7 +705,7 @@ export default function PropertySubmissionWizard({ open, onOpenChange, editPrope
                       <Label className="text-xs mb-1 block">Состояние</Label>
                       <Select value={form.condition} onValueChange={(v) => update("condition", v)}>
                         <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                        <SelectContent>{CONDITIONS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                        <SelectContent>{conditionOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                     <div>
@@ -502,7 +720,7 @@ export default function PropertySubmissionWizard({ open, onOpenChange, editPrope
               )}
               <div className="space-y-4">
                 <Label className="text-xs block">Особенности и инфраструктура ({form.features.length})</Label>
-                {FEATURE_GROUPS.map((group) => (
+                {featureGroups.map((group) => (
                   <div key={group.title} className="border border-border rounded-lg p-3">
                     <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">{group.title}</p>
                     <div className="grid grid-cols-2 gap-1.5">

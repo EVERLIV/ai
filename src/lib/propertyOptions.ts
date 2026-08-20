@@ -1,8 +1,16 @@
 /** Общие справочники полей объекта — единый источник для формы, админки и карточек */
+import {
+  COMMERCIAL_PROPERTY_TYPES,
+  RESIDENTIAL_PROPERTY_TYPES,
+} from "@/config/propertySegments";
 
-export const PROPERTY_TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"] as const;
+export { COMMERCIAL_PROPERTY_TYPES, RESIDENTIAL_PROPERTY_TYPES };
+
+export const PROPERTY_TYPES = COMMERCIAL_PROPERTY_TYPES;
 export const PROPERTY_CLASSES = ["A", "A+", "B+", "B", "C", "-"] as const;
 export const DEAL_TYPES = ["Аренда", "Продажа"] as const;
+export const RESIDENTIAL_DEAL_TYPES = ["Аренда", "Продажа", "Посуточно"] as const;
+export const MARKET_OPTIONS = ["Вторичка", "Новостройка"] as const;
 
 export const DISTRICTS = [
   "Кировский", "Октябрьский", "Свердловский", "Ленинский", "Куйбышевский",
@@ -25,6 +33,18 @@ export const CEILING_HEIGHTS = [
 export const CONDITIONS = [
   "Евроремонт", "Хороший ремонт", "Косметический ремонт", "Рабочее состояние",
   "Под чистовую отделку", "Shell & Core", "Требуется ремонт", "Без отделки", "Новое", "Без строений",
+] as const;
+
+export const RESIDENTIAL_CONDITIONS = [
+  "Евроремонт",
+  "Дизайнерский",
+  "Хороший ремонт",
+  "Косметический ремонт",
+  "Требуется ремонт",
+  "Черновая отделка",
+  "Под чистовую отделку",
+  "Без отделки",
+  "Новое",
 ] as const;
 
 export const LAYOUTS = [
@@ -94,6 +114,22 @@ export const PURPOSE_OPTIONS = [
   "Офис", "Коворкинг", "Торговля", "Общепит", "Услуги", "Медицина", "Образование",
   "Склад", "Производство", "Автосервис", "Спорт", "Красота", "HoReCa", "Свободное назначение",
 ] as const;
+
+export const ROOMS_OPTIONS = ["Студия", "1", "2", "3", "4+", "5", "6+"] as const;
+
+export const BUILDING_TYPES = [
+  "Панельный",
+  "Кирпичный",
+  "Монолит",
+  "Деревянный",
+  "Блочный",
+  "Монолит-кирпич",
+] as const;
+
+export const BALCONY_OPTIONS = ["Нет", "Балкон", "Лоджия", "Балкон и лоджия", "2 балкона"] as const;
+export const FURNITURE_OPTIONS = ["С мебелью", "Без мебели", "Частично"] as const;
+export const BATHROOM_OPTIONS = ["Совмещённый", "Раздельный", "2 санузла", "Несколько санузлов"] as const;
+export const WINDOW_VIEW_OPTIONS = ["Во двор", "На улицу", "На парк", "На реку", "На горы"] as const;
 
 export const FEATURE_GROUPS: { title: string; items: string[] }[] = [
   {
@@ -169,8 +205,72 @@ export const FEATURE_GROUPS: { title: string; items: string[] }[] = [
   },
 ];
 
+export const RESIDENTIAL_FEATURE_GROUPS: { title: string; items: string[] }[] = [
+  {
+    title: "Комфорт",
+    items: [
+      "Балкон",
+      "Лоджия",
+      "Гардеробная",
+      "Кондиционер",
+      "Тёплый пол",
+      "Кухня",
+      "Мебель",
+      "Техника",
+    ],
+  },
+  {
+    title: "Техника",
+    items: [
+      "Стиральная машина",
+      "Холодильник",
+      "Посудомоечная машина",
+      "Телевизор",
+      "Интернет",
+    ],
+  },
+  {
+    title: "Дом и двор",
+    items: [
+      "Лифт",
+      "Грузовой лифт",
+      "Консьерж",
+      "Закрытый двор",
+      "Детская площадка",
+      "Парковка",
+      "Подземная парковка",
+      "Охрана",
+    ],
+  },
+  {
+    title: "Локация",
+    items: [
+      "Рядом школа",
+      "Рядом детский сад",
+      "Рядом парк",
+      "Рядом остановка",
+      "Центр города",
+      "Вид на реку",
+      "Тихий двор",
+    ],
+  },
+  {
+    title: "Дом / участок",
+    items: [
+      "Баня",
+      "Гараж на участке",
+      "Сад",
+      "Огород",
+    ],
+  },
+];
+
 export const FEATURES_LIST: string[] = Array.from(
   new Set(FEATURE_GROUPS.flatMap((g) => g.items)),
+);
+
+export const RESIDENTIAL_FEATURES_LIST: string[] = Array.from(
+  new Set(RESIDENTIAL_FEATURE_GROUPS.flatMap((g) => g.items)),
 );
 
 export const CATALOG_FEATURES_PREVIEW = 5;

@@ -14,7 +14,7 @@ export interface DictionaryItem {
 }
 
 export const DICTIONARY_CATEGORIES: { key: string; title: string; hasParent: boolean }[] = [
-  { key: "property_type", title: "Тип объекта", hasParent: false },
+  { key: "property_type", title: "Тип объекта", hasParent: true },
   { key: "property_class", title: "Класс объекта", hasParent: false },
   { key: "deal_type", title: "Тип сделки", hasParent: false },
   { key: "district", title: "Район / Локация", hasParent: true },
@@ -27,6 +27,15 @@ export const DICTIONARY_CATEGORIES: { key: string; title: string; hasParent: boo
   { key: "utilities", title: "Коммунальные", hasParent: false },
   { key: "vat", title: "НДС", hasParent: false },
   { key: "landlord_type", title: "Тип арендодателя", hasParent: false },
+  { key: "rooms", title: "Комнаты", hasParent: false },
+  { key: "building_type", title: "Тип дома", hasParent: false },
+  { key: "market", title: "Рынок", hasParent: false },
+  { key: "balcony", title: "Балкон", hasParent: false },
+  { key: "furniture", title: "Мебель", hasParent: false },
+  { key: "bathroom", title: "Санузел", hasParent: false },
+  { key: "window_view", title: "Вид из окон", hasParent: false },
+  { key: "residential_condition", title: "Состояние (жильё)", hasParent: false },
+  { key: "residential_feature", title: "Особенности (жильё)", hasParent: true },
 ];
 
 function adminError(error: unknown, fallback: string) {

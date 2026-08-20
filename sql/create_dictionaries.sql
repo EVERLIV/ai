@@ -1,5 +1,6 @@
 -- Справочники для управления полями объектов недвижимости
 -- Выполнить в Supabase SQL Editor
+-- Безопасно повторять: индексы/политики/значения не дублируются
 
 CREATE TABLE IF NOT EXISTS dictionaries (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -13,28 +14,47 @@ CREATE TABLE IF NOT EXISTS dictionaries (
   UNIQUE(category, value)
 );
 
-CREATE INDEX idx_dict_category ON dictionaries(category);
-CREATE INDEX idx_dict_category_active ON dictionaries(category, is_active);
+CREATE INDEX IF NOT EXISTS idx_dict_category ON dictionaries(category);
+CREATE INDEX IF NOT EXISTS idx_dict_category_active ON dictionaries(category, is_active);
 
 ALTER TABLE dictionaries ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "dictionaries_select" ON dictionaries
-  FOR SELECT USING (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'dictionaries' AND policyname = 'dictionaries_select'
+  ) THEN
+    CREATE POLICY "dictionaries_select" ON dictionaries
+      FOR SELECT USING (true);
+  END IF;
 
-CREATE POLICY "dictionaries_insert" ON dictionaries
-  FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager'))
-  );
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'dictionaries' AND policyname = 'dictionaries_insert'
+  ) THEN
+    CREATE POLICY "dictionaries_insert" ON dictionaries
+      FOR INSERT WITH CHECK (
+        EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager'))
+      );
+  END IF;
 
-CREATE POLICY "dictionaries_update" ON dictionaries
-  FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager'))
-  );
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'dictionaries' AND policyname = 'dictionaries_update'
+  ) THEN
+    CREATE POLICY "dictionaries_update" ON dictionaries
+      FOR UPDATE USING (
+        EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager'))
+      );
+  END IF;
 
-CREATE POLICY "dictionaries_delete" ON dictionaries
-  FOR DELETE USING (
-    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager'))
-  );
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'dictionaries' AND policyname = 'dictionaries_delete'
+  ) THEN
+    CREATE POLICY "dictionaries_delete" ON dictionaries
+      FOR DELETE USING (
+        EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager'))
+      );
+  END IF;
+END$$;
 
 -- Типы объектов
 INSERT INTO dictionaries (category, value, sort_order) VALUES
@@ -42,7 +62,22 @@ INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('property_type', 'Торговая', 2),
   ('property_type', 'Склад', 3),
   ('property_type', 'Земля', 4),
-  ('property_type', 'Производство', 5);
+  ('property_type', 'Производство', 5)
+ON CONFLICT (category, value) DO NOTHING;
+
+INSERT INTO dictionaries (category, value, parent, sort_order) VALUES
+  ('property_type', 'Квартира', 'residential', 10),
+  ('property_type', 'Дом', 'residential', 11),
+  ('property_type', 'Комната', 'residential', 12),
+  ('property_type', 'Таунхаус', 'residential', 13),
+  ('property_type', 'Апартаменты', 'residential', 15),
+  ('property_type', 'Дача', 'residential', 16),
+  ('property_type', 'Коттедж', 'residential', 17),
+  ('property_type', 'Участок', 'residential', 18),
+  ('property_type', 'Гараж', 'residential', 19),
+  ('property_type', 'Машиноместо', 'residential', 20),
+  ('property_type', 'Доля', 'residential', 21)
+ON CONFLICT (category, value) DO NOTHING;
 
 -- Классы объектов
 INSERT INTO dictionaries (category, value, sort_order) VALUES
@@ -51,12 +86,71 @@ INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('property_class', 'B+', 3),
   ('property_class', 'B', 4),
   ('property_class', 'C', 5),
-  ('property_class', '-', 6);
+  ('property_class', '-', 6)
+ON CONFLICT (category, value) DO NOTHING;
 
 -- Типы сделок
 INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('deal_type', 'Аренда', 1),
-  ('deal_type', 'Продажа', 2);
+  ('deal_type', 'Продажа', 2),
+  ('deal_type', 'Посуточно', 3)
+ON CONFLICT (category, value) DO NOTHING;
+
+INSERT INTO dictionaries (category, value, sort_order) VALUES
+  ('market', 'Вторичка', 1),
+  ('market', 'Новостройка', 2)
+ON CONFLICT (category, value) DO NOTHING;
+
+INSERT INTO dictionaries (category, value, sort_order) VALUES
+  ('rooms', 'Студия', 0),
+  ('rooms', '1', 1),
+  ('rooms', '2', 2),
+  ('rooms', '3', 3),
+  ('rooms', '4+', 4),
+  ('rooms', '5', 5),
+  ('rooms', '6+', 6),
+  ('building_type', 'Панельный', 1),
+  ('building_type', 'Кирпичный', 2),
+  ('building_type', 'Монолит', 3),
+  ('building_type', 'Деревянный', 4),
+  ('building_type', 'Блочный', 5),
+  ('building_type', 'Монолит-кирпич', 6)
+ON CONFLICT (category, value) DO NOTHING;
+
+INSERT INTO dictionaries (category, value, sort_order) VALUES
+  ('balcony', 'Нет', 1),
+  ('balcony', 'Балкон', 2),
+  ('balcony', 'Лоджия', 3),
+  ('balcony', 'Балкон и лоджия', 4),
+  ('balcony', '2 балкона', 5),
+  ('furniture', 'С мебелью', 1),
+  ('furniture', 'Без мебели', 2),
+  ('furniture', 'Частично', 3),
+  ('bathroom', 'Совмещённый', 1),
+  ('bathroom', 'Раздельный', 2),
+  ('bathroom', '2 санузла', 3),
+  ('bathroom', 'Несколько санузлов', 4)
+ON CONFLICT (category, value) DO NOTHING;
+
+INSERT INTO dictionaries (category, value, sort_order) VALUES
+  ('window_view', 'Во двор', 1),
+  ('window_view', 'На улицу', 2),
+  ('window_view', 'На парк', 3),
+  ('window_view', 'На реку', 4),
+  ('window_view', 'На горы', 5)
+ON CONFLICT (category, value) DO NOTHING;
+
+INSERT INTO dictionaries (category, value, sort_order) VALUES
+  ('residential_condition', 'Евроремонт', 1),
+  ('residential_condition', 'Дизайнерский', 2),
+  ('residential_condition', 'Хороший ремонт', 3),
+  ('residential_condition', 'Косметический ремонт', 4),
+  ('residential_condition', 'Требуется ремонт', 5),
+  ('residential_condition', 'Черновая отделка', 6),
+  ('residential_condition', 'Под чистовую отделку', 7),
+  ('residential_condition', 'Без отделки', 8),
+  ('residential_condition', 'Новое', 9)
+ON CONFLICT (category, value) DO NOTHING;
 
 -- Районы (с группировкой по городу)
 INSERT INTO dictionaries (category, value, parent, sort_order) VALUES
@@ -69,7 +163,8 @@ INSERT INTO dictionaries (category, value, parent, sort_order) VALUES
   ('district', 'Шелехов', 'Шелехов', 11),
   ('district', 'Усолье-Сибирское', 'Усолье-Сибирское', 12),
   ('district', 'Братск', 'Братск', 13),
-  ('district', 'Усть-Илимск', 'Усть-Илимск', 14);
+  ('district', 'Усть-Илимск', 'Усть-Илимск', 14)
+ON CONFLICT (category, value) DO NOTHING;
 
 -- Состояние
 INSERT INTO dictionaries (category, value, sort_order) VALUES
@@ -82,7 +177,8 @@ INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('condition', 'Требуется ремонт', 7),
   ('condition', 'Без отделки', 8),
   ('condition', 'Новое', 9),
-  ('condition', 'Без строений', 10);
+  ('condition', 'Без строений', 10)
+ON CONFLICT (category, value) DO NOTHING;
 
 -- Планировка
 INSERT INTO dictionaries (category, value, sort_order) VALUES
@@ -99,7 +195,8 @@ INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('layout', 'Прямоугольная', 11),
   ('layout', 'Г-образная', 12),
   ('layout', 'Кабинеты + open-space', 13),
-  ('layout', 'Смешанная', 14);
+  ('layout', 'Смешанная', 14)
+ON CONFLICT (category, value) DO NOTHING;
 
 -- Парковка
 INSERT INTO dictionaries (category, value, sort_order) VALUES
@@ -117,7 +214,8 @@ INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('parking', 'Открытая, 10 м/м', 12),
   ('parking', 'Открытая, 20 м/м', 13),
   ('parking', 'Гостевая', 14),
-  ('parking', 'Бесплатная для арендаторов', 15);
+  ('parking', 'Бесплатная для арендаторов', 15)
+ON CONFLICT (category, value) DO NOTHING;
 
 -- Назначение
 INSERT INTO dictionaries (category, value, sort_order) VALUES
@@ -134,7 +232,8 @@ INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('purpose', 'Спорт', 11),
   ('purpose', 'Красота', 12),
   ('purpose', 'HoReCa', 13),
-  ('purpose', 'Свободное назначение', 14);
+  ('purpose', 'Свободное назначение', 14)
+ON CONFLICT (category, value) DO NOTHING;
 
 -- Залог
 INSERT INTO dictionaries (category, value, sort_order) VALUES
@@ -145,7 +244,8 @@ INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('deposit', '6 месяцев', 5),
   ('deposit', '50%', 6),
   ('deposit', '100%', 7),
-  ('deposit', 'По договорённости', 8);
+  ('deposit', 'По договорённости', 8)
+ON CONFLICT (category, value) DO NOTHING;
 
 -- Срок договора
 INSERT INTO dictionaries (category, value, sort_order) VALUES
@@ -160,7 +260,8 @@ INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('contract_term', '5 лет', 9),
   ('contract_term', '7 лет', 10),
   ('contract_term', '10 лет', 11),
-  ('contract_term', 'Бессрочный', 12);
+  ('contract_term', 'Бессрочный', 12)
+ON CONFLICT (category, value) DO NOTHING;
 
 -- Коммунальные
 INSERT INTO dictionaries (category, value, sort_order) VALUES
@@ -168,7 +269,8 @@ INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('utilities', 'Отдельно', 2),
   ('utilities', 'По счётчикам', 3),
   ('utilities', 'Частично включены', 4),
-  ('utilities', 'Не включены', 5);
+  ('utilities', 'Не включены', 5)
+ON CONFLICT (category, value) DO NOTHING;
 
 -- НДС
 INSERT INTO dictionaries (category, value, sort_order) VALUES
@@ -176,7 +278,8 @@ INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('vat', '20%', 2),
   ('vat', 'Включён в ставку', 3),
   ('vat', 'УСН', 4),
-  ('vat', 'Без НДС', 5);
+  ('vat', 'Без НДС', 5)
+ON CONFLICT (category, value) DO NOTHING;
 
 -- Тип арендодателя
 INSERT INTO dictionaries (category, value, sort_order) VALUES
@@ -187,4 +290,10 @@ INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('landlord_type', 'Управляющая компания', 5),
   ('landlord_type', 'Застройщик', 6),
   ('landlord_type', 'Банк', 7),
-  ('landlord_type', 'Государство', 8);
+  ('landlord_type', 'Государство', 8)
+ON CONFLICT (category, value) DO NOTHING;
+
+-- «Новостройка» больше не тип объекта
+UPDATE dictionaries
+SET is_active = false
+WHERE category = 'property_type' AND value = 'Новостройка';

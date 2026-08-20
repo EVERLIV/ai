@@ -9,11 +9,13 @@ import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useAuth } from "@/hooks/useAuth";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import { CONTACTS } from "@/config/company";
+import type { PropertySegment } from "@/config/propertySegments";
 
 type Mode = "management" | "rent";
 
 interface Props {
   variant?: "page" | "section";
+  segment?: PropertySegment;
 }
 
 const steps = [
@@ -93,7 +95,7 @@ const stats = [
   { value: "98%", label: "клиентов возвращаются" },
 ];
 
-export default function ListPropertyBlock({ variant = "section" }: Props) {
+export default function ListPropertyBlock({ variant = "section", segment = "commercial" }: Props) {
   const [mode, setMode] = useState<Mode>("management");
   const { ref, isVisible } = useScrollReveal();
   const { search } = useLocation();
@@ -105,6 +107,7 @@ export default function ListPropertyBlock({ variant = "section" }: Props) {
   }, [search]);
 
   const isPage = variant === "page";
+  const isResidential = segment === "residential";
 
   return (
     <div ref={ref} className={`${isPage ? "pt-0" : ""} ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
@@ -114,14 +117,16 @@ export default function ListPropertyBlock({ variant = "section" }: Props) {
         <div className="container mx-auto px-4 lg:px-8">
           <div className="max-w-2xl">
             <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-3">
-              Сдайте на АрендаСити
+              {isResidential ? "Жильё на АрендаСити" : "Сдайте на АрендаСити"}
             </p>
             <h1 className="font-display text-4xl lg:text-5xl font-bold leading-tight text-foreground mb-6">
-              Добавьте объект —<br />найдём арендатора
+              {isResidential ? "Добавьте жильё —" : "Добавьте объект —"}<br />
+              {isResidential ? "найдём жильца или покупателя" : "найдём арендатора"}
             </h1>
             <p className="text-muted-foreground text-base leading-relaxed mb-8 max-w-xl">
-              Разместите объект самостоятельно через личный кабинет — бесплатно и без звонков.
-              Нужно больше, чем публикация? АрендаСити возьмёт на себя поиск арендаторов, документы и контроль платежей.
+              {isResidential
+                ? "Разместите квартиру, дом или комнату самостоятельно через личный кабинет — бесплатно и без лишних посредников. Нужно больше, чем публикация? АрендаСити поможет с показами, заявками и сопровождением."
+                : "Разместите объект самостоятельно через личный кабинет — бесплатно и без звонков. Нужно больше, чем публикация? АрендаСити возьмёт на себя поиск арендаторов, документы и контроль платежей."}
             </p>
 
             {/* Mode switcher */}
@@ -231,8 +236,9 @@ export default function ListPropertyBlock({ variant = "section" }: Props) {
                   Добавьте объект самостоятельно
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Зарегистрируйтесь на сайте и разместите объект через личный кабинет — это бесплатно.
-                  После проверки модератором объявление появится в каталоге.
+                  {isResidential
+                    ? "Зарегистрируйтесь на сайте и разместите жилой объект через личный кабинет — это бесплатно. После проверки модератором объявление появится в каталоге."
+                    : "Зарегистрируйтесь на сайте и разместите объект через личный кабинет — это бесплатно. После проверки модератором объявление появится в каталоге."}
                 </p>
               </div>
 
@@ -314,7 +320,7 @@ export default function ListPropertyBlock({ variant = "section" }: Props) {
 
               {user ? (
                 <Link
-                  to="/account#properties"
+                  to={isResidential ? "/account?segment=residential#properties" : "/account#properties"}
                   className="w-full h-11 flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
                 >
                   <Building2 className="w-4 h-4" />
@@ -322,7 +328,7 @@ export default function ListPropertyBlock({ variant = "section" }: Props) {
                 </Link>
               ) : (
                 <Link
-                  to="/auth?tab=register&redirect=/account%23properties"
+                  to={isResidential ? "/auth?tab=register&redirect=/account%3Fsegment%3Dresidential%23properties" : "/auth?tab=register&redirect=/account%23properties"}
                   className="w-full h-11 flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
                 >
                   <UserPlus className="w-4 h-4" />

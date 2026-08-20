@@ -21,6 +21,7 @@ import {
   type RequestType,
 } from "@/lib/propertyModeration";
 import { cn } from "@/lib/utils";
+import type { PropertySegment } from "@/config/propertySegments";
 
 const STATUS_STYLES: Record<ModerationStatus, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -187,7 +188,7 @@ function PropertyCard({
   );
 }
 
-export default function MyPropertiesTab() {
+export default function MyPropertiesTab({ defaultSegment = "commercial" }: { defaultSegment?: PropertySegment }) {
   const { data: properties = [], isLoading } = useMyProperties();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -310,6 +311,7 @@ export default function MyPropertiesTab() {
         open={wizardOpen}
         onOpenChange={(o) => { setWizardOpen(o); if (!o) setEditProperty(null); }}
         editProperty={editProperty}
+        segment={editProperty?.segment === "residential" ? "residential" : defaultSegment}
       />
 
       <AlertDialog open={!!cancelTarget} onOpenChange={(o) => { if (!o) setCancelTarget(null); }}>

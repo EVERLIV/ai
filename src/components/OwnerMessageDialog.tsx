@@ -20,6 +20,9 @@ interface Props {
   ownerUserId?: string;
   trigger?: React.ReactNode;
   className?: string;
+  /** Лейбл кнопки и заголовка диалога */
+  title?: string;
+  source?: string;
 }
 
 export default function OwnerMessageDialog({
@@ -29,6 +32,8 @@ export default function OwnerMessageDialog({
   ownerUserId,
   trigger,
   className,
+  title = "Задать вопрос",
+  source = "owner_message",
 }: Props) {
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
@@ -55,12 +60,12 @@ export default function OwnerMessageDialog({
         name,
         phone,
         email: email || null,
-        message: `Вопрос по объекту${ownerName ? ` (${ownerName})` : ""}${ownerUserId ? ` [user:${ownerUserId}]` : ""}:\n${message}`,
-        source: "owner_message",
+        message: `Заявка по объекту${ownerName ? ` (${ownerName})` : ""}${ownerUserId ? ` [user:${ownerUserId}]` : ""}:\n${message}`,
+        source,
         business_category: propertyAddress,
       });
       setSent(true);
-      toast({ title: "Вопрос отправлен", description: "Собственник или риелтор получит ваше обращение." });
+      toast({ title: "Заявка отправлена", description: "Разместивший объявление получит ваше обращение." });
     } catch {
       toast({ title: "Не удалось отправить", variant: "destructive" });
     } finally {
@@ -74,7 +79,7 @@ export default function OwnerMessageDialog({
       className={cn(propertyCtaButtonClass, "bg-primary text-primary-foreground", className)}
     >
       <MessageSquareText className="w-4 h-4 shrink-0" />
-      Задать вопрос
+      {title}
     </button>
   );
 
@@ -87,7 +92,7 @@ export default function OwnerMessageDialog({
         {sent ? (
           <div className="text-center py-6 space-y-3">
             <CheckCircle className="w-12 h-12 text-primary mx-auto" />
-            <h3 className="font-semibold">Вопрос отправлен</h3>
+            <h3 className="font-semibold">Заявка отправлена</h3>
             <p className="text-sm text-muted-foreground">Вам ответят в ближайшее время.</p>
             <Button variant="outline" onClick={() => setOpen(false)}>Закрыть</Button>
           </div>
@@ -96,10 +101,10 @@ export default function OwnerMessageDialog({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <MessageSquareText className="w-4 h-4 text-primary" />
-                Задать вопрос
+                {title}
               </DialogTitle>
               <DialogDescription>
-                {ownerName ? `Контакт: ${ownerName}` : "Задайте вопрос по объекту"}
+                {ownerName ? `Контакт: ${ownerName}` : "Заявка разместившему объявление"}
                 {propertyAddress && <> · {propertyAddress}</>}
               </DialogDescription>
             </DialogHeader>
@@ -117,7 +122,7 @@ export default function OwnerMessageDialog({
                 <Input name="email" type="email" placeholder="Email (необязательно)" className="pl-9" />
               </div>
               <div>
-                <Label className="text-xs mb-1 block">Ваш вопрос</Label>
+                <Label className="text-xs mb-1 block">Сообщение</Label>
                 <Textarea name="message" rows={4} placeholder="Здравствуйте, интересует объект…" required />
               </div>
               <Button type="submit" className="w-full gap-2" disabled={loading}>

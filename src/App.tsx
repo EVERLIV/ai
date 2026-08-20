@@ -33,6 +33,11 @@ import AccountPage from "./pages/AccountPage.tsx";
 import ContactsPage from "./pages/ContactsPage.tsx";
 import VacanciesPage from "./pages/VacanciesPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
+import ResidentialHomePage from "./pages/residential/ResidentialHomePage.tsx";
+import ResidentialCatalog from "./pages/residential/ResidentialCatalog.tsx";
+import ApartmentsPage from "./pages/residential/ApartmentsPage.tsx";
+import HousesPage from "./pages/residential/HousesPage.tsx";
+import RoomsPage from "./pages/residential/RoomsPage.tsx";
 import InstallPrompt from "@/components/InstallPrompt";
 import CookieBanner from "@/components/CookieBanner";
 const queryClient = new QueryClient();
@@ -68,6 +73,12 @@ const App = () => {
                 <Route path="/contacts" element={<ContactsPage />} />
                 <Route path="/vacancies" element={<VacanciesPage />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/zhilaya" element={<ResidentialHomePage />} />
+                <Route path="/zhilaya/catalog" element={<ResidentialCatalog />} />
+                <Route path="/zhilaya/kvartiry" element={<ApartmentsPage />} />
+                <Route path="/zhilaya/doma" element={<HousesPage />} />
+                <Route path="/zhilaya/komnaty" element={<RoomsPage />} />
+                <Route path="/zhilaya/list-property" element={<ListProperty segment="residential" />} />
                 {/* Таск-менеджер — lazy, не влияет на основной бандл */}
                 <Route path="/tasks" element={
                   <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-sm text-gray-400">Загрузка...</div>}>

@@ -5,20 +5,28 @@ import { ChevronLeft, ChevronRight, MapPin, Maximize, ArrowRight } from "lucide-
 import { Button } from "@/components/ui/button";
 import { useProperties } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
-import { propertyMatchesTypes } from "@/lib/propertyTypes";
+import { propertyMatchesSegment, propertyMatchesTypes } from "@/lib/propertyTypes";
 import { getPropertyCover } from "@/lib/propertyImages";
 import { buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
+import type { PropertySegment } from "@/config/propertySegments";
 
 interface Props {
   type: string;
   title?: string;
+  segment?: PropertySegment;
 }
 
-export default function CategoryPropertySlider({ type, title = "Объекты в каталоге" }: Props) {
-  const { data: allProperties, isLoading } = useProperties();
+export default function CategoryPropertySlider({
+  type,
+  title = "Объекты в каталоге",
+  segment = "commercial",
+}: Props) {
+  const { data: allProperties, isLoading } = useProperties({ segment });
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const properties = allProperties?.filter((p) => propertyMatchesTypes(p, [type])) ?? [];
+  const properties = allProperties?.filter((p) => (
+    propertyMatchesSegment(p, segment) && propertyMatchesTypes(p, [type])
+  )) ?? [];
 
   const scroll = (dir: "left" | "right") => {
     if (!scrollRef.current) return;
@@ -119,7 +127,7 @@ export default function CategoryPropertySlider({ type, title = "Объекты �
         </div>
 
         <div className="mt-8 text-center">
-          <Link to={buildCatalogUrl({ types: type })}>
+          <Link to={buildCatalogUrl({ segment, types: type })}>
             <Button variant="outline" size="lg" className="gap-2">
               Смотреть все объекты
               <ArrowRight className="w-4 h-4" />

@@ -33,7 +33,7 @@ export default function HeroSection() {
   const searchBarRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { data: properties = [] } = useProperties();
+  const { data: properties = [] } = useProperties({ segment: "commercial" });
 
   const c1 = useCountUp(stats[0].value, 2200, isVisible);
   const c2 = useCountUp(stats[1].value, 2000, isVisible);
@@ -99,11 +99,11 @@ export default function HeroSection() {
           </div>
 
           <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-4">
-            Аренда коммерческой<br />
-            <span className="text-primary">недвижимости</span>
+            Аренда и продажа<br />
+            <span className="text-primary">коммерческой и жилой недвижимости</span>
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed">
-            Офисы, торговые площади, склады и земельные участки
+            Офисы, торговые площади, склады, квартиры, дома и комнаты в Иркутске и области
           </p>
 
           {/* Search block */}

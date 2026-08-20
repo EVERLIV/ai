@@ -1,22 +1,36 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabasePublic } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import type { PropertySegment } from "@/config/propertySegments";
 
 export type DbProperty = Tables<"properties">;
 
-export function useProperties() {
+type UsePropertiesOptions = {
+  segment?: PropertySegment;
+};
+
+export function useProperties(options: UsePropertiesOptions = {}) {
   return useQuery({
-    queryKey: ["properties"],
+    queryKey: ["properties", options.segment ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabasePublic
+      let query = supabasePublic
         .from("properties")
         .select("*")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
+        .eq("is_active", true);
+      if (options.segment) query = query.eq("segment", options.segment);
+      const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
       return data as DbProperty[];
     },
   });
+}
+
+export function useCommercialProperties() {
+  return useProperties({ segment: "commercial" });
+}
+
+export function useResidentialProperties() {
+  return useProperties({ segment: "residential" });
 }
 
 /**

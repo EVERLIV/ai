@@ -18,14 +18,32 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import PKKMapModal from "@/components/PKKMapModal";
 import { formatPropertyPrice, formatListingViews, isListingVerified, buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
 import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL, LAND_USE_OPTIONS } from "@/lib/propertyLand";
-import { getPropertyTypes, propertyMatchesTypes } from "@/lib/propertyTypes";
+import { getPropertyTypes, propertyMatchesSegment, propertyMatchesTypes } from "@/lib/propertyTypes";
 import { readCatalogFiltersFromSearchParams } from "@/lib/catalogLinks";
 import SeoHead from "@/components/SeoHead";
 import { absoluteUrl } from "@/config/site";
 import ctaRentOutBg from "@/assets/cta-rent-out.jpg";
+import type { PropertySegment } from "@/config/propertySegments";
+import {
+  COMMERCIAL_PROPERTY_TYPES,
+  RESIDENTIAL_PROPERTY_TYPES,
+} from "@/config/propertySegments";
+import {
+  getResidentialRooms,
+  getResidentialMarket,
+  getResidentialBuildingType,
+  getResidentialFurniture,
+} from "@/lib/propertyResidential";
+import {
+  ROOMS_OPTIONS,
+  BUILDING_TYPES,
+  FURNITURE_OPTIONS,
+  MARKET_OPTIONS,
+  RESIDENTIAL_CONDITIONS,
+} from "@/lib/propertyOptions";
 
-const TYPES = ["Офис", "Торговая", "Склад", "Земля", "Производство"];
 const DEALS = ["Все", "Аренда", "Продажа"];
+const RESIDENTIAL_DEALS = ["Все", "Аренда", "Продажа", "Посуточно"];
 const CLASSES = ["Все", "A", "A+", "B+", "B", "C"];
 const PRICE_MAX_DEFAULT = 50000000;
 const AREA_MAX_DEFAULT = 300000;
@@ -239,8 +257,15 @@ function CtaBanner() {
 }
 
 // ─── Main Catalog ───
-export default function Catalog() {
-  const { data: properties = [], isLoading } = useProperties();
+interface CatalogProps {
+  segment?: PropertySegment;
+}
+
+export default function Catalog({ segment = "commercial" }: CatalogProps) {
+  const isResidential = segment === "residential";
+  const TYPES = isResidential ? [...RESIDENTIAL_PROPERTY_TYPES] : [...COMMERCIAL_PROPERTY_TYPES];
+  const dealOptions = isResidential ? RESIDENTIAL_DEALS : DEALS;
+  const { data: properties = [], isLoading } = useProperties({ segment });
   const [searchParams, setSearchParams] = useSearchParams();
 
   const initialFilters = readCatalogFiltersFromSearchParams(searchParams);
@@ -266,6 +291,10 @@ export default function Catalog() {
   const [ceilingMin, setCeilingMin] = useState(initialFilters.ceilingMin);
   const [parkingOnly, setParkingOnly] = useState(initialFilters.parkingOnly);
   const [selectedLayouts, setSelectedLayouts] = useState<string[]>(initialFilters.selectedLayouts);
+  const [selectedRooms, setSelectedRooms] = useState<string[]>(initialFilters.selectedRooms || []);
+  const [selectedMarket, setSelectedMarket] = useState<string[]>(initialFilters.selectedMarket || []);
+  const [selectedBuildingTypes, setSelectedBuildingTypes] = useState<string[]>(initialFilters.selectedBuildingTypes || []);
+  const [selectedFurniture, setSelectedFurniture] = useState<string[]>(initialFilters.selectedFurniture || []);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
@@ -285,10 +314,17 @@ export default function Catalog() {
     setCeilingMin(next.ceilingMin);
     setParkingOnly(next.parkingOnly);
     setSelectedLayouts(next.selectedLayouts);
+    setSelectedRooms(next.selectedRooms || []);
+    setSelectedMarket(next.selectedMarket || []);
+    setSelectedBuildingTypes(next.selectedBuildingTypes || []);
+    setSelectedFurniture(next.selectedFurniture || []);
   }, [searchParams]);
 
   const districts = useMemo(() => ["Все", ...Array.from(new Set(properties.map((p) => p.district).filter(Boolean)))], [properties]);
-  const conditions = useMemo(() => ["Все", ...Array.from(new Set(properties.map((p) => p.condition).filter(Boolean) as string[]))], [properties]);
+  const conditions = useMemo(() => {
+    if (isResidential) return ["Все", ...RESIDENTIAL_CONDITIONS];
+    return ["Все", ...Array.from(new Set(properties.map((p) => p.condition).filter(Boolean) as string[]))];
+  }, [properties, isResidential]);
   // Виды использования только по земельным объектам — фильтр доступен лишь для типа «Земля».
   const landUses = useMemo(() => Array.from(new Set(
     properties.flatMap((p) => {
@@ -315,8 +351,12 @@ export default function Catalog() {
     if (ceilingMin > 0) params.ceil = String(ceilingMin);
     if (parkingOnly) params.parking = "1";
     if (selectedLayouts.length > 0) params.layouts = selectedLayouts.join(",");
+    if (selectedRooms.length > 0) params.rooms = selectedRooms.join(",");
+    if (selectedMarket.length > 0) params.market = selectedMarket.join(",");
+    if (selectedBuildingTypes.length > 0) params.bld = selectedBuildingTypes.join(",");
+    if (selectedFurniture.length > 0) params.furniture = selectedFurniture.join(",");
     setSearchParams(params, { replace: true });
-  }, [dealType, selectedTypes, district, propertyClass, condition, sort, debouncedSearch, priceMin, priceMax, areaMin, areaMax, ceilingMin, parkingOnly, selectedLayouts]);
+  }, [dealType, selectedTypes, district, propertyClass, condition, sort, debouncedSearch, priceMin, priceMax, areaMin, areaMax, ceilingMin, parkingOnly, selectedLayouts, selectedRooms, selectedMarket, selectedBuildingTypes, selectedFurniture, setSearchParams]);
 
   const toggleType = (t: string) => {
     setSelectedTypes((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]);
@@ -324,10 +364,22 @@ export default function Catalog() {
   const toggleLayout = (l: string) => {
     setSelectedLayouts((prev) => prev.includes(l) ? prev.filter((x) => x !== l) : [...prev, l]);
   };
+  const toggleRoom = (room: string) => {
+    setSelectedRooms((prev) => prev.includes(room) ? prev.filter((x) => x !== room) : [...prev, room]);
+  };
+  const toggleMarket = (value: string) => {
+    setSelectedMarket((prev) => prev.includes(value) ? prev.filter((x) => x !== value) : [...prev, value]);
+  };
+  const toggleBuildingType = (value: string) => {
+    setSelectedBuildingTypes((prev) => prev.includes(value) ? prev.filter((x) => x !== value) : [...prev, value]);
+  };
+  const toggleFurniture = (value: string) => {
+    setSelectedFurniture((prev) => prev.includes(value) ? prev.filter((x) => x !== value) : [...prev, value]);
+  };
 
   const isPriceFiltered = priceMin > 0 || priceMax < PRICE_MAX_DEFAULT;
   const isAreaFiltered = areaMin > 0 || areaMax < AREA_MAX_DEFAULT;
-  const moreActive = propertyClass !== "Все" || condition !== "Все" || ceilingMin > 0 || parkingOnly || selectedLayouts.length > 0;
+  const moreActive = propertyClass !== "Все" || condition !== "Все" || ceilingMin > 0 || parkingOnly || selectedLayouts.length > 0 || selectedRooms.length > 0 || selectedMarket.length > 0 || selectedBuildingTypes.length > 0 || selectedFurniture.length > 0;
 
   const activeFiltersCount = [
     dealType !== "Все",
@@ -341,6 +393,10 @@ export default function Catalog() {
     ceilingMin > 0,
     parkingOnly,
     selectedLayouts.length > 0,
+    selectedRooms.length > 0,
+    selectedMarket.length > 0,
+    selectedBuildingTypes.length > 0,
+    selectedFurniture.length > 0,
   ].filter(Boolean).length;
 
   const resetFilters = () => {
@@ -348,10 +404,12 @@ export default function Catalog() {
     setPropertyClass("Все"); setCondition("Все");
     setPriceMin(0); setPriceMax(PRICE_MAX_DEFAULT); setAreaMin(0); setAreaMax(AREA_MAX_DEFAULT);
     setSearchQuery(""); setCeilingMin(0); setParkingOnly(false); setSelectedLayouts([]);
+    setSelectedRooms([]); setSelectedMarket([]); setSelectedBuildingTypes([]); setSelectedFurniture([]);
   };
 
   const filtered = useMemo(() => {
     let result = [...properties];
+    result = result.filter((p) => propertyMatchesSegment(p, segment));
     if (debouncedSearch) {
       const q = debouncedSearch.toLowerCase();
       result = result.filter((p) =>
@@ -363,8 +421,32 @@ export default function Catalog() {
     }
     if (dealType !== "Все") result = result.filter((p) => p.deal_type === dealType);
     if (selectedTypes.length > 0) result = result.filter((p) => propertyMatchesTypes(p, selectedTypes));
+    if (selectedRooms.length > 0) {
+      result = result.filter((p) => {
+        const rooms = getResidentialRooms(p);
+        return rooms ? selectedRooms.includes(rooms) : false;
+      });
+    }
+    if (selectedMarket.length > 0) {
+      result = result.filter((p) => {
+        const market = getResidentialMarket(p);
+        return market ? selectedMarket.includes(market) : false;
+      });
+    }
+    if (selectedBuildingTypes.length > 0) {
+      result = result.filter((p) => {
+        const buildingType = getResidentialBuildingType(p);
+        return buildingType ? selectedBuildingTypes.includes(buildingType) : false;
+      });
+    }
+    if (selectedFurniture.length > 0) {
+      result = result.filter((p) => {
+        const furniture = getResidentialFurniture(p);
+        return furniture ? selectedFurniture.includes(furniture) : false;
+      });
+    }
     if (district !== "Все") result = result.filter((p) => p.district === district);
-    if (propertyClass !== "Все") result = result.filter((p) => p.class === propertyClass);
+    if (!isResidential && propertyClass !== "Все") result = result.filter((p) => p.class === propertyClass);
     if (condition !== "Все") result = result.filter((p) => p.condition === condition);
     if (isPriceFiltered) {
       if (priceMin > 0) result = result.filter((p) => Number(p.price) >= priceMin || Number(p.price) === 0);
@@ -372,9 +454,9 @@ export default function Catalog() {
     }
     if (areaMin > 0) result = result.filter((p) => Number(p.area) >= areaMin);
     if (areaMax < AREA_MAX_DEFAULT) result = result.filter((p) => Number(p.area) <= areaMax);
-    if (ceilingMin > 0) result = result.filter((p) => isLandProperty(p) || Number(p.ceiling_height) >= ceilingMin);
-    if (parkingOnly) result = result.filter((p) => isLandProperty(p) || (p.parking && p.parking !== "Нет" && p.parking !== "-"));
-    if (selectedLayouts.length > 0) result = result.filter((p) => {
+    if (!isResidential && ceilingMin > 0) result = result.filter((p) => isLandProperty(p) || Number(p.ceiling_height) >= ceilingMin);
+    if (!isResidential && parkingOnly) result = result.filter((p) => isLandProperty(p) || (p.parking && p.parking !== "Нет" && p.parking !== "-"));
+    if (!isResidential && selectedLayouts.length > 0) result = result.filter((p) => {
       if (!isLandProperty(p)) return false;
       const landUse = getLandUse(p);
       return landUse ? selectedLayouts.includes(landUse) : false;
@@ -387,7 +469,7 @@ export default function Catalog() {
       case "area_desc": result.sort((a, b) => Number(b.area) - Number(a.area)); break;
     }
     return result;
-  }, [properties, dealType, selectedTypes, district, propertyClass, condition, priceMin, priceMax, areaMin, areaMax, sort, debouncedSearch, ceilingMin, parkingOnly, selectedLayouts, isPriceFiltered]);
+  }, [properties, dealType, selectedTypes, selectedRooms, selectedMarket, selectedBuildingTypes, selectedFurniture, district, propertyClass, condition, priceMin, priceMax, areaMin, areaMax, sort, debouncedSearch, ceilingMin, parkingOnly, selectedLayouts, isPriceFiltered, segment, isResidential]);
 
   const landTypeFilterOnly = selectedTypes.length > 0 && selectedTypes.every((t) => t === "Земля");
   const layoutFilterOptions = landTypeFilterOnly
@@ -411,6 +493,87 @@ export default function Catalog() {
   const moreFilterFields = (
     <div className="space-y-4">
       <div>
+        {isResidential && (
+          <div className="mb-4">
+            <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Комнаты</p>
+            <div className="flex flex-wrap gap-1.5">
+              {ROOMS_OPTIONS.map((room) => (
+                <button
+                  key={room}
+                  onClick={() => toggleRoom(room)}
+                  className={`px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                    selectedRooms.includes(room)
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border text-muted-foreground hover:border-foreground/30 bg-background"
+                  }`}
+                >
+                  {room}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {isResidential && (
+          <>
+            <div className="mb-4">
+              <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Рынок</p>
+              <div className="flex flex-wrap gap-1.5">
+                {MARKET_OPTIONS.map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => toggleMarket(item)}
+                    className={`px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                      selectedMarket.includes(item)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border text-muted-foreground hover:border-foreground/30 bg-background"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mb-4">
+              <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Тип дома</p>
+              <div className="flex flex-wrap gap-1.5">
+                {BUILDING_TYPES.map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => toggleBuildingType(item)}
+                    className={`px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                      selectedBuildingTypes.includes(item)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border text-muted-foreground hover:border-foreground/30 bg-background"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mb-4">
+              <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Мебель</p>
+              <div className="flex flex-wrap gap-1.5">
+                {FURNITURE_OPTIONS.map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => toggleFurniture(item)}
+                    className={`px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                      selectedFurniture.includes(item)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border text-muted-foreground hover:border-foreground/30 bg-background"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+      {!isResidential && (
+      <div>
         <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Класс</p>
         <div className="flex flex-wrap gap-1.5">
           {CLASSES.map((c) => (
@@ -428,6 +591,7 @@ export default function Catalog() {
           ))}
         </div>
       </div>
+      )}
       <div>
         <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Состояние</p>
         <div className="flex flex-wrap gap-1.5">
@@ -446,6 +610,7 @@ export default function Catalog() {
           ))}
         </div>
       </div>
+      {!isResidential && (
       <div>
         <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Высота потолков</p>
         <div className="flex flex-wrap gap-1.5">
@@ -464,11 +629,12 @@ export default function Catalog() {
           ))}
         </div>
       </div>
-      <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-md border border-border px-3 py-2.5 hover:bg-muted/40 transition-colors">
+      )}
+      {!isResidential && <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-md border border-border px-3 py-2.5 hover:bg-muted/40 transition-colors">
         <Checkbox checked={parkingOnly} onCheckedChange={(v) => setParkingOnly(!!v)} className="shrink-0" />
         <span className="text-xs text-foreground">Есть парковка</span>
-      </label>
-      {landTypeFilterOnly && layoutFilterOptions.length > 0 && (
+      </label>}
+      {!isResidential && landTypeFilterOnly && layoutFilterOptions.length > 0 && (
         <div>
           <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">{LAND_TYPE_LABEL}</p>
           <div className="space-y-1 max-h-40 overflow-y-auto">
@@ -502,9 +668,11 @@ export default function Catalog() {
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
       <SeoHead
-        title="Каталог коммерческой недвижимости"
-        description="Офисы, торговые площади, склады и земля в Иркутске и области. Фильтры по цене, площади и району."
-        url={absoluteUrl("/catalog")}
+        title={isResidential ? "Каталог жилой недвижимости" : "Каталог коммерческой недвижимости"}
+        description={isResidential
+          ? "Квартиры, дома и комнаты в Иркутске и области. Фильтры по комнатам, цене, площади и району."
+          : "Офисы, торговые площади, склады и земля в Иркутске и области. Фильтры по цене, площади и району."}
+        url={absoluteUrl(isResidential ? "/zhilaya/catalog" : "/catalog")}
       />
       <SiteHeader />
 
@@ -516,7 +684,7 @@ export default function Catalog() {
             <FilterDropdown label="Тип сделки" valueLabel={dealType} active={dealType !== "Все"} panelWidth={200}>
               {(close) => (
                 <div className="space-y-0.5">
-                  {DEALS.map((d) => (
+                  {dealOptions.map((d) => (
                     <OptionRow key={d} label={d} selected={dealType === d} onClick={() => { setDealType(d); close(); }} />
                   ))}
                 </div>
@@ -703,7 +871,7 @@ export default function Catalog() {
               <div>
                 <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Тип сделки</p>
                 <div className="flex rounded-md bg-muted/50 p-1 gap-0.5">
-                  {DEALS.map((d) => (
+                  {dealOptions.map((d) => (
                     <button
                       key={d}
                       onClick={() => setDealType(d)}

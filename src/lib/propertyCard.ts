@@ -1,8 +1,11 @@
 import type { DbProperty } from "@/hooks/useProperties";
 import { getLandUse, isLandProperty } from "@/lib/propertyLand";
 import { getPrimaryPropertyType, getPropertyTypes } from "@/lib/propertyTypes";
+import { getRoomsLabel, isResidentialProperty } from "@/lib/propertyResidential";
+import type { PropertySegment } from "@/config/propertySegments";
 
 export type PropertyTitleInput = {
+  segment?: PropertySegment | null;
   type?: string | null;
   extras?: Record<string, unknown> | null;
   area?: number | null;
@@ -55,7 +58,9 @@ function getPropertySubtypeLabel(property: PropertyTitleInput, category: string)
  */
 export function buildPropertyDisplayTitle(property: PropertyTitleInput): string {
   const category = getPrimaryPropertyType(property) || "Объект";
-  const subtype = getPropertySubtypeLabel(property, category);
+  const subtype = isResidentialProperty(property)
+    ? getRoomsLabel(property)
+    : getPropertySubtypeLabel(property, category);
   const area = Number(property.area) > 0 ? `${Number(property.area).toLocaleString("ru-RU")} м²` : null;
   const district = getPropertyDistrictLabel(property);
 

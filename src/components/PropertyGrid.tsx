@@ -10,7 +10,7 @@ import type { PropertyFilters } from "@/components/SearchFilters";
 export default function PropertyGrid({ filters }: { filters?: PropertyFilters }) {
   const { ref, isVisible } = useScrollReveal();
   const [activePKK, setActivePKK] = useState<string | null>(null);
-  const { data: properties = [], isLoading } = useProperties();
+  const { data: properties = [], isLoading } = useProperties({ segment: "commercial" });
 
   const filtered = useMemo(() => {
     if (!filters) return properties;

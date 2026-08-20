@@ -41,6 +41,7 @@ import {
 import { isSaleDeal } from "@/lib/propertyDeal";
 import {
   getPropertyTypes,
+  getPropertySegment,
   togglePropertyType,
   syncPropertyTypesPayload,
   normalizePropertyTypes,
@@ -83,6 +84,11 @@ import {
   ENTRANCE_OPTIONS,
   PURPOSE_OPTIONS as FALLBACK_PURPOSE,
 } from "@/lib/propertyOptions";
+import {
+  COMMERCIAL_PROPERTY_TYPES,
+  RESIDENTIAL_PROPERTY_TYPES,
+  type PropertySegment,
+} from "@/config/propertySegments";
 
 // Address suggestions for Irkutsk region
 const ADDRESS_SUGGESTIONS = [
@@ -102,6 +108,7 @@ const ADDRESS_SUGGESTIONS = [
 interface PropertyExtras extends PropertySidebarExtras {}
 
 interface PropertyForm {
+  segment: PropertySegment;
   types: string[];
   class: string;
   area: number;
@@ -150,6 +157,7 @@ const emptyExtras: PropertyExtras = {
 };
 
 const emptyForm: PropertyForm = {
+  segment: "commercial",
   types: ["Офис"], class: "B", area: 0, price: 0, price_per_m2: 0,
   address: "", lat: null, lng: null, district: "Кировский", floor: "1", total_floors: 1,
   ceiling_height: 3, parking: "Нет", condition: "Хороший ремонт", layout: "Open-space",
@@ -169,7 +177,18 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const { byCategory } = useAllDictionaryValues();
 
-  const TYPES = byCategory("property_type").length > 0 ? byCategory("property_type") : [...FALLBACK_TYPES];
+  const allPropertyTypes = byCategory("property_type");
+  const TYPES = form.segment === "residential"
+    ? (
+      allPropertyTypes.filter((item) => (RESIDENTIAL_PROPERTY_TYPES as readonly string[]).includes(item)).length > 0
+        ? allPropertyTypes.filter((item) => (RESIDENTIAL_PROPERTY_TYPES as readonly string[]).includes(item))
+        : [...RESIDENTIAL_PROPERTY_TYPES]
+    )
+    : (
+      allPropertyTypes.filter((item) => (COMMERCIAL_PROPERTY_TYPES as readonly string[]).includes(item)).length > 0
+        ? allPropertyTypes.filter((item) => (COMMERCIAL_PROPERTY_TYPES as readonly string[]).includes(item))
+        : [...FALLBACK_TYPES]
+    );
   const CLASSES = byCategory("property_class").length > 0 ? byCategory("property_class") : [...FALLBACK_CLASSES];
   const DEAL_TYPES = byCategory("deal_type").length > 0 ? byCategory("deal_type") : [...FALLBACK_DEAL_TYPES];
   const DISTRICTS = byCategory("district").length > 0 ? byCategory("district") : [...FALLBACK_DISTRICTS];
@@ -325,11 +344,16 @@ export default function Dashboard() {
     mutationFn: async (formData: PropertyForm) => {
       const types = normalizePropertyTypes(formData.types);
       if (types.length === 0) throw new Error("Выберите хотя бы один тип объекта");
-      const { type: primaryType, extras: typesExtras } = syncPropertyTypesPayload(types, formData.extras as Record<string, unknown>);
+      const { type: primaryType, extras: typesExtras } = syncPropertyTypesPayload(
+        types,
+        formData.extras as Record<string, unknown>,
+        formData.segment,
+      );
       const isLand = isLandProperty(primaryType);
       const isSale = isSaleDeal(formData.deal_type);
       // Create property first to get ID, then upload photos
       const payload: any = {
+        segment: formData.segment,
         type: primaryType,
         class: formData.class,
         area: formData.area,
@@ -415,6 +439,7 @@ export default function Dashboard() {
   const openEdit = (prop: any) => {
     setEditId(prop.id);
     setForm({
+      segment: getPropertySegment(prop),
       types: getPropertyTypes(prop), class: prop.class, area: prop.area, price: prop.price,
       price_per_m2: prop.price_per_m2, address: prop.address,
       lat: typeof prop.lat === "number" ? prop.lat : null,
@@ -738,6 +763,32 @@ export default function Dashboard() {
                     <fieldset className={`${propertyFormSection} space-y-3 bg-sky-500/10`}>
                       <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Основное</legend>
                       <div className="space-y-2">
+                        <div>
+                          <Label className="text-xs mb-1 block">Сегмент</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {([
+                              { value: "commercial", label: "Коммерческая" },
+                              { value: "residential", label: "Жилая" },
+                            ] as const).map((item) => (
+                              <button
+                                key={item.value}
+                                type="button"
+                                onClick={() => setForm((prev) => ({
+                                  ...prev,
+                                  segment: item.value,
+                                  types: [item.value === "residential" ? "Квартира" : "Офис"],
+                                }))}
+                                className={`h-8 rounded-md border text-xs font-semibold transition-colors ${
+                                  form.segment === item.value
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "border-border bg-background text-foreground"
+                                }`}
+                              >
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                         <div>
                           <Label className="text-xs mb-1 block">Тип объекта</Label>
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-1.5 rounded-md border border-border/60 bg-background/40 p-2">

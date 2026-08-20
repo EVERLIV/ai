@@ -29,6 +29,18 @@ describe("buildPropertyDisplayTitle", () => {
 
     expect(title).toBe("Торговая · Павильон · 120 м² · Ангарск");
   });
+
+  test("builds a residential title with room count", () => {
+    const title = buildPropertyDisplayTitle({
+      segment: "residential",
+      type: "Квартира",
+      area: 54,
+      district: "Кировский",
+      extras: { rooms: "2" },
+    });
+
+    expect(title).toBe("Квартира · 2 комн · 54 м² · Кировский");
+  });
 });
 
 describe("formatPropertyAddressShort", () => {

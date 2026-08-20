@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -28,9 +28,11 @@ const VALID_TABS = new Set<string>(TABS.map((t) => t.key));
 export default function AccountPage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [tab, setTab] = useState<Tab>("favorites");
   const { data: properties = [] } = useProperties();
   const { data: profile } = useProfile();
+  const requestedSegment = new URLSearchParams(location.search).get("segment") === "residential" ? "residential" : "commercial";
 
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
@@ -172,7 +174,7 @@ export default function AccountPage() {
               </div>
             )}
 
-            {tab === "properties" && <MyPropertiesTab />}
+            {tab === "properties" && <MyPropertiesTab defaultSegment={requestedSegment} />}
 
             {tab === "requests" && <MyLeadsTab />}
 

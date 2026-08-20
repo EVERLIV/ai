@@ -9,27 +9,35 @@ import {
 import AIWizardModal from "@/components/AIWizardModal";
 import { useAuth } from "@/hooks/useAuth";
 import { CONTACTS } from "@/config/company";
+import { SEGMENT_ROUTES } from "@/config/propertySegments";
 
 type SubItem = { label: string; desc: string; href: string; icon: React.ElementType };
 type NavItem = { label: string; href: string; submenu?: SubItem[] };
 
-const catalogItem: NavItem = {
-  label: "Каталог",
-  href: "/catalog",
-  submenu: [
-    { label: "Все объекты", desc: "Полный каталог коммерческой недвижимости", href: "/catalog", icon: LayoutGrid },
-    { label: "Передать в управление", desc: "Полный цикл: арендаторы, договоры, платежи", href: "/list-property?mode=management", icon: Settings },
-    { label: "Сдать через АрендаСити", desc: "Размещение объекта и поток заявок", href: "/list-property?mode=rent", icon: Building2 },
-  ],
-};
+function getCatalogItem(isResidential: boolean): NavItem {
+  return isResidential
+    ? {
+        label: "Каталог жилья",
+        href: SEGMENT_ROUTES.residential.catalog,
+        submenu: [
+          { label: "Все объекты", desc: "Квартиры, дома и комнаты в одном каталоге", href: SEGMENT_ROUTES.residential.catalog, icon: LayoutGrid },
+          { label: "Разместить жильё", desc: "Добавьте квартиру, дом или комнату за 0 ₽", href: `${SEGMENT_ROUTES.residential.listProperty}?mode=rent`, icon: Building2 },
+          { label: "Передать в управление", desc: "Поможем со сдачей и сопровождением", href: `${SEGMENT_ROUTES.residential.listProperty}?mode=management`, icon: Settings },
+        ],
+      }
+    : {
+        label: "Каталог",
+        href: SEGMENT_ROUTES.commercial.catalog,
+        submenu: [
+          { label: "Все объекты", desc: "Полный каталог коммерческой недвижимости", href: SEGMENT_ROUTES.commercial.catalog, icon: LayoutGrid },
+          { label: "Передать в управление", desc: "Полный цикл: арендаторы, договоры, платежи", href: `${SEGMENT_ROUTES.commercial.listProperty}?mode=management`, icon: Settings },
+          { label: "Сдать через АрендаСити", desc: "Размещение объекта и поток заявок", href: `${SEGMENT_ROUTES.commercial.listProperty}?mode=rent`, icon: Building2 },
+        ],
+      };
+}
 
-const navItems: NavItem[] = [
-  { label: "Офисы", href: "/offices" },
-  { label: "Торговля", href: "/retail" },
-  { label: "Склады", href: "/warehouses" },
-  { label: "Земля", href: "/land" },
-  { label: "Реклама", href: "/ads" },
-  {
+function getNavItems(isResidential: boolean): NavItem[] {
+  const companyItem = {
     label: "Компания",
     href: "/about",
     submenu: [
@@ -38,8 +46,24 @@ const navItems: NavItem[] = [
       { label: "Контакты", desc: "Адрес, телефон, режим работы", href: "/contacts", icon: BookOpen },
       { label: "Вакансии", desc: "Работа в агентстве коммерческой недвижимости", href: "/vacancies", icon: Briefcase },
     ],
-  },
-];
+  };
+
+  return isResidential
+    ? [
+        { label: "Квартиры", href: "/zhilaya/kvartiry" },
+        { label: "Дома", href: "/zhilaya/doma" },
+        { label: "Комнаты", href: "/zhilaya/komnaty" },
+        companyItem,
+      ]
+    : [
+        { label: "Офисы", href: "/offices" },
+        { label: "Торговля", href: "/retail" },
+        { label: "Склады", href: "/warehouses" },
+        { label: "Земля", href: "/land" },
+        { label: "Реклама", href: "/ads" },
+        companyItem,
+      ];
+}
 
 const socials = [
   { Icon: Send, href: "https://t.me/arendacity", label: "Telegram" },
@@ -56,6 +80,10 @@ export default function SiteHeader() {
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
   const { pathname, hash } = useLocation();
+  const isResidential = pathname.startsWith("/zhilaya");
+  const catalogItem = getCatalogItem(isResidential);
+  const navItems = getNavItems(isResidential);
+
   const { user, signOut, hasRole } = useAuth();
   const navigate = useNavigate();
 
@@ -117,7 +145,21 @@ export default function SiteHeader() {
               className="hidden xl:flex items-center gap-1 h-7 px-2 text-muted-foreground text-[11px] font-medium hover:text-foreground transition-colors duration-200 whitespace-nowrap">
               <Sparkles className="w-3 h-3" /> ИИ-подбор
             </button>
-            <Link to="/list-property"
+            <div className="hidden md:flex items-center gap-1 rounded-md border border-border/70 bg-card/60 p-0.5">
+              <Link
+                to={SEGMENT_ROUTES.commercial.catalog}
+                className={`px-2 py-1 text-[11px] font-medium transition-colors ${!isResidential ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Коммерческая
+              </Link>
+              <Link
+                to={SEGMENT_ROUTES.residential.home}
+                className={`px-2 py-1 text-[11px] font-medium transition-colors ${isResidential ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Жилая
+              </Link>
+            </div>
+            <Link to={isResidential ? SEGMENT_ROUTES.residential.listProperty : SEGMENT_ROUTES.commercial.listProperty}
               className="hidden sm:flex items-center h-7 px-3 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity whitespace-nowrap">
               + Разместить за 0 ₽
             </Link>
@@ -201,7 +243,7 @@ export default function SiteHeader() {
                 АРЕНДА<span className="text-primary">СИТИ</span>
               </span>
               <span className="text-[9px] font-medium tracking-wide text-muted-foreground mt-0.5 uppercase hidden sm:block">
-                Коммерческая недвижимость
+                {isResidential ? "Жилая недвижимость" : "Коммерческая и жилая недвижимость"}
               </span>
             </span>
           </Link>
@@ -405,7 +447,23 @@ export default function SiteHeader() {
 
           <div className="my-3 h-px bg-border/50" />
 
-          <Link to="/list-property" onClick={() => setMobileOpen(false)}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <Link
+              to={SEGMENT_ROUTES.commercial.catalog}
+              onClick={() => setMobileOpen(false)}
+              className={`flex items-center justify-center h-9 text-xs font-semibold border ${!isResidential ? "bg-foreground text-background border-foreground" : "border-border text-foreground"}`}
+            >
+              Коммерческая
+            </Link>
+            <Link
+              to={SEGMENT_ROUTES.residential.home}
+              onClick={() => setMobileOpen(false)}
+              className={`flex items-center justify-center h-9 text-xs font-semibold border ${isResidential ? "bg-foreground text-background border-foreground" : "border-border text-foreground"}`}
+            >
+              Жилая
+            </Link>
+          </div>
+          <Link to={isResidential ? SEGMENT_ROUTES.residential.listProperty : SEGMENT_ROUTES.commercial.listProperty} onClick={() => setMobileOpen(false)}
             className="flex items-center justify-center h-9 bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity">
             Разместить за 0 ₽
           </Link>

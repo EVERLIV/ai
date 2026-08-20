@@ -15,7 +15,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default function PopularPropertiesSlider() {
-  const { data: properties = [], isLoading } = useProperties();
+  const { data: properties = [], isLoading } = useProperties({ segment: "commercial" });
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const items = properties.slice(0, 10);

@@ -24,7 +24,7 @@ export default function MapSection() {
   const [mapReady, setMapReady] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
 
-  const { data: properties = [] } = useProperties();
+  const { data: properties = [] } = useProperties({ segment: "commercial" });
 
   const filtered = useMemo(
     () => (activeDistrict === "Все" ? properties : properties.filter((p) => p.district === activeDistrict)),

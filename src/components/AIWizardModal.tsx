@@ -10,7 +10,7 @@ interface AIWizardModalProps {
 }
 
 export default function AIWizardModal({ open, onClose }: AIWizardModalProps) {
-  const { data: properties = [] } = useProperties();
+  const { data: properties = [] } = useProperties({ segment: "commercial" });
 
   useEffect(() => {
     if (!open) return;

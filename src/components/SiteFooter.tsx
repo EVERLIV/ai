@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { COMPANY, CONTACTS } from "@/config/company";
-import { footerCityLinks, footerSectionLinks } from "@/lib/catalogLinks";
+import { footerCityLinks, footerResidentialLinks, footerSectionLinks } from "@/lib/catalogLinks";
 
 const legalLinks = [
   { label: "Политика конфиденциальности", href: "#" },
@@ -17,7 +17,7 @@ export default function SiteFooter() {
   return (
     <footer className="bg-foreground text-background/70">
       <div className="container mx-auto px-4 lg:px-8 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
           <div>
             <div className="flex items-center gap-2.5 mb-4">
               <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
@@ -28,12 +28,12 @@ export default function SiteFooter() {
                   АРЕНДА<span className="text-primary">СИТИ</span>
                 </span>
                 <span className="text-[10px] font-medium tracking-wide text-background/60 mt-0.5 uppercase">
-                  Коммерческая недвижимость и реклама
+                  Коммерческая и жилая недвижимость
                 </span>
               </span>
             </div>
             <p className="text-sm leading-relaxed">
-              Агентство коммерческой недвижимости в Ангарске и Иркутской области. Профессиональный подбор и управление объектами.
+              Аренда и продажа коммерческой и жилой недвижимости в Иркутске и области. Профессиональный подбор и управление объектами.
             </p>
 
             <ul className="mt-4 space-y-2">
@@ -64,6 +64,19 @@ export default function SiteFooter() {
             <h4 className="text-sm font-semibold text-background mb-4">Города</h4>
             <ul className="space-y-2">
               {footerCityLinks.map((l) => (
+                <li key={l.label}>
+                  <Link to={l.href} className="text-sm hover:text-background transition-colors">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-semibold text-background mb-4">Жилая недвижимость</h4>
+            <ul className="space-y-2">
+              {footerResidentialLinks.map((l) => (
                 <li key={l.label}>
                   <Link to={l.href} className="text-sm hover:text-background transition-colors">
                     {l.label}

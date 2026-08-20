@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useProperty } from "@/hooks/useProperties";
 import {
-  ArrowLeft, Heart, MapPin, Clock, Eye, Phone, Mail,
+  ArrowLeft, Heart, MapPin, Clock, Eye, Mail,
   Building2, Ruler, Layers, Car, Paintbrush, LayoutGrid, FileText,
   Shield, Calendar, ChevronLeft, ChevronRight, Store, Warehouse, TreePine,
   MessageSquareText, Tag, Download, X, Send, ChevronDown,
@@ -15,8 +15,11 @@ import PropertyMap from "@/components/PropertyMap";
 import { getDefaultPropertyImage } from "@/lib/propertyImages";
 import RequestPriceDialog from "@/components/RequestPriceDialog";
 import OwnerMessageDialog, { propertyCtaButtonClass } from "@/components/OwnerMessageDialog";
+import RevealListingPhone from "@/components/RevealListingPhone";
+import ReportListingDialog from "@/components/ReportListingDialog";
 import PropertyAIChat from "@/components/PropertyAIChat";
 import { isOwnerListing, getOwnerUserId } from "@/lib/propertyModeration";
+import { isResidentialSegment } from "@/config/propertySegments";
 import PropertyUnitsTable from "@/components/PropertyUnitsTable";
 import PropertySidebarExtras from "@/components/PropertySidebarExtras";
 import PKKMapModal from "@/components/PKKMapModal";
@@ -29,7 +32,6 @@ import PropertyJsonLd from "@/components/PropertyJsonLd";
 import { buildPropertyShareOgDescription, buildPropertySharePayload } from "@/lib/propertyShare";
 import { formatListingViews, buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
 import { absoluteUrl } from "@/config/site";
-import { CONTACTS } from "@/config/company";
 import PropertyShareButton from "@/components/PropertyShareButton";
 import PropertyDescription from "@/components/PropertyDescription";
 import { submitLead } from "@/lib/submitLead";
@@ -119,7 +121,10 @@ export default function PropertyDetail() {
 
   const isLand = isLandProperty(property);
   const isSale = isSaleDeal(property.deal_type);
+  const isResidential = isResidentialSegment(property.segment);
   const landExtras = (property.extras || {}) as Record<string, unknown>;
+  const ownerUserIdForInquiry = getOwnerUserId(landExtras, property.submitted_by);
+  const ownerNameForInquiry = typeof landExtras.agent_name === "string" ? landExtras.agent_name : undefined;
 
   const rentTerms = isSale
     ? []
@@ -292,22 +297,36 @@ export default function PropertyDetail() {
       {/* Mobile bottom action bar */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_24px_-12px_hsl(0_0%_0%/0.15)]">
         <div className="grid grid-cols-4 px-2 py-2 gap-1 max-w-md mx-auto">
-          <a
-            href={`tel:${CONTACTS.phoneTel}`}
-            aria-label="Позвонить"
-            className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-primary hover:bg-primary/10 active:scale-95 transition-all"
-          >
-            <Phone className="w-6 h-6" strokeWidth={2.2} />
-            <span className="text-[10px] font-medium">Звонок</span>
-          </a>
-          <button
-            onClick={() => { setContactOpen(true); setContactSent(false); }}
-            aria-label="Задать вопрос"
-            className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-foreground hover:bg-muted active:scale-95 transition-all"
-          >
-            <Mail className="w-6 h-6" strokeWidth={2.2} />
-            <span className="text-[9px] font-medium whitespace-nowrap">Задать вопрос</span>
-          </button>
+          <RevealListingPhone property={property} variant="bar" />
+          {isResidential ? (
+            <OwnerMessageDialog
+              propertyId={property.id}
+              propertyAddress={property.address}
+              ownerName={ownerNameForInquiry}
+              ownerUserId={ownerUserIdForInquiry || undefined}
+              title="Оставить заявку"
+              source="property_inquiry"
+              trigger={
+                <button
+                  type="button"
+                  aria-label="Оставить заявку"
+                  className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-foreground hover:bg-muted active:scale-95 transition-all w-full"
+                >
+                  <Mail className="w-6 h-6" strokeWidth={2.2} />
+                  <span className="text-[9px] font-medium whitespace-nowrap">Заявка</span>
+                </button>
+              }
+            />
+          ) : (
+            <button
+              onClick={() => { setContactOpen(true); setContactSent(false); }}
+              aria-label="Задать вопрос"
+              className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-foreground hover:bg-muted active:scale-95 transition-all"
+            >
+              <Mail className="w-6 h-6" strokeWidth={2.2} />
+              <span className="text-[9px] font-medium whitespace-nowrap">Задать вопрос</span>
+            </button>
+          )}
           <button
             onClick={handleSave}
             aria-label="Сохранить"
@@ -461,7 +480,9 @@ export default function PropertyDetail() {
           </aside>
         </div>
 
-        <PropertyAIChat propertyId={property.id} propertyAddress={property.address} />
+        {!isResidential && (
+          <PropertyAIChat propertyId={property.id} propertyAddress={property.address} />
+        )}
 
         <NearbyPropertiesSlider
           district={property.district}
@@ -483,6 +504,9 @@ function PropertyPriceBlock({ property }: { property: any }) {
   const ownerListing = isOwnerListing(extras, property.submitted_by);
   const ownerUserId = getOwnerUserId(extras, property.submitted_by);
   const ownerName = typeof extras.agent_name === "string" ? extras.agent_name : undefined;
+  const isResidential = isResidentialSegment(property.segment);
+  const typesLabel = formatPropertyTypesLabel(getPropertyTypes(property));
+  const useOwnerInquiry = isResidential || ownerListing;
 
   return (
     <div id="contact-form" className="bg-card rounded-2xl shadow-card p-4 scroll-mt-24 space-y-3">
@@ -503,18 +527,20 @@ function PropertyPriceBlock({ property }: { property: any }) {
         <div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Цена</div>
           <div className="text-xl font-bold text-foreground leading-none">По запросу</div>
-          <div className="text-xs text-muted-foreground mt-1.5">{property.area} м² · {formatPropertyTypesLabel(propertyTypes)}</div>
+          <div className="text-xs text-muted-foreground mt-1.5">{property.area} м² · {typesLabel}</div>
         </div>
       )}
 
       {/* CTAs — компактно: основные две рядом, "Предложить цену" — текстовая ссылка */}
       <div className="grid grid-cols-2 gap-2">
-        {ownerListing ? (
+        {useOwnerInquiry ? (
           <OwnerMessageDialog
             propertyId={property.id}
             propertyAddress={property.address}
             ownerName={ownerName}
             ownerUserId={ownerUserId || undefined}
+            title={isResidential ? "Оставить заявку" : "Задать вопрос"}
+            source={isResidential ? "property_inquiry" : "owner_message"}
           />
         ) : (
           <button
@@ -525,13 +551,7 @@ function PropertyPriceBlock({ property }: { property: any }) {
             Задать вопрос
           </button>
         )}
-        <a
-          href={`tel:${CONTACTS.phoneTel}`}
-          className={`${propertyCtaButtonClass} bg-foreground text-background`}
-        >
-          <Phone className="w-4 h-4 shrink-0" />
-          Позвонить
-        </a>
+        <RevealListingPhone property={property} />
       </div>
       <RequestPriceDialog
         propertyId={property.id}
@@ -548,6 +568,9 @@ function PropertyPriceBlock({ property }: { property: any }) {
           </button>
         }
       />
+      <div className="flex justify-center pt-1 border-t border-border/50">
+        <ReportListingDialog propertyId={property.id} propertyAddress={property.address} />
+      </div>
     </div>
   );
 }

@@ -1,8 +1,14 @@
 import { LAND_PROPERTY_TYPE } from "@/lib/propertyLand";
+import {
+  COMMERCIAL_PROPERTY_TYPES,
+  RESIDENTIAL_PROPERTY_TYPES,
+  type PropertySegment,
+} from "@/config/propertySegments";
 
 export const PROPERTY_TYPES_EXTRA_KEY = "property_types";
 
 type PropertyLike = {
+  segment?: PropertySegment | null;
   type?: string | null;
   extras?: Record<string, unknown> | null;
 };
@@ -36,6 +42,11 @@ export function formatPropertyTypesLabel(types: string[]): string {
   return types.join(", ");
 }
 
+export function getPropertySegment(property: PropertyLike): PropertySegment {
+  if (property.segment === "residential" || property.type === "Новостройка") return "residential";
+  return "commercial";
+}
+
 export function getPrimaryPropertyType(property: PropertyLike): string {
   return getPropertyTypes(property)[0] || property.type?.trim() || "";
 }
@@ -46,16 +57,26 @@ export function propertyMatchesTypes(property: PropertyLike, selectedTypes: stri
   return selectedTypes.some((t) => types.includes(t));
 }
 
+export function propertyMatchesSegment(property: PropertyLike, segment: PropertySegment): boolean {
+  return getPropertySegment(property) === segment;
+}
+
+export function getSegmentPropertyTypes(segment: PropertySegment): readonly string[] {
+  return segment === "residential" ? RESIDENTIAL_PROPERTY_TYPES : COMMERCIAL_PROPERTY_TYPES;
+}
+
 export function syncPropertyTypesPayload(
   types: string[],
   extras: Record<string, unknown> | undefined,
+  segment: PropertySegment = "commercial",
 ): { type: string; extras: Record<string, unknown> } {
   const normalized = normalizePropertyTypes(types);
-  const primaryType = normalized[0] || "Офис";
+  const primaryType = normalized[0] || (segment === "residential" ? "Квартира" : "Офис");
   return {
     type: primaryType,
     extras: {
       ...(extras || {}),
+      segment,
       [PROPERTY_TYPES_EXTRA_KEY]: normalized,
     },
   };

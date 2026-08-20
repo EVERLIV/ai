@@ -17,7 +17,7 @@ const typeIcons: Record<string, React.ElementType> = {
 
 export default function RentSection() {
   const { ref, isVisible } = useScrollReveal();
-  const { data: properties = [], isLoading } = useProperties();
+  const { data: properties = [], isLoading } = useProperties({ segment: "commercial" });
   const navigate = useNavigate();
 
   const rentals = properties.filter((p) => p.deal_type === "Аренда").slice(0, 8);

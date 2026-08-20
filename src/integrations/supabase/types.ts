@@ -522,6 +522,7 @@ export type Database = {
           published_date: string | null
           rejection_reason: string | null
           request_type: Database["public"]["Enums"]["property_request_type"] | null
+          segment: Database["public"]["Enums"]["property_segment"]
           submitted_by: string | null
           total_floors: number | null
           type: string
@@ -563,6 +564,7 @@ export type Database = {
           published_date?: string | null
           rejection_reason?: string | null
           request_type?: Database["public"]["Enums"]["property_request_type"] | null
+          segment?: Database["public"]["Enums"]["property_segment"]
           submitted_by?: string | null
           total_floors?: number | null
           type?: string
@@ -604,6 +606,7 @@ export type Database = {
           published_date?: string | null
           rejection_reason?: string | null
           request_type?: Database["public"]["Enums"]["property_request_type"] | null
+          segment?: Database["public"]["Enums"]["property_segment"]
           submitted_by?: string | null
           total_floors?: number | null
           type?: string
@@ -742,6 +745,7 @@ export type Database = {
       profile_account_type: "owner" | "realtor"
       property_moderation_status: "draft" | "on_moderation" | "published" | "rejected" | "cancelled"
       property_request_type: "free_listing" | "management"
+      property_segment: "commercial" | "residential"
       verification_status: "unverified" | "pending" | "verified" | "rejected"
     }
     CompositeTypes: {
@@ -889,6 +893,7 @@ export const Constants = {
       profile_account_type: ["owner", "realtor"],
       property_moderation_status: ["draft", "on_moderation", "published", "rejected", "cancelled"],
       property_request_type: ["free_listing", "management"],
+      property_segment: ["commercial", "residential"],
       verification_status: ["unverified", "pending", "verified", "rejected"],
     },
   },

@@ -21,6 +21,17 @@ const TYPE_SEO = {
   Помещение: "помещение",
   Павильон: "павильон",
   Киоск: "киоск",
+  Квартира: "квартира",
+  Дом: "дом",
+  Комната: "комната",
+  Таунхаус: "таунхаус",
+  Апартаменты: "апартаменты",
+  Дача: "дача",
+  Коттедж: "коттедж",
+  Участок: "участок",
+  Гараж: "гараж",
+  Машиноместо: "машиноместо",
+  Доля: "доля в квартире",
 };
 
 const STATIC_PATHS = [
@@ -35,6 +46,12 @@ const STATIC_PATHS = [
   "/vacancies",
   "/news",
   "/list-property",
+  "/zhilaya",
+  "/zhilaya/catalog",
+  "/zhilaya/kvartiry",
+  "/zhilaya/doma",
+  "/zhilaya/komnaty",
+  "/zhilaya/list-property",
 ];
 
 function escapeXml(s) {
