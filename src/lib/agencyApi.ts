@@ -44,6 +44,7 @@ export type AgencyManager = {
   full_name: string;
   phone: string;
   photo_url: string | null;
+  property_types: string[];
   sort_order: number;
   is_active: boolean;
   created_at: string;
@@ -62,11 +63,35 @@ export type AgencyInvite = {
   created_at: string;
 };
 
+function errorBodyText(data: unknown): string {
+  if (!data || typeof data !== "object") return "";
+  const o = data as Record<string, unknown>;
+  return [o.message, o.details, o.hint, o.code]
+    .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+    .join(" — ");
+}
+
+function isMissingColumnError(data: unknown, column?: string): boolean {
+  const text = errorBodyText(data);
+  if (!/Could not find.*column|column .* does not exist|PGRST204/i.test(text)) return false;
+  if (!column) return true;
+  return new RegExp(column, "i").test(text);
+}
+
 function parseError(data: unknown, res: Response): Error {
-  if (data && typeof data === "object") {
-    const o = data as Record<string, unknown>;
-    if (typeof o.message === "string" && o.message.trim()) return new Error(o.message);
-    if (typeof o.hint === "string" && o.hint.trim()) return new Error(o.hint);
+  const combined = errorBodyText(data);
+  if (combined) {
+    if (isMissingColumnError(data, "property_types")) {
+      return new Error(
+        "В БД нет колонки property_types. Выполните supabase/self_hosted_agency_hotfix.sql",
+      );
+    }
+    if (isMissingColumnError(data, "agency_id")) {
+      return new Error(
+        "В БД нет колонки properties.agency_id. Выполните supabase/self_hosted_agency_hotfix.sql",
+      );
+    }
+    return new Error(combined);
   }
   return new Error(`HTTP ${res.status}`);
 }
@@ -78,21 +103,30 @@ async function restGet<T>(path: string): Promise<T> {
   return data as T;
 }
 
+async function restMutateRaw(
+  path: string,
+  method: "POST" | "PATCH" | "DELETE",
+  body?: unknown,
+): Promise<{ ok: boolean; status: number; data: unknown }> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      ...headers,
+      Prefer: "return=representation",
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+}
+
 async function restMutate(
   path: string,
   method: "POST" | "PATCH" | "DELETE",
   body?: unknown,
 ): Promise<unknown> {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    method,
-    headers: {
-      ...headers,
-      Prefer: method === "POST" ? "return=representation" : "return=representation",
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw parseError(data, res);
+  const { ok, status, data } = await restMutateRaw(path, method, body);
+  if (!ok) throw parseError(data, { status } as Response);
   return data;
 }
 
@@ -135,6 +169,32 @@ export async function fetchAgenciesAdminApi() {
   return restGet<Agency[]>(`agencies?select=*&order=created_at.desc`);
 }
 
+/** Публичный список верифицированных агентств для фильтров каталога */
+export async function fetchVerifiedAgenciesApi(): Promise<
+  Pick<Agency, "id" | "name" | "logo_url" | "verification_status">[]
+> {
+  // anon REST: agencies в Database types может отсутствовать
+  const anonKey =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4ODQyOTQwLCJleHAiOjE5MzY1MjI5NDB9.uK1BksB1rl0vNAlUc2nVpkqECeiWD9CKx0rIfHUlyWA";
+  const qs =
+    "select=id,name,logo_url,verification_status&verification_status=eq.verified&order=name.asc";
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/agencies?${qs}`, {
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+    },
+  });
+  const data = await res.json().catch(() => []);
+  if (!res.ok) {
+    const msg =
+      data && typeof data === "object" && "message" in data
+        ? String((data as { message: string }).message)
+        : `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return Array.isArray(data) ? data : [];
+}
+
 export async function fetchAgencyMembersApi(agencyId: string) {
   return restGet<AgencyMember[]>(
     `agency_members?agency_id=eq.${agencyId}&select=*,profiles(id,full_name,email,phone,avatar_url)&order=created_at.asc`,
@@ -162,31 +222,66 @@ export async function updateAgencyMemberRoleApi(
 
 export async function fetchAgencyManagersApi(agencyId: string, activeOnly = false) {
   const filter = activeOnly ? "&is_active=eq.true" : "";
-  return restGet<AgencyManager[]>(
+  const rows = await restGet<AgencyManager[]>(
     `agency_managers?agency_id=eq.${agencyId}${filter}&select=*&order=sort_order.asc,created_at.asc`,
   );
+  return rows.map((m) => ({
+    ...m,
+    property_types: Array.isArray(m.property_types) ? m.property_types : [],
+  }));
 }
 
 export async function createAgencyManagerApi(
   agencyId: string,
-  payload: { full_name: string; phone: string; photo_url?: string | null },
+  payload: {
+    full_name: string;
+    phone: string;
+    photo_url?: string | null;
+    property_types?: string[];
+  },
 ) {
-  const data = await restMutate("agency_managers", "POST", {
+  const base = {
     agency_id: agencyId,
     full_name: payload.full_name,
     phone: payload.phone,
     photo_url: payload.photo_url ?? null,
-  });
-  const row = Array.isArray(data) ? data[0] : data;
-  return row as AgencyManager;
+  };
+  const withTypes = {
+    ...base,
+    property_types: payload.property_types ?? [],
+  };
+
+  let result = await restMutateRaw("agency_managers", "POST", withTypes);
+  if (!result.ok && isMissingColumnError(result.data, "property_types")) {
+    // Колонка ещё не накатана — сохраняем менеджера без типов
+    result = await restMutateRaw("agency_managers", "POST", base);
+  }
+  if (!result.ok) throw parseError(result.data, { status: result.status } as Response);
+
+  const row = Array.isArray(result.data) ? result.data[0] : result.data;
+  const manager = row as AgencyManager;
+  return {
+    ...manager,
+    property_types: Array.isArray(manager.property_types)
+      ? manager.property_types
+      : payload.property_types ?? [],
+  };
 }
 
 export async function updateAgencyManagerApi(
   managerId: string,
   payload: Partial<AgencyManager>,
 ) {
-  const data = await restMutate(`agency_managers?id=eq.${managerId}`, "PATCH", payload);
-  const row = Array.isArray(data) ? data[0] : data;
+  let result = await restMutateRaw(`agency_managers?id=eq.${managerId}`, "PATCH", payload);
+  if (!result.ok && isMissingColumnError(result.data, "property_types") && "property_types" in payload) {
+    const { property_types: _drop, ...rest } = payload;
+    if (Object.keys(rest).length === 0) {
+      throw parseError(result.data, { status: result.status } as Response);
+    }
+    result = await restMutateRaw(`agency_managers?id=eq.${managerId}`, "PATCH", rest);
+  }
+  if (!result.ok) throw parseError(result.data, { status: result.status } as Response);
+  const row = Array.isArray(result.data) ? result.data[0] : result.data;
   return row as AgencyManager;
 }
 
@@ -228,23 +323,45 @@ export async function fetchInviteByTokenApi(token: string) {
 }
 
 export async function fetchAgencyPropertiesApi(agencyId: string) {
-  return restGet<Record<string, unknown>[]>(
-    `properties?agency_id=eq.${agencyId}&moderation_status=eq.approved&is_active=eq.true&select=*&order=created_at.desc`,
-  );
+  try {
+    return await restGet<Record<string, unknown>[]>(
+      `properties?agency_id=eq.${agencyId}&moderation_status=eq.approved&is_active=eq.true&select=*&order=created_at.desc`,
+    );
+  } catch (err) {
+    if (err instanceof Error && /agency_id|self_hosted_agency_hotfix/i.test(err.message)) {
+      return [];
+    }
+    throw err;
+  }
 }
 
 export async function fetchMyAgencyPropertiesApi(agencyId: string) {
-  return restGet<Record<string, unknown>[]>(
-    `properties?agency_id=eq.${agencyId}&select=*&order=created_at.desc`,
+  try {
+    return await restGet<Record<string, unknown>[]>(
+      `properties?agency_id=eq.${agencyId}&select=*&order=created_at.desc`,
+    );
+  } catch (err) {
+    if (err instanceof Error && /agency_id|self_hosted_agency_hotfix/i.test(err.message)) {
+      return [];
+    }
+    throw err;
+  }
+}
+
+function toPublicStorageUrl(url: string): string {
+  // /storage/v1/object/bucket/... → /storage/v1/object/public/bucket/...
+  return url.replace(
+    /\/storage\/v1\/object\/(?!public\/)/,
+    "/storage/v1/object/public/",
   );
 }
 
 export async function uploadAgencyAssetApi(agencyId: string, file: File, kind: "logo" | "manager") {
-  const ext = file.name.split(".").pop() || "jpg";
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const path = `${agencyId}/${kind}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabaseAdmin.storage.upload("agency-assets", path, file);
   if (error) throw new Error(typeof error === "string" ? error : "Не удалось загрузить файл");
-  return supabaseAdmin.storage.getPublicUrl("agency-assets", path);
+  return toPublicStorageUrl(supabaseAdmin.storage.getPublicUrl("agency-assets", path));
 }
 
 /** Ensure agency exists for legacy realtor profiles when migration not yet run on row */

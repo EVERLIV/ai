@@ -24,7 +24,7 @@ export default function MapSection() {
   const [mapReady, setMapReady] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
 
-  const { data: properties = [] } = useProperties({ segment: "commercial" });
+  const { data: properties = [] } = useProperties();
 
   const filtered = useMemo(
     () => (activeDistrict === "Все" ? properties : properties.filter((p) => p.district === activeDistrict)),
@@ -176,7 +176,7 @@ export default function MapSection() {
               Карта объектов
             </p>
             <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-              Объекты на карте Иркутска
+              Объекты на карте Иркутска и области
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               {withCoords.length} объектов на карте · {filtered.length} всего{activeDistrict !== "Все" ? ` в районе «${activeDistrict}»` : ""}

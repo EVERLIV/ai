@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabasePublic } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import type { PropertySegment } from "@/config/propertySegments";
+import { isCommercialLand } from "@/lib/propertyTypeFamilies";
 
 export type DbProperty = Tables<"properties">;
 
@@ -9,10 +10,45 @@ type UsePropertiesOptions = {
   segment?: PropertySegment;
 };
 
+function mergeById(a: DbProperty[], b: DbProperty[]): DbProperty[] {
+  const map = new Map<string, DbProperty>();
+  for (const row of [...a, ...b]) map.set(row.id, row);
+  return Array.from(map.values()).sort(
+    (x, y) => new Date(y.created_at).getTime() - new Date(x.created_at).getTime(),
+  );
+}
+
 export function useProperties(options: UsePropertiesOptions = {}) {
   return useQuery({
     queryKey: ["properties", options.segment ?? "all"],
     queryFn: async () => {
+      if (options.segment === "residential") {
+        // Жилой каталог + вся коммерческая земля в разделе «Участок»
+        const [residentialRes, commercialLandRes] = await Promise.all([
+          supabasePublic
+            .from("properties")
+            .select("*")
+            .eq("is_active", true)
+            .eq("segment", "residential")
+            .order("created_at", { ascending: false }),
+          supabasePublic
+            .from("properties")
+            .select("*")
+            .eq("is_active", true)
+            .eq("segment", "commercial")
+            .eq("type", "Земля")
+            .order("created_at", { ascending: false }),
+        ]);
+        if (residentialRes.error) throw residentialRes.error;
+        if (commercialLandRes.error) throw commercialLandRes.error;
+
+        const residential = (residentialRes.data || []) as DbProperty[];
+        const commercialLand = ((commercialLandRes.data || []) as DbProperty[]).filter(
+          (p) => isCommercialLand(p),
+        );
+        return mergeById(residential, commercialLand);
+      }
+
       let query = supabasePublic
         .from("properties")
         .select("*")

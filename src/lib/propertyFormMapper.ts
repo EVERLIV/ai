@@ -1,10 +1,17 @@
 import type { MyProperty } from "@/hooks/useMyProperties";
 import type { RequestType } from "@/lib/propertyModeration";
-import { isLandProperty } from "@/lib/propertyLand";
+import { isAnyLand } from "@/lib/propertyTypeFamilies";
 import { getPropertyTypes, syncPropertyTypesPayload, normalizePropertyTypes } from "@/lib/propertyTypes";
 import type { PropertySegment } from "@/config/propertySegments";
 import { getPropertySegment } from "@/lib/propertyTypes";
 import { RESIDENTIAL_EXTRAS_KEYS } from "@/lib/propertyResidential";
+import { isDailyDeal, isLongTermRent, isSaleDeal } from "@/lib/propertyDeal";
+import {
+  isDwellingLike,
+  isFlatLike,
+  isHouseLike,
+  isParkingLike,
+} from "@/lib/propertyTypeFamilies";
 
 export interface PropertyFormState {
   segment: PropertySegment;
@@ -16,6 +23,8 @@ export interface PropertyFormState {
   description: string;
   address: string;
   district: string;
+  lat: number | null;
+  lng: number | null;
   floor: string;
   total_floors: number;
   ceiling_height: number;
@@ -58,11 +67,12 @@ export interface PropertyFormState {
 
 export function propertyToFormState(property: MyProperty): PropertyFormState {
   const e = (property.extras || {}) as Record<string, unknown>;
-  const isLand = isLandProperty(property);
+  const typeSource = { type: property.type, extras: e };
+  const land = isAnyLand(typeSource);
 
   return {
-    segment: getPropertySegment(property),
-    types: getPropertyTypes(property),
+    segment: getPropertySegment({ type: property.type, extras: e, segment: property.segment as PropertySegment | null }),
+    types: getPropertyTypes({ type: property.type, extras: e }),
     class: property.class,
     deal_type: property.deal_type,
     area: Number(property.area) || 0,
@@ -70,16 +80,18 @@ export function propertyToFormState(property: MyProperty): PropertyFormState {
     description: property.description || "",
     address: property.address || "",
     district: property.district || "Кировский",
+    lat: property.lat != null && Number.isFinite(Number(property.lat)) ? Number(property.lat) : null,
+    lng: property.lng != null && Number.isFinite(Number(property.lng)) ? Number(property.lng) : null,
     floor: property.floor || "1",
     total_floors: property.total_floors || 1,
     ceiling_height: Number(property.ceiling_height) || 3,
     parking: property.parking || "Нет",
     condition: property.condition || "Хороший ремонт",
     layout: property.layout || "Open-space",
-    deposit: property.deposit || "1 месяц",
-    contract_term: property.contract_term || "1 год",
-    cadastral_number: isLand ? String(e.cadastral_number || "") : "",
-    land_use: isLand ? String(e.land_use || property.layout || "") : "",
+    deposit: property.deposit || (isDailyDeal(property.deal_type) ? "По договорённости" : "1 месяц"),
+    contract_term: property.contract_term || (isDailyDeal(property.deal_type) ? "от 1 суток" : "1 год"),
+    cadastral_number: land ? String(e.cadastral_number || "") : "",
+    land_use: land ? String(e.land_use || property.layout || "") : "",
     features: property.features || [],
     request_type: (property.request_type as RequestType) || "free_listing",
     utilities_included: String(e.utilities_included || ""),
@@ -114,55 +126,112 @@ export function propertyToFormState(property: MyProperty): PropertyFormState {
 export function buildPropertyPayload(
   form: PropertyFormState,
   userId: string,
-  options: { isSale: boolean; isLand: boolean; isEdit?: boolean; resubmit?: boolean },
+  options: {
+    isSale: boolean;
+    isLand: boolean;
+    isEdit?: boolean;
+    resubmit?: boolean;
+  },
 ) {
-  const landExtras = options.isLand
+  const isSale = options.isSale || isSaleDeal(form.deal_type);
+  const isDaily = isDailyDeal(form.deal_type);
+  const isLongRent = isLongTermRent(form.deal_type);
+  const isCommercial = form.segment === "commercial";
+  const isResidential = form.segment === "residential";
+  const dwelling = isDwellingLike(form.types);
+  const land = options.isLand || isAnyLand(form.types);
+
+  const landExtras = land
     ? { cadastral_number: form.cadastral_number.trim(), land_use: form.land_use }
     : {};
 
-  const rentExtras = !options.isSale ? {
-    utilities_included: form.utilities_included || undefined,
-    vat: form.vat || undefined,
-    indexation: form.indexation || undefined,
-    min_term: form.min_term || form.contract_term || undefined,
-    contract_form: form.contract_form || undefined,
-    sublease: form.sublease || undefined,
-    pedestrian_traffic: form.pedestrian_traffic as 1 | 2 | 3 | 4 | undefined,
-    metro_minutes: form.metro_minutes || undefined,
-    transport_hub: form.transport_hub || undefined,
-  } : {};
+  // Коммерческие extras аренды (НДС, трафик…) — только долгосрочная коммерческая аренда
+  const commercialRentExtras =
+    isCommercial && isLongRent && !land
+      ? {
+          vat: form.vat || undefined,
+          indexation: form.indexation || undefined,
+          sublease: form.sublease || undefined,
+          pedestrian_traffic: form.pedestrian_traffic as 1 | 2 | 3 | 4 | undefined,
+          metro_minutes: form.metro_minutes || undefined,
+          transport_hub: form.transport_hub || undefined,
+          entrance_group: form.entrance_group || undefined,
+          purpose: form.purpose || undefined,
+          contract_form: form.contract_form || undefined,
+          min_term: form.min_term || form.contract_term || undefined,
+        }
+      : {};
+
+  const rentExtras =
+    !isSale
+      ? {
+          utilities_included: form.utilities_included || undefined,
+          ...(isLongRent && isResidential
+            ? {
+                contract_form: form.contract_form || undefined,
+                min_term: form.min_term || form.contract_term || undefined,
+              }
+            : {}),
+          ...(isDaily
+            ? {
+                min_term: form.min_term || form.contract_term || undefined,
+              }
+            : {}),
+          ...commercialRentExtras,
+        }
+      : {};
 
   const commonExtras = {
     landlord_type: form.landlord_type || undefined,
-    entrance_group: form.entrance_group || undefined,
-    purpose: form.purpose || undefined,
+    ...(isCommercial && isSale && !land
+      ? {
+          purpose: form.purpose || undefined,
+          entrance_group: form.entrance_group || undefined,
+        }
+      : {}),
   };
 
-  const residentialExtras = form.segment === "residential"
+  const residentialExtras = isResidential
     ? {
-        [RESIDENTIAL_EXTRAS_KEYS.rooms]: form.rooms || undefined,
-        [RESIDENTIAL_EXTRAS_KEYS.buildingType]: form.building_type || undefined,
-        [RESIDENTIAL_EXTRAS_KEYS.yearBuilt]: form.year_built ? Number(form.year_built) : undefined,
-        [RESIDENTIAL_EXTRAS_KEYS.balcony]: form.balcony || undefined,
-        [RESIDENTIAL_EXTRAS_KEYS.furniture]: form.furniture || undefined,
-        [RESIDENTIAL_EXTRAS_KEYS.bathroom]: form.bathroom || undefined,
-        [RESIDENTIAL_EXTRAS_KEYS.market]: form.market || undefined,
-        [RESIDENTIAL_EXTRAS_KEYS.windowView]: form.window_view || undefined,
-        [RESIDENTIAL_EXTRAS_KEYS.livingArea]: form.living_area ? Number(form.living_area) : undefined,
-        [RESIDENTIAL_EXTRAS_KEYS.kitchenArea]: form.kitchen_area ? Number(form.kitchen_area) : undefined,
-        [RESIDENTIAL_EXTRAS_KEYS.mortgage]: form.mortgage || undefined,
-        [RESIDENTIAL_EXTRAS_KEYS.petsAllowed]: form.pets_allowed || undefined,
-        [RESIDENTIAL_EXTRAS_KEYS.childrenAllowed]: form.children_allowed || undefined,
+        ...(dwelling || isParkingLike(form.types)
+          ? {
+              [RESIDENTIAL_EXTRAS_KEYS.rooms]: dwelling ? form.rooms || undefined : undefined,
+              [RESIDENTIAL_EXTRAS_KEYS.buildingType]: dwelling ? form.building_type || undefined : undefined,
+              [RESIDENTIAL_EXTRAS_KEYS.yearBuilt]:
+                dwelling && form.year_built ? Number(form.year_built) : undefined,
+              [RESIDENTIAL_EXTRAS_KEYS.balcony]:
+                (isFlatLike(form.types) || isHouseLike(form.types)) && form.balcony
+                  ? form.balcony
+                  : undefined,
+              [RESIDENTIAL_EXTRAS_KEYS.furniture]: form.furniture || undefined,
+              [RESIDENTIAL_EXTRAS_KEYS.bathroom]: dwelling ? form.bathroom || undefined : undefined,
+              [RESIDENTIAL_EXTRAS_KEYS.windowView]: dwelling ? form.window_view || undefined : undefined,
+              [RESIDENTIAL_EXTRAS_KEYS.livingArea]:
+                dwelling && form.living_area ? Number(form.living_area) : undefined,
+              [RESIDENTIAL_EXTRAS_KEYS.kitchenArea]:
+                dwelling && form.kitchen_area ? Number(form.kitchen_area) : undefined,
+            }
+          : {}),
+        [RESIDENTIAL_EXTRAS_KEYS.market]: isSale ? form.market || undefined : undefined,
+        [RESIDENTIAL_EXTRAS_KEYS.mortgage]: isSale && form.mortgage ? true : undefined,
+        [RESIDENTIAL_EXTRAS_KEYS.petsAllowed]:
+          !isSale && form.pets_allowed ? true : undefined,
+        [RESIDENTIAL_EXTRAS_KEYS.childrenAllowed]:
+          !isSale && form.children_allowed ? true : undefined,
       }
     : {};
 
   const types = normalizePropertyTypes(form.types);
-  const { type: primaryType, extras: typesExtras } = syncPropertyTypesPayload(types, {
-    ...landExtras,
-    ...rentExtras,
-    ...commonExtras,
-    ...residentialExtras,
-  }, form.segment);
+  const { type: primaryType, extras: typesExtras } = syncPropertyTypesPayload(
+    types,
+    {
+      ...landExtras,
+      ...rentExtras,
+      ...commonExtras,
+      ...residentialExtras,
+    },
+    form.segment,
+  );
 
   const base = {
     segment: form.segment,
@@ -173,15 +242,17 @@ export function buildPropertyPayload(
     price_per_m2: form.area > 0 ? Math.round(form.price / form.area) : 0,
     address: form.address.trim(),
     district: form.district,
-    floor: options.isLand ? "-" : form.floor,
-    total_floors: options.isLand ? 1 : form.total_floors,
-    ceiling_height: options.isLand ? null : form.ceiling_height,
-    parking: options.isLand ? "Нет" : form.parking,
-    condition: options.isLand ? null : form.condition,
-    layout: options.isLand ? (form.land_use || null) : form.layout,
+    lat: form.lat,
+    lng: form.lng,
+    floor: land ? "-" : form.floor,
+    total_floors: land ? 1 : form.total_floors,
+    ceiling_height: land ? null : form.ceiling_height,
+    parking: land ? "Нет" : form.parking,
+    condition: land ? null : form.condition,
+    layout: land ? form.land_use || null : form.layout,
     deal_type: form.deal_type,
-    deposit: options.isSale ? null : form.deposit,
-    contract_term: options.isSale ? null : form.contract_term,
+    deposit: isSale ? null : form.deposit,
+    contract_term: isSale ? null : form.contract_term,
     description: form.description,
     features: form.features,
     request_type: form.request_type,

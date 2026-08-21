@@ -35,7 +35,7 @@ export const RESIDENTIAL_DEAL_TYPES = [
 
 export const SEGMENT_ROUTES = {
   commercial: {
-    home: "/kommercheskaya",
+    home: "/",
     catalog: "/catalog",
     listProperty: "/list-property",
   },
@@ -46,12 +46,12 @@ export const SEGMENT_ROUTES = {
   },
 } as const;
 
-/** Категории для экрана выбора раздела на `/` */
-export const SEGMENT_CHOOSER = {
+/** Быстрые ссылки для ориентации на главной / в меню */
+export const SEGMENT_QUICK_LINKS = {
   commercial: {
     title: "Коммерческая",
     subtitle: "Помещения для бизнеса: аренда и продажа",
-    href: SEGMENT_ROUTES.commercial.home,
+    href: SEGMENT_ROUTES.commercial.catalog,
     categories: [
       { label: "Офисы", desc: "Кабинеты и open space для работы", href: "/offices" },
       { label: "Торговая", desc: "Магазины, павильоны, стрит-ритейл", href: "/retail" },
@@ -68,10 +68,14 @@ export const SEGMENT_CHOOSER = {
       { label: "Квартиры", desc: "Студии, 1–4 комнаты, новостройки", href: "/zhilaya/kvartiry" },
       { label: "Дома", desc: "Дома, коттеджи и таунхаусы", href: "/zhilaya/doma" },
       { label: "Комнаты", desc: "Комнаты в квартирах и общежитиях", href: "/zhilaya/komnaty" },
-      { label: "Весь каталог жилья", desc: "Также апартаменты, дачи, участки, гаражи", href: SEGMENT_ROUTES.residential.catalog },
+      { label: "Участки", desc: "Жилые участки и коммерческая земля", href: "/zhilaya/uchastki" },
+      { label: "Весь каталог жилья", desc: "Также апартаменты, дачи, гаражи", href: SEGMENT_ROUTES.residential.catalog },
     ],
   },
 } as const;
+
+/** @deprecated используйте SEGMENT_QUICK_LINKS */
+export const SEGMENT_CHOOSER = SEGMENT_QUICK_LINKS;
 
 export function segmentHomePath(segment: PropertySegment): string {
   return SEGMENT_ROUTES[segment].home;

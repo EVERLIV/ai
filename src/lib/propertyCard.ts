@@ -1,5 +1,5 @@
 import type { DbProperty } from "@/hooks/useProperties";
-import { getLandUse, isLandProperty } from "@/lib/propertyLand";
+import { getLandUse, isAnyLand } from "@/lib/propertyLand";
 import { getPrimaryPropertyType, getPropertyTypes } from "@/lib/propertyTypes";
 import { getRoomsLabel, isResidentialProperty } from "@/lib/propertyResidential";
 import type { PropertySegment } from "@/config/propertySegments";
@@ -35,7 +35,7 @@ function getPropertySubtypeLabel(property: PropertyTitleInput, category: string)
   const extraTypes = types.filter((type) => type !== category);
   if (extraTypes.length > 0) return extraTypes.join(", ");
 
-  if (isLandProperty(property)) {
+  if (isAnyLand(property)) {
     return getLandUse(property);
   }
 

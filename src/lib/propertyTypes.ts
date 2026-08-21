@@ -1,4 +1,4 @@
-import { LAND_PROPERTY_TYPE } from "@/lib/propertyLand";
+import { LAND_PROPERTY_TYPE, RESIDENTIAL_LAND_TYPE, expandLandFilterTypes, isCommercialLand } from "@/lib/propertyTypeFamilies";
 import {
   COMMERCIAL_PROPERTY_TYPES,
   RESIDENTIAL_PROPERTY_TYPES,
@@ -23,17 +23,20 @@ export function getPropertyTypes(property: PropertyLike): string[] {
   return [];
 }
 
+const EXCLUSIVE_LAND_TYPES = new Set([LAND_PROPERTY_TYPE, RESIDENTIAL_LAND_TYPE]);
+
 export function normalizePropertyTypes(types: string[]): string[] {
   const unique = [...new Set(types.map((t) => t.trim()).filter(Boolean))];
-  if (unique.includes(LAND_PROPERTY_TYPE)) return [LAND_PROPERTY_TYPE];
+  const land = unique.find((t) => EXCLUSIVE_LAND_TYPES.has(t));
+  if (land) return [land];
   return unique;
 }
 
 export function togglePropertyType(current: string[], type: string, checked: boolean): string[] {
-  if (type === LAND_PROPERTY_TYPE) {
-    return checked ? [LAND_PROPERTY_TYPE] : [];
+  if (EXCLUSIVE_LAND_TYPES.has(type)) {
+    return checked ? [type] : [];
   }
-  const withoutLand = current.filter((t) => t !== LAND_PROPERTY_TYPE);
+  const withoutLand = current.filter((t) => !EXCLUSIVE_LAND_TYPES.has(t));
   if (checked) return normalizePropertyTypes([...withoutLand, type]);
   return withoutLand.filter((t) => t !== type);
 }
@@ -53,11 +56,19 @@ export function getPrimaryPropertyType(property: PropertyLike): string {
 
 export function propertyMatchesTypes(property: PropertyLike, selectedTypes: string[]): boolean {
   if (selectedTypes.length === 0) return true;
+  const wanted = expandLandFilterTypes(selectedTypes);
   const types = getPropertyTypes(property);
-  return selectedTypes.some((t) => types.includes(t));
+  return wanted.some((t) => types.includes(t));
 }
 
+/**
+ * Жилой каталог: обычное жильё + вся коммерческая «Земля»
+ * (показывается в разделе «Участок»).
+ */
 export function propertyMatchesSegment(property: PropertyLike, segment: PropertySegment): boolean {
+  if (segment === "residential") {
+    return getPropertySegment(property) === "residential" || isCommercialLand(property);
+  }
   return getPropertySegment(property) === segment;
 }
 

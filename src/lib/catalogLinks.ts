@@ -1,4 +1,5 @@
 import { SEGMENT_ROUTES, type PropertySegment } from "@/config/propertySegments";
+import { normalizeListingSeller, type ListingSellerFilter } from "@/lib/listingSource";
 
 type CatalogLinkParams = {
   segment?: PropertySegment;
@@ -10,6 +11,8 @@ type CatalogLinkParams = {
   district?: string;
   deal?: "Аренда" | "Продажа" | "Посуточно" | "rent" | "sale" | "Все";
   q?: string;
+  seller?: ListingSellerFilter | "owner" | "agency";
+  agency?: string;
 };
 
 export function normalizeCatalogDeal(value: string | null | undefined): string {
@@ -76,6 +79,10 @@ export function buildCatalogUrl(params: CatalogLinkParams = {}): string {
 
   if (params.q?.trim()) search.set("q", params.q.trim());
 
+  const seller = normalizeListingSeller(params.seller);
+  if (seller !== "Все") search.set("seller", seller);
+  if (params.agency?.trim()) search.set("agency", params.agency.trim());
+
   const query = search.toString();
   return query ? `${basePath}?${query}` : basePath;
 }
@@ -103,7 +110,7 @@ export const footerResidentialLinks = [
   { label: "Комнаты", href: buildCatalogUrl({ segment: "residential", types: "Комната" }) },
   { label: "Таунхаусы", href: buildCatalogUrl({ segment: "residential", types: "Таунхаус" }) },
   { label: "Апартаменты", href: buildCatalogUrl({ segment: "residential", types: "Апартаменты" }) },
-  { label: "Участки", href: buildCatalogUrl({ segment: "residential", types: "Участок" }) },
+  { label: "Участки", href: "/zhilaya/uchastki" },
   { label: "Новостройки", href: buildCatalogUrl({ segment: "residential", market: "Новостройка" }) },
 ];
 
@@ -138,5 +145,7 @@ export function readCatalogFiltersFromSearchParams(searchParams: URLSearchParams
     ceilingMin: Number(searchParams.get("ceil") || 0),
     parkingOnly: searchParams.get("parking") === "1",
     selectedLayouts: parseCsvParam(searchParams, "layouts"),
+    seller: normalizeListingSeller(searchParams.get("seller")),
+    agencyId: searchParams.get("agency") || "",
   };
 }

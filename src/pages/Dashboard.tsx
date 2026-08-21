@@ -31,6 +31,8 @@ import CrmLeadsTab from "@/components/admin/CrmLeadsTab";
 import NewsAdminPanel from "@/components/NewsAdminPanel";
 import DictionariesTab from "@/components/admin/DictionariesTab";
 import SeoHead from "@/components/SeoHead";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
+import LocationDistrictSelect from "@/components/LocationDistrictSelect";
 import { supabaseAdmin, SUPABASE_URL, SERVICE_ROLE_KEY } from "@/integrations/supabase/adminClient";
 import {
   isLandProperty,
@@ -63,7 +65,6 @@ import {
   PROPERTY_TYPES as FALLBACK_TYPES,
   PROPERTY_CLASSES as FALLBACK_CLASSES,
   DEAL_TYPES as FALLBACK_DEAL_TYPES,
-  DISTRICTS as FALLBACK_DISTRICTS,
   FLOORS,
   TOTAL_FLOORS_OPTIONS,
   CEILING_HEIGHTS,
@@ -90,20 +91,7 @@ import {
   type PropertySegment,
 } from "@/config/propertySegments";
 
-// Address suggestions for Irkutsk region
-const ADDRESS_SUGGESTIONS = [
-  "Иркутск, ул. Ленина,", "Иркутск, ул. Карла Маркса,", "Иркутск, ул. Байкальская,",
-  "Иркутск, ул. Советская,", "Иркутск, ул. Декабрьских Событий,", "Иркутск, ул. Литвинова,",
-  "Иркутск, ул. Трактовая,", "Иркутск, ул. Партизанская,", "Иркутск, ул. Дзержинского,",
-  "Иркутск, ул. Горького,", "Иркутск, ул. Красноармейская,", "Иркутск, ул. Сухэ-Батора,",
-  "Иркутск, ул. Чкалова,", "Иркутск, ул. Лермонтова,", "Иркутск, ул. Свердлова,",
-  "Иркутск, ул. Седова,", "Иркутск, ул. Ширямова,", "Иркутск, ул. Рабочая,",
-  "Иркутск, бул. Гагарина,", "Иркутск, бул. Рябикова,",
-  "Иркутск, мкр. Солнечный,", "Иркутск, мкр. Университетский,",
-  "Ангарск, ул. Карла Маркса,", "Ангарск, ул. Ленина,", "Ангарск, мкр. 12-й,",
-  "Шелехов, ул. Ленина,", "Шелехов, ул. Привокзальная,",
-  "Усолье-Сибирское, ул. Ленина,", "Братск, ул. Мира,",
-];
+// Address autocomplete via Yandex Geocoder (AddressAutocomplete)
 
 interface PropertyExtras extends PropertySidebarExtras {}
 
@@ -188,8 +176,6 @@ export default function Dashboard() {
   const [coverIndex, setCoverIndex] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [propSearch, setPropSearch] = useState("");
-  const [addressQuery, setAddressQuery] = useState("");
-  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [latText, setLatText] = useState("");
   const [lngText, setLngText] = useState("");
@@ -209,7 +195,6 @@ export default function Dashboard() {
     );
   const CLASSES = byCategory("property_class").length > 0 ? byCategory("property_class") : [...FALLBACK_CLASSES];
   const DEAL_TYPES = byCategory("deal_type").length > 0 ? byCategory("deal_type") : [...FALLBACK_DEAL_TYPES];
-  const DISTRICTS = byCategory("district").length > 0 ? byCategory("district") : [...FALLBACK_DISTRICTS];
   const CONDITIONS = byCategory("condition").length > 0 ? byCategory("condition") : [...FALLBACK_CONDITIONS];
   const LAYOUTS = byCategory("layout").length > 0 ? byCategory("layout") : [...FALLBACK_LAYOUTS];
   const PARKING_OPTIONS = byCategory("parking").length > 0 ? byCategory("parking") : [...FALLBACK_PARKING];
@@ -278,12 +263,6 @@ export default function Dashboard() {
     if (sortField !== field) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" />;
     return sortDir === "asc" ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />;
   };
-
-  const filteredAddresses = useMemo(() => {
-    if (!addressQuery || addressQuery.length < 2) return [];
-    const q = addressQuery.toLowerCase();
-    return ADDRESS_SUGGESTIONS.filter((a) => a.toLowerCase().includes(q)).slice(0, 6);
-  }, [addressQuery]);
 
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ["dashboard-properties"],
@@ -928,37 +907,29 @@ export default function Dashboard() {
                     {/* Section: Локация */}
                     <fieldset className={`${propertyFormSection} space-y-3 bg-emerald-500/10`}>
                       <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Локация</legend>
-                      <div className="relative">
-                        <Label className="text-xs mb-1 block">Адрес</Label>
-                        <div className="relative">
-                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                          <Input className="h-8 text-xs pl-8" value={form.address}
-                            onChange={(e) => { updateField("address", e.target.value); setAddressQuery(e.target.value); setShowAddressSuggestions(true); }}
-                            onFocus={() => setShowAddressSuggestions(true)}
-                            onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 200)}
-                            placeholder="Начните вводить адрес..." required />
-                        </div>
-                        {showAddressSuggestions && filteredAddresses.length > 0 && (
-                          <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg overflow-hidden">
-                            {filteredAddresses.map((addr) => (
-                              <button key={addr} type="button"
-                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-accent transition-colors flex items-center gap-1.5"
-                                onMouseDown={(e) => e.preventDefault()}
-                                onClick={() => { updateField("address", addr); setAddressQuery(addr); setShowAddressSuggestions(false); }}>
-                                <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />{addr}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <AddressAutocomplete
+                        value={form.address}
+                        lat={form.lat}
+                        lng={form.lng}
+                        district={form.district}
+                        inputClassName="h-8 text-xs"
+                        onChange={({ address, lat, lng, district }) => {
+                          setForm((prev) => ({
+                            ...prev,
+                            address,
+                            lat,
+                            lng,
+                            ...(district ? { district } : {}),
+                          }));
+                          setLatText(lat != null ? formatCoord(lat) : "");
+                          setLngText(lng != null ? formatCoord(lng) : "");
+                        }}
+                      />
                       <div className={`grid gap-2 ${isLandForm ? "grid-cols-1" : "grid-cols-3"}`}>
-                        <div>
-                          <Label className="text-xs mb-1 block">Район</Label>
-                          <Select value={form.district || "none"} onValueChange={(v) => updateField("district", v === "none" ? "" : v)}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Район" /></SelectTrigger>
-                            <SelectContent><SelectItem value="none">—</SelectItem>{DISTRICTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </div>
+                        <LocationDistrictSelect
+                          value={form.district}
+                          onChange={(v) => updateField("district", v)}
+                        />
                         {!isLandForm && (
                           <>
                             <div>

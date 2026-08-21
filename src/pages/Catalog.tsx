@@ -17,9 +17,11 @@ import ListingAgentFooter from "@/components/ListingAgentFooter";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import PKKMapModal from "@/components/PKKMapModal";
 import { formatPropertyPrice, formatListingViews, isListingVerified, buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
-import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL, LAND_USE_OPTIONS } from "@/lib/propertyLand";
-import { getPropertyTypes, propertyMatchesSegment, propertyMatchesTypes } from "@/lib/propertyTypes";
+import { getLandCadastral, getLandUse, isLandProperty, isAnyLand, LAND_TYPE_LABEL, LAND_USE_OPTIONS } from "@/lib/propertyLand";
+import { getPropertySegment, getPropertyTypes, propertyMatchesSegment, propertyMatchesTypes } from "@/lib/propertyTypes";
 import { readCatalogFiltersFromSearchParams } from "@/lib/catalogLinks";
+import { listingMatchesSellerFilter, type ListingSellerFilter } from "@/lib/listingSource";
+import { useVerifiedAgencies } from "@/hooks/useAgency";
 import SeoHead from "@/components/SeoHead";
 import { absoluteUrl } from "@/config/site";
 import ctaRentOutBg from "@/assets/cta-rent-out.jpg";
@@ -45,6 +47,11 @@ import {
 
 const DEALS = ["Все", "Аренда", "Продажа"];
 const RESIDENTIAL_DEALS = ["Все", "Аренда", "Продажа", "Посуточно"];
+const SELLER_OPTIONS: { value: ListingSellerFilter; label: string }[] = [
+  { value: "Все", label: "Все" },
+  { value: "owner", label: "Собственник" },
+  { value: "agency", label: "Агентство" },
+];
 const CLASSES = ["Все", "A", "A+", "B+", "B", "C"];
 const PRICE_MAX_DEFAULT = 50000000;
 const AREA_MAX_DEFAULT = 300000;
@@ -285,6 +292,7 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
   const TYPES = isResidential ? [...RESIDENTIAL_PROPERTY_TYPES] : [...COMMERCIAL_PROPERTY_TYPES];
   const dealOptions = isResidential ? RESIDENTIAL_DEALS : DEALS;
   const { data: properties = [], isLoading } = useProperties({ segment });
+  const { data: verifiedAgencies = [] } = useVerifiedAgencies();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const initialFilters = readCatalogFiltersFromSearchParams(searchParams);
@@ -301,6 +309,8 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
   const [condition, setCondition] = useState(initialFilters.condition);
   const [sort, setSort] = useState(initialFilters.sort);
   const [searchQuery, setSearchQuery] = useState(initialFilters.searchQuery);
+  const [seller, setSeller] = useState<ListingSellerFilter>(initialFilters.seller);
+  const [agencyId, setAgencyId] = useState(initialFilters.agencyId);
 
   const [priceMin, setPriceMin] = useState(initialFilters.priceMin);
   const [priceMax, setPriceMax] = useState(initialFilters.priceMax);
@@ -317,6 +327,11 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
+  const selectedAgencyName = useMemo(
+    () => verifiedAgencies.find((a) => a.id === agencyId)?.name || "",
+    [verifiedAgencies, agencyId],
+  );
+
   useEffect(() => {
     const next = readCatalogFiltersFromSearchParams(searchParams);
     setDealType(next.dealType);
@@ -326,6 +341,8 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
     setCondition(next.condition);
     setSort(next.sort);
     setSearchQuery(next.searchQuery);
+    setSeller(next.seller);
+    setAgencyId(next.agencyId);
     setPriceMin(next.priceMin);
     setPriceMax(next.priceMax);
     setAreaMin(next.areaMin);
@@ -347,7 +364,7 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
   // Виды использования только по земельным объектам — фильтр доступен лишь для типа «Земля».
   const landUses = useMemo(() => Array.from(new Set(
     properties.flatMap((p) => {
-      if (!isLandProperty(p)) return [];
+      if (!isAnyLand(p)) return [];
       const landUse = getLandUse(p);
       return landUse ? [landUse] : [];
     })
@@ -374,8 +391,10 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
     if (selectedMarket.length > 0) params.market = selectedMarket.join(",");
     if (selectedBuildingTypes.length > 0) params.bld = selectedBuildingTypes.join(",");
     if (selectedFurniture.length > 0) params.furniture = selectedFurniture.join(",");
+    if (seller !== "Все") params.seller = seller;
+    if (agencyId) params.agency = agencyId;
     setSearchParams(params, { replace: true });
-  }, [dealType, selectedTypes, district, propertyClass, condition, sort, debouncedSearch, priceMin, priceMax, areaMin, areaMax, ceilingMin, parkingOnly, selectedLayouts, selectedRooms, selectedMarket, selectedBuildingTypes, selectedFurniture, setSearchParams]);
+  }, [dealType, selectedTypes, district, propertyClass, condition, sort, debouncedSearch, priceMin, priceMax, areaMin, areaMax, ceilingMin, parkingOnly, selectedLayouts, selectedRooms, selectedMarket, selectedBuildingTypes, selectedFurniture, seller, agencyId, setSearchParams]);
 
   const toggleType = (t: string) => {
     setSelectedTypes((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]);
@@ -396,9 +415,19 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
     setSelectedFurniture((prev) => prev.includes(value) ? prev.filter((x) => x !== value) : [...prev, value]);
   };
 
+  const selectSeller = (value: ListingSellerFilter) => {
+    setSeller(value);
+    if (value !== "agency") setAgencyId("");
+  };
+
+  const selectAgency = (id: string) => {
+    setAgencyId(id);
+    if (id) setSeller("agency");
+  };
+
   const isPriceFiltered = priceMin > 0 || priceMax < PRICE_MAX_DEFAULT;
   const isAreaFiltered = areaMin > 0 || areaMax < AREA_MAX_DEFAULT;
-  const moreActive = propertyClass !== "Все" || condition !== "Все" || ceilingMin > 0 || parkingOnly || selectedLayouts.length > 0 || selectedRooms.length > 0 || selectedMarket.length > 0 || selectedBuildingTypes.length > 0 || selectedFurniture.length > 0;
+  const moreActive = propertyClass !== "Все" || condition !== "Все" || ceilingMin > 0 || parkingOnly || selectedLayouts.length > 0 || selectedRooms.length > 0 || selectedMarket.length > 0 || selectedBuildingTypes.length > 0 || selectedFurniture.length > 0 || seller !== "Все" || !!agencyId;
 
   const activeFiltersCount = [
     dealType !== "Все",
@@ -416,6 +445,8 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
     selectedMarket.length > 0,
     selectedBuildingTypes.length > 0,
     selectedFurniture.length > 0,
+    seller !== "Все",
+    !!agencyId,
   ].filter(Boolean).length;
 
   const resetFilters = () => {
@@ -424,11 +455,23 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
     setPriceMin(0); setPriceMax(PRICE_MAX_DEFAULT); setAreaMin(0); setAreaMax(AREA_MAX_DEFAULT);
     setSearchQuery(""); setCeilingMin(0); setParkingOnly(false); setSelectedLayouts([]);
     setSelectedRooms([]); setSelectedMarket([]); setSelectedBuildingTypes([]); setSelectedFurniture([]);
+    setSeller("Все"); setAgencyId("");
   };
 
   const filtered = useMemo(() => {
     let result = [...properties];
     result = result.filter((p) => propertyMatchesSegment(p, segment));
+    if (isResidential) {
+      // Коммерческая «Земля» — только в разделе участков, не в общем списке жилья
+      const landFilterActive =
+        selectedTypes.length > 0 &&
+        selectedTypes.some((t) => t === "Участок" || t === "Земля");
+      if (!landFilterActive) {
+        result = result.filter(
+          (p) => getPropertySegment(p) === "residential",
+        );
+      }
+    }
     if (debouncedSearch) {
       const q = debouncedSearch.toLowerCase();
       result = result.filter((p) =>
@@ -465,6 +508,7 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
       });
     }
     if (district !== "Все") result = result.filter((p) => p.district === district);
+    result = result.filter((p) => listingMatchesSellerFilter(p, seller, agencyId || null));
     if (!isResidential && propertyClass !== "Все") result = result.filter((p) => p.class === propertyClass);
     if (condition !== "Все") result = result.filter((p) => p.condition === condition);
     if (isPriceFiltered) {
@@ -476,7 +520,7 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
     if (!isResidential && ceilingMin > 0) result = result.filter((p) => isLandProperty(p) || Number(p.ceiling_height) >= ceilingMin);
     if (!isResidential && parkingOnly) result = result.filter((p) => isLandProperty(p) || (p.parking && p.parking !== "Нет" && p.parking !== "-"));
     if (!isResidential && selectedLayouts.length > 0) result = result.filter((p) => {
-      if (!isLandProperty(p)) return false;
+      if (!isAnyLand(p)) return false;
       const landUse = getLandUse(p);
       return landUse ? selectedLayouts.includes(landUse) : false;
     });
@@ -488,9 +532,11 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
       case "area_desc": result.sort((a, b) => Number(b.area) - Number(a.area)); break;
     }
     return result;
-  }, [properties, dealType, selectedTypes, selectedRooms, selectedMarket, selectedBuildingTypes, selectedFurniture, district, propertyClass, condition, priceMin, priceMax, areaMin, areaMax, sort, debouncedSearch, ceilingMin, parkingOnly, selectedLayouts, isPriceFiltered, segment, isResidential]);
+  }, [properties, dealType, selectedTypes, selectedRooms, selectedMarket, selectedBuildingTypes, selectedFurniture, district, propertyClass, condition, priceMin, priceMax, areaMin, areaMax, sort, debouncedSearch, ceilingMin, parkingOnly, selectedLayouts, isPriceFiltered, segment, isResidential, seller, agencyId]);
 
-  const landTypeFilterOnly = selectedTypes.length > 0 && selectedTypes.every((t) => t === "Земля");
+  const landTypeFilterOnly =
+    selectedTypes.length > 0 &&
+    selectedTypes.every((t) => t === "Земля" || t === "Участок");
   const layoutFilterOptions = landTypeFilterOnly
     ? Array.from(new Set([...LAND_USE_OPTIONS, ...landUses]))
     : [];
@@ -733,6 +779,58 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
               )}
             </FilterDropdown>
 
+            <FilterDropdown
+              label="Кто сдаёт"
+              valueLabel={
+                agencyId && selectedAgencyName
+                  ? selectedAgencyName
+                  : seller === "owner"
+                    ? "Собственник"
+                    : seller === "agency"
+                      ? "Агентство"
+                      : undefined
+              }
+              active={seller !== "Все" || !!agencyId}
+              panelWidth={280}
+            >
+              {(close) => (
+                <div className="space-y-3">
+                  <div className="space-y-0.5">
+                    {SELLER_OPTIONS.map((o) => (
+                      <OptionRow
+                        key={o.value}
+                        label={o.label}
+                        selected={seller === o.value && !agencyId}
+                        onClick={() => { selectSeller(o.value); close(); }}
+                      />
+                    ))}
+                  </div>
+                  {verifiedAgencies.length > 0 && (
+                    <div className="border-t border-border/60 pt-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground px-2 mb-1">
+                        Верифицированные агентства
+                      </p>
+                      <div className="space-y-0.5 max-h-48 overflow-y-auto">
+                        <OptionRow
+                          label="Все агентства"
+                          selected={seller === "agency" && !agencyId}
+                          onClick={() => { selectSeller("agency"); close(); }}
+                        />
+                        {verifiedAgencies.map((a) => (
+                          <OptionRow
+                            key={a.id}
+                            label={a.name}
+                            selected={agencyId === a.id}
+                            onClick={() => { selectAgency(a.id); close(); }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </FilterDropdown>
+
             <FilterDropdown label="Цена, ₽" valueLabel={priceLabel} active={isPriceFiltered} panelWidth={280}>
               <RangeInputs
                 min={0} max={PRICE_MAX_DEFAULT} step={50000}
@@ -936,6 +1034,48 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
                 </div>
               </div>
               <div>
+                <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Кто сдаёт</p>
+                <div className="flex rounded-md bg-muted/50 p-1 gap-0.5 mb-2">
+                  {SELLER_OPTIONS.map((o) => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => selectSeller(o.value)}
+                      className={`flex-1 py-2 rounded text-xs font-medium transition-all ${
+                        seller === o.value && !agencyId
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+                {verifiedAgencies.length > 0 && (
+                  <div className="relative rounded-md border border-border">
+                    <select
+                      value={agencyId}
+                      onChange={(e) => {
+                        const id = e.target.value;
+                        if (id) selectAgency(id);
+                        else if (seller === "agency") selectSeller("agency");
+                        else selectSeller("Все");
+                      }}
+                      aria-label="Агентство"
+                      className="w-full appearance-none px-3 py-2 pr-8 bg-transparent text-xs text-foreground focus:outline-none cursor-pointer"
+                    >
+                      <option value="">
+                        {seller === "agency" ? "Все верифицированные агентства" : "Выберите агентство"}
+                      </option>
+                      {verifiedAgencies.map((a) => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  </div>
+                )}
+              </div>
+              <div>
                 <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Цена, ₽</p>
                 <RangeInputs min={0} max={PRICE_MAX_DEFAULT} step={50000} valueMin={priceMin} valueMax={priceMax} onChangeMin={setPriceMin} onChangeMax={setPriceMax} suffix="₽" />
               </div>
@@ -1029,7 +1169,7 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
 
 // ─── List card ───
 function ListCard({ property: p, onOpenPKK }: { property: DbProperty; onOpenPKK: (cad: string) => void }) {
-  const land = isLandProperty(p);
+  const land = isAnyLand(p);
   const landUse = getLandUse(p);
   const cadastral = getLandCadastral(p.extras as Record<string, unknown> | null);
   const price = formatPropertyPrice(p);

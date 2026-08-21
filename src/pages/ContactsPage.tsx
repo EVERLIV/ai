@@ -4,45 +4,55 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import {
   Phone, Mail, MapPin, Clock, Send, ChevronRight, CheckCircle2,
-  Building2, Warehouse, Megaphone, Settings, MessageCircle, AlertCircle,
+  Building2, Handshake, Megaphone, HardHat, MessageCircle, AlertCircle, HelpCircle,
 } from "lucide-react";
 import { COMPANY, CONTACTS } from "@/config/company";
 import { submitLead } from "@/lib/submitLead";
 import SeoHead from "@/components/SeoHead";
 import { absoluteUrl } from "@/config/site";
 
-/** Направления работы — без вымышленных контактов отделов. */
-const services = [
+/** Темы обращений: сотрудничество, размещение, застройщики и пр. */
+const inquiryTopics = [
+  {
+    icon: Handshake,
+    name: "Сотрудничество",
+    desc: "Партнёрства с агентствами, рекламными площадками и сервисами региона",
+    subject: "Сотрудничество и партнёрство",
+  },
   {
     icon: Building2,
-    name: "Офисы и торговые площади",
-    desc: "Подбор помещений, консультации по ставкам и условиям рынка",
+    name: "Размещение объектов",
+    desc: "Публикация объявлений собственниками и управляющими — бесплатно на портале",
+    subject: "Размещение объекта",
+    href: "/list-property",
   },
   {
-    icon: Warehouse,
-    name: "Склады и производство",
-    desc: "Складские и производственные помещения от 100 м²",
-  },
-  {
-    icon: Settings,
-    name: "Управление недвижимостью",
-    desc: "Поиск арендаторов, договоры, контроль платежей",
+    icon: HardHat,
+    name: "Застройщикам",
+    desc: "Каталог новостроек, витрина ЖК, лиды и совместные размещения",
+    subject: "Застройщикам / новостройки",
   },
   {
     icon: Megaphone,
-    name: "Реклама и размещение",
-    desc: "Рекламные конструкции, баннеры и вывески",
+    name: "Реклама на портале",
+    desc: "Баннеры, спецразмещения и продвижение объектов в каталоге",
+    subject: "Реклама на портале",
+  },
+  {
+    icon: HelpCircle,
+    name: "Аренда и подбор",
+    desc: "Вопросы по объектам, показам и сопровождению сделки",
+    subject: "Аренда / подбор объекта",
+  },
+  {
+    icon: MessageCircle,
+    name: "Другое",
+    desc: "Пресса, предложения по улучшению портала и любые другие запросы",
+    subject: "Другое",
   },
 ];
 
-const SUBJECTS = [
-  "Аренда офисного помещения",
-  "Аренда торговой площади",
-  "Аренда склада",
-  "Передача в управление",
-  "Размещение рекламы",
-  "Другое",
-];
+const SUBJECTS = inquiryTopics.map((t) => t.subject);
 
 /** Координаты офиса: Ангарск, 17 микрорайон, 4а — [долгота, широта]. */
 const OFFICE_COORDS: [number, number] = [103.8508, 52.50148];
@@ -89,6 +99,11 @@ export default function ContactsPage() {
     }
   };
 
+  const pickTopic = (subject: string) => {
+    set("subject", subject);
+    document.getElementById("form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const inputClass =
     "w-full h-11 px-3 bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary transition-colors";
 
@@ -96,12 +111,11 @@ export default function ContactsPage() {
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
       <SeoHead
         title="Контакты АрендаСити"
-        description="Телефон, адрес офиса и форма заявки. Агентство коммерческой недвижимости в Иркутске."
+        description="Сотрудничество, размещение объектов, застройщики и другие вопросы. Портал аренды в Иркутске и области."
         url={absoluteUrl("/contacts")}
       />
       <SiteHeader />
 
-      {/* Breadcrumbs */}
       <div className="sticky top-[56px] md:top-[98px] z-30 mt-[56px] md:mt-[98px] bg-card/90 backdrop-blur-xl shadow-[0_1px_0_0_hsl(var(--border)/0.5)]">
         <div className="container mx-auto px-4 lg:px-8 h-10 flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <Link to="/" className="hover:text-foreground transition-colors">Главная</Link>
@@ -112,7 +126,6 @@ export default function ContactsPage() {
 
       <main className="flex-1">
 
-        {/* ── HERO: телефон как главный элемент ───────────── */}
         <section className="border-b border-border bg-muted/30">
           <div className="container mx-auto px-4 lg:px-8 py-8 lg:py-14">
             <div className="grid lg:grid-cols-[1.1fr_1fr] gap-8 lg:gap-16 items-start">
@@ -122,14 +135,13 @@ export default function ContactsPage() {
                   Свяжитесь с нами
                 </p>
                 <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.05] text-foreground mb-4 text-balance">
-                  Ответим на вопросы<br className="hidden sm:block" /> по любому объекту
+                  Сотрудничество,<br className="hidden sm:block" /> размещение и партнёрства
                 </h1>
                 <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-lg">
-                  Коммерческая недвижимость в Ангарске, Иркутске и области.
-                  Звоните — подберём помещение или организуем показ.
+                  АрендаСити — портал от агентства недвижимости Иркутска и области.
+                  Пишите по объектам, размещению, работе с застройщиками или совместным проектам.
                 </p>
 
-                {/* Телефон — фокус страницы */}
                 <a
                   href={`tel:${CONTACTS.phoneTel}`}
                   className="group mt-7 inline-flex items-baseline gap-3 font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-tight text-foreground hover:text-primary transition-colors tabular-nums"
@@ -141,7 +153,6 @@ export default function ContactsPage() {
                   {CONTACTS.hours} · {CONTACTS.hoursWeekend}
                 </p>
 
-                {/* Быстрые действия — на мобильном в первую очередь */}
                 <div className="flex flex-wrap gap-2.5 mt-6">
                   <a
                     href={`tel:${CONTACTS.phoneTel}`}
@@ -166,7 +177,6 @@ export default function ContactsPage() {
                 </div>
               </div>
 
-              {/* Реквизиты-ведомость */}
               <dl className="w-full border-y border-border divide-y divide-border lg:border lg:divide-y">
                 <ContactRow icon={Phone} label="Телефон">
                   <a href={`tel:${CONTACTS.phoneTel}`} className="font-semibold text-foreground hover:text-primary transition-colors tabular-nums">
@@ -190,41 +200,52 @@ export default function ContactsPage() {
           </div>
         </section>
 
-        {/* ── НАПРАВЛЕНИЯ ─────────────────────────────────── */}
         <section className="border-b border-border">
           <div className="container mx-auto px-4 lg:px-8 py-10 lg:py-14">
             <h2 className="font-display text-xl lg:text-2xl font-bold text-foreground mb-1.5">
-              Чем занимаемся
+              По какому вопросу писать
             </h2>
             <p className="text-sm text-muted-foreground mb-7">
-              По всем направлениям — один номер и один менеджер
+              Выберите тему — откроется форма с нужной категорией
             </p>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 border-t border-l border-border">
-              {services.map(({ icon: Icon, name, desc }) => (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 border-t border-l border-border">
+              {inquiryTopics.map(({ icon: Icon, name, desc, subject, href }) => (
                 <div
                   key={name}
-                  className="border-r border-b border-border p-5 lg:p-6 hover:bg-muted/40 transition-colors"
+                  className="border-r border-b border-border p-5 lg:p-6 hover:bg-muted/40 transition-colors flex flex-col"
                 >
                   <Icon className="w-5 h-5 text-primary mb-3.5" strokeWidth={1.8} />
                   <h3 className="text-sm font-semibold text-foreground mb-1.5 text-balance">{name}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed text-pretty">{desc}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed text-pretty flex-1">{desc}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => pickTopic(subject)}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                    >
+                      Написать <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                    {href && (
+                      <Link to={href} className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground">
+                        Разместить онлайн
+                      </Link>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ── ОФИС + ФОРМА ────────────────────────────────── */}
         <section id="form" className="scroll-mt-24">
           <div className="container mx-auto px-4 lg:px-8 py-10 lg:py-14">
             <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
 
-              {/* Офис */}
               <div className="min-w-0">
                 <h2 className="font-display text-xl lg:text-2xl font-bold text-foreground mb-1.5">Офис</h2>
                 <p className="text-sm text-muted-foreground mb-6">
-                  Приезжайте — покажем объекты и обсудим условия
+                  Приезжайте — обсудим размещение, партнёрство или объекты
                 </p>
 
                 <div className="border border-border">
@@ -273,7 +294,6 @@ export default function ContactsPage() {
                 </div>
               </div>
 
-              {/* Форма */}
               <div className="min-w-0">
                 <h2 className="font-display text-xl lg:text-2xl font-bold text-foreground mb-1.5">
                   Оставить заявку
@@ -355,7 +375,7 @@ export default function ContactsPage() {
                       <textarea
                         value={form.message}
                         onChange={(e) => set("message", e.target.value)}
-                        placeholder="Опишите ваш запрос…"
+                        placeholder="Кратко опишите запрос…"
                         rows={4}
                         className="w-full px-3 py-2.5 bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary transition-colors resize-none"
                       />

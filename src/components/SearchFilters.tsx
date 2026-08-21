@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Search, X, ChevronDown } from "lucide-react";
+import { IRKUTSK_CITY_DISTRICTS, IRKUTSK_OBLAST_CITIES } from "@/lib/irkutskLocations";
+import { useVerifiedAgencies } from "@/hooks/useAgency";
+import type { ListingSellerFilter } from "@/lib/listingSource";
 
 export type PropertyFilters = {
   type: string;
@@ -9,6 +12,8 @@ export type PropertyFilters = {
   priceMax: number;
   district: string;
   cls: string;
+  seller: ListingSellerFilter;
+  agencyId: string;
 };
 
 export const defaultFilters: PropertyFilters = {
@@ -19,11 +24,18 @@ export const defaultFilters: PropertyFilters = {
   priceMax: 100000000,
   district: "Все",
   cls: "Все",
+  seller: "Все",
+  agencyId: "",
 };
 
 const tabs = ["Все", "Офис", "Торговая", "Склад", "ПСН", "Земля"];
-const districts = ["Все", "Кировский", "Октябрьский", "Свердловский", "Ленинский", "Куйбышевский", "Ангарск", "Шелехов", "Усолье-Сибирское"];
+const districts = ["Все", ...IRKUTSK_CITY_DISTRICTS, ...IRKUTSK_OBLAST_CITIES];
 const classes = ["Все", "A", "B", "C"];
+const sellerOptions: { value: ListingSellerFilter; label: string }[] = [
+  { value: "Все", label: "Все" },
+  { value: "owner", label: "Собственник" },
+  { value: "agency", label: "Агентство" },
+];
 
 interface Props {
   onAIClick?: () => void;
@@ -34,7 +46,8 @@ interface Props {
 function isDirty(f: PropertyFilters) {
   return f.type !== "Все" || f.areaMin > 0 || f.areaMax < 100000
     || f.priceMin > 0 || f.priceMax < 100000000
-    || f.district !== "Все" || f.cls !== "Все";
+    || f.district !== "Все" || f.cls !== "Все"
+    || f.seller !== "Все" || !!f.agencyId;
 }
 
 function RangeInput({ label, valMin, valMax, placeholder, suffix, onMin, onMax }: {
@@ -94,6 +107,7 @@ function SelectInput({ label, value, options, onChange }: {
 export default function SearchFilters({ filters, onChange }: Props) {
   const [local, setLocal] = useState<PropertyFilters>(filters ?? defaultFilters);
   const f = filters ?? local;
+  const { data: verifiedAgencies = [] } = useVerifiedAgencies();
 
   const set = (patch: Partial<PropertyFilters>) => {
     const next = { ...f, ...patch };
@@ -104,6 +118,7 @@ export default function SearchFilters({ filters, onChange }: Props) {
   const scrollToResults = () =>
     document.getElementById("property-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
   const dirty = isDirty(f);
+  const agencyName = verifiedAgencies.find((a) => a.id === f.agencyId)?.name;
 
   return (
     <section id="search" className="bg-card border-b border-border/60">
@@ -152,6 +167,31 @@ export default function SearchFilters({ filters, onChange }: Props) {
             onChange={(v) => set({ district: v })}
           />
 
+          <SelectInput
+            label="Кто сдаёт"
+            value={f.seller}
+            options={sellerOptions.map((o) => ({ value: o.value, label: o.label }))}
+            onChange={(v) => set({
+              seller: v as ListingSellerFilter,
+              agencyId: v === "agency" ? f.agencyId : "",
+            })}
+          />
+
+          {verifiedAgencies.length > 0 && (
+            <SelectInput
+              label="Агентство"
+              value={f.agencyId}
+              options={[
+                { value: "", label: f.seller === "agency" ? "Все агентства" : "Не выбрано" },
+                ...verifiedAgencies.map((a) => ({ value: a.id, label: a.name })),
+              ]}
+              onChange={(v) => set({
+                agencyId: v,
+                seller: v ? "agency" : f.seller === "owner" ? "owner" : v === "" && f.seller === "agency" ? "agency" : f.seller,
+              })}
+            />
+          )}
+
           <div className="w-full sm:w-24 sm:shrink-0">
             <SelectInput
               label="Класс"
@@ -195,6 +235,15 @@ export default function SearchFilters({ filters, onChange }: Props) {
             )}
             {f.district !== "Все" && <Chip label={f.district} onRemove={() => set({ district: "Все" })} />}
             {f.cls !== "Все" && <Chip label={`Класс ${f.cls}`} onRemove={() => set({ cls: "Все" })} />}
+            {f.agencyId && agencyName && (
+              <Chip label={agencyName} onRemove={() => set({ agencyId: "", seller: "agency" })} />
+            )}
+            {!f.agencyId && f.seller === "owner" && (
+              <Chip label="Собственник" onRemove={() => set({ seller: "Все" })} />
+            )}
+            {!f.agencyId && f.seller === "agency" && (
+              <Chip label="Агентство" onRemove={() => set({ seller: "Все" })} />
+            )}
             <button onClick={reset} className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors">
               Сбросить всё
             </button>

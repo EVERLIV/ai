@@ -106,19 +106,22 @@ export const supabaseAdmin = {
       const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`, {
         method: "POST",
         headers: {
-          "apikey": SERVICE_ROLE_KEY,
-          "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
+          apikey: SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+          "Content-Type": file.type || "application/octet-stream",
+          "x-upsert": "true",
         },
         body: file,
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        return { error: data.error ?? data.message ?? "Upload failed" };
+        return { error: data.error ?? data.message ?? `Upload failed (${res.status})` };
       }
       return { error: null };
     },
     getPublicUrl(bucket: string, path: string): string {
-      return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+      const clean = path.replace(/^\/+/, "");
+      return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${clean}`;
     },
   },
   async rpc(fn: string, params: Record<string, unknown> = {}) {

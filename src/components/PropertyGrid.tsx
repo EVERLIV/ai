@@ -6,6 +6,7 @@ import { useProperties } from "@/hooks/useProperties";
 import PropertyGridCard, { PropertyGridCardSkeleton } from "@/components/PropertyGridCard";
 import PKKMapModal from "@/components/PKKMapModal";
 import type { PropertyFilters } from "@/components/SearchFilters";
+import { listingMatchesSellerFilter } from "@/lib/listingSource";
 
 export default function PropertyGrid({ filters }: { filters?: PropertyFilters }) {
   const { ref, isVisible } = useScrollReveal();
@@ -22,6 +23,7 @@ export default function PropertyGrid({ filters }: { filters?: PropertyFilters })
       if (price > 0 && (price < filters.priceMin || price > filters.priceMax)) return false;
       if (filters.district !== "Все" && p.district !== filters.district) return false;
       if (filters.cls !== "Все" && p.class !== filters.cls) return false;
+      if (!listingMatchesSellerFilter(p, filters.seller || "Все", filters.agencyId || null)) return false;
       return true;
     });
   }, [properties, filters]);

@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Eye, Phone, Mail, User, Calendar, MessageSquareText } from "lucide-react";
+import { FileText, Eye, Phone, Mail, User, Calendar, MessageSquareText, UserCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyAgency } from "@/hooks/useAgency";
 
 interface Lead {
   id: string;
@@ -24,26 +25,76 @@ interface PropertyInfo {
   area: number;
   price: number;
   cover_photo: string | null;
+  listing_manager_id?: string | null;
+  managerName?: string | null;
+  managerPhone?: string | null;
 }
 
 function useMyLeads() {
   const { user } = useAuth();
+  const { data: myAgency } = useMyAgency();
+  const agencyId = myAgency?.agency.id;
 
   return useQuery({
-    queryKey: ["my-leads", user?.id],
+    queryKey: ["my-leads", user?.id, agencyId],
     enabled: !!user,
     queryFn: async () => {
-      const { data: myProps } = await supabase
-        .from("properties")
-        .select("id, address, type, area, price, cover_photo")
-        .eq("submitted_by", user!.id);
+      const propSelect =
+        "id, address, type, area, price, cover_photo, listing_manager_id, extras";
+      const propSelectFallback = "id, address, type, area, price, cover_photo, extras";
 
-      if (!myProps?.length) return { leads: [] as Lead[], properties: {} as Record<string, PropertyInfo> };
+      let ownedRes = await supabase
+        .from("properties")
+        .select(propSelect)
+        .eq("submitted_by", user!.id);
+      if (ownedRes.error) {
+        ownedRes = await supabase
+          .from("properties")
+          .select(propSelectFallback)
+          .eq("submitted_by", user!.id);
+      }
+      const owned = ownedRes.data;
+
+      let agencyProps: typeof owned = [];
+      if (agencyId) {
+        let agencyRes = await supabase
+          .from("properties")
+          .select(propSelect)
+          .eq("agency_id", agencyId);
+        if (agencyRes.error) {
+          // Нет agency_id / listing_manager_id или RLS — не роняем вкладку заявок
+          agencyRes = { data: [], error: null } as typeof agencyRes;
+        }
+        agencyProps = agencyRes.data || [];
+      }
+
+      const byId = new Map<string, PropertyInfo>();
+      for (const p of [...(owned || []), ...agencyProps]) {
+        const extras = (p.extras || {}) as Record<string, unknown>;
+        byId.set(p.id, {
+          id: p.id,
+          address: p.address,
+          type: p.type,
+          area: p.area,
+          price: p.price,
+          cover_photo: p.cover_photo,
+          listing_manager_id: p.listing_manager_id,
+          managerName:
+            typeof extras.agent_name === "string" && p.listing_manager_id
+              ? extras.agent_name
+              : null,
+          managerPhone:
+            typeof extras.agent_phone === "string" && p.listing_manager_id
+              ? extras.agent_phone
+              : null,
+        });
+      }
+
+      const myProps = Array.from(byId.values());
+      if (!myProps.length) return { leads: [] as Lead[], properties: {} as Record<string, PropertyInfo> };
 
       const propMap: Record<string, PropertyInfo> = {};
-      for (const p of myProps) {
-        propMap[p.id] = p as PropertyInfo;
-      }
+      for (const p of myProps) propMap[p.id] = p;
 
       const propIds = myProps.map((p) => p.id);
       const { data: leads } = await supabase
@@ -92,9 +143,17 @@ function LeadCard({ lead, property }: { lead: Lead; property?: PropertyInfo }) {
             <Calendar className="w-3.5 h-3.5" />
             {dateStr}, {timeStr}
           </div>
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 whitespace-nowrap">
-            {lead.source === "owner_message" ? "Вопрос" : "Заявка"}
-          </span>
+          <div className="flex flex-wrap gap-1 justify-end">
+            {property?.managerName && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200 whitespace-nowrap flex items-center gap-1">
+                <UserCircle className="w-3 h-3" />
+                {property.managerName}
+              </span>
+            )}
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 whitespace-nowrap">
+              {lead.source === "owner_message" ? "Вопрос" : "Заявка"}
+            </span>
+          </div>
         </div>
 
         {property && (

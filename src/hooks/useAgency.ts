@@ -12,6 +12,7 @@ import {
   fetchAgencyPropertiesApi,
   fetchMyAgencyApi,
   fetchMyAgencyPropertiesApi,
+  fetchVerifiedAgenciesApi,
   removeAgencyMemberApi,
   requestAgencyVerificationApi,
   updateAgencyApi,
@@ -22,6 +23,14 @@ import {
   type AgencyMemberRole,
   type AgencyManager,
 } from "@/lib/agencyApi";
+
+export function useVerifiedAgencies() {
+  return useQuery({
+    queryKey: ["agencies-verified"],
+    staleTime: 5 * 60_000,
+    queryFn: fetchVerifiedAgenciesApi,
+  });
+}
 
 export function useMyAgency() {
   const { user } = useAuth();
@@ -112,8 +121,12 @@ export function useAgencyManagerMutations(agencyId: string | undefined) {
   };
 
   const create = useMutation({
-    mutationFn: (payload: { full_name: string; phone: string; photo_url?: string | null }) =>
-      createAgencyManagerApi(agencyId!, payload),
+    mutationFn: (payload: {
+      full_name: string;
+      phone: string;
+      photo_url?: string | null;
+      property_types?: string[];
+    }) => createAgencyManagerApi(agencyId!, payload),
     onSuccess: invalidate,
   });
 

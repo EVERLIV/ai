@@ -1,4 +1,7 @@
-export const LAND_PROPERTY_TYPE = "Земля";
+import { isAnyLand, LAND_PROPERTY_TYPE as LAND_TYPE_FROM_FAMILIES } from "@/lib/propertyTypeFamilies";
+
+export const LAND_PROPERTY_TYPE = LAND_TYPE_FROM_FAMILIES;
+export { RESIDENTIAL_LAND_TYPE, isAnyLand, isCommercialLand, isResidentialLand, expandLandFilterTypes } from "@/lib/propertyTypeFamilies";
 
 export const LAND_TYPE_LABEL = "Тип";
 
@@ -16,6 +19,7 @@ export type PropertyExtrasLike = {
   [key: string]: unknown;
 };
 
+/** Коммерческая земля («Земля»). Для жилого участка используйте isResidentialLand / isAnyLand. */
 export function isLandProperty(
   typeOrProperty: string | { type?: string | null; extras?: PropertyExtrasLike | null } | null | undefined,
 ): boolean {
@@ -40,7 +44,7 @@ export function getLandUse(property: {
   condition?: string | null;
   extras?: PropertyExtrasLike | null;
 }): string | null {
-  if (!isLandProperty(property)) return null;
+  if (!isAnyLand(property)) return null;
 
   const extras = property.extras as PropertyExtrasLike | null;
   if (extras?.land_use?.trim()) return extras.land_use.trim();

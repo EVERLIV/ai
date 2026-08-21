@@ -12,10 +12,15 @@ export const DEAL_TYPES = ["Аренда", "Продажа"] as const;
 export const RESIDENTIAL_DEAL_TYPES = ["Аренда", "Продажа", "Посуточно"] as const;
 export const MARKET_OPTIONS = ["Вторичка", "Новостройка"] as const;
 
-export const DISTRICTS = [
-  "Кировский", "Октябрьский", "Свердловский", "Ленинский", "Куйбышевский",
-  "Ангарск", "Шелехов", "Усолье-Сибирское", "Братск", "Усть-Илимск",
-] as const;
+export {
+  DISTRICTS,
+  LOCATION_GROUPS,
+  IRKUTSK_CITY_DISTRICTS,
+  IRKUTSK_MICRODISTRICTS,
+  IRKUTSK_OBLAST_CITIES,
+  IRKUTSK_OBLAST_DISTRICTS,
+  inferDistrictFromAddress,
+} from "@/lib/irkutskLocations";
 
 export const FLOORS = [
   "-", "Цоколь", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
@@ -68,6 +73,26 @@ export const DEPOSIT_OPTIONS = [
 export const CONTRACT_TERMS = [
   "от 1 мес", "от 3 мес", "от 6 мес", "от 11 мес",
   "1 год", "2 года", "3 года", "4 года", "5 лет", "7 лет", "10 лет", "Бессрочный",
+] as const;
+
+/** Посуточная аренда — без «договор на 1 год» */
+export const DAILY_DEPOSIT_OPTIONS = [
+  "Нет",
+  "1 сутки",
+  "2 суток",
+  "3 суток",
+  "Фиксированная сумма",
+  "По договорённости",
+] as const;
+
+export const DAILY_TERM_OPTIONS = [
+  "от 1 суток",
+  "от 2 суток",
+  "от 3 суток",
+  "от 7 суток",
+  "от 14 суток",
+  "от 30 суток",
+  "По договорённости",
 ] as const;
 
 export const UTILITIES_OPTIONS = [
@@ -274,3 +299,57 @@ export const RESIDENTIAL_FEATURES_LIST: string[] = Array.from(
 );
 
 export const CATALOG_FEATURES_PREVIEW = 5;
+
+type FeatureGroup = { title: string; items: string[] };
+
+const COMMERCIAL_GROUP_BY_TYPE: Record<string, string[]> = {
+  Офис: ["Инженерия и коммуникации", "Безопасность", "Парковка и доступ", "Локация и трафик", "Планировка и отделка"],
+  Торговая: ["Инженерия и коммуникации", "Безопасность", "Парковка и доступ", "Локация и трафик", "Планировка и отделка", "Торговля и общепит"],
+  Склад: ["Инженерия и коммуникации", "Безопасность", "Парковка и доступ", "Склад и производство"],
+  Производство: ["Инженерия и коммуникации", "Безопасность", "Парковка и доступ", "Склад и производство"],
+  Земля: ["Земельный участок"],
+};
+
+const RESIDENTIAL_GROUP_BY_FAMILY = {
+  flat: ["Комфорт", "Техника", "Дом и двор", "Локация"],
+  house: ["Комфорт", "Техника", "Дом и двор", "Локация", "Дом / участок"],
+  land: ["Дом / участок", "Локация"],
+  parking: ["Дом и двор", "Локация"],
+} as const;
+
+function pickGroups(all: FeatureGroup[], titles: readonly string[]): FeatureGroup[] {
+  const set = new Set(titles);
+  return all.filter((g) => set.has(g.title));
+}
+
+/** Группы особенностей под сегмент и выбранные типы объекта */
+export function getFeatureGroupsFor(
+  segment: "commercial" | "residential",
+  types: string[],
+): FeatureGroup[] {
+  const primary = types[0] || (segment === "residential" ? "Квартира" : "Офис");
+
+  if (segment === "residential") {
+    if (primary === "Участок" || types.includes("Участок")) {
+      return pickGroups(RESIDENTIAL_FEATURE_GROUPS, RESIDENTIAL_GROUP_BY_FAMILY.land);
+    }
+    if (["Гараж", "Машиноместо"].includes(primary)) {
+      return pickGroups(RESIDENTIAL_FEATURE_GROUPS, RESIDENTIAL_GROUP_BY_FAMILY.parking);
+    }
+    if (["Дом", "Коттедж", "Дача", "Таунхаус"].includes(primary)) {
+      return pickGroups(RESIDENTIAL_FEATURE_GROUPS, RESIDENTIAL_GROUP_BY_FAMILY.house);
+    }
+    return pickGroups(RESIDENTIAL_FEATURE_GROUPS, RESIDENTIAL_GROUP_BY_FAMILY.flat);
+  }
+
+  if (primary === "Земля" || types.includes("Земля")) {
+    return pickGroups(FEATURE_GROUPS, COMMERCIAL_GROUP_BY_TYPE.Земля);
+  }
+
+  const titleSets = types.map((t) => COMMERCIAL_GROUP_BY_TYPE[t]).filter(Boolean);
+  if (titleSets.length === 0) {
+    return pickGroups(FEATURE_GROUPS, COMMERCIAL_GROUP_BY_TYPE.Офис);
+  }
+  const merged = new Set(titleSets.flat());
+  return pickGroups(FEATURE_GROUPS, [...merged]);
+}

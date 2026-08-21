@@ -24,7 +24,7 @@
     --muted: 40 15% 94%;
     --muted-foreground: 220 10% 45%;
 
-    --accent: 38 75% 55%;
+    --accent: 38 65% 54%;
     --accent-foreground: 220 25% 10%;
 
     --destructive: 0 84.2% 60.2%;
@@ -36,9 +36,10 @@
 
     --radius: 0rem;
 
-    --gold: 38 75% 55%;
-    --gold-light: 38 60% 90%;
-    --gold-dark: 38 80% 42%;
+    /* Фирменный золотой (как в логотипе / письмах #c4a35a…#d39e3f) — hover/выбор в списках */
+    --gold: 38 65% 54%;
+    --gold-light: 38 55% 90%;
+    --gold-dark: 38 70% 40%;
 
     --surface-warm: 35 25% 96%;
     --surface-cool: 220 15% 97%;
@@ -111,6 +112,17 @@
   }
   .text-gold {
     color: hsl(var(--gold));
+  }
+
+  /* Выпадающие списки: hover/фокус — золото, не фирменный красный */
+  [data-radix-select-viewport] [data-highlighted],
+  [data-radix-collection-item][data-highlighted],
+  [role="option"][data-highlighted],
+  [role="menuitem"][data-highlighted],
+  [role="menuitemcheckbox"][data-highlighted],
+  [role="menuitemradio"][data-highlighted] {
+    background-color: hsl(var(--gold)) !important;
+    color: hsl(var(--foreground)) !important;
   }
   .bg-surface-warm {
     background-color: hsl(var(--surface-warm));

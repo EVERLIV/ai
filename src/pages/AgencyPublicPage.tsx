@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -13,12 +14,30 @@ import { isProfileVerified } from "@/hooks/useProfile";
 import { Building2, Clock, Calendar, Loader2, Phone } from "lucide-react";
 import type { DbProperty } from "@/hooks/useProperties";
 
+function pluralObjects(n: number) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "объект";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "объекта";
+  return "объектов";
+}
+
 export default function AgencyPublicPage() {
   const { id } = useParams<{ id: string }>();
   const { data: agency, isLoading, error } = useAgencyPublic(id);
   const { data: managers = [] } = useAgencyManagers(id, true);
   const { data: rawProperties = [], isLoading: propsLoading } = useAgencyPublicProperties(id);
   const properties = rawProperties as unknown as DbProperty[];
+
+  const listingCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of rawProperties as { listing_manager_id?: string | null }[]) {
+      const mid = p.listing_manager_id;
+      if (!mid) continue;
+      map.set(mid, (map.get(mid) || 0) + 1);
+    }
+    return map;
+  }, [rawProperties]);
 
   if (isLoading) {
     return (
@@ -103,33 +122,54 @@ export default function AgencyPublicPage() {
           <section className="space-y-4">
             <h2 className="text-lg font-semibold">Менеджеры</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {managers.map((m) => (
-                <div
-                  key={m.id}
-                  className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
-                >
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-muted shrink-0">
-                    {m.photo_url ? (
-                      <img src={m.photo_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-muted-foreground">
-                        {m.full_name?.[0] || "?"}
+              {managers.map((m) => {
+                const count = listingCounts.get(m.id) || 0;
+                const types = m.property_types ?? [];
+                return (
+                  <div
+                    key={m.id}
+                    className="flex flex-col gap-2.5 rounded-xl border border-border bg-card p-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-muted shrink-0">
+                        {m.photo_url ? (
+                          <img src={m.photo_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-sm font-bold text-muted-foreground">
+                            {m.full_name?.[0] || "?"}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">{m.full_name}</div>
+                        {m.phone && (
+                          <a
+                            href={`tel:${m.phone.replace(/\D/g, "")}`}
+                            className="text-xs text-primary inline-flex items-center gap-1 hover:underline"
+                          >
+                            <Phone className="w-3 h-3" /> {m.phone}
+                          </a>
+                        )}
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          В управлении: {count} {pluralObjects(count)}
+                        </div>
+                      </div>
+                    </div>
+                    {types.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {types.map((t) => (
+                          <span
+                            key={t}
+                            className="rounded-md border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                          >
+                            {t}
+                          </span>
+                        ))}
                       </div>
                     )}
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">{m.full_name}</div>
-                    {m.phone && (
-                      <a
-                        href={`tel:${m.phone.replace(/\D/g, "")}`}
-                        className="text-xs text-primary inline-flex items-center gap-1 hover:underline"
-                      >
-                        <Phone className="w-3 h-3" /> {m.phone}
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}

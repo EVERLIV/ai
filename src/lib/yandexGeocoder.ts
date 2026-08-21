@@ -1,8 +1,8 @@
 import { getYandexMapsApiKey, IRKUTSK_CENTER_LNGLAT } from "@/lib/yandexMaps";
 
-type GeoHit = { lat: number; lng: number; address: string };
+export type GeoHit = { lat: number; lng: number; address: string };
 
-function parseGeoResponse(data: unknown): GeoHit | null {
+function parseFeatureMembers(data: unknown): GeoHit[] {
   const root = data as {
     response?: {
       GeoObjectCollection?: {
@@ -17,20 +17,28 @@ function parseGeoResponse(data: unknown): GeoHit | null {
       };
     };
   };
-  const geo = root?.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject;
-  const parts = geo?.Point?.pos?.trim().split(/\s+/) ?? [];
-  if (parts.length < 2) return null;
-  const lng = Number(parts[0]);
-  const lat = Number(parts[1]);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  const address =
-    geo?.metaDataProperty?.GeocoderMetaData?.text?.trim() ||
-    [geo?.name, geo?.description].filter(Boolean).join(", ").trim() ||
-    "";
-  return { lat, lng, address };
+  const members = root?.response?.GeoObjectCollection?.featureMember ?? [];
+  const hits: GeoHit[] = [];
+
+  for (const member of members) {
+    const geo = member?.GeoObject;
+    const parts = geo?.Point?.pos?.trim().split(/\s+/) ?? [];
+    if (parts.length < 2) continue;
+    const lng = Number(parts[0]);
+    const lat = Number(parts[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    const address =
+      geo?.metaDataProperty?.GeocoderMetaData?.text?.trim() ||
+      [geo?.name, geo?.description].filter(Boolean).join(", ").trim() ||
+      "";
+    if (!address) continue;
+    hits.push({ lat, lng, address });
+  }
+
+  return hits;
 }
 
-async function geocodeQuery(geocode: string): Promise<GeoHit | null> {
+async function geocodeQuery(geocode: string, results = 1): Promise<GeoHit[]> {
   const apiKey = getYandexMapsApiKey();
   if (!apiKey) throw new Error("Не задан ключ Яндекс.Карт");
 
@@ -40,9 +48,10 @@ async function geocodeQuery(geocode: string): Promise<GeoHit | null> {
     geocode,
     lang: "ru_RU",
     format: "json",
-    results: "1",
+    results: String(results),
     ll: `${centerLng},${centerLat}`,
-    spn: "6,6",
+    spn: "8,8",
+    bbox: "95.5,51.0,119.5,64.5",
   });
 
   const resp = await fetch(`https://geocode-maps.yandex.ru/1.x/?${params.toString()}`);
@@ -55,15 +64,37 @@ async function geocodeQuery(geocode: string): Promise<GeoHit | null> {
   }
 
   const data = await resp.json();
-  return parseGeoResponse(data);
+  return parseFeatureMembers(data);
 }
 
 export async function geocodeAddress(address: string): Promise<GeoHit | null> {
   const query = address.trim();
   if (query.length < 4) return null;
-  return geocodeQuery(query);
+  const hits = await geocodeQuery(query, 1);
+  return hits[0] ?? null;
 }
 
 export async function reverseGeocode(lat: number, lng: number): Promise<GeoHit | null> {
-  return geocodeQuery(`${lng},${lat}`);
+  const hits = await geocodeQuery(`${lng},${lat}`, 1);
+  return hits[0] ?? null;
+}
+
+/** Подсказки адреса с координатами (Иркутск и область) */
+export async function suggestAddresses(query: string, limit = 7): Promise<GeoHit[]> {
+  const q = query.trim();
+  if (q.length < 3) return [];
+
+  const prefixed = /иркутск|ангарск|братск|шелехов|усолье|область/i.test(q)
+    ? q
+    : `Иркутск, ${q}`;
+
+  try {
+    const hits = await geocodeQuery(prefixed, limit);
+    if (hits.length > 0) return hits;
+  } catch {
+    // fallback below
+  }
+
+  // запасной вариант без префикса
+  return geocodeQuery(q, limit);
 }

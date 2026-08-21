@@ -6,7 +6,7 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import ListingAgentFooter from "@/components/ListingAgentFooter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPropertyPrice, formatListingViews, isListingVerified, buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
-import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL } from "@/lib/propertyLand";
+import { getLandCadastral, getLandUse, isAnyLand, LAND_TYPE_LABEL } from "@/lib/propertyLand";
 
 interface PropertyGridCardProps {
   property: DbProperty;
@@ -15,7 +15,7 @@ interface PropertyGridCardProps {
 
 /** Карточка объекта в сетке каталога и на главной. */
 export default function PropertyGridCard({ property: p, onOpenPKK }: PropertyGridCardProps) {
-  const land = isLandProperty(p);
+  const land = isAnyLand(p);
   const landUse = getLandUse(p);
   const cadastral = getLandCadastral(p.extras as Record<string, unknown> | null);
   const price = formatPropertyPrice(p);

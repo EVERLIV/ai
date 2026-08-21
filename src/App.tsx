@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { ConversationProvider } from "@elevenlabs/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { MotionConfig } from "framer-motion";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -15,7 +15,6 @@ const TaskDetailPage     = lazy(() => import("./pages/TaskDetailPage"));
 const TaskReportsPage    = lazy(() => import("./pages/TaskReportsPage"));
 const TaskAnalyticsPage  = lazy(() => import("./pages/TaskAnalyticsPage"));
 import Index from "./pages/Index.tsx";
-import SegmentHomePage from "./pages/SegmentHomePage.tsx";
 import PropertyDetail from "./pages/PropertyDetail.tsx";
 import Catalog from "./pages/Catalog.tsx";
 import Auth from "./pages/Auth.tsx";
@@ -40,6 +39,7 @@ import ResidentialCatalog from "./pages/residential/ResidentialCatalog.tsx";
 import ApartmentsPage from "./pages/residential/ApartmentsPage.tsx";
 import HousesPage from "./pages/residential/HousesPage.tsx";
 import RoomsPage from "./pages/residential/RoomsPage.tsx";
+import PlotsPage from "./pages/residential/PlotsPage.tsx";
 import InstallPrompt from "@/components/InstallPrompt";
 import CookieBanner from "@/components/CookieBanner";
 const queryClient = new QueryClient();
@@ -57,8 +57,8 @@ const App = () => {
               <InstallPrompt />
               <CookieBanner />
               <Routes>
-                <Route path="/" element={<SegmentHomePage />} />
-                <Route path="/kommercheskaya" element={<Index />} />
+                <Route path="/" element={<Index />} />
+                <Route path="/kommercheskaya" element={<Navigate to="/" replace />} />
                 <Route path="/catalog" element={<Catalog />} />
                 <Route path="/property/:id" element={<PropertyDetail />} />
                 <Route path="/auth" element={<Auth />} />
@@ -82,6 +82,7 @@ const App = () => {
                 <Route path="/zhilaya/kvartiry" element={<ApartmentsPage />} />
                 <Route path="/zhilaya/doma" element={<HousesPage />} />
                 <Route path="/zhilaya/komnaty" element={<RoomsPage />} />
+                <Route path="/zhilaya/uchastki" element={<PlotsPage />} />
                 <Route path="/zhilaya/list-property" element={<ListProperty segment="residential" />} />
                 {/* Таск-менеджер — lazy, не влияет на основной бандл */}
                 <Route path="/tasks" element={

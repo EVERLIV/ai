@@ -1,6 +1,6 @@
 import { buildCatalogUrl } from "@/lib/catalogLinks";
 import { placementCtaPath } from "@/lib/listPropertyLinks";
-import { SEGMENT_ROUTES, type PropertySegment } from "@/config/propertySegments";
+import { SEGMENT_ROUTES } from "@/config/propertySegments";
 
 export type MegaLink = { label: string; href: string };
 export type MegaSection = { title: string; links: MegaLink[] };
@@ -20,10 +20,11 @@ function c(params: Parameters<typeof buildCatalogUrl>[0]) {
   return buildCatalogUrl({ segment: "commercial", ...params });
 }
 
-function buildResidentialMenu(isLoggedIn: boolean): MegaMenuConfig {
+/** Единое меню недвижимости (жильё + коммерция + участки), как у Avito. */
+export function getCatalogMegaMenu(isLoggedIn = false): MegaMenuConfig {
   return {
-    triggerLabel: "Каталог жилья",
-    catalogHref: SEGMENT_ROUTES.residential.catalog,
+    triggerLabel: "Недвижимость",
+    catalogHref: SEGMENT_ROUTES.commercial.catalog,
     columns: [
       {
         sections: [
@@ -37,7 +38,6 @@ function buildResidentialMenu(isLoggedIn: boolean): MegaMenuConfig {
               { label: "Таунхаусы", href: r({ types: "Таунхаус", deal: "Продажа" }) },
               { label: "Апартаменты", href: r({ types: "Апартаменты", deal: "Продажа" }) },
               { label: "Комнаты", href: r({ types: "Комната", deal: "Продажа" }) },
-              { label: "Участки", href: r({ types: "Участок", deal: "Продажа" }) },
             ],
           },
         ],
@@ -45,22 +45,14 @@ function buildResidentialMenu(isLoggedIn: boolean): MegaMenuConfig {
       {
         sections: [
           {
-            title: "Посуточно",
+            title: "Снять / посуточно",
             links: [
-              { label: "Квартиры посуточно", href: r({ types: "Квартира", deal: "Посуточно" }) },
-              { label: "Дома, дачи и коттеджи", href: r({ types: ["Дом", "Дача", "Коттедж"], deal: "Посуточно" }) },
-              { label: "Комнаты", href: r({ types: "Комната", deal: "Посуточно" }) },
-              { label: "Апартаменты", href: r({ types: "Апартаменты", deal: "Посуточно" }) },
-            ],
-          },
-          {
-            title: "Снять долгосрочно",
-            links: [
-              { label: "Квартиры", href: r({ types: "Квартира", deal: "Аренда" }) },
+              { label: "Квартиры долгосрочно", href: r({ types: "Квартира", deal: "Аренда" }) },
               { label: "Дома, дачи и коттеджи", href: r({ types: ["Дом", "Дача", "Коттедж"], deal: "Аренда" }) },
               { label: "Комнаты", href: r({ types: "Комната", deal: "Аренда" }) },
-              { label: "Таунхаусы", href: r({ types: "Таунхаус", deal: "Аренда" }) },
-              { label: "Апартаменты", href: r({ types: "Апартаменты", deal: "Аренда" }) },
+              { label: "Квартиры посуточно", href: r({ types: "Квартира", deal: "Посуточно" }) },
+              { label: "Дома посуточно", href: r({ types: ["Дом", "Дача", "Коттедж"], deal: "Посуточно" }) },
+              { label: "Весь каталог жилья", href: SEGMENT_ROUTES.residential.catalog },
             ],
           },
         ],
@@ -68,75 +60,29 @@ function buildResidentialMenu(isLoggedIn: boolean): MegaMenuConfig {
       {
         sections: [
           {
-            title: "Другие категории",
+            title: "Коммерческая недвижимость",
             links: [
-              { label: "Весь каталог жилья", href: r({}) },
-              { label: "Гаражи и машиноместа", href: r({ types: ["Гараж", "Машиноместо"] }) },
-              { label: "Доли", href: r({ types: "Доля" }) },
-              { label: "Земельные участки", href: r({ types: "Участок" }) },
-            ],
-          },
-        ],
-      },
-    ],
-    services: {
-      title: "Сервисы",
-      links: [
-        { label: "ИИ-подбор", href: "#ai-wizard" },
-        { label: "Разместить жильё за 0 ₽", href: placementCtaPath("residential", "rent", isLoggedIn) },
-        { label: "Передать в управление", href: placementCtaPath("residential", "management", isLoggedIn) },
-        { label: "Квартиры", href: "/zhilaya/kvartiry" },
-        { label: "Дома", href: "/zhilaya/doma" },
-        { label: "Комнаты", href: "/zhilaya/komnaty" },
-      ],
-    },
-  };
-}
-
-function buildCommercialMenu(isLoggedIn: boolean): MegaMenuConfig {
-  return {
-    triggerLabel: "Каталог",
-    catalogHref: SEGMENT_ROUTES.commercial.catalog,
-    columns: [
-      {
-        sections: [
-          {
-            title: "Купить",
-            links: [
-              { label: "Офисы", href: c({ types: "Офис", deal: "Продажа" }) },
-              { label: "Торговые площади", href: c({ types: "Торговая", deal: "Продажа" }) },
-              { label: "Склады", href: c({ types: "Склад", deal: "Продажа" }) },
-              { label: "Производство", href: c({ types: "Производство", deal: "Продажа" }) },
-              { label: "Земельные участки", href: c({ types: "Земля", deal: "Продажа" }) },
-            ],
-          },
-        ],
-      },
-      {
-        sections: [
-          {
-            title: "Снять",
-            links: [
-              { label: "Офисы", href: c({ types: "Офис", deal: "Аренда" }) },
-              { label: "Торговые площади", href: c({ types: "Торговая", deal: "Аренда" }) },
-              { label: "Склады", href: c({ types: "Склад", deal: "Аренда" }) },
-              { label: "Производство", href: c({ types: "Производство", deal: "Аренда" }) },
-              { label: "Земельные участки", href: c({ types: "Земля", deal: "Аренда" }) },
-            ],
-          },
-        ],
-      },
-      {
-        sections: [
-          {
-            title: "По типу",
-            links: [
-              { label: "Все объекты", href: c({}) },
               { label: "Офисы", href: "/offices" },
-              { label: "Торговля", href: "/retail" },
+              { label: "Торговые площади", href: "/retail" },
               { label: "Склады", href: "/warehouses" },
-              { label: "Земля", href: "/land" },
+              { label: "Производство", href: c({ types: "Производство" }) },
+              { label: "Весь каталог коммерции", href: c({}) },
+              { label: "Снять офис", href: c({ types: "Офис", deal: "Аренда" }) },
+              { label: "Купить помещение", href: c({ types: "Торговая", deal: "Продажа" }) },
+            ],
+          },
+        ],
+      },
+      {
+        sections: [
+          {
+            title: "Участки и прочее",
+            links: [
+              { label: "Земельные участки", href: "/zhilaya/uchastki" },
+              { label: "Земля (коммерция)", href: "/land" },
+              { label: "Гаражи и машиноместа", href: r({ types: ["Гараж", "Машиноместо"] }) },
               { label: "Реклама", href: "/ads" },
+              { label: "Раздел жилья", href: SEGMENT_ROUTES.residential.home },
             ],
           },
         ],
@@ -147,17 +93,11 @@ function buildCommercialMenu(isLoggedIn: boolean): MegaMenuConfig {
       links: [
         { label: "ИИ-подбор", href: "#ai-wizard" },
         { label: "Разместить объект за 0 ₽", href: placementCtaPath("commercial", "rent", isLoggedIn) },
+        { label: "Разместить жильё за 0 ₽", href: placementCtaPath("residential", "rent", isLoggedIn) },
         { label: "Передать в управление", href: placementCtaPath("commercial", "management", isLoggedIn) },
+        { label: "О компании", href: "/about" },
+        { label: "Контакты", href: "/contacts" },
       ],
     },
   };
-}
-
-export function getCatalogMegaMenu(
-  segment: PropertySegment,
-  isLoggedIn = false,
-): MegaMenuConfig {
-  return segment === "residential"
-    ? buildResidentialMenu(isLoggedIn)
-    : buildCommercialMenu(isLoggedIn);
 }

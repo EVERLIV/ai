@@ -23,7 +23,7 @@ import { isResidentialSegment, SEGMENT_ROUTES } from "@/config/propertySegments"
 import PropertyUnitsTable from "@/components/PropertyUnitsTable";
 import PropertySidebarExtras from "@/components/PropertySidebarExtras";
 import PKKMapModal from "@/components/PKKMapModal";
-import { getLandCadastral, getLandUse, isLandProperty, LAND_TYPE_LABEL } from "@/lib/propertyLand";
+import { getLandCadastral, getLandUse, isAnyLand, LAND_TYPE_LABEL } from "@/lib/propertyLand";
 import { getPropertyTypes, getPrimaryPropertyType, formatPropertyTypesLabel } from "@/lib/propertyTypes";
 import { isSaleDeal } from "@/lib/propertyDeal";
 import { motion } from "framer-motion";
@@ -58,13 +58,23 @@ export default function PropertyDetail() {
     e.preventDefault();
     setContactLoading(true);
     try {
+      const extras = (property?.extras || {}) as Record<string, unknown>;
+      const managerName =
+        extras.listing_manager_id && typeof extras.agent_name === "string"
+          ? extras.agent_name.trim()
+          : "";
+      const categoryParts = [
+        property?.address || null,
+        managerName ? `Менеджер: ${managerName}` : null,
+      ].filter(Boolean);
+
       await submitLead({
         object_id: id || null,
         name: contactForm.name,
         phone: contactForm.phone,
         message: contactForm.message || null,
         source: "property_contact",
-        business_category: property?.address || null,
+        business_category: categoryParts.join(" · ") || null,
       });
       setContactSent(true);
     } catch {
@@ -119,7 +129,7 @@ export default function PropertyDetail() {
   const photos = property.photos || [];
   const photosCount = photos.length || 1;
 
-  const isLand = isLandProperty(property);
+  const isLand = isAnyLand(property);
   const isSale = isSaleDeal(property.deal_type);
   const isResidential = isResidentialSegment(property.segment);
   const segmentHome = isResidential ? SEGMENT_ROUTES.residential.home : SEGMENT_ROUTES.commercial.home;
@@ -167,7 +177,10 @@ export default function PropertyDetail() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <SiteHeader />
+      <SiteHeader
+        contextSegment={isResidential ? "residential" : "commercial"}
+        isLandContext={isLand}
+      />
 
       <SeoHead
         title={seoTitle}

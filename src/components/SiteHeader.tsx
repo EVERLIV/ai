@@ -3,51 +3,44 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Phone, Mail,
   ChevronDown, User,
-  Heart, FileText, LogOut, Building2,
-  ArrowUpRight, Newspaper, Info, BookOpen, Settings2, Shield, Briefcase,
+  Heart, FileText, LogOut, Building2, Home,
+  ArrowUpRight, Newspaper, Info, BookOpen, Settings2, Briefcase, TreePine,
 } from "lucide-react";
 import AIWizardModal from "@/components/AIWizardModal";
 import { CatalogMegaMenuDesktop, CatalogMegaMenuMobile } from "@/components/CatalogMegaMenu";
-import SegmentSwitcher from "@/components/SegmentSwitcher";
 import BrandMark from "@/components/BrandMark";
 import { useAuth } from "@/hooks/useAuth";
 import { CONTACTS } from "@/config/company";
-import { SEGMENT_ROUTES } from "@/config/propertySegments";
+import { SEGMENT_ROUTES, type PropertySegment } from "@/config/propertySegments";
 import { placementCtaPath } from "@/lib/listPropertyLinks";
 
 type SubItem = { label: string; desc: string; href: string; icon: React.ElementType };
 type NavItem = { label: string; href: string; submenu?: SubItem[] };
 
-function getNavItems(isResidential: boolean): NavItem[] {
-  const companyItem = {
+const NAV_ITEMS: NavItem[] = [
+  { label: "Жилая", href: SEGMENT_ROUTES.residential.home },
+  { label: "Коммерция", href: SEGMENT_ROUTES.commercial.catalog },
+  { label: "Участки", href: "/zhilaya/uchastki" },
+  {
     label: "Компания",
     href: "/about",
     submenu: [
       { label: "О нас", desc: "История, команда и ценности АрендаСити", href: "/about", icon: Info },
       { label: "Новости", desc: "Аналитика и события рынка недвижимости", href: "/news", icon: Newspaper },
       { label: "Контакты", desc: "Адрес, телефон, режим работы", href: "/contacts", icon: BookOpen },
-      { label: "Вакансии", desc: "Работа в агентстве коммерческой недвижимости", href: "/vacancies", icon: Briefcase },
+      { label: "Вакансии", desc: "Работа в агентстве недвижимости", href: "/vacancies", icon: Briefcase },
     ],
-  };
+  },
+];
 
-  return isResidential
-    ? [
-        { label: "Квартиры", href: "/zhilaya/kvartiry" },
-        { label: "Дома", href: "/zhilaya/doma" },
-        { label: "Комнаты", href: "/zhilaya/komnaty" },
-        companyItem,
-      ]
-    : [
-        { label: "Офисы", href: "/offices" },
-        { label: "Торговля", href: "/retail" },
-        { label: "Склады", href: "/warehouses" },
-        { label: "Земля", href: "/land" },
-        { label: "Реклама", href: "/ads" },
-        companyItem,
-      ];
-}
+export type SiteHeaderProps = {
+  /** Контекст карточки объекта — не форсит «Коммерческая» по URL */
+  contextSegment?: PropertySegment | null;
+  /** Участок / земля — нейтральный контекст для CTA */
+  isLandContext?: boolean;
+};
 
-export default function SiteHeader() {
+export default function SiteHeader({ contextSegment = null, isLandContext = false }: SiteHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -56,14 +49,15 @@ export default function SiteHeader() {
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
   const { pathname, hash } = useLocation();
-  const isResidential = pathname.startsWith("/zhilaya");
-  const segment = isResidential ? "residential" as const : "commercial" as const;
-  const catalogHref = isResidential ? SEGMENT_ROUTES.residential.catalog : SEGMENT_ROUTES.commercial.catalog;
-  const navItems = getNavItems(isResidential);
+
+  const wizardSegment: PropertySegment =
+    contextSegment === "residential" || pathname.startsWith("/zhilaya")
+      ? "residential"
+      : "commercial";
 
   const { user, signOut, hasRole } = useAuth();
   const navigate = useNavigate();
-  const placeHref = placementCtaPath(segment, "rent", !!user);
+  const placeHref = placementCtaPath(wizardSegment, "rent", !!user);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -91,13 +85,23 @@ export default function SiteHeader() {
 
   const isActive = (href: string) => {
     if (href.startsWith("/#")) return pathname === "/" && hash === href.slice(1);
+    if (href === "/") return pathname === "/";
+    // На карточке объекта не подсвечиваем «Коммерция» только из-за /property
+    if (pathname.startsWith("/property/") && contextSegment) {
+      if (href === SEGMENT_ROUTES.residential.home) {
+        return contextSegment === "residential" && !isLandContext;
+      }
+      if (href === "/zhilaya/uchastki") return !!isLandContext;
+      if (href === SEGMENT_ROUTES.commercial.catalog) {
+        return contextSegment === "commercial" && !isLandContext;
+      }
+    }
     return pathname === href || pathname.startsWith(href + "/");
   };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
 
-      {/* ── TOP BAR ─────────────────────── */}
       <div className="hidden md:block bg-background border-b border-border/50">
         <div className="container mx-auto px-4 lg:px-8 h-10 flex items-center justify-between gap-4 text-[12px]">
           <div className="hidden md:flex items-center gap-4 text-muted-foreground">
@@ -181,16 +185,11 @@ export default function SiteHeader() {
         </div>
       </div>
 
-      {/* ── MAIN NAV BAR ─────────────────────────────── */}
       <div className={`transition-all duration-300 ${scrolled ? "bg-card/95 backdrop-blur-2xl shadow-[0_1px_0_0_hsl(var(--border)/0.6)]" : "bg-card"}`}>
         <div className="container mx-auto flex items-center justify-between h-14 px-4 lg:px-8">
 
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            {/* Logo */}
-            <Link
-              to={isResidential ? SEGMENT_ROUTES.residential.home : SEGMENT_ROUTES.commercial.home}
-              className="group flex items-center gap-2.5 shrink-0 min-w-0"
-            >
+            <Link to="/" className="group flex items-center gap-2.5 shrink-0 min-w-0">
               <div className="relative w-10 h-10 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shrink-0">
                 <BrandMark className="w-10 h-10" />
               </div>
@@ -199,20 +198,17 @@ export default function SiteHeader() {
                   АРЕНДА<span className="text-primary">СИТИ</span>
                 </span>
                 <span className="text-[9px] font-medium tracking-wide text-muted-foreground mt-0.5 uppercase hidden sm:block">
-                  {isResidential ? "Жилая недвижимость" : "Коммерческая недвижимость"}
+                  Недвижимость в Иркутске
                 </span>
               </span>
             </Link>
-
-            <SegmentSwitcher className="shrink-0" />
           </div>
 
-          {/* Desktop nav */}
           <nav className="hidden lg:flex items-center gap-1 ml-auto">
-            {navItems.map((item, idx) => {
+            {NAV_ITEMS.map((item, idx) => {
               const active = isActive(item.href);
               const hasMenu = !!item.submenu?.length;
-              const isLast = idx === navItems.length - 1;
+              const isLast = idx === NAV_ITEMS.length - 1;
               return (
                 <div key={item.label} className="relative group/nav">
                   <Link
@@ -260,14 +256,12 @@ export default function SiteHeader() {
             })}
 
             <CatalogMegaMenuDesktop
-              segment={segment}
-              isActive={isActive(catalogHref)}
+              isActive={pathname.startsWith("/catalog") || pathname.startsWith("/zhilaya/catalog")}
               isLoggedIn={!!user}
               onOpenWizard={() => setWizardOpen(true)}
             />
           </nav>
 
-          {/* Mobile toggle */}
           <button
             aria-label="Меню"
             className="lg:hidden ml-auto w-9 h-9 flex items-center justify-center text-foreground"
@@ -281,13 +275,11 @@ export default function SiteHeader() {
           </button>
         </div>
 
-        {/* Scroll progress */}
         <div className="h-1.5 bg-border/30">
           <div className="h-full bg-primary transition-[width] duration-100" style={{ width: `${scrollPct}%` }} />
         </div>
       </div>
 
-      {/* ── MOBILE NAV ───────────────────────────────── */}
       <div
         className={`lg:hidden overflow-hidden transition-[max-height,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
           mobileOpen ? "max-h-[90vh] opacity-100" : "max-h-0 opacity-0"
@@ -296,7 +288,6 @@ export default function SiteHeader() {
       >
         <div className="px-4 pt-2 pb-4 max-h-[90vh] overflow-y-auto">
           <CatalogMegaMenuMobile
-            segment={segment}
             isLoggedIn={!!user}
             onNavigate={() => setMobileOpen(false)}
             onOpenWizard={() => setWizardOpen(true)}
@@ -304,8 +295,23 @@ export default function SiteHeader() {
 
           <div className="my-3 h-px bg-border/50" />
 
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <Link to="/zhilaya" onClick={() => setMobileOpen(false)}
+              className="flex flex-col items-center gap-1 rounded-md border border-border px-2 py-2.5 text-[11px] font-medium text-foreground hover:border-primary/40">
+              <Home className="w-4 h-4 text-primary" /> Жилая
+            </Link>
+            <Link to="/catalog" onClick={() => setMobileOpen(false)}
+              className="flex flex-col items-center gap-1 rounded-md border border-border px-2 py-2.5 text-[11px] font-medium text-foreground hover:border-primary/40">
+              <Building2 className="w-4 h-4 text-primary" /> Коммерция
+            </Link>
+            <Link to="/zhilaya/uchastki" onClick={() => setMobileOpen(false)}
+              className="flex flex-col items-center gap-1 rounded-md border border-border px-2 py-2.5 text-[11px] font-medium text-foreground hover:border-primary/40">
+              <TreePine className="w-4 h-4 text-primary" /> Участки
+            </Link>
+          </div>
+
           <div className="space-y-px">
-            {navItems.map((item) => {
+            {NAV_ITEMS.map((item) => {
               const active = isActive(item.href);
               const hasMenu = !!item.submenu?.length;
               const expanded = mobileExpanded === item.label;
@@ -355,13 +361,6 @@ export default function SiteHeader() {
 
           <div className="my-3 h-px bg-border/50" />
 
-          <Link
-            to="/"
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center justify-center h-9 text-xs font-medium text-muted-foreground hover:text-foreground border border-border mb-3"
-          >
-            Сменить раздел
-          </Link>
           <Link to={placeHref} onClick={() => setMobileOpen(false)}
             className="flex items-center justify-center h-9 bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity">
             Разместить за 0 ₽
@@ -380,7 +379,7 @@ export default function SiteHeader() {
         </div>
       </div>
 
-      <AIWizardModal open={wizardOpen} onClose={() => setWizardOpen(false)} segment={segment} />
+      <AIWizardModal open={wizardOpen} onClose={() => setWizardOpen(false)} segment={wizardSegment} />
     </header>
   );
 }

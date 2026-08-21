@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { ChevronDown, LayoutGrid } from "lucide-react";
 import { getCatalogMegaMenu, type MegaMenuConfig, type MegaSection } from "@/lib/catalogMegaMenu";
-import type { PropertySegment } from "@/config/propertySegments";
 import { cn } from "@/lib/utils";
 
 function MegaSectionBlock({
@@ -16,14 +15,14 @@ function MegaSectionBlock({
   compact?: boolean;
 }) {
   return (
-    <div className={compact ? "space-y-1.5" : "space-y-2"}>
+    <div className={compact ? "space-y-1.5" : "space-y-1.5"}>
       <div className={cn(
-        "font-semibold text-foreground",
-        compact ? "text-xs px-2 pt-2" : "text-sm",
+        "font-semibold text-foreground whitespace-nowrap",
+        compact ? "text-xs px-2 pt-2" : "text-[11px] leading-tight",
       )}>
         {section.title}
       </div>
-      <ul className={compact ? "space-y-0.5" : "space-y-1"}>
+      <ul className={compact ? "space-y-0.5" : "space-y-0.5"}>
         {section.links.map((link) => (
           <li key={`${section.title}-${link.label}-${link.href}`}>
             {link.href === "#ai-wizard" ? (
@@ -34,8 +33,8 @@ function MegaSectionBlock({
                   onOpenWizard?.();
                 }}
                 className={cn(
-                  "text-left w-full text-muted-foreground hover:text-primary transition-colors",
-                  compact ? "block px-2 py-1.5 text-xs" : "block py-0.5 text-sm",
+                  "text-left w-full text-muted-foreground hover:text-primary transition-colors whitespace-nowrap",
+                  compact ? "block px-2 py-1.5 text-xs" : "block py-0.5 text-[11px] leading-snug",
                 )}
               >
                 {link.label}
@@ -45,8 +44,8 @@ function MegaSectionBlock({
                 to={link.href}
                 onClick={onNavigate}
                 className={cn(
-                  "text-muted-foreground hover:text-primary transition-colors",
-                  compact ? "block px-2 py-1.5 text-xs" : "block py-0.5 text-sm",
+                  "text-muted-foreground hover:text-primary transition-colors whitespace-nowrap",
+                  compact ? "block px-2 py-1.5 text-xs" : "block py-0.5 text-[11px] leading-snug",
                 )}
               >
                 {link.label}
@@ -71,13 +70,13 @@ export function CatalogMegaPanel({
   className?: string;
 }) {
   return (
-    <div className={cn("bg-card shadow-[0_16px_48px_-12px_rgba(0,0,0,0.18)] border border-border/60 overflow-hidden", className)}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0">
+    <div className={cn("bg-card shadow-[0_16px_48px_-12px_rgba(0,0,0,0.18)] border border-border/60 overflow-x-auto overflow-y-hidden", className)}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-0 min-w-[920px] lg:min-w-0">
         {config.columns.map((column, idx) => (
           <div
             key={idx}
             className={cn(
-              "px-5 py-5 space-y-6",
+              "px-3.5 py-4 space-y-4 min-w-0",
               idx > 0 && "lg:border-l border-border/50",
             )}
           >
@@ -91,7 +90,7 @@ export function CatalogMegaPanel({
             ))}
           </div>
         ))}
-        <div className="px-5 py-5 bg-[#E1F1FF] dark:bg-primary/15 border-t lg:border-t-0 lg:border-l border-border/50">
+        <div className="px-3.5 py-4 bg-[#E1F1FF] dark:bg-primary/15 border-t lg:border-t-0 lg:border-l border-border/50 min-w-0">
           <MegaSectionBlock
             section={config.services}
             onNavigate={onNavigate}
@@ -105,17 +104,15 @@ export function CatalogMegaPanel({
 
 /** Desktop trigger + hover mega panel */
 export function CatalogMegaMenuDesktop({
-  segment,
   isActive,
   isLoggedIn,
   onOpenWizard,
 }: {
-  segment: PropertySegment;
   isActive: boolean;
   isLoggedIn?: boolean;
   onOpenWizard?: () => void;
 }) {
-  const config = getCatalogMegaMenu(segment, !!isLoggedIn);
+  const config = getCatalogMegaMenu(!!isLoggedIn);
 
   return (
     <div className="relative group/mega ml-2">
@@ -133,7 +130,7 @@ export function CatalogMegaMenuDesktop({
         <ChevronDown className="w-3 h-3 opacity-70 transition-transform duration-300 group-hover/mega:rotate-180" />
       </Link>
 
-      <div className="absolute top-full right-0 pt-2 w-[min(920px,calc(100vw-2rem))] opacity-0 invisible -translate-y-2 pointer-events-none group-hover/mega:opacity-100 group-hover/mega:visible group-hover/mega:translate-y-0 group-hover/mega:pointer-events-auto transition-all duration-200 ease-out z-50">
+      <div className="absolute top-full right-0 pt-2 w-[min(1080px,calc(100vw-1.5rem))] opacity-0 invisible -translate-y-2 pointer-events-none group-hover/mega:opacity-100 group-hover/mega:visible group-hover/mega:translate-y-0 group-hover/mega:pointer-events-auto transition-all duration-200 ease-out z-50">
         <CatalogMegaPanel config={config} onOpenWizard={onOpenWizard} />
       </div>
     </div>
@@ -142,17 +139,15 @@ export function CatalogMegaMenuDesktop({
 
 /** Mobile list of mega categories */
 export function CatalogMegaMenuMobile({
-  segment,
   isLoggedIn,
   onNavigate,
   onOpenWizard,
 }: {
-  segment: PropertySegment;
   isLoggedIn?: boolean;
   onNavigate: () => void;
   onOpenWizard?: () => void;
 }) {
-  const config = getCatalogMegaMenu(segment, !!isLoggedIn);
+  const config = getCatalogMegaMenu(!!isLoggedIn);
 
   return (
     <div className="mb-3 space-y-3">

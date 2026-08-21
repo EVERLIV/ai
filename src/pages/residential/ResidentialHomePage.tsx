@@ -24,6 +24,8 @@ import residentialBannerDomnd from "@/assets/residential-banner-domnd.png";
 import residentialCategoryApartment from "@/assets/residential-category-apartment.jpg";
 import residentialCategoryHouse from "@/assets/residential-category-house.jpg";
 import residentialCategoryRoom from "@/assets/residential-category-room.jpg";
+import landImg from "@/assets/property-land.jpg";
+import { getPropertySegment, propertyMatchesTypes } from "@/lib/propertyTypes";
 
 const categories = [
   {
@@ -50,15 +52,28 @@ const categories = [
     image: residentialCategoryRoom,
     imageAlt: "Комната для аренды",
   },
+  {
+    title: "Участки",
+    href: "/zhilaya/uchastki",
+    body: "Жилые участки и вся коммерческая земля региона.",
+    type: "Участок",
+    image: landImg,
+    imageAlt: "Земельный участок",
+  },
 ];
 
 export default function ResidentialHomePage() {
   const { data: properties = [], isLoading } = useProperties({ segment: "residential" });
-  const featured = properties.slice(0, 12);
+  const featured = properties
+    .filter((p) => getPropertySegment(p) === "residential")
+    .slice(0, 12);
   const countsByType = new Map<string, number>();
-  properties.forEach((property) => {
-    countsByType.set(property.type, (countsByType.get(property.type) || 0) + 1);
-  });
+  for (const item of categories) {
+    countsByType.set(
+      item.type,
+      properties.filter((p) => propertyMatchesTypes(p, [item.type])).length,
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">

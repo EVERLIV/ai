@@ -96,8 +96,9 @@ export default function HeroSection() {
             Аренда и продажа<br />
             <span className="text-primary">коммерческой и жилой недвижимости</span>
           </h1>
-          <p className="text-sm sm:text-base text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed">
-            Офисы, торговые площади, склады, квартиры, дома и комнаты в Иркутске и области
+          <p className="text-sm sm:text-base text-muted-foreground mb-8 max-w-lg mx-auto leading-relaxed">
+            Портал от агентства недвижимости Иркутска и области: бесплатный доступ к объектам
+            без переплат на агрегаторах и лишних комиссий
           </p>
 
           {/* Search block */}

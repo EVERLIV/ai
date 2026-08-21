@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS public.agency_managers (
   full_name TEXT NOT NULL DEFAULT '',
   phone TEXT NOT NULL DEFAULT '',
   photo_url TEXT,
+  property_types TEXT[] NOT NULL DEFAULT '{}',
   sort_order INTEGER NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
