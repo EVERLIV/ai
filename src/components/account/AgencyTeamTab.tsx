@@ -8,8 +8,12 @@ import {
 } from "@/hooks/useAgency";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Loader2, Trash2, UserPlus } from "lucide-react";
+import { Loader2, Mail, Trash2, UserPlus } from "lucide-react";
 import type { AgencyMemberRole } from "@/lib/agencyApi";
+import {
+  buildAgencyInviteLink,
+  sendAgencyInviteEmail,
+} from "@/lib/sendAgencyInviteEmail";
 
 const ROLE_LABELS: Record<AgencyMemberRole, string> = {
   owner: "Владелец",
@@ -22,8 +26,13 @@ export default function AgencyTeamTab() {
   const { user } = useAuth();
   const { data } = useMyAgency();
   const agencyId = data?.agency.id;
+  const agencyName = data?.agency.name || "Агентство";
   const myRole = data?.membership.role;
   const canManage = myRole === "owner" || myRole === "admin";
+  const invitedByName =
+    (user?.user_metadata?.full_name as string | undefined)?.trim() ||
+    user?.email ||
+    "";
 
   const { data: members = [], isLoading: membersLoading } = useAgencyMembers(agencyId);
   const { data: invites = [] } = useAgencyInvites(agencyId);
@@ -31,17 +40,51 @@ export default function AgencyTeamTab() {
 
   const [email, setEmail] = useState("");
   const [role, setInviteRole] = useState<AgencyMemberRole>("member");
+  const [resendingId, setResendingId] = useState<string | null>(null);
+
+  const sendInviteMail = async (opts: {
+    to: string;
+    token: string;
+    role: AgencyMemberRole;
+    expiresAt?: string | null;
+  }) => {
+    const inviteUrl = buildAgencyInviteLink(opts.token);
+    return sendAgencyInviteEmail({
+      to: opts.to,
+      agencyName,
+      roleLabel: ROLE_LABELS[opts.role] || opts.role,
+      inviteUrl,
+      invitedByName,
+      expiresAt: opts.expiresAt,
+    });
+  };
 
   const onInvite = async () => {
     if (!email.trim()) return;
     try {
       const row = await invite.mutateAsync({ email: email.trim(), role });
-      const link = `${window.location.origin}/auth?tab=register&invite=${row.token}`;
+      const link = buildAgencyInviteLink(row.token);
       await navigator.clipboard.writeText(link).catch(() => undefined);
-      toast({
-        title: "Приглашение создано",
-        description: "Ссылка скопирована в буфер. Отправьте её сотруднику.",
+
+      const mail = await sendInviteMail({
+        to: row.email,
+        token: row.token,
+        role: row.role,
+        expiresAt: row.expires_at,
       });
+
+      if (mail.ok) {
+        toast({
+          title: "Приглашение отправлено",
+          description: `Письмо ушло на ${row.email}. Ссылка также скопирована.`,
+        });
+      } else {
+        toast({
+          title: "Приглашение создано, письмо не ушло",
+          description: `${mail.error}. Ссылка скопирована — отправьте вручную.`,
+          variant: "destructive",
+        });
+      }
       setEmail("");
     } catch (err) {
       toast({
@@ -187,8 +230,43 @@ export default function AgencyTeamTab() {
                 <Button
                   size="sm"
                   variant="ghost"
+                  disabled={resendingId === inv.id}
                   onClick={async () => {
-                    const link = `${window.location.origin}/auth?tab=register&invite=${inv.token}`;
+                    setResendingId(inv.id);
+                    try {
+                      const mail = await sendInviteMail({
+                        to: inv.email,
+                        token: inv.token,
+                        role: inv.role,
+                        expiresAt: inv.expires_at,
+                      });
+                      if (mail.ok) {
+                        toast({ title: "Письмо отправлено", description: inv.email });
+                      } else {
+                        toast({
+                          title: "Не удалось отправить",
+                          description: mail.error,
+                          variant: "destructive",
+                        });
+                      }
+                    } finally {
+                      setResendingId(null);
+                    }
+                  }}
+                  className="gap-1"
+                >
+                  {resendingId === inv.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Mail className="w-3.5 h-3.5" />
+                  )}
+                  Email
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    const link = buildAgencyInviteLink(inv.token);
                     await navigator.clipboard.writeText(link).catch(() => undefined);
                     toast({ title: "Ссылка скопирована" });
                   }}

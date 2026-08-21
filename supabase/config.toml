@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.notify-property-email]
 verify_jwt = false
+
+[functions.send-agency-invite]
+verify_jwt = false
