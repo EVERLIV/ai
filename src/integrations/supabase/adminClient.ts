@@ -121,9 +121,33 @@ export const supabaseAdmin = {
       return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
     },
   },
+  async rpc(fn: string, params: Record<string, unknown> = {}) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify(params),
+    });
+    const text = await res.text();
+    let data: any = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = text;
+    }
+    if (!res.ok) {
+      const msg =
+        typeof data === "object" && data
+          ? String(data.message || data.msg || data.error || data.hint || JSON.stringify(data))
+          : `HTTP ${res.status}`;
+      return { data: null, error: { message: msg, ...(typeof data === "object" && data ? data : {}) } };
+    }
+    return { data, error: null };
+  },
   auth: {
     admin: {
       async createUser(attrs: { email: string; password: string; full_name?: string }) {
+        // Prefer GoTrue Admin; if gateway returns 403, create via Auth signup is not available
+        // with email_confirm — use REST only after SQL helper exists is not enough for create.
         const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
           method: "POST",
           headers: authHeaders,
@@ -134,15 +158,58 @@ export const supabaseAdmin = {
             user_metadata: attrs.full_name ? { full_name: attrs.full_name } : {},
           }),
         });
-        const data = await res.json();
-        if (!res.ok) return { data: null, error: data };
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          return {
+            data: null,
+            error: {
+              message:
+                res.status === 403
+                  ? "Auth Admin API закрыт (403). Создание пользователей через /auth/v1/admin недоступно — откройте маршрут в Kong или создайте юзера через регистрацию."
+                  : String((data as any)?.msg || (data as any)?.message || `HTTP ${res.status}`),
+              ...((typeof data === "object" && data) || {}),
+            },
+          };
+        }
         return { data, error: null };
       },
-      async listUsers({ perPage = 1000 } = {}) {
-        const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?per_page=${perPage}`, { headers: authHeaders });
-        const data = await res.json();
-        if (!res.ok) return { data: { users: [] }, error: data };
-        return { data: { users: data.users ?? data }, error: null };
+      async listUsers({ perPage = 1000, page = 1 } = {}) {
+        const res = await fetch(
+          `${SUPABASE_URL}/auth/v1/admin/users?per_page=${perPage}&page=${page}`,
+          { headers: authHeaders },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          return { data: { users: data.users ?? data }, error: null };
+        }
+
+        // Fallback: gateway often blocks /auth/v1/admin (403) — use SECURITY DEFINER RPC
+        const { data, error } = await supabaseAdmin.rpc("admin_list_users");
+        if (error) {
+          return {
+            data: { users: [] as any[] },
+            error: {
+              message:
+                res.status === 403
+                  ? `Auth Admin 403. Примените supabase/self_hosted_admin_user_rpc.sql и обновите страницу. RPC: ${error.message}`
+                  : `Auth Admin HTTP ${res.status}. RPC: ${error.message}`,
+            },
+          };
+        }
+        const rows = Array.isArray(data) ? data : [];
+        // Client-side pagination to keep call sites unchanged
+        const start = (page - 1) * perPage;
+        const users = rows.slice(start, start + perPage).map((u: any) => ({
+          id: u.id,
+          email: u.email,
+          phone: u.phone,
+          created_at: u.created_at,
+          last_sign_in_at: u.last_sign_in_at,
+          email_confirmed_at: u.email_confirmed_at,
+          user_metadata: u.raw_user_meta_data ?? {},
+          app_metadata: {},
+        }));
+        return { data: { users }, error: null };
       },
       async updateUserById(userId: string, attrs: { password?: string; email_confirm?: boolean }) {
         const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
@@ -150,16 +217,72 @@ export const supabaseAdmin = {
           headers: authHeaders,
           body: JSON.stringify(attrs),
         });
-        const data = await res.json();
-        if (!res.ok) return { data: null, error: data };
-        return { data, error: null };
+        if (res.ok) {
+          const data = await res.json();
+          return { data, error: null };
+        }
+
+        if (attrs.password) {
+          const { error } = await supabaseAdmin.rpc("admin_set_user_password", {
+            p_user_id: userId,
+            p_password: attrs.password,
+          });
+          if (error) {
+            return {
+              data: null,
+              error: {
+                message:
+                  res.status === 403
+                    ? `Auth Admin 403. Нужен RPC admin_set_user_password (self_hosted_admin_user_rpc.sql). ${error.message}`
+                    : error.message,
+              },
+            };
+          }
+        }
+        if (attrs.email_confirm) {
+          const { error } = await supabaseAdmin.rpc("admin_confirm_user", { p_user_id: userId });
+          if (error) {
+            return {
+              data: null,
+              error: {
+                message:
+                  res.status === 403
+                    ? `Auth Admin 403. Нужен RPC admin_confirm_user. ${error.message}`
+                    : error.message,
+              },
+            };
+          }
+        }
+        if (!attrs.password && !attrs.email_confirm) {
+          const data = await res.json().catch(() => ({}));
+          return { data: null, error: data };
+        }
+        return { data: { id: userId }, error: null };
       },
       async deleteUser(userId: string) {
-        const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
-          method: "DELETE",
-          headers: authHeaders,
-        });
-        if (!res.ok) { const data = await res.json(); return { error: data }; }
+        // Hard-delete: иначе на self-hosted юзер может остаться «мягко удалённым»
+        const res = await fetch(
+          `${SUPABASE_URL}/auth/v1/admin/users/${userId}?should_soft_delete=false`,
+          { method: "DELETE", headers: authHeaders },
+        );
+        if (res.ok) return { error: null };
+
+        const { error } = await supabaseAdmin.rpc("admin_delete_user", { p_user_id: userId });
+        if (error) {
+          const data = await res.json().catch(() => ({}));
+          const authMsg =
+            typeof data === "object" && data
+              ? String((data as any).msg || (data as any).message || (data as any).error || "")
+              : "";
+          return {
+            error: {
+              message:
+                res.status === 403
+                  ? `Auth Admin 403. Примените self_hosted_admin_user_rpc.sql. RPC: ${error.message}`
+                  : error.message || authMsg || `HTTP ${res.status}`,
+            },
+          };
+        }
         return { error: null };
       },
     },
