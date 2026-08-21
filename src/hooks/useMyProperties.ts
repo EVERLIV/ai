@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchModerationQueue } from "@/lib/adminModeration";
 import { fetchMyPropertiesApi } from "@/lib/userPropertyApi";
+import { fetchMembershipApi } from "@/lib/agencyApi";
 import type { Tables } from "@/integrations/supabase/types";
 export type MyProperty = Tables<"properties">;
 
@@ -12,7 +13,8 @@ export function useMyProperties() {
     queryKey: ["my-properties", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const data = await fetchMyPropertiesApi(user!.id);
+      const membership = await fetchMembershipApi(user!.id);
+      const data = await fetchMyPropertiesApi(user!.id, membership?.agency_id);
       return data as MyProperty[];
     },
   });

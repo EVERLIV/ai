@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, ArrowRight, Building2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
+import BrandMark from "@/components/BrandMark";
 
 export default function ResetPassword() {
   const [step, setStep] = useState<"request" | "new-password">("request");
@@ -62,9 +63,7 @@ export default function ResetPassword() {
         {/* Logo */}
         <div className="flex items-center justify-between mb-10">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">А</span>
-            </div>
+            <BrandMark className="w-9 h-9" />
             <span className="font-display text-lg font-bold text-foreground">
               АРЕНДА<span className="text-primary">СИТИ</span>
             </span>

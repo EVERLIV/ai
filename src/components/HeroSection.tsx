@@ -92,12 +92,6 @@ export default function HeroSection() {
       <div className="relative z-10 w-full container mx-auto px-4 lg:px-8 py-16 sm:py-20">
         <div className={`max-w-2xl mx-auto text-center ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
 
-          {/* Badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/8 border border-primary/20 text-primary text-[11px] font-semibold uppercase tracking-widest mb-5">
-            <span className="w-1.5 h-1.5 bg-primary" />
-            Иркутск · Ангарск · Шелехов
-          </div>
-
           <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-4">
             Аренда и продажа<br />
             <span className="text-primary">коммерческой и жилой недвижимости</span>

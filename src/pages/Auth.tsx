@@ -6,6 +6,7 @@ import { describeAuthError } from "@/lib/authErrors";
 import { Eye, EyeOff, ArrowRight, ArrowLeft, Building2, ShieldCheck, Heart, FileText } from "lucide-react";
 import heroImg from "@/assets/hero-commercial.jpg";
 import SeoHead from "@/components/SeoHead";
+import BrandMark from "@/components/BrandMark";
 
 const BENEFITS = [
   { icon: Heart, text: "Сохраняйте понравившиеся объекты в избранное" },
@@ -21,7 +22,7 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [accountType, setAccountType] = useState<"owner" | "realtor">("owner");
+  const [accountType, setAccountType] = useState<"owner" | "agency">("owner");
   const [agencyName, setAgencyName] = useState("");
   const [agencyStaffCount, setAgencyStaffCount] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -31,8 +32,17 @@ export default function Auth() {
   const [resendBusy, setResendBusy] = useState(false);
   const navigate = useNavigate();
   const { search } = useLocation();
-  const redirectTo = new URLSearchParams(search).get("redirect") || "/";
+  const searchParams = new URLSearchParams(search);
+  const redirectTo = searchParams.get("redirect") || "/";
+  const inviteToken = searchParams.get("invite") || "";
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (inviteToken) {
+      setAccountType("agency");
+      setTab("register");
+    }
+  }, [inviteToken]);
 
   useEffect(() => {
     const hash = window.location.hash;
@@ -88,9 +98,10 @@ export default function Auth() {
           data: {
             full_name: fullName,
             phone,
-            account_type: accountType,
-            agency_name: accountType === "realtor" ? agencyName.trim() : "",
-            agency_staff_count: accountType === "realtor" ? agencyStaffCount.trim() : "",
+            account_type: inviteToken ? "agency" : accountType,
+            agency_name: accountType === "agency" && !inviteToken ? agencyName.trim() : "",
+            agency_staff_count: accountType === "agency" && !inviteToken ? agencyStaffCount.trim() : "",
+            invite_token: inviteToken || "",
           },
           emailRedirectTo: `${window.location.origin}/auth`,
         },
@@ -165,9 +176,7 @@ export default function Auth() {
         {/* Logo + back */}
         <div className="flex items-center justify-between mb-10">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">А</span>
-            </div>
+            <BrandMark className="w-9 h-9" />
             <span className="font-display text-lg font-bold text-foreground">
               АРЕНДА<span className="text-primary">СИТИ</span>
             </span>
@@ -254,12 +263,13 @@ export default function Auth() {
             <h1 className="font-display text-2xl font-bold text-foreground mb-1">Создать аккаунт</h1>
             <p className="text-sm text-muted-foreground mb-7">Бесплатно — доступ к избранному и заявкам</p>
             <form onSubmit={handleRegister} className="space-y-4">
+              {!inviteToken && (
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1.5">Вы —</label>
                 <div className="grid grid-cols-2 gap-2">
                   {([
                     ["owner", "Собственник"],
-                    ["realtor", "Риелтор"],
+                    ["agency", "Агентство"],
                   ] as const).map(([key, label]) => (
                     <button
                       key={key}
@@ -276,7 +286,13 @@ export default function Auth() {
                   ))}
                 </div>
               </div>
-              {accountType === "realtor" && (
+              )}
+              {inviteToken && (
+                <p className="text-xs text-muted-foreground rounded-md border border-border bg-muted/40 px-3 py-2">
+                  Вы регистрируетесь по приглашению в агентство.
+                </p>
+              )}
+              {accountType === "agency" && !inviteToken && (
                 <>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground block mb-1.5">

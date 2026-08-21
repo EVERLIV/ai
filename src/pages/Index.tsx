@@ -15,7 +15,7 @@ import ConsultationWidget from "@/components/ConsultationWidget";
 import SiteFooter from "@/components/SiteFooter";
 import SeoHead from "@/components/SeoHead";
 import OrganizationJsonLd from "@/components/OrganizationJsonLd";
-import { SITE } from "@/config/site";
+import { absoluteUrl } from "@/config/site";
 import { Link } from "react-router-dom";
 import { Home } from "lucide-react";
 
@@ -24,7 +24,11 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SeoHead title={SITE.title} description={SITE.description} />
+      <SeoHead
+        title="Коммерческая недвижимость в Иркутске — АрендаСити"
+        description="Аренда и продажа офисов, торговых площадей, складов и земли в Иркутске и области. Каталог коммерческой недвижимости АрендаСити."
+        url={absoluteUrl("/kommercheskaya")}
+      />
       <OrganizationJsonLd />
       <SiteHeader />
       <HeroSection />

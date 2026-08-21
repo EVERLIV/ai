@@ -3,14 +3,20 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import AIPropertyWizard from "@/components/AIPropertyWizard";
 import { useProperties } from "@/hooks/useProperties";
+import type { PropertySegment } from "@/config/propertySegments";
 
 interface AIWizardModalProps {
   open: boolean;
   onClose: () => void;
+  segment?: PropertySegment;
 }
 
-export default function AIWizardModal({ open, onClose }: AIWizardModalProps) {
-  const { data: properties = [] } = useProperties({ segment: "commercial" });
+export default function AIWizardModal({
+  open,
+  onClose,
+  segment = "commercial",
+}: AIWizardModalProps) {
+  const { data: properties = [] } = useProperties({ segment });
 
   useEffect(() => {
     if (!open) return;
@@ -30,18 +36,15 @@ export default function AIWizardModal({ open, onClose }: AIWizardModalProps) {
       className="fixed inset-0 z-[9999] flex items-end justify-center p-0 sm:items-center sm:p-4"
       style={{ animation: "ai-backdrop-in 200ms ease forwards" }}
     >
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal */}
       <div
         className="relative w-full max-w-lg bg-card shadow-[0_24px_64px_-12px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col h-[92dvh] rounded-t-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-none"
         style={{ animation: "ai-modal-in 250ms cubic-bezier(0.34,1.56,0.64,1) forwards" }}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 sm:px-5 sm:py-4">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-primary flex items-center justify-center">
@@ -51,7 +54,11 @@ export default function AIWizardModal({ open, onClose }: AIWizardModalProps) {
             </div>
             <div>
               <span className="text-sm font-bold text-foreground">ИИ-подбор объекта</span>
-              <p className="text-[11px] text-muted-foreground">Подбор по параметрам за 1 минуту</p>
+              <p className="text-[11px] text-muted-foreground">
+                {segment === "residential"
+                  ? "Подбор жилья по параметрам за 1 минуту"
+                  : "Подбор коммерции по параметрам за 1 минуту"}
+              </p>
             </div>
           </div>
           <button
@@ -62,9 +69,8 @@ export default function AIWizardModal({ open, onClose }: AIWizardModalProps) {
           </button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          <AIPropertyWizard properties={properties} onClose={onClose} />
+          <AIPropertyWizard properties={properties} onClose={onClose} segment={segment} />
         </div>
       </div>
 

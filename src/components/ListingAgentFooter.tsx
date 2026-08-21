@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Building2, MapPin } from "lucide-react";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -31,49 +32,80 @@ export default function ListingAgentFooter({
     avatarUrl: DEFAULT_AGENT.avatar,
     isVerified: DEFAULT_AGENT.isVerified,
     isRealtor: false,
+    isAgency: false,
+    agencyId: null,
     objectsCount: 0,
   };
 
-  const isAgencyListing = agent.isRealtor && !extrasRecord?.owner_user_id;
+  const isAgencyListing = (agent.isAgency || agent.isRealtor) && !extrasRecord?.owner_user_id;
   const objectsCount = isAgencyListing
     ? Math.max(agent.objectsCount, catalogCount ?? 0)
     : agent.objectsCount;
 
   const avatar = agent.avatarUrl || consultantAvatar;
   const objectsLabel = formatAgentObjectsLabel(objectsCount, { isAgency: isAgencyListing });
+  const agencyHref = agent.agencyId ? `/agentstvo/${agent.agencyId}` : null;
+
+  const nameBlock = (
+    <>
+      <div className="flex items-center gap-1 min-w-0">
+        {(agent.isAgency || agent.isRealtor) && agent.primaryLabel !== agent.secondaryLabel && (
+          <Building2 className="w-3 h-3 text-primary shrink-0" />
+        )}
+        <span
+          className={cn(
+            "text-xs font-semibold truncate leading-tight",
+            agencyHref ? "text-primary group-hover/agent:underline" : "text-foreground",
+          )}
+        >
+          {agent.primaryLabel}
+        </span>
+        {agent.isVerified && <VerifiedBadge size="sm" showLabel={false} className="shrink-0" />}
+      </div>
+      <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+        {agent.secondaryLabel}
+        {objectsLabel && (
+          <>
+            <span className="mx-1 opacity-40">·</span>
+            {objectsLabel}
+          </>
+        )}
+      </p>
+    </>
+  );
 
   return (
     <div className={cn("mt-auto pt-3", className)}>
       <div className={cn("flex items-center gap-2.5", compact ? "py-1" : "py-1.5")}>
-        <img
-          src={avatar}
-          alt={agent.primaryLabel}
-          className={cn(
-            "rounded-lg object-cover shrink-0 bg-muted",
-            compact ? "w-8 h-8" : "w-9 h-9",
-          )}
-        />
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1 min-w-0">
-            {agent.isRealtor && agent.primaryLabel !== agent.secondaryLabel && (
-              <Building2 className="w-3 h-3 text-primary shrink-0" />
-            )}
-            <span className="text-xs font-semibold text-foreground truncate leading-tight">
-              {agent.primaryLabel}
-            </span>
-            {agent.isVerified && <VerifiedBadge size="sm" showLabel={false} className="shrink-0" />}
-          </div>
-          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-            {agent.secondaryLabel}
-            {objectsLabel && (
-              <>
-                <span className="mx-1 opacity-40">·</span>
-                {objectsLabel}
-              </>
-            )}
-          </p>
-        </div>
+        {agencyHref ? (
+          <Link
+            to={agencyHref}
+            onClick={(e) => e.stopPropagation()}
+            className="group/agent flex items-center gap-2.5 min-w-0 flex-1"
+          >
+            <img
+              src={avatar}
+              alt={agent.primaryLabel}
+              className={cn(
+                "rounded-lg object-cover shrink-0 bg-muted",
+                compact ? "w-8 h-8" : "w-9 h-9",
+              )}
+            />
+            <div className="min-w-0 flex-1">{nameBlock}</div>
+          </Link>
+        ) : (
+          <>
+            <img
+              src={avatar}
+              alt={agent.primaryLabel}
+              className={cn(
+                "rounded-lg object-cover shrink-0 bg-muted",
+                compact ? "w-8 h-8" : "w-9 h-9",
+              )}
+            />
+            <div className="min-w-0 flex-1">{nameBlock}</div>
+          </>
+        )}
 
         <div className="shrink-0 flex flex-col items-end gap-1 max-w-[40%]">
           {district && (

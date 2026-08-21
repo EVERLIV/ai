@@ -26,6 +26,7 @@ describe("getListingAgentDisplay", () => {
       primaryLabel: "АРЕНДА СИТИ",
       secondaryLabel: "Анастасия Романова",
       isRealtor: true,
+      isAgency: true,
       isVerified: true,
     });
   });
@@ -42,6 +43,6 @@ describe("getListingAgentDisplay", () => {
     const agent = getListingAgentDisplay(extras);
 
     // Assert
-    expect(agent).toMatchObject({ primaryLabel: "Иван Петров", isRealtor: false });
+    expect(agent).toMatchObject({ primaryLabel: "Иван Петров", isRealtor: false, isAgency: false });
   });
 });

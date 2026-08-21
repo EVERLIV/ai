@@ -11,7 +11,7 @@ import { COMPANY, CONTACTS } from "@/config/company";
 export const DEFAULT_AGENT = {
   name: "Анастасия Романова",
   /** Тип аккаунта в терминах ACCOUNT_TYPE_LABELS. */
-  accountType: "realtor" as const,
+  accountType: "agency" as const,
   agencyName: COMPANY.brand,
   isVerified: true,
   avatar: consultantAvatar,

@@ -15,7 +15,6 @@ import {
   listPropertyPath,
   placementCtaPath,
   loginToAddPropertyPath,
-  modeToRequestType,
 } from "@/lib/listPropertyLinks";
 
 interface Props {
@@ -124,7 +123,6 @@ export default function ListPropertyBlock({ variant = "section", segment = "comm
   const { user } = useAuth();
   const mode = parseMode(search);
 
-  const isPage = variant === "page";
   const isResidential = segment === "residential";
   const basePath = listPropertyPath(segment);
 
@@ -142,7 +140,7 @@ export default function ListPropertyBlock({ variant = "section", segment = "comm
   return (
     <div
       ref={ref}
-      className={`${isPage ? "pt-0 pb-24 md:pb-0" : ""} ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}
+      className={`${isVisible ? "animate-fade-in-up" : "opacity-0"}`}
     >
       {/* ── HERO ─────────────────────────────────────────── */}
       <section className="bg-muted/60 border-b border-border py-12 lg:py-16">
@@ -242,14 +240,6 @@ export default function ListPropertyBlock({ variant = "section", segment = "comm
           </p>
         </div>
       )}
-
-      {mode && (
-        <StickyCta
-          segment={segment}
-          mode={mode}
-          isLoggedIn={!!user}
-        />
-      )}
     </div>
   );
 }
@@ -345,9 +335,9 @@ function FreeListingContent({
                 ))}
               </ul>
 
-              <PrimaryCta to={ctaTo} loggedIn={user} mode="rent" className="hidden md:inline-flex" />
+              <PrimaryCta to={ctaTo} loggedIn={user} mode="rent" className="w-full sm:w-auto" />
               {!user && (
-                <p className="text-xs text-muted-foreground hidden md:block">
+                <p className="text-xs text-muted-foreground">
                   Уже есть аккаунт?{" "}
                   <Link to={loginTo} className="text-primary hover:underline">Войти</Link>
                 </p>
@@ -357,7 +347,7 @@ function FreeListingContent({
             <div className="bg-card border border-border p-6 sm:p-7">
               <h3 className="font-display text-lg font-bold text-foreground mb-1">Как это работает</h3>
               <p className="text-xs text-muted-foreground mb-6">Быстрый старт для собственника</p>
-              <ol className="space-y-5 mb-7">
+              <ol className="space-y-5">
                 {steps.map((s, i) => (
                   <li key={s.title} className="flex gap-4">
                     <span className="shrink-0 w-7 h-7 bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
@@ -370,13 +360,6 @@ function FreeListingContent({
                   </li>
                 ))}
               </ol>
-              <PrimaryCta to={ctaTo} loggedIn={user} mode="rent" className="w-full md:hidden" />
-              {!user && (
-                <p className="text-xs text-muted-foreground text-center mt-3 md:hidden">
-                  Уже есть аккаунт?{" "}
-                  <Link to={loginTo} className="text-primary hover:underline">Войти</Link>
-                </p>
-              )}
             </div>
           </div>
         </div>
@@ -547,32 +530,6 @@ function PrimaryCta({
       {loggedIn ? <Building2 className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
       {label}
     </Link>
-  );
-}
-
-function StickyCta({
-  segment,
-  mode,
-  isLoggedIn,
-}: {
-  segment: PropertySegment;
-  mode: ListPropertyMode;
-  isLoggedIn: boolean;
-}) {
-  const to = placementCtaPath(segment, mode, isLoggedIn);
-  const requestType = modeToRequestType(mode);
-  const loginTo = loginToAddPropertyPath(segment, requestType);
-
-  return (
-    <div className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur-md p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-      <PrimaryCta to={to} loggedIn={isLoggedIn} mode={mode} className="w-full" />
-      {!isLoggedIn && (
-        <p className="text-[11px] text-muted-foreground text-center mt-2">
-          Уже есть аккаунт?{" "}
-          <Link to={loginTo} className="text-primary hover:underline">Войти</Link>
-        </p>
-      )}
-    </div>
   );
 }
 

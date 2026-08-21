@@ -84,7 +84,7 @@ export async function adminInsertCrmLead(payload: Record<string, unknown>) {
 export async function fetchClientProfiles() {
   const select = encodeURIComponent("*");
   let res = await fetch(
-    `${SUPABASE_URL}/rest/v1/profiles?select=${select}&account_type=in.(owner,realtor)&order=created_at.desc`,
+    `${SUPABASE_URL}/rest/v1/profiles?select=${select}&account_type=in.(owner,realtor,agency)&order=created_at.desc`,
     { headers: adminHeaders },
   );
   let data = await res.json();
@@ -134,7 +134,7 @@ export async function fetchPropertyCountsBySubmitter(): Promise<Record<string, n
 export interface OwnerListingCardData {
   full_name: string;
   avatar_url: string | null;
-  account_type: "owner" | "realtor";
+  account_type: "owner" | "realtor" | "agency";
   agency_name: string | null;
   agency_about: string | null;
   agency_staff_count: number | null;
@@ -142,7 +142,7 @@ export interface OwnerListingCardData {
   published_objects_count: number;
 }
 
-/** Актуальные данные собственника/риелтора для карточки на объекте */
+/** Актуальные данные собственника/агентства для карточки на объекте */
 export async function fetchOwnerListingCard(userId: string): Promise<OwnerListingCardData | null> {
   const profileSelect = encodeURIComponent(
     "full_name,avatar_url,account_type,agency_name,agency_about,agency_staff_count,verification_status",
@@ -164,10 +164,14 @@ export async function fetchOwnerListingCard(userId: string): Promise<OwnerListin
   const props = await countRes.json();
   const publishedCount = Array.isArray(props) ? props.length : 0;
 
+  const rawType = String(p.account_type || "owner");
+  const account_type =
+    rawType === "agency" || rawType === "realtor" ? (rawType as "agency" | "realtor") : "owner";
+
   return {
     full_name: String(p.full_name || ""),
     avatar_url: (p.avatar_url as string | null) ?? null,
-    account_type: (p.account_type === "realtor" ? "realtor" : "owner") as "owner" | "realtor",
+    account_type,
     agency_name: (p.agency_name as string | null) ?? null,
     agency_about: (p.agency_about as string | null) ?? null,
     agency_staff_count: typeof p.agency_staff_count === "number" ? p.agency_staff_count : null,

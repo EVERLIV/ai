@@ -8,12 +8,16 @@ import ProfileTab from "@/components/account/ProfileTab";
 import MyLeadsTab from "@/components/account/MyLeadsTab";
 import StatsTab from "@/components/account/StatsTab";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import { Heart, FileText, User, LogOut, MapPin, Maximize2, ChevronRight, Building2, BarChart3 } from "lucide-react";
+import { Heart, FileText, User, LogOut, MapPin, Maximize2, ChevronRight, Building2, BarChart3, Users, Briefcase, Landmark } from "lucide-react";
 import { useProperties } from "@/hooks/useProperties";
 import { useProfile, ACCOUNT_TYPE_LABELS, isProfileVerified } from "@/hooks/useProfile";
+import { useMyAgency } from "@/hooks/useAgency";
 import SeoHead from "@/components/SeoHead";
+import AgencyProfileTab from "@/components/account/AgencyProfileTab";
+import AgencyTeamTab from "@/components/account/AgencyTeamTab";
+import AgencyManagersTab from "@/components/account/AgencyManagersTab";
 
-const TABS = [
+const OWNER_TABS = [
   { key: "favorites", label: "Избранное", icon: Heart },
   { key: "properties", label: "Мои объекты", icon: Building2 },
   { key: "requests", label: "Мои заявки", icon: FileText },
@@ -21,9 +25,20 @@ const TABS = [
   { key: "profile", label: "Мои данные", icon: User },
 ] as const;
 
-type Tab = typeof TABS[number]["key"];
+const AGENCY_EXTRA_TABS = [
+  { key: "agency", label: "Агентство", icon: Landmark },
+  { key: "team", label: "Команда", icon: Users },
+  { key: "managers", label: "Менеджеры", icon: Briefcase },
+] as const;
 
-const VALID_TABS = new Set<string>(TABS.map((t) => t.key));
+type Tab =
+  | (typeof OWNER_TABS)[number]["key"]
+  | (typeof AGENCY_EXTRA_TABS)[number]["key"];
+
+const VALID_TABS = new Set<string>([
+  ...OWNER_TABS.map((t) => t.key),
+  ...AGENCY_EXTRA_TABS.map((t) => t.key),
+]);
 
 export default function AccountPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -32,6 +47,14 @@ export default function AccountPage() {
   const [tab, setTab] = useState<Tab>("favorites");
   const { data: properties = [] } = useProperties();
   const { data: profile } = useProfile();
+  const { data: myAgency } = useMyAgency();
+  const isAgencyAccount =
+    profile?.account_type === "agency" ||
+    profile?.account_type === "realtor" ||
+    !!myAgency;
+  const tabs = isAgencyAccount
+    ? [...OWNER_TABS.slice(0, 4), ...AGENCY_EXTRA_TABS, OWNER_TABS[4]]
+    : [...OWNER_TABS];
   const searchParams = new URLSearchParams(location.search);
   const requestedSegment = searchParams.get("segment") === "residential" ? "residential" : "commercial";
   const requestTypeParam = searchParams.get("request_type");
@@ -113,17 +136,17 @@ export default function AccountPage() {
                   <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary font-medium">
                     {ACCOUNT_TYPE_LABELS[profile?.account_type || "owner"]}
                   </span>
-                  {isProfileVerified(profile?.verification_status) && (
-                    <VerifiedBadge showLabel={false} />
-                  )}
+                  {isProfileVerified(
+                    myAgency?.agency.verification_status || profile?.verification_status,
+                  ) && <VerifiedBadge showLabel={false} />}
                 </div>
               </div>
 
               {/* Nav */}
-              {TABS.map(({ key, label, icon: Icon }) => (
+              {tabs.map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
-                  onClick={() => switchTab(key)}
+                  onClick={() => switchTab(key as Tab)}
                   className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
                     tab === key ? "text-primary font-medium" : "text-foreground hover:text-primary"
                   }`}
@@ -201,6 +224,12 @@ export default function AccountPage() {
             {tab === "requests" && <MyLeadsTab />}
 
             {tab === "stats" && <StatsTab />}
+
+            {tab === "agency" && <AgencyProfileTab />}
+
+            {tab === "team" && <AgencyTeamTab />}
+
+            {tab === "managers" && <AgencyManagersTab />}
 
             {tab === "profile" && <ProfileTab />}
           </div>

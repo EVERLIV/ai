@@ -22,8 +22,11 @@ export type PropertySidebarExtras = {
   agent_response_min?: number;
   agent_verified?: boolean;
   agent_avatar_url?: string;
-  agent_account_type?: "owner" | "realtor";
+  agent_account_type?: "owner" | "realtor" | "agency";
   agent_agency_about?: string;
+  agent_phone?: string;
+  agency_id?: string;
+  listing_manager_id?: string;
   owner_user_id?: string;
   cadastral_number?: string;
   land_use?: string;
@@ -36,40 +39,46 @@ export type ListingAgentDisplay = {
   avatarUrl: string | null;
   isVerified: boolean;
   isRealtor: boolean;
+  isAgency: boolean;
+  agencyId: string | null;
   objectsCount: number;
 };
 
-/** Данные собственника/риелтора для карточки в каталоге (из extras объекта) */
+/** Данные собственника/агентства для карточки в каталоге (из extras объекта) */
 export function getListingAgentDisplay(
   extras?: PropertySidebarExtras | Record<string, unknown> | null,
 ): ListingAgentDisplay | null {
   const e = (extras || {}) as PropertySidebarExtras;
   const name = e.agent_name?.trim() || "";
   const company = e.agent_company?.trim() || "";
-  const hasAgent = !!(name || e.owner_user_id);
+  const hasAgent = !!(name || e.owner_user_id || e.agency_id);
   if (!hasAgent) return null;
 
-  // Объекты агентства импортированы без agent_account_type: указана только
-  // компания. Наличие компании без аккаунта собственника — признак риелтора.
-  const isRealtor = e.agent_account_type === "realtor" || (!e.owner_user_id && !!company);
-  const hasAgency = isRealtor && !!company && company !== "Риелтор";
+  const isAgency =
+    e.agent_account_type === "agency" ||
+    e.agent_account_type === "realtor" ||
+    !!e.agency_id ||
+    (!e.owner_user_id && !!company);
+  const isRealtor = isAgency;
+  const hasAgencyBrand =
+    isAgency && !!company && company !== "Риелтор" && company !== "Агентство";
 
   let primaryLabel: string;
   let secondaryLabel: string;
 
-  if (hasAgency) {
+  if (hasAgencyBrand) {
     primaryLabel = company;
-    secondaryLabel = name || ACCOUNT_TYPE_LABELS.realtor;
-  } else if (isRealtor) {
-    primaryLabel = name || ACCOUNT_TYPE_LABELS.realtor;
-    secondaryLabel = ACCOUNT_TYPE_LABELS.realtor;
+    secondaryLabel = name || ACCOUNT_TYPE_LABELS.agency;
+  } else if (isAgency) {
+    primaryLabel = name || company || ACCOUNT_TYPE_LABELS.agency;
+    secondaryLabel = ACCOUNT_TYPE_LABELS.agency;
   } else {
     primaryLabel = name || ACCOUNT_TYPE_LABELS.owner;
     secondaryLabel = ACCOUNT_TYPE_LABELS.owner;
   }
 
   if (secondaryLabel === primaryLabel) {
-    secondaryLabel = isRealtor ? ACCOUNT_TYPE_LABELS.realtor : ACCOUNT_TYPE_LABELS.owner;
+    secondaryLabel = isAgency ? ACCOUNT_TYPE_LABELS.agency : ACCOUNT_TYPE_LABELS.owner;
   }
 
   return {
@@ -78,6 +87,8 @@ export function getListingAgentDisplay(
     avatarUrl: e.agent_avatar_url?.trim() || null,
     isVerified: !!e.agent_verified,
     isRealtor,
+    isAgency,
+    agencyId: e.agency_id?.trim() || null,
     objectsCount: e.agent_objects_count ?? 0,
   };
 }
@@ -164,10 +175,14 @@ export function resolveSidebarDisplay(property: {
     agent_response_min: e.agent_response_min ?? 0,
     agent_verified: !!e.agent_verified,
     agent_avatar_url: e.agent_avatar_url || "",
-    agent_account_type: e.agent_account_type === "realtor" ? "realtor" : "owner",
+    agent_account_type:
+      e.agent_account_type === "agency" || e.agent_account_type === "realtor"
+        ? e.agent_account_type
+        : "owner",
     agent_agency_about: e.agent_agency_about?.trim() || "",
+    agency_id: typeof e.agency_id === "string" ? e.agency_id : "",
     owner_user_id: typeof e.owner_user_id === "string" ? e.owner_user_id : "",
-    showAgent: !!(e.agent_name?.trim() || e.agent_company?.trim() || e.owner_user_id),
+    showAgent: !!(e.agent_name?.trim() || e.agent_company?.trim() || e.owner_user_id || e.agency_id),
   };
 }
 

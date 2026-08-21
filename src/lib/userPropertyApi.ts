@@ -20,7 +20,16 @@ function parseError(data: unknown, res: Response): Error {
   return new Error(`HTTP ${res.status}`);
 }
 
-export async function fetchMyPropertiesApi(userId: string) {
+export async function fetchMyPropertiesApi(userId: string, agencyId?: string | null) {
+  if (agencyId) {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/properties?or=(submitted_by.eq.${userId},agency_id.eq.${agencyId})&select=*&order=created_at.desc`,
+      { headers },
+    );
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw parseError(data, res);
+    return Array.isArray(data) ? data : [];
+  }
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/properties?submitted_by=eq.${userId}&select=*&order=created_at.desc`,
     { headers },
@@ -30,11 +39,16 @@ export async function fetchMyPropertiesApi(userId: string) {
   return Array.isArray(data) ? data : [];
 }
 
-export async function insertMyPropertyApi(userId: string, payload: Record<string, unknown>) {
+export async function insertMyPropertyApi(
+  userId: string,
+  payload: Record<string, unknown>,
+  agencyId?: string | null,
+) {
   const body = {
     ...payload,
     submitted_by: userId,
     client_id: userId,
+    ...(agencyId ? { agency_id: agencyId } : {}),
   };
   const res = await fetch(`${SUPABASE_URL}/rest/v1/properties`, {
     method: "POST",
@@ -52,9 +66,13 @@ export async function updateMyPropertyApi(
   userId: string,
   propertyId: string,
   payload: Record<string, unknown>,
+  agencyId?: string | null,
 ) {
+  const filter = agencyId
+    ? `id=eq.${propertyId}&or=(submitted_by.eq.${userId},agency_id.eq.${agencyId})`
+    : `id=eq.${propertyId}&submitted_by=eq.${userId}`;
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/properties?id=eq.${propertyId}&submitted_by=eq.${userId}`,
+    `${SUPABASE_URL}/rest/v1/properties?${filter}`,
     {
       method: "PATCH",
       headers: { ...headers, Prefer: "return=minimal" },

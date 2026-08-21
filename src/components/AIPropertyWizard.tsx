@@ -10,14 +10,17 @@ import {
   Car, WifiHigh, Snowflake, ShieldCheck, Lightning,
 } from "@phosphor-icons/react";
 import type { DbProperty } from "@/hooks/useProperties";
+import type { PropertySegment } from "@/config/propertySegments";
 import { getPropertyTypes, propertyMatchesTypes } from "@/lib/propertyTypes";
 import { invokePropertyPick, type AIResponse } from "@/lib/aiPropertyPick";
 import { buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
 
-type Deal = "Аренда" | "Продажа" | "Любое";
+type Deal = "Аренда" | "Продажа" | "Посуточно" | "Любое";
 
-const DEALS: Deal[] = ["Аренда", "Продажа", "Любое"];
-const TYPE_ORDER = ["Офис", "Торговая", "Помещение", "Павильон", "Киоск", "Склад", "Производство", "Земля"] as const;
+const COMMERCIAL_DEALS: Deal[] = ["Аренда", "Продажа", "Любое"];
+const RESIDENTIAL_DEALS: Deal[] = ["Аренда", "Продажа", "Посуточно", "Любое"];
+const COMMERCIAL_TYPE_ORDER = ["Офис", "Торговая", "Помещение", "Павильон", "Киоск", "Склад", "Производство", "Земля"] as const;
+const RESIDENTIAL_TYPE_ORDER = ["Квартира", "Дом", "Комната", "Таунхаус", "Апартаменты", "Дача", "Коттедж", "Участок"] as const;
 const STEPS = [
   "Сделка", "Тип", "Сценарий", "Район", "Бюджет", "Площадь", "Класс / Состояние", "Удобства",
 ] as const;
@@ -32,6 +35,14 @@ const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
   Склад: Warehouse,
   Производство: Factory,
   Земля: Tree,
+  Квартира: HouseLine,
+  Дом: HouseLine,
+  Комната: HouseLine,
+  Таунхаус: Buildings,
+  Апартаменты: Buildings,
+  Дача: Tree,
+  Коттедж: HouseLine,
+  Участок: Tree,
 };
 
 const SCENARIO_BY_TYPE: Record<string, string[]> = {
@@ -44,6 +55,14 @@ const SCENARIO_BY_TYPE: Record<string, string[]> = {
   Склад: ["Логистика", "Холодный склад", "Тёплый склад", "Фулфилмент", "Оптовая база"],
   Производство: ["Цех", "Автосервис", "Мебельное производство", "Пищевая линия", "База с офисом"],
   Земля: ["Коммерция", "Под базу / склад", "ИЖС", "Сельхоз", "Участок у трассы"],
+  Квартира: ["Для себя", "Инвестиция", "Сдача в аренду", "Переезд", "Семья"],
+  Дом: ["Для себя", "Дача", "Инвестиция", "Большая семья", "Переезд"],
+  Комната: ["Для себя", "Студент", "Временное жильё", "Экономия"],
+  Таунхаус: ["Для семьи", "Инвестиция", "Переезд"],
+  Апартаменты: ["Для себя", "Инвестиция", "Сдача посуточно"],
+  Дача: ["Отдых", "Сезонное проживание", "Инвестиция"],
+  Коттедж: ["Для семьи", "Постоянное жильё", "Инвестиция"],
+  Участок: ["ИЖС", "Дача", "Инвестиция", "Строительство"],
 };
 
 function uniqueNonEmpty(values: Array<string | null | undefined>): string[] {
@@ -60,8 +79,19 @@ function featureIcon(label: string) {
   return Check;
 }
 
-export default function AIPropertyWizard({ properties, onClose }: { properties: DbProperty[]; onClose?: () => void }) {
+export default function AIPropertyWizard({
+  properties,
+  onClose,
+  segment = "commercial",
+}: {
+  properties: DbProperty[];
+  onClose?: () => void;
+  segment?: PropertySegment;
+}) {
   const { toast } = useToast();
+  const isResidential = segment === "residential";
+  const DEALS = isResidential ? RESIDENTIAL_DEALS : COMMERCIAL_DEALS;
+  const TYPE_ORDER = isResidential ? RESIDENTIAL_TYPE_ORDER : COMMERCIAL_TYPE_ORDER;
   const [step, setStep] = useState(0);
   const [deal, setDeal] = useState<Deal>("Любое");
   const [type, setType] = useState("");
@@ -97,7 +127,7 @@ export default function AIPropertyWizard({ properties, onClose }: { properties: 
         return b[1] - a[1];
       })
       .map(([label]) => ({ label, icon: TYPE_ICONS[label] || Buildings }));
-  }, [properties]);
+  }, [properties, TYPE_ORDER]);
 
   const districts = useMemo(() => ["Любой", ...uniqueNonEmpty(properties.map((property) => property.district))], [properties]);
 

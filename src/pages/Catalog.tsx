@@ -214,6 +214,9 @@ function PromoCard() {
         <span className="mt-4 inline-flex h-10 w-fit items-center justify-center rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground transition-colors group-hover:bg-primary/90">
           Перейти
         </span>
+        <p className="mt-3 text-[10px] leading-tight text-white/55">
+          ООО «СК «Надёжный дом»
+        </p>
       </div>
     </a>
   );

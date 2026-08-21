@@ -36,6 +36,7 @@ const TYPE_SEO = {
 
 const STATIC_PATHS = [
   "/",
+  "/kommercheskaya",
   "/catalog",
   "/offices",
   "/retail",

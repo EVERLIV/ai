@@ -19,7 +19,7 @@ import RevealListingPhone from "@/components/RevealListingPhone";
 import ReportListingDialog from "@/components/ReportListingDialog";
 import PropertyAIChat from "@/components/PropertyAIChat";
 import { isOwnerListing, getOwnerUserId } from "@/lib/propertyModeration";
-import { isResidentialSegment } from "@/config/propertySegments";
+import { isResidentialSegment, SEGMENT_ROUTES } from "@/config/propertySegments";
 import PropertyUnitsTable from "@/components/PropertyUnitsTable";
 import PropertySidebarExtras from "@/components/PropertySidebarExtras";
 import PKKMapModal from "@/components/PKKMapModal";
@@ -122,6 +122,8 @@ export default function PropertyDetail() {
   const isLand = isLandProperty(property);
   const isSale = isSaleDeal(property.deal_type);
   const isResidential = isResidentialSegment(property.segment);
+  const segmentHome = isResidential ? SEGMENT_ROUTES.residential.home : SEGMENT_ROUTES.commercial.home;
+  const segmentCatalog = isResidential ? SEGMENT_ROUTES.residential.catalog : SEGMENT_ROUTES.commercial.catalog;
   const landExtras = (property.extras || {}) as Record<string, unknown>;
   const ownerUserIdForInquiry = getOwnerUserId(landExtras, property.submitted_by);
   const ownerNameForInquiry = typeof landExtras.agent_name === "string" ? landExtras.agent_name : undefined;
@@ -272,9 +274,9 @@ export default function PropertyDetail() {
           </button>
 
           <nav className="flex-1 min-w-0 flex items-center gap-1.5 text-[11px] lg:text-xs text-muted-foreground whitespace-nowrap overflow-hidden">
-            <Link to="/" className="hover:text-foreground transition-colors shrink-0">Главная</Link>
+            <Link to={segmentHome} className="hover:text-foreground transition-colors shrink-0">Главная</Link>
             <span className="shrink-0 opacity-50">/</span>
-            <Link to="/catalog" className="hover:text-foreground transition-colors shrink-0">{formatPropertyTypesLabel(propertyTypes)}</Link>
+            <Link to={segmentCatalog} className="hover:text-foreground transition-colors shrink-0">{formatPropertyTypesLabel(propertyTypes)}</Link>
             <span className="shrink-0 opacity-50">/</span>
             <span className="text-foreground truncate min-w-0">{displayTitle}</span>
           </nav>

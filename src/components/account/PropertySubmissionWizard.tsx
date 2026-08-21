@@ -7,6 +7,7 @@ import {
   updateMyPropertyApi,
   uploadMyPropertyPhotoApi,
 } from "@/lib/userPropertyApi";
+import { useAgencyManagers, useMyAgency } from "@/hooks/useAgency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -114,6 +115,7 @@ const emptyForm: PropertyFormState = {
   mortgage: false,
   pets_allowed: false,
   children_allowed: false,
+  listing_manager_id: "",
 };
 
 const STEPS = [
@@ -146,6 +148,9 @@ export default function PropertySubmissionWizard({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { data: myAgency } = useMyAgency();
+  const agencyId = myAgency?.agency.id;
+  const { data: agencyManagers = [] } = useAgencyManagers(agencyId, true);
 
   const [step, setStep] = useState<StepKey>("basic");
   const [editId, setEditId] = useState<string | null>(null);
@@ -304,9 +309,10 @@ export default function PropertySubmissionWizard({
           photos: urls,
           cover_photo: cover || null,
           photos_count: urls.length,
-        });
+          ...(agencyId ? { agency_id: agencyId } : {}),
+        }, agencyId);
       } else {
-        const data = await insertMyPropertyApi(user.id, payload);
+        const data = await insertMyPropertyApi(user.id, payload, agencyId);
 
         propertyId = data.id;
         publicId = data.public_id;
@@ -317,7 +323,7 @@ export default function PropertySubmissionWizard({
             photos: urls,
             cover_photo: cover,
             photos_count: urls.length,
-          });
+          }, agencyId);
         }
       }
 
@@ -944,6 +950,30 @@ export default function PropertySubmissionWizard({
 
           {step === "submit" && (
             <div className="space-y-3">
+              {agencyId && agencyManagers.length > 0 && (
+                <div className="space-y-1.5">
+                  <Label>Менеджер на объекте</Label>
+                  <Select
+                    value={form.listing_manager_id || "none"}
+                    onValueChange={(v) => update("listing_manager_id", v === "none" ? "" : v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите менеджера" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Не указан</SelectItem>
+                      {agencyManagers.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.full_name} · {m.phone}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground">
+                    Контакт менеджера будет показан на карточке объекта.
+                  </p>
+                </div>
+              )}
               <p className="text-sm text-muted-foreground">Выберите, как вы хотите разместить объект:</p>
               <button
                 type="button"

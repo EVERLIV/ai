@@ -19,7 +19,7 @@ import {
   Building2, Plus, LogOut, Users, Home, Edit, Trash2,
   BarChart3, Eye, MapPin, ArrowLeft, Upload, X, Star, ImageIcon, Search,
   ArrowUpDown, ArrowUp, ArrowDown, Settings2, Check, Megaphone, CheckSquare, Shield, UserCircle,
-  Inbox,
+  Inbox, Menu, Newspaper,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import AdPlacementsManager from "@/components/admin/AdPlacementsManager";
@@ -178,6 +178,8 @@ export default function Dashboard() {
   const { byCategory } = useAllDictionaryValues();
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [adminTab, setAdminTab] = useState("properties");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<PropertyForm>(emptyForm);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
@@ -669,22 +671,24 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <SeoHead title="Панель управления" description="Административная панель АрендаСити." noindex />
-      {/* Header */}
       <header className="border-b bg-card sticky top-0 z-30">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0">
+        <div className="h-14 px-4 sm:px-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Button variant="ghost" size="icon" className="lg:hidden shrink-0" onClick={() => setMobileNavOpen(true)}>
+              <Menu className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0 hidden sm:inline-flex">
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <Building2 className="w-6 h-6 text-primary shrink-0" />
-            <span className="font-semibold text-base sm:text-lg truncate" style={{ fontFamily: "var(--font-display)" }}>
+            <Building2 className="w-5 h-5 text-primary shrink-0" />
+            <span className="font-semibold text-base truncate" style={{ fontFamily: "var(--font-display)" }}>
               Панель управления
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground hidden sm:block">{user?.email}</span>
+            <span className="text-sm text-muted-foreground hidden md:block">{user?.email}</span>
             <Button variant="outline" size="sm" onClick={() => { signOut(); navigate("/"); }}>
               <LogOut className="w-4 h-4 mr-1" /> Выйти
             </Button>
@@ -692,51 +696,140 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-2 sm:gap-4">
-          {[
-            { label: "Объектов", value: stats.total, icon: Home, color: "text-primary" },
-            { label: "Активных", value: stats.active, icon: Eye, color: "text-green-600" },
-            { label: "Площадь", value: `${stats.totalArea.toLocaleString()} м²`, icon: MapPin, color: "text-blue-600" },
-            { label: "Просмотры", value: stats.totalViews, icon: BarChart3, color: "text-amber-600" },
-          ].map((s) => (
-            <Card key={s.label}>
-              <CardContent className="p-2 sm:pt-5 sm:pb-4 sm:px-6 flex flex-col sm:flex-row items-center sm:items-center text-center sm:text-left gap-1 sm:gap-3 overflow-hidden">
-                <div className={`w-6 h-6 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center ${s.color} shrink-0`}>
-                  <s.icon className="w-3 h-3 sm:w-5 sm:h-5" />
-                </div>
-                <div className="min-w-0 w-full">
-                  <p className="text-sm sm:text-2xl font-bold truncate leading-tight">{s.value}</p>
-                  <p className="text-[9px] sm:text-xs text-muted-foreground truncate leading-tight">{s.label}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <Tabs defaultValue="properties">
-          <TabsList className="h-auto w-full justify-start gap-1 bg-transparent p-0 flex-wrap">
+      <Tabs value={adminTab} onValueChange={setAdminTab} className="flex-1 flex flex-col lg:flex-row min-h-0">
+        {/* Desktop sidebar */}
+        <aside className="hidden lg:flex w-60 shrink-0 flex-col border-r border-border bg-card sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
+          <nav className="p-3 space-y-4">
             {[
-              { value: "properties", label: "Объекты", icon: Home },
-              { value: "leads", label: "Заявки", icon: Inbox },
-              { value: "moderation", label: "Модерация", icon: Shield },
-              { value: "clients", label: "Собственники и риелторы", icon: UserCircle },
-              { value: "ads", label: "Реклама", icon: Megaphone },
-              { value: "users", label: "Сотрудники", icon: Users },
-              { value: "news", label: "Новости", icon: null },
-              { value: "dictionaries", label: "Справочники", icon: Settings2 },
-              ...(hasRole("admin") ? [{ value: "tasks", label: "Задачи", icon: CheckSquare }] : []),
-            ].map((t) => (
-              <TabsTrigger
-                key={t.value}
-                value={t.value}
-                className="rounded-full border border-border bg-card px-3 py-1.5 text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary shadow-none"
-              >
-                {t.icon && <t.icon className="w-3.5 h-3.5 mr-1" />}
-                {t.label}
-              </TabsTrigger>
+              {
+                title: "Контент",
+                items: [
+                  { value: "properties", label: "Объекты", icon: Home },
+                  { value: "moderation", label: "Модерация", icon: Shield },
+                  { value: "news", label: "Новости", icon: Newspaper },
+                ],
+              },
+              {
+                title: "Клиенты",
+                items: [
+                  { value: "clients", label: "Собственники и агентства", icon: UserCircle },
+                  { value: "leads", label: "Заявки", icon: Inbox },
+                ],
+              },
+              {
+                title: "Реклама",
+                items: [{ value: "ads", label: "Размещения", icon: Megaphone }],
+              },
+              {
+                title: "Система",
+                items: [
+                  { value: "users", label: "Сотрудники", icon: Users },
+                  { value: "dictionaries", label: "Справочники", icon: Settings2 },
+                  ...(hasRole("admin") ? [{ value: "tasks", label: "Задачи", icon: CheckSquare }] : []),
+                ],
+              },
+            ].map((group) => (
+              <div key={group.title}>
+                <div className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {group.title}
+                </div>
+                <div className="space-y-0.5">
+                  {group.items.map((t) => {
+                    const Icon = t.icon;
+                    const active = adminTab === t.value;
+                    return (
+                      <button
+                        key={t.value}
+                        type="button"
+                        onClick={() => setAdminTab(t.value)}
+                        className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors ${
+                          active
+                            ? "bg-primary text-primary-foreground font-medium"
+                            : "text-foreground hover:bg-muted"
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 shrink-0" />
+                        {t.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             ))}
+          </nav>
+        </aside>
+
+        {/* Mobile nav sheet */}
+        <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+          <SheetContent side="left" className="w-72 p-0">
+            <SheetHeader className="px-4 py-3 border-b">
+              <SheetTitle className="text-base">Разделы</SheetTitle>
+            </SheetHeader>
+            <nav className="p-3 space-y-4">
+              {[
+                { value: "properties", label: "Объекты", icon: Home },
+                { value: "moderation", label: "Модерация", icon: Shield },
+                { value: "news", label: "Новости", icon: Newspaper },
+                { value: "clients", label: "Собственники и агентства", icon: UserCircle },
+                { value: "leads", label: "Заявки", icon: Inbox },
+                { value: "ads", label: "Реклама", icon: Megaphone },
+                { value: "users", label: "Сотрудники", icon: Users },
+                { value: "dictionaries", label: "Справочники", icon: Settings2 },
+                ...(hasRole("admin") ? [{ value: "tasks", label: "Задачи", icon: CheckSquare }] : []),
+              ].map((t) => {
+                const Icon = t.icon;
+                return (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => { setAdminTab(t.value); setMobileNavOpen(false); }}
+                    className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2.5 text-sm ${
+                      adminTab === t.value ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </SheetContent>
+        </Sheet>
+
+        <main className="flex-1 min-w-0 px-4 sm:px-6 py-6 space-y-6 overflow-x-hidden">
+          <div className="grid grid-cols-4 gap-2 sm:gap-4">
+            {[
+              { label: "Объектов", value: stats.total, icon: Home, color: "text-primary" },
+              { label: "Активных", value: stats.active, icon: Eye, color: "text-green-600" },
+              { label: "Площадь", value: `${stats.totalArea.toLocaleString()} м²`, icon: MapPin, color: "text-blue-600" },
+              { label: "Просмотры", value: stats.totalViews, icon: BarChart3, color: "text-amber-600" },
+            ].map((s) => (
+              <Card key={s.label}>
+                <CardContent className="p-2 sm:pt-5 sm:pb-4 sm:px-6 flex flex-col sm:flex-row items-center sm:items-center text-center sm:text-left gap-1 sm:gap-3 overflow-hidden">
+                  <div className={`w-6 h-6 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center ${s.color} shrink-0`}>
+                    <s.icon className="w-3 h-3 sm:w-5 sm:h-5" />
+                  </div>
+                  <div className="min-w-0 w-full">
+                    <p className="text-sm sm:text-2xl font-bold truncate leading-tight">{s.value}</p>
+                    <p className="text-[9px] sm:text-xs text-muted-foreground truncate leading-tight">{s.label}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Keep TabsList visually hidden for a11y / radix — navigation via sidebar */}
+          <TabsList className="sr-only">
+            <TabsTrigger value="properties">Объекты</TabsTrigger>
+            <TabsTrigger value="leads">Заявки</TabsTrigger>
+            <TabsTrigger value="moderation">Модерация</TabsTrigger>
+            <TabsTrigger value="clients">Клиенты</TabsTrigger>
+            <TabsTrigger value="verification">Верификация</TabsTrigger>
+            <TabsTrigger value="ads">Реклама</TabsTrigger>
+            <TabsTrigger value="users">Сотрудники</TabsTrigger>
+            <TabsTrigger value="dictionaries">Справочники</TabsTrigger>
+            <TabsTrigger value="tasks">Задачи</TabsTrigger>
+            <TabsTrigger value="news">Новости</TabsTrigger>
           </TabsList>
 
           {/* Properties Tab */}
@@ -1604,8 +1697,8 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
-      </main>
+        </main>
+      </Tabs>
     </div>
   );
 }

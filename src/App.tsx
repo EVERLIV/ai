@@ -15,6 +15,7 @@ const TaskDetailPage     = lazy(() => import("./pages/TaskDetailPage"));
 const TaskReportsPage    = lazy(() => import("./pages/TaskReportsPage"));
 const TaskAnalyticsPage  = lazy(() => import("./pages/TaskAnalyticsPage"));
 import Index from "./pages/Index.tsx";
+import SegmentHomePage from "./pages/SegmentHomePage.tsx";
 import PropertyDetail from "./pages/PropertyDetail.tsx";
 import Catalog from "./pages/Catalog.tsx";
 import Auth from "./pages/Auth.tsx";
@@ -30,6 +31,7 @@ import NewsPage from "./pages/NewsPage.tsx";
 import NewsPostPage from "./pages/NewsPostPage.tsx";
 import AboutPage from "./pages/AboutPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
+import AgencyPublicPage from "./pages/AgencyPublicPage.tsx";
 import ContactsPage from "./pages/ContactsPage.tsx";
 import VacanciesPage from "./pages/VacanciesPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
@@ -55,7 +57,8 @@ const App = () => {
               <InstallPrompt />
               <CookieBanner />
               <Routes>
-                <Route path="/" element={<Index />} />
+                <Route path="/" element={<SegmentHomePage />} />
+                <Route path="/kommercheskaya" element={<Index />} />
                 <Route path="/catalog" element={<Catalog />} />
                 <Route path="/property/:id" element={<PropertyDetail />} />
                 <Route path="/auth" element={<Auth />} />
@@ -70,6 +73,7 @@ const App = () => {
                 <Route path="/news/:slug" element={<NewsPostPage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/account" element={<AccountPage />} />
+                <Route path="/agentstvo/:id" element={<AgencyPublicPage />} />
                 <Route path="/contacts" element={<ContactsPage />} />
                 <Route path="/vacancies" element={<VacanciesPage />} />
                 <Route path="/reset-password" element={<ResetPassword />} />

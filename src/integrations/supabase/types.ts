@@ -510,6 +510,8 @@ export type Database = {
           layout: string | null
           lng: number | null
           manager_id: string | null
+          agency_id: string | null
+          listing_manager_id: string | null
           moderated_at: string | null
           moderated_by: string | null
           moderation_status: Database["public"]["Enums"]["property_moderation_status"]
@@ -552,6 +554,8 @@ export type Database = {
           layout?: string | null
           lng?: number | null
           manager_id?: string | null
+          agency_id?: string | null
+          listing_manager_id?: string | null
           moderated_at?: string | null
           moderated_by?: string | null
           moderation_status?: Database["public"]["Enums"]["property_moderation_status"]
@@ -594,6 +598,8 @@ export type Database = {
           layout?: string | null
           lng?: number | null
           manager_id?: string | null
+          agency_id?: string | null
+          listing_manager_id?: string | null
           moderated_at?: string | null
           moderated_by?: string | null
           moderation_status?: Database["public"]["Enums"]["property_moderation_status"]
@@ -742,7 +748,7 @@ export type Database = {
         | "digital_screen"
         | "flag_pole"
       app_role: "admin" | "manager" | "client"
-      profile_account_type: "owner" | "realtor"
+      profile_account_type: "owner" | "realtor" | "agency"
       property_moderation_status: "draft" | "on_moderation" | "published" | "rejected" | "cancelled"
       property_request_type: "free_listing" | "management"
       property_segment: "commercial" | "residential"
@@ -890,7 +896,7 @@ export const Constants = {
         "flag_pole",
       ],
       app_role: ["admin", "manager", "client"],
-      profile_account_type: ["owner", "realtor"],
+      profile_account_type: ["owner", "realtor", "agency"],
       property_moderation_status: ["draft", "on_moderation", "published", "rejected", "cancelled"],
       property_request_type: ["free_listing", "management"],
       property_segment: ["commercial", "residential"],

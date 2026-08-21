@@ -23,8 +23,15 @@ import {
 } from "@/hooks/useProfile";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { cn } from "@/lib/utils";
+import {
+  adminUpdateAgencyApi,
+  fetchAgenciesAdminApi,
+  type Agency,
+} from "@/lib/agencyApi";
+import { Link } from "react-router-dom";
+import { ExternalLink } from "lucide-react";
 
-type TypeFilter = "all" | "owner" | "realtor";
+type TypeFilter = "all" | "owner" | "agency";
 type StatusFilter = "all" | "pending" | "verified" | "unverified";
 
 const STATUS_STYLES: Record<VerificationStatus, string> = {
@@ -53,7 +60,7 @@ function ClientCard({
   onReject: (id: string) => void;
   busy: boolean;
 }) {
-  const isRealtor = u.account_type === "realtor";
+  const isRealtor = u.account_type === "realtor" || u.account_type === "agency";
   const verified = u.verification_status === "verified";
   const pending = u.verification_status === "pending";
 
@@ -222,6 +229,12 @@ export default function OwnersRealtorsTab() {
     staleTime: 0,
   });
 
+  const { data: agencies = [] } = useQuery({
+    queryKey: ["admin-agencies"],
+    queryFn: fetchAgenciesAdminApi,
+    staleTime: 0,
+  });
+
   const { data: propertyCounts = {} } = useQuery({
     queryKey: ["client-property-counts"],
     queryFn: fetchPropertyCountsBySubmitter,
@@ -255,6 +268,31 @@ export default function OwnersRealtorsTab() {
     },
   });
 
+  const toggleAgencyVerified = useMutation({
+    mutationFn: async ({ id, verified }: { id: string; verified: boolean }) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const moderatorId = session?.user?.id ?? null;
+      await adminUpdateAgencyApi(id, verified
+        ? {
+            verification_status: "verified",
+            verified_at: new Date().toISOString(),
+            verified_by: moderatorId,
+          }
+        : {
+            verification_status: "unverified",
+            verified_at: null,
+            verified_by: null,
+          });
+    },
+    onSuccess: (_, { verified }) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-agencies"] });
+      toast({ title: verified ? "Агентство верифицировано" : "Верификация снята" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Ошибка", description: err.message, variant: "destructive" });
+    },
+  });
+
   const rejectMutation = useMutation({
     mutationFn: (id: string) => adminUpdateProfile(id, { verification_status: "rejected" }),
     onSuccess: () => {
@@ -266,18 +304,38 @@ export default function OwnersRealtorsTab() {
     },
   });
 
+  const rejectAgencyMutation = useMutation({
+    mutationFn: (id: string) => adminUpdateAgencyApi(id, { verification_status: "rejected" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-agencies"] });
+      toast({ title: "Заявка агентства отклонена" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Ошибка", description: err.message, variant: "destructive" });
+    },
+  });
+
   const stats = useMemo(() => ({
     total: users.length,
     owners: users.filter((u) => u.account_type === "owner").length,
-    realtors: users.filter((u) => u.account_type === "realtor").length,
-    pending: users.filter((u) => u.verification_status === "pending").length,
-    verified: users.filter((u) => u.verification_status === "verified").length,
-  }), [users]);
+    realtors: users.filter((u) => u.account_type === "realtor" || u.account_type === "agency").length,
+    agencies: agencies.length,
+    pending:
+      users.filter((u) => u.verification_status === "pending").length +
+      agencies.filter((a) => a.verification_status === "pending").length,
+    verified:
+      users.filter((u) => u.verification_status === "verified").length +
+      agencies.filter((a) => a.verification_status === "verified").length,
+  }), [users, agencies]);
 
   const filtered = useMemo(() => {
     return users.filter((u) => {
       if (typeFilter === "owner" && u.account_type !== "owner") return false;
-      if (typeFilter === "realtor" && u.account_type !== "realtor") return false;
+      if (
+        typeFilter === "agency" &&
+        u.account_type !== "realtor" &&
+        u.account_type !== "agency"
+      ) return false;
       if (statusFilter === "pending" && u.verification_status !== "pending") return false;
       if (statusFilter === "verified" && u.verification_status !== "verified") return false;
       if (statusFilter === "unverified" && u.verification_status !== "unverified") return false;
@@ -294,7 +352,23 @@ export default function OwnersRealtorsTab() {
     });
   }, [users, typeFilter, statusFilter, search]);
 
-  const busy = toggleVerified.isPending || rejectMutation.isPending;
+  const filteredAgencies = useMemo(() => {
+    if (typeFilter === "owner") return [] as Agency[];
+    return agencies.filter((a) => {
+      if (statusFilter === "pending" && a.verification_status !== "pending") return false;
+      if (statusFilter === "verified" && a.verification_status !== "verified") return false;
+      if (statusFilter === "unverified" && a.verification_status !== "unverified") return false;
+      if (!search.trim()) return true;
+      const q = search.toLowerCase();
+      return a.name?.toLowerCase().includes(q) || a.about?.toLowerCase().includes(q);
+    });
+  }, [agencies, typeFilter, statusFilter, search]);
+
+  const busy =
+    toggleVerified.isPending ||
+    rejectMutation.isPending ||
+    toggleAgencyVerified.isPending ||
+    rejectAgencyMutation.isPending;
 
   return (
     <div className="space-y-5">
@@ -303,10 +377,10 @@ export default function OwnersRealtorsTab() {
         <div>
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Users className="w-5 h-5 text-primary" />
-            Собственники и риелторы
+            Собственники и агентства
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Клиенты платформы — верификация, контакты и данные агентств
+            Клиенты платформы — верификация собственников и агентств
           </p>
         </div>
         <div className="relative w-full sm:w-64">
@@ -321,11 +395,12 @@ export default function OwnersRealtorsTab() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
         {[
-          { label: "Всего", value: stats.total, icon: Users },
+          { label: "Профили", value: stats.total, icon: Users },
           { label: "Собственники", value: stats.owners, icon: User },
-          { label: "Риелторы", value: stats.realtors, icon: Building2 },
+          { label: "Профили агентств", value: stats.realtors, icon: Building2 },
+          { label: "Агентства", value: stats.agencies, icon: Briefcase },
           { label: "На проверке", value: stats.pending, icon: ShieldCheck, highlight: stats.pending > 0 },
           { label: "Верифицированы", value: stats.verified, icon: ShieldCheck },
         ].map(({ label, value, icon: Icon, highlight }) => (
@@ -353,7 +428,7 @@ export default function OwnersRealtorsTab() {
           {([
             ["all", "Все"],
             ["owner", "Собственники"],
-            ["realtor", "Риелторы"],
+            ["agency", "Агентства"],
           ] as [TypeFilter, string][]).map(([key, label]) => (
             <button
               key={key}
@@ -406,32 +481,115 @@ export default function OwnersRealtorsTab() {
             Повторить
           </Button>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : filtered.length === 0 && filteredAgencies.length === 0 ? (
         <div className="text-center py-16 border border-dashed border-border rounded-lg bg-card">
           <Users className="w-10 h-10 text-muted-foreground/25 mx-auto mb-3" />
-          <p className="text-sm font-medium text-foreground">Пользователей не найдено</p>
+          <p className="text-sm font-medium text-foreground">Ничего не найдено</p>
           <p className="text-xs text-muted-foreground mt-1">
-            {search ? "Измените поиск или фильтры" : "Зарегистрированные собственники и риелторы появятся здесь"}
+            {search ? "Измените поиск или фильтры" : "Собственники и агентства появятся здесь"}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map((u) => (
-            <ClientCard
-              key={u.id}
-              profile={u as UserProfile}
-              propertyCount={propertyCounts[u.id] || 0}
-              busy={busy}
-              onToggleVerified={(id, verified) => toggleVerified.mutate({ id, verified })}
-              onReject={(id) => rejectMutation.mutate(id)}
-            />
-          ))}
+        <div className="space-y-6">
+          {filteredAgencies.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">Агентства ({filteredAgencies.length})</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredAgencies.map((a) => {
+                  const verified = a.verification_status === "verified";
+                  const pending = a.verification_status === "pending";
+                  return (
+                    <article
+                      key={a.id}
+                      className={cn(
+                        "bg-card border border-border rounded-lg overflow-hidden flex flex-col",
+                        pending && "ring-1 ring-amber-300/60",
+                        verified && "ring-1 ring-emerald-300/40",
+                      )}
+                    >
+                      <div className={cn("h-1 w-full", pending ? "bg-amber-500" : verified ? "bg-emerald-500" : "bg-primary")} />
+                      <div className="p-4 flex flex-col flex-1 gap-3">
+                        <div className="flex items-start gap-3">
+                          <div className="w-11 h-11 rounded-md overflow-hidden bg-primary/10 flex items-center justify-center shrink-0">
+                            {a.logo_url ? (
+                              <img src={a.logo_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <Building2 className="w-5 h-5 text-primary" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <h3 className="text-sm font-semibold truncate">{a.name || "Без названия"}</h3>
+                              {verified && <VerifiedBadge showLabel={false} />}
+                            </div>
+                            <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", STATUS_STYLES[a.verification_status])}>
+                              {VERIFICATION_LABELS[a.verification_status]}
+                            </span>
+                          </div>
+                        </div>
+                        {a.about && (
+                          <p className="text-[11px] text-muted-foreground line-clamp-3">{a.about}</p>
+                        )}
+                        <Link
+                          to={`/agentstvo/${a.id}`}
+                          className="text-xs text-primary inline-flex items-center gap-1 hover:underline"
+                        >
+                          Публичная страница <ExternalLink className="w-3 h-3" />
+                        </Link>
+                        <div className="mt-auto pt-3 border-t border-border/60 flex items-center justify-between gap-2">
+                          <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <Switch
+                              checked={verified}
+                              disabled={busy}
+                              onCheckedChange={(checked) =>
+                                toggleAgencyVerified.mutate({ id: a.id, verified: checked })
+                              }
+                            />
+                            <span className="text-[11px] font-medium text-muted-foreground">Верифицировано</span>
+                          </label>
+                          {pending && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-[10px] text-destructive border-destructive/30"
+                              disabled={busy}
+                              onClick={() => rejectAgencyMutation.mutate(a.id)}
+                            >
+                              Отклонить
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {filtered.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">Профили ({filtered.length})</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filtered.map((u) => (
+                  <ClientCard
+                    key={u.id}
+                    profile={u as UserProfile}
+                    propertyCount={propertyCounts[u.id] || 0}
+                    busy={busy}
+                    onToggleVerified={(id, verified) => toggleVerified.mutate({ id, verified })}
+                    onReject={(id) => rejectMutation.mutate(id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {!isLoading && filtered.length > 0 && (
+      {!isLoading && (filtered.length > 0 || filteredAgencies.length > 0) && (
         <p className="text-[10px] text-muted-foreground text-center">
-          Показано {filtered.length} из {users.length}
+          Профили: {filtered.length} · Агентства: {filteredAgencies.length}
         </p>
       )}
     </div>

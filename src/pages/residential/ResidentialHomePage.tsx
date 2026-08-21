@@ -1,11 +1,8 @@
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
-  BedDouble,
   Building2,
-  DoorOpen,
   Home,
-  House,
   KeyRound,
   Sparkles,
   Tag,
@@ -24,6 +21,9 @@ import residentialBannerAd from "@/assets/residential-banner-ad.jpg";
 import residentialBannerAgency from "@/assets/residential-banner-agency.jpg";
 import residentialBannerSlot from "@/assets/residential-banner-slot.jpg";
 import residentialBannerDomnd from "@/assets/residential-banner-domnd.png";
+import residentialCategoryApartment from "@/assets/residential-category-apartment.jpg";
+import residentialCategoryHouse from "@/assets/residential-category-house.jpg";
+import residentialCategoryRoom from "@/assets/residential-category-room.jpg";
 
 const categories = [
   {
@@ -31,21 +31,24 @@ const categories = [
     href: "/zhilaya/kvartiry",
     body: "Студии, 1–4-комнатные квартиры и новостройки.",
     type: "Квартира",
-    icon: BedDouble,
+    image: residentialCategoryApartment,
+    imageAlt: "Типичная квартира в российском городе",
   },
   {
     title: "Дома",
     href: "/zhilaya/doma",
     body: "Дома, коттеджи и таунхаусы.",
     type: "Дом",
-    icon: House,
+    image: residentialCategoryHouse,
+    imageAlt: "Частный дом в пригороде",
   },
   {
     title: "Комнаты",
     href: "/zhilaya/komnaty",
     body: "Комнаты для жизни, учёбы и работы.",
     type: "Комната",
-    icon: DoorOpen,
+    image: residentialCategoryRoom,
+    imageAlt: "Комната для аренды",
   },
 ];
 
@@ -139,20 +142,29 @@ export default function ResidentialHomePage() {
       <section className="bg-background py-10">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="grid gap-5 md:grid-cols-3">
-            {categories.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link key={item.href} to={item.href} className="rounded-2xl border border-border bg-card p-6 transition-all hover:-translate-y-0.5 hover:shadow-md">
-                  <Icon className="mb-4 h-5 w-5 text-primary" />
-                  <div className="mb-1 text-lg font-semibold text-foreground">{item.title}</div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+            {categories.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className="group relative overflow-hidden rounded-2xl border border-border min-h-[220px] transition-all hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <img
+                  src={item.image}
+                  alt={item.imageAlt}
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,20,0.28)_0%,rgba(8,12,20,0.72)_55%,rgba(8,12,20,0.88)_100%)]" />
+                <div className="relative flex h-full min-h-[220px] flex-col justify-end p-6 text-white">
+                  <div className="mb-1 text-lg font-semibold">{item.title}</div>
+                  <p className="text-sm leading-relaxed text-white/78">{item.body}</p>
                   <div className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-primary">
                     {countsByType.get(item.type) || 0} объектов
-                    <ArrowRight className="h-3.5 w-3.5" />
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                   </div>
-                </Link>
-              );
-            })}
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -215,6 +227,9 @@ export default function ResidentialHomePage() {
                       <span className="mt-4 inline-flex h-10 w-fit items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors group-hover:bg-primary/90">
                         Перейти
                       </span>
+                      <p className="mt-3 text-[10px] leading-tight text-white/55">
+                        ООО «СК «Надёжный дом»
+                      </p>
                     </div>
                   </a>
 

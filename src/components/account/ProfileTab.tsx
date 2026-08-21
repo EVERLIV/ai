@@ -131,11 +131,11 @@ export default function ProfileTab() {
     );
   }
 
-  const isRealtor = profile?.account_type === "realtor";
+  const isAgency = profile?.account_type === "agency" || profile?.account_type === "realtor";
   const verified = isProfileVerified(profile?.verification_status);
   const pending = profile?.verification_status === "pending";
   const rejected = profile?.verification_status === "rejected";
-  const canRequest = !verified && !pending;
+  const canRequest = !verified && !pending && !isAgency;
 
   const inputClass =
     "w-full h-10 px-3 bg-background border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors";
@@ -271,52 +271,24 @@ export default function ProfileTab() {
           />
         </div>
 
-        {isRealtor && (
-          <>
-            <div>
-              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide block mb-1.5">
-                Название агентства (по документам)
-              </label>
-              <input
-                type="text"
-                value={agencyName}
-                onChange={(e) => setAgencyName(e.target.value)}
-                className={inputClass}
-                placeholder="ООО «Название»"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide block mb-1.5">
-                Количество сотрудников
-              </label>
-              <input
-                type="number"
-                min={1}
-                value={agencyStaffCount}
-                onChange={(e) => setAgencyStaffCount(e.target.value)}
-                className={inputClass}
-                placeholder="5"
-              />
-            </div>
-          </>
+        {isAgency ? (
+          <p className="text-xs text-muted-foreground rounded-md border border-border bg-muted/40 px-3 py-2">
+            Название, логотип, описание и верификация агентства — во вкладке «Агентство».
+          </p>
+        ) : (
+          <div>
+            <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide block mb-1.5">
+              О себе
+            </label>
+            <Textarea
+              value={agencyAbout}
+              onChange={(e) => setAgencyAbout(e.target.value)}
+              rows={4}
+              className="text-sm resize-none"
+              placeholder="Расскажите о себе как о собственнике..."
+            />
+          </div>
         )}
-
-        <div>
-          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide block mb-1.5">
-            {isRealtor ? "Об агентстве" : "О себе"}
-          </label>
-          <Textarea
-            value={agencyAbout}
-            onChange={(e) => setAgencyAbout(e.target.value)}
-            rows={4}
-            className="text-sm resize-none"
-            placeholder={
-              isRealtor
-                ? "Расскажите об агентстве, специализации, опыте..."
-                : "Расскажите о себе как о собственнике..."
-            }
-          />
-        </div>
 
         <div className="flex flex-wrap gap-2 pt-2">
           <Button

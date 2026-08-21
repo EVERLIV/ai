@@ -2,39 +2,21 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Phone, Mail,
-  MessageCircle, Instagram, ChevronDown, Sparkles, User,
-  Heart, FileText, LogOut, LayoutGrid, Settings, Building2,
+  ChevronDown, User,
+  Heart, FileText, LogOut, Building2,
   ArrowUpRight, Newspaper, Info, BookOpen, Settings2, Shield, Briefcase,
 } from "lucide-react";
 import AIWizardModal from "@/components/AIWizardModal";
+import { CatalogMegaMenuDesktop, CatalogMegaMenuMobile } from "@/components/CatalogMegaMenu";
+import SegmentSwitcher from "@/components/SegmentSwitcher";
+import BrandMark from "@/components/BrandMark";
 import { useAuth } from "@/hooks/useAuth";
 import { CONTACTS } from "@/config/company";
 import { SEGMENT_ROUTES } from "@/config/propertySegments";
+import { placementCtaPath } from "@/lib/listPropertyLinks";
 
 type SubItem = { label: string; desc: string; href: string; icon: React.ElementType };
 type NavItem = { label: string; href: string; submenu?: SubItem[] };
-
-function getCatalogItem(isResidential: boolean): NavItem {
-  return isResidential
-    ? {
-        label: "Каталог жилья",
-        href: SEGMENT_ROUTES.residential.catalog,
-        submenu: [
-          { label: "Все объекты", desc: "Квартиры, дома и комнаты в одном каталоге", href: SEGMENT_ROUTES.residential.catalog, icon: LayoutGrid },
-          { label: "Разместить жильё", desc: "Добавьте квартиру, дом или комнату за 0 ₽", href: `${SEGMENT_ROUTES.residential.listProperty}?mode=rent`, icon: Building2 },
-          { label: "Передать в управление", desc: "Поможем со сдачей и сопровождением", href: `${SEGMENT_ROUTES.residential.listProperty}?mode=management`, icon: Settings },
-        ],
-      }
-    : {
-        label: "Каталог",
-        href: SEGMENT_ROUTES.commercial.catalog,
-        submenu: [
-          { label: "Все объекты", desc: "Полный каталог коммерческой недвижимости", href: SEGMENT_ROUTES.commercial.catalog, icon: LayoutGrid },
-          { label: "Передать в управление", desc: "Полный цикл: арендаторы, договоры, платежи", href: `${SEGMENT_ROUTES.commercial.listProperty}?mode=management`, icon: Settings },
-          { label: "Сдать через АрендаСити", desc: "Размещение объекта и поток заявок", href: `${SEGMENT_ROUTES.commercial.listProperty}?mode=rent`, icon: Building2 },
-        ],
-      };
-}
 
 function getNavItems(isResidential: boolean): NavItem[] {
   const companyItem = {
@@ -65,11 +47,6 @@ function getNavItems(isResidential: boolean): NavItem[] {
       ];
 }
 
-const socials = [
-  { Icon: MessageCircle, href: `https://wa.me/${CONTACTS.phoneDigits}`, label: "WhatsApp" },
-  { Icon: Instagram, href: "https://www.instagram.com/arendacity38/", label: "Instagram" },
-];
-
 export default function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
@@ -80,11 +57,13 @@ export default function SiteHeader() {
   const accountRef = useRef<HTMLDivElement>(null);
   const { pathname, hash } = useLocation();
   const isResidential = pathname.startsWith("/zhilaya");
-  const catalogItem = getCatalogItem(isResidential);
+  const segment = isResidential ? "residential" as const : "commercial" as const;
+  const catalogHref = isResidential ? SEGMENT_ROUTES.residential.catalog : SEGMENT_ROUTES.commercial.catalog;
   const navItems = getNavItems(isResidential);
 
   const { user, signOut, hasRole } = useAuth();
   const navigate = useNavigate();
+  const placeHref = placementCtaPath(segment, "rent", !!user);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -132,33 +111,7 @@ export default function SiteHeader() {
             </a>
           </div>
           <div className="flex items-center gap-2 ml-auto">
-            <div className="hidden md:flex items-center gap-0.5 mr-1">
-              {socials.map(({ Icon, href, label }) => (
-                <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label}
-                  className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-all duration-200">
-                  <Icon className="w-3.5 h-3.5" />
-                </a>
-              ))}
-            </div>
-            <button onClick={() => setWizardOpen(true)}
-              className="hidden xl:flex items-center gap-1 h-7 px-2 text-muted-foreground text-[11px] font-medium hover:text-foreground transition-colors duration-200 whitespace-nowrap">
-              <Sparkles className="w-3 h-3" /> ИИ-подбор
-            </button>
-            <div className="hidden md:flex items-center gap-1 rounded-md border border-border/70 bg-card/60 p-0.5">
-              <Link
-                to={SEGMENT_ROUTES.commercial.catalog}
-                className={`px-2 py-1 text-[11px] font-medium transition-colors ${!isResidential ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                Коммерческая
-              </Link>
-              <Link
-                to={SEGMENT_ROUTES.residential.home}
-                className={`px-2 py-1 text-[11px] font-medium transition-colors ${isResidential ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                Жилая
-              </Link>
-            </div>
-            <Link to={isResidential ? `${SEGMENT_ROUTES.residential.listProperty}?mode=rent` : `${SEGMENT_ROUTES.commercial.listProperty}?mode=rent`}
+            <Link to={placeHref}
               className="hidden sm:flex items-center h-7 px-3 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity whitespace-nowrap">
               + Разместить за 0 ₽
             </Link>
@@ -232,23 +185,30 @@ export default function SiteHeader() {
       <div className={`transition-all duration-300 ${scrolled ? "bg-card/95 backdrop-blur-2xl shadow-[0_1px_0_0_hsl(var(--border)/0.6)]" : "bg-card"}`}>
         <div className="container mx-auto flex items-center justify-between h-14 px-4 lg:px-8">
 
-          {/* Logo */}
-          <Link to="/" className="group flex items-center gap-2.5 shrink-0">
-            <div className="relative w-8 h-8 bg-primary flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
-              <span className="text-primary-foreground font-bold text-sm tracking-tight">А</span>
-            </div>
-            <span className="flex flex-col leading-none">
-              <span className="font-sans text-[16px] font-bold tracking-tight text-foreground">
-                АРЕНДА<span className="text-primary">СИТИ</span>
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            {/* Logo */}
+            <Link
+              to={isResidential ? SEGMENT_ROUTES.residential.home : SEGMENT_ROUTES.commercial.home}
+              className="group flex items-center gap-2.5 shrink-0 min-w-0"
+            >
+              <div className="relative w-10 h-10 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shrink-0">
+                <BrandMark className="w-10 h-10" />
+              </div>
+              <span className="flex flex-col leading-none min-w-0">
+                <span className="font-sans text-[15px] sm:text-[16px] font-bold tracking-tight text-foreground">
+                  АРЕНДА<span className="text-primary">СИТИ</span>
+                </span>
+                <span className="text-[9px] font-medium tracking-wide text-muted-foreground mt-0.5 uppercase hidden sm:block">
+                  {isResidential ? "Жилая недвижимость" : "Коммерческая недвижимость"}
+                </span>
               </span>
-              <span className="text-[9px] font-medium tracking-wide text-muted-foreground mt-0.5 uppercase hidden sm:block">
-                {isResidential ? "Жилая недвижимость" : "Коммерческая и жилая недвижимость"}
-              </span>
-            </span>
-          </Link>
+            </Link>
+
+            <SegmentSwitcher className="shrink-0" />
+          </div>
 
           {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1 ml-auto">
             {navItems.map((item, idx) => {
               const active = isActive(item.href);
               const hasMenu = !!item.submenu?.length;
@@ -299,51 +259,18 @@ export default function SiteHeader() {
               );
             })}
 
-            <div className="relative group/nav ml-2">
-              <Link
-                to={catalogItem.href}
-                className={`inline-flex items-center gap-1 h-8 px-3.5 rounded-md text-sm font-semibold transition-colors duration-200 ${
-                  isActive(catalogItem.href)
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground"
-                }`}
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                {catalogItem.label}
-                <ChevronDown className="w-3 h-3 opacity-70 transition-transform duration-300 group-hover/nav:rotate-180" />
-              </Link>
-              <div className="absolute top-full right-0 pt-2 w-80 opacity-0 invisible -translate-y-2 group-hover/nav:opacity-100 group-hover/nav:visible group-hover/nav:translate-y-0 transition-all duration-200 ease-out z-50">
-                <div className="bg-card border-0 shadow-[0_8px_30px_rgba(0,0,0,0.10)] overflow-hidden">
-                  <div className="py-1">
-                    {catalogItem.submenu!.map((s, subIdx) => {
-                      const Icon = s.icon;
-                      return (
-                        <Link
-                          key={s.href}
-                          to={s.href}
-                          className="group/item flex items-center gap-3 px-4 py-3 hover:bg-muted/60 transition-colors duration-150 relative"
-                          style={{ transitionDelay: `${subIdx * 15}ms` }}
-                        >
-                          <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-primary scale-y-0 group-hover/item:scale-y-100 transition-transform duration-200 origin-center" />
-                          <Icon className="w-4 h-4 text-muted-foreground group-hover/item:text-primary transition-colors duration-150 shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-foreground group-hover/item:text-primary transition-colors duration-150 leading-tight">{s.label}</div>
-                            <div className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{s.desc}</div>
-                          </div>
-                          <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 opacity-0 group-hover/item:opacity-100 group-hover/item:text-primary transition-all duration-150" />
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <CatalogMegaMenuDesktop
+              segment={segment}
+              isActive={isActive(catalogHref)}
+              isLoggedIn={!!user}
+              onOpenWizard={() => setWizardOpen(true)}
+            />
           </nav>
 
           {/* Mobile toggle */}
           <button
             aria-label="Меню"
-            className="lg:hidden w-9 h-9 flex items-center justify-center text-foreground"
+            className="lg:hidden ml-auto w-9 h-9 flex items-center justify-center text-foreground"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
             <span className="flex flex-col gap-[5px] w-5">
@@ -355,43 +282,25 @@ export default function SiteHeader() {
         </div>
 
         {/* Scroll progress */}
-        <div className="h-px bg-border/20">
-          <div className="h-full bg-primary/40 transition-[width] duration-100" style={{ width: `${scrollPct}%` }} />
+        <div className="h-1.5 bg-border/30">
+          <div className="h-full bg-primary transition-[width] duration-100" style={{ width: `${scrollPct}%` }} />
         </div>
       </div>
 
       {/* ── MOBILE NAV ───────────────────────────────── */}
       <div
         className={`lg:hidden overflow-hidden transition-[max-height,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-          mobileOpen ? "max-h-[720px] opacity-100" : "max-h-0 opacity-0"
+          mobileOpen ? "max-h-[90vh] opacity-100" : "max-h-0 opacity-0"
         }`}
         style={{ background: "hsl(var(--card))", boxShadow: mobileOpen ? "0 8px 32px -8px rgba(0,0,0,0.12)" : "none" }}
       >
-        <div className="px-4 pt-2 pb-4">
-          <Link
-            to={catalogItem.href}
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center justify-center gap-2 h-10 rounded-md text-sm font-semibold mb-3 bg-primary text-primary-foreground"
-          >
-            <LayoutGrid className="w-4 h-4" />
-            Каталог
-          </Link>
-          <div className="space-y-px mb-1">
-            {catalogItem.submenu!.filter((s) => s.href !== "/catalog").map((s) => {
-              const Icon = s.icon;
-              return (
-                <Link
-                  key={s.href}
-                  to={s.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2.5 py-2 px-2 text-xs text-muted-foreground hover:text-primary transition-colors duration-150"
-                >
-                  <Icon className="w-3.5 h-3.5 shrink-0" />
-                  <span>{s.label}</span>
-                </Link>
-              );
-            })}
-          </div>
+        <div className="px-4 pt-2 pb-4 max-h-[90vh] overflow-y-auto">
+          <CatalogMegaMenuMobile
+            segment={segment}
+            isLoggedIn={!!user}
+            onNavigate={() => setMobileOpen(false)}
+            onOpenWizard={() => setWizardOpen(true)}
+          />
 
           <div className="my-3 h-px bg-border/50" />
 
@@ -446,59 +355,32 @@ export default function SiteHeader() {
 
           <div className="my-3 h-px bg-border/50" />
 
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            <Link
-              to={SEGMENT_ROUTES.commercial.catalog}
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center justify-center h-9 text-xs font-semibold border ${!isResidential ? "bg-foreground text-background border-foreground" : "border-border text-foreground"}`}
-            >
-              Коммерческая
-            </Link>
-            <Link
-              to={SEGMENT_ROUTES.residential.home}
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center justify-center h-9 text-xs font-semibold border ${isResidential ? "bg-foreground text-background border-foreground" : "border-border text-foreground"}`}
-            >
-              Жилая
-            </Link>
-          </div>
-          <Link to={isResidential ? `${SEGMENT_ROUTES.residential.listProperty}?mode=rent` : `${SEGMENT_ROUTES.commercial.listProperty}?mode=rent`} onClick={() => setMobileOpen(false)}
+          <Link
+            to="/"
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center justify-center h-9 text-xs font-medium text-muted-foreground hover:text-foreground border border-border mb-3"
+          >
+            Сменить раздел
+          </Link>
+          <Link to={placeHref} onClick={() => setMobileOpen(false)}
             className="flex items-center justify-center h-9 bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity">
             Разместить за 0 ₽
           </Link>
-          <button
-            onClick={() => {
-              setMobileOpen(false);
-              setWizardOpen(true);
-            }}
-            className="mt-2 w-full flex items-center justify-center gap-1.5 h-8 text-muted-foreground text-xs font-medium hover:text-foreground transition-colors"
-          >
-            <Sparkles className="w-3.5 h-3.5" /> ИИ-подбор
-          </button>
           {user ? (
             <Link to="/account" onClick={() => setMobileOpen(false)}
               className="mt-1 flex items-center justify-center gap-1.5 h-8 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
               <User className="w-3.5 h-3.5" /> Кабинет
             </Link>
           ) : (
-            <Link to="/auth" onClick={() => setMobileOpen(false)}
+            <Link to="/auth?tab=register" onClick={() => setMobileOpen(false)}
               className="mt-1 flex items-center justify-center gap-1.5 h-8 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
               <User className="w-3.5 h-3.5" /> Войти
             </Link>
           )}
-
-          <div className="flex items-center gap-3 mt-3">
-            {socials.map(({ Icon, href, label }) => (
-              <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label}
-                className="text-muted-foreground hover:text-foreground transition-colors">
-                <Icon className="w-4 h-4" />
-              </a>
-            ))}
-          </div>
         </div>
       </div>
 
-      <AIWizardModal open={wizardOpen} onClose={() => setWizardOpen(false)} />
+      <AIWizardModal open={wizardOpen} onClose={() => setWizardOpen(false)} segment={segment} />
     </header>
   );
 }

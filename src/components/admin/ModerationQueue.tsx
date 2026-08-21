@@ -20,6 +20,7 @@ import {
   type RequestType,
 } from "@/lib/propertyModeration";
 import { notifyPropertyEmail } from "@/lib/notifyPropertyEmail";
+import { fetchAgencyByIdApi, fetchAgencyManagersApi, fetchMembershipApi } from "@/lib/agencyApi";
 
 type QueueItem = {
   id: string;
@@ -44,7 +45,7 @@ type QueueItem = {
     email: string | null;
     phone: string | null;
     avatar_url: string | null;
-    account_type?: "owner" | "realtor";
+    account_type?: "owner" | "realtor" | "agency";
     agency_name?: string | null;
     agency_about?: string | null;
     agency_staff_count?: number | null;
@@ -68,8 +69,33 @@ export default function ModerationQueue() {
 
       const submitter = item.submitter;
       const isFreeListing = item.request_type === "free_listing";
-      const isVerified = submitter?.verification_status === "verified";
-      const isRealtor = submitter?.account_type === "realtor";
+      const membership = submitter?.id ? await fetchMembershipApi(submitter.id) : null;
+      const agencyId =
+        membership?.agency_id ||
+        (item as { agency_id?: string | null }).agency_id ||
+        null;
+
+      let agency: Awaited<ReturnType<typeof fetchAgencyByIdApi>> | null = null;
+      if (agencyId) {
+        try {
+          agency = await fetchAgencyByIdApi(agencyId);
+        } catch {
+          agency = null;
+        }
+      }
+
+      const isAgency = !!agency || submitter?.account_type === "agency" || submitter?.account_type === "realtor";
+      const isVerified = agency
+        ? agency.verification_status === "verified"
+        : submitter?.verification_status === "verified";
+
+      const listingManagerId = (item as { listing_manager_id?: string | null }).listing_manager_id;
+      let manager: { full_name: string; phone: string; photo_url: string | null } | null = null;
+      if (agencyId && listingManagerId) {
+        const managers = await fetchAgencyManagersApi(agencyId);
+        const found = managers.find((m) => m.id === listingManagerId);
+        if (found) manager = found;
+      }
 
       let objectsCount = 0;
       if (submitter?.id) {
@@ -78,13 +104,18 @@ export default function ModerationQueue() {
       }
 
       const extras = {
-        agent_name: submitter?.full_name || "Собственник",
-        agent_company: isRealtor ? (submitter?.agency_name || "Риелтор") : "Собственник",
+        agent_name: manager?.full_name || submitter?.full_name || "Собственник",
+        agent_company: isAgency
+          ? (agency?.name || submitter?.agency_name || "Агентство")
+          : "Собственник",
         agent_verified: isVerified,
-        agent_avatar_url: submitter?.avatar_url || "",
-        agent_account_type: isRealtor ? "realtor" : "owner",
+        agent_avatar_url: manager?.photo_url || agency?.logo_url || submitter?.avatar_url || "",
+        agent_account_type: isAgency ? "agency" : "owner",
         agent_objects_count: objectsCount,
-        agent_agency_about: submitter?.agency_about || "",
+        agent_agency_about: agency?.about || submitter?.agency_about || "",
+        agent_phone: manager?.phone || submitter?.phone || "",
+        agency_id: agencyId || "",
+        listing_manager_id: listingManagerId || "",
         owner_user_id: submitter?.id || "",
       };
 
@@ -97,6 +128,7 @@ export default function ModerationQueue() {
         rejection_reason: null,
         extras,
         client_id: submitter?.id || null,
+        ...(agencyId ? { agency_id: agencyId } : {}),
       });
 
       if (item.request_type === "management") {

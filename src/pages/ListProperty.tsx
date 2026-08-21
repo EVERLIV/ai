@@ -4,6 +4,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ListPropertyBlock from "@/components/ListPropertyBlock";
 import type { PropertySegment } from "@/config/propertySegments";
+import { SEGMENT_ROUTES } from "@/config/propertySegments";
 import { listPropertyPath } from "@/lib/listPropertyLinks";
 
 interface ListPropertyProps {
@@ -15,6 +16,7 @@ export default function ListProperty({ segment = "commercial" }: ListPropertyPro
   const { search } = useLocation();
   const mode = new URLSearchParams(search).get("mode");
   const isResidential = segment === "residential";
+  const segmentHome = isResidential ? SEGMENT_ROUTES.residential.home : SEGMENT_ROUTES.commercial.home;
 
   const modeLabel =
     mode === "rent"
@@ -41,7 +43,7 @@ export default function ListProperty({ segment = "commercial" }: ListPropertyPro
             <ArrowLeft className="w-4 h-4" />
           </button>
           <nav className="flex-1 min-w-0 flex items-center gap-1.5 text-[11px] lg:text-xs text-muted-foreground whitespace-nowrap overflow-hidden">
-            <Link to="/" className="hover:text-foreground transition-colors shrink-0">Главная</Link>
+            <Link to={segmentHome} className="hover:text-foreground transition-colors shrink-0">Главная</Link>
             <span className="shrink-0 opacity-50">/</span>
             <Link to={basePath} className="hover:text-foreground transition-colors shrink-0">
               {isResidential ? "Разместить жильё" : "Разместить объект"}

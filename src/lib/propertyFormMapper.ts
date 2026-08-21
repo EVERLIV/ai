@@ -53,6 +53,7 @@ export interface PropertyFormState {
   mortgage: boolean;
   pets_allowed: boolean;
   children_allowed: boolean;
+  listing_manager_id: string;
 }
 
 export function propertyToFormState(property: MyProperty): PropertyFormState {
@@ -106,6 +107,7 @@ export function propertyToFormState(property: MyProperty): PropertyFormState {
     mortgage: Boolean(e[RESIDENTIAL_EXTRAS_KEYS.mortgage]),
     pets_allowed: Boolean(e[RESIDENTIAL_EXTRAS_KEYS.petsAllowed]),
     children_allowed: Boolean(e[RESIDENTIAL_EXTRAS_KEYS.childrenAllowed]),
+    listing_manager_id: property.listing_manager_id || "",
   };
 }
 
@@ -184,6 +186,7 @@ export function buildPropertyPayload(
     features: form.features,
     request_type: form.request_type,
     client_id: userId,
+    listing_manager_id: form.listing_manager_id || null,
     extras: typesExtras,
   };
 

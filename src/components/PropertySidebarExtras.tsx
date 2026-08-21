@@ -33,7 +33,7 @@ export default function PropertySidebarExtras({ property }: Props) {
   const agentName = liveOwner?.full_name || (d.agent_name !== "—" ? d.agent_name : "");
   const agentAvatar = liveOwner?.avatar_url || d.agent_avatar_url || consultantAvatar;
   const accountType = liveOwner?.account_type || d.agent_account_type;
-  const isRealtor = accountType === "realtor";
+  const isRealtor = accountType === "realtor" || accountType === "agency";
   const agencyName = liveOwner?.agency_name || (d.agent_company !== "—" && d.agent_company !== "Собственник" ? d.agent_company : "");
   const agencyAbout = liveOwner?.agency_about || d.agent_agency_about;
   const objectsCount = liveOwner?.published_objects_count ?? d.agent_objects_count;
