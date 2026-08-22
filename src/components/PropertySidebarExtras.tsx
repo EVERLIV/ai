@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import { resolveSidebarDisplay } from "@/lib/propertySidebar";
+import { isAgencyListing } from "@/lib/listingSource";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useOwnerListingCard } from "@/hooks/useOwnerListingCard";
 import { ACCOUNT_TYPE_LABELS } from "@/hooks/useProfile";
@@ -13,6 +14,7 @@ import { AGENCY_OBJECTS_FLOOR, formatAgentObjectsLabel } from "@/lib/propertyCar
 
 interface Props {
   property: {
+    agency_id?: string | null;
     type?: string | null;
     deal_type?: string | null;
     district?: string | null;
@@ -27,22 +29,39 @@ interface Props {
 export default function PropertySidebarExtras({ property }: Props) {
   const d = resolveSidebarDisplay(property);
   const { vis } = d;
+  const agencyListing = isAgencyListing(property);
   const ownerUserId = d.owner_user_id || property.submitted_by || "";
-  const { data: liveOwner } = useOwnerListingCard(ownerUserId || null);
+  const { data: liveOwner } = useOwnerListingCard(agencyListing ? null : ownerUserId || null);
 
-  const agentName = liveOwner?.full_name || (d.agent_name !== "—" ? d.agent_name : "");
-  const agentAvatar = liveOwner?.avatar_url || d.agent_avatar_url || consultantAvatar;
-  const accountType = liveOwner?.account_type || d.agent_account_type;
-  const isRealtor = accountType === "realtor" || accountType === "agency";
-  const agencyName = liveOwner?.agency_name || (d.agent_company !== "—" && d.agent_company !== "Собственник" ? d.agent_company : "");
-  const agencyAbout = liveOwner?.agency_about || d.agent_agency_about;
-  const objectsCount = liveOwner?.published_objects_count ?? d.agent_objects_count;
-  const isVerified = liveOwner
-    ? liveOwner.verification_status === "verified"
-    : d.agent_verified;
-  const staffCount = liveOwner?.agency_staff_count;
+  const extrasAgentName = d.agent_name !== "—" ? d.agent_name : "";
+  const extrasAgencyName =
+    d.agent_company !== "—" && d.agent_company !== "Собственник" ? d.agent_company : "";
 
-  const hasOwnerData = !!ownerUserId && !!(agentName || liveOwner?.full_name);
+  const agentName = agencyListing
+    ? extrasAgentName
+    : liveOwner?.full_name || extrasAgentName;
+  const agentAvatar = agencyListing
+    ? d.agent_avatar_url || consultantAvatar
+    : liveOwner?.avatar_url || d.agent_avatar_url || consultantAvatar;
+  const accountType = agencyListing ? d.agent_account_type : liveOwner?.account_type || d.agent_account_type;
+  const isRealtor = accountType === "realtor" || accountType === "agency" || agencyListing;
+  const agencyName = agencyListing
+    ? extrasAgencyName
+    : liveOwner?.agency_name || extrasAgencyName;
+  const agencyAbout = agencyListing ? d.agent_agency_about : liveOwner?.agency_about || d.agent_agency_about;
+  const objectsCount = agencyListing
+    ? d.agent_objects_count
+    : liveOwner?.published_objects_count ?? d.agent_objects_count;
+  const isVerified = agencyListing
+    ? d.agent_verified
+    : liveOwner
+      ? liveOwner.verification_status === "verified"
+      : d.agent_verified;
+  const staffCount = agencyListing ? undefined : liveOwner?.agency_staff_count;
+
+  const hasOwnerData = agencyListing
+    ? !!(extrasAgentName || extrasAgencyName)
+    : !!ownerUserId && !!(agentName || liveOwner?.full_name);
 
   // Объекты без собственника ведёт агент агентства — берём его данные
   // из единого конфига, а число объектов из фактического каталога.

@@ -6,7 +6,7 @@ import {
   Shield, Calendar, ChevronLeft, ChevronRight, Store, Warehouse, TreePine,
   MessageSquareText, Tag, Download, X, Send, ChevronDown,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -19,6 +19,7 @@ import RevealListingPhone from "@/components/RevealListingPhone";
 import ReportListingDialog from "@/components/ReportListingDialog";
 import PropertyAIChat from "@/components/PropertyAIChat";
 import { isOwnerListing, getOwnerUserId } from "@/lib/propertyModeration";
+import { isAgencyListing } from "@/lib/listingSource";
 import { isResidentialSegment, SEGMENT_ROUTES } from "@/config/propertySegments";
 import PropertyUnitsTable from "@/components/PropertyUnitsTable";
 import PropertySidebarExtras from "@/components/PropertySidebarExtras";
@@ -35,6 +36,7 @@ import { absoluteUrl } from "@/config/site";
 import PropertyShareButton from "@/components/PropertyShareButton";
 import PropertyDescription from "@/components/PropertyDescription";
 import { submitLead } from "@/lib/submitLead";
+import { trackPropertyView } from "@/lib/agencyNotify";
 
 const typeIcons: Record<string, React.ElementType> = {
   "Офис": Building2, "Торговая": Store, "Склад": Warehouse, "Земля": TreePine,
@@ -48,6 +50,16 @@ export default function PropertyDetail() {
   const [activePhoto, setActivePhoto] = useState(0);
   const [showPKK, setShowPKK] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const viewTrackedRef = useRef(false);
+
+  useEffect(() => {
+    if (!property?.id || viewTrackedRef.current) return;
+    const key = `pv_${property.id}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+    viewTrackedRef.current = true;
+    void trackPropertyView(property.id);
+  }, [property?.id]);
   const [contactForm, setContactForm] = useState({ name: "", phone: "", message: "" });
   const [contactSent, setContactSent] = useState(false);
   const [contactLoading, setContactLoading] = useState(false);
@@ -517,11 +529,12 @@ export default function PropertyDetail() {
 function PropertyPriceBlock({ property }: { property: any }) {
   const extras = (property.extras || {}) as Record<string, unknown>;
   const ownerListing = isOwnerListing(extras, property.submitted_by);
+  const agencyListing = isAgencyListing(property);
   const ownerUserId = getOwnerUserId(extras, property.submitted_by);
   const ownerName = typeof extras.agent_name === "string" ? extras.agent_name : undefined;
   const isResidential = isResidentialSegment(property.segment);
   const typesLabel = formatPropertyTypesLabel(getPropertyTypes(property));
-  const useOwnerInquiry = isResidential || ownerListing;
+  const useOwnerInquiry = isResidential || ownerListing || agencyListing;
 
   return (
     <div id="contact-form" className="bg-card rounded-2xl shadow-card p-4 scroll-mt-24 space-y-3">

@@ -83,7 +83,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section ref={ref} className="relative min-h-screen flex items-center pt-14 md:pt-16">
+    <section ref={ref} className="relative hidden lg:flex min-h-screen items-center pt-14 md:pt-16">
       <div className="absolute inset-0">
         <img src={heroImg} alt="" width={1920} height={1080} className="w-full h-full object-cover" fetchpriority="high" />
         <div className="absolute inset-0" style={{ background: "rgba(255,255,255,0.88)" }} />

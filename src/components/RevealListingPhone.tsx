@@ -11,10 +11,12 @@ import {
   maskPhone,
   normalizePhoneTel,
 } from "@/lib/listingContact";
+import { isAgencyListing } from "@/lib/listingSource";
 import { propertyCtaButtonClass } from "@/components/OwnerMessageDialog";
 import { cn } from "@/lib/utils";
 
 type PropertyLike = {
+  agency_id?: string | null;
   extras?: Record<string, unknown> | null;
   submitted_by?: string | null;
 };
@@ -38,6 +40,11 @@ export default function RevealListingPhone({ property, className, variant = "cta
     const fromExtras = getListingPhoneFromExtras(property.extras);
     if (fromExtras) {
       setPhone(fromExtras);
+      return;
+    }
+
+    if (isAgencyListing(property)) {
+      setLoading(false);
       return;
     }
 

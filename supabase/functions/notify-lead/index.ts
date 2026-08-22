@@ -18,6 +18,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+import { fetchPropertyAgencyId, internalSecret } from "../_shared/agencyTelegram.ts";
+
 type LeadPayload = {
   id?: string | null;
   name?: string | null;
@@ -113,7 +115,30 @@ Deno.serve(async (req) => {
     }
 
     const text = formatLead(body);
-    await sendTelegram(text);
+    try {
+      await sendTelegram(text);
+    } catch (e) {
+      console.warn("notify-lead ops telegram:", e);
+    }
+
+    // Уведомление агентства (отдельный бот), только если объект привязан к агентству
+    if (body.object_id) {
+      const prop = await fetchPropertyAgencyId(body.object_id);
+      if (prop?.agency_id) {
+        const base = Deno.env.get("SUPABASE_URL") || "";
+        const secret = internalSecret();
+        if (base) {
+          await fetch(`${base}/functions/v1/agency-notify`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(secret ? { "X-Agency-Notify-Secret": secret } : {}),
+            },
+            body: JSON.stringify({ type: "lead", agency_id: prop.agency_id, payload: body }),
+          }).catch((e) => console.warn("agency-notify:", e));
+        }
+      }
+    }
 
     return json({ ok: true });
   } catch (e) {

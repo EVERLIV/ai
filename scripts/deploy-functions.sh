@@ -38,6 +38,9 @@ echo
 # Копируем каждую функцию. Каталог main не трогаем — это роутер рантайма.
 for fn_path in "$SRC_DIR"/*/; do
   fn="$(basename "$fn_path")"
+  if [ "$fn" = "_shared" ]; then
+    continue
+  fi
   if [ ! -f "$fn_path/index.ts" ]; then
     echo "  пропуск $fn (нет index.ts)"
     continue
@@ -46,6 +49,13 @@ for fn_path in "$SRC_DIR"/*/; do
   cp "$fn_path/index.ts" "$TARGET_DIR/$fn/index.ts"
   echo "  ✓ $fn"
 done
+
+# Общие модули (agencyTelegram.ts и т.д.) — импортируются как ../_shared/...
+if [ -d "$SRC_DIR/_shared" ]; then
+  mkdir -p "$TARGET_DIR/_shared"
+  cp -r "$SRC_DIR/_shared/." "$TARGET_DIR/_shared/"
+  echo "  ✓ _shared"
+fi
 
 echo
 echo "Содержимое каталога функций:"

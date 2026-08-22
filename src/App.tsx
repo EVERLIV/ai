@@ -42,6 +42,7 @@ import RoomsPage from "./pages/residential/RoomsPage.tsx";
 import PlotsPage from "./pages/residential/PlotsPage.tsx";
 import InstallPrompt from "@/components/InstallPrompt";
 import CookieBanner from "@/components/CookieBanner";
+import MobileBottomNav from "@/components/mobile/MobileBottomNav";
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -56,6 +57,7 @@ const App = () => {
             <BrowserRouter>
               <InstallPrompt />
               <CookieBanner />
+              <div className="pb-mobile-nav">
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/kommercheskaya" element={<Navigate to="/" replace />} />
@@ -113,6 +115,8 @@ const App = () => {
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </div>
+              <MobileBottomNav />
             </BrowserRouter>
             </MotionConfig>
           </TooltipProvider>

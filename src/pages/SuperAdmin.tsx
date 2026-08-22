@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -382,9 +382,10 @@ export default function SuperAdmin() {
 
       {/* Role Dialog */}
       <Dialog open={roleDialog.open} onOpenChange={open => !open && setRoleDialog({ open: false, user: null })}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Изменить роль</DialogTitle>
+            <DialogDescription className="sr-only">Выбор новой роли пользователя</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">{roleDialog.user?.email}</p>
@@ -416,9 +417,10 @@ export default function SuperAdmin() {
 
       {/* Set Password Dialog */}
       <Dialog open={resetDialog.open} onOpenChange={open => { if (!open) { setResetDialog({ open: false, userId: "", email: "" }); setNewPasswordValue(""); } }}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Установить пароль</DialogTitle>
+            <DialogDescription className="sr-only">Новый пароль для пользователя</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">{resetDialog.email}</p>

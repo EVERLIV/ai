@@ -12,6 +12,7 @@ import ListPropertyBlock from "@/components/ListPropertyBlock";
 import NewsSection from "@/components/NewsSection";
 import PopularPropertiesSlider from "@/components/PopularPropertiesSlider";
 import ConsultationWidget from "@/components/ConsultationWidget";
+import MobileHomeSearch from "@/components/mobile/MobileHomeSearch";
 import SiteFooter from "@/components/SiteFooter";
 import SeoHead from "@/components/SeoHead";
 import OrganizationJsonLd from "@/components/OrganizationJsonLd";
@@ -31,9 +32,10 @@ export default function Index() {
       />
       <OrganizationJsonLd />
       <SiteHeader />
+      <MobileHomeSearch />
       <HeroSection />
 
-      <section className="border-b border-border/60 bg-muted/20">
+      <section className="hidden lg:block border-b border-border/60 bg-muted/20">
         <div className="container mx-auto px-4 lg:px-8 py-4">
           <div className="flex flex-wrap gap-2">
             <Link
@@ -65,7 +67,9 @@ export default function Index() {
       </section>
 
       <NewsSection />
-      <SearchFilters onAIClick={() => {}} filters={filters} onChange={setFilters} />
+      <div className="hidden lg:block">
+        <SearchFilters onAIClick={() => {}} filters={filters} onChange={setFilters} />
+      </div>
       <PropertyGrid filters={filters} />
       <PopularPropertiesSlider />
       <RentSection />

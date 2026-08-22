@@ -22,6 +22,15 @@ export type Agency = {
   verified_by: string | null;
   created_at: string;
   updated_at: string;
+  telegram_enabled?: boolean;
+  telegram_chat_id?: number | null;
+  telegram_chat_title?: string | null;
+  telegram_connect_code?: string | null;
+  telegram_connect_expires_at?: string | null;
+  telegram_connected_at?: string | null;
+  telegram_notify_leads?: boolean;
+  telegram_notify_views?: boolean;
+  telegram_notify_moderation?: boolean;
 };
 
 export type AgencyMember = {
@@ -89,6 +98,11 @@ function parseError(data: unknown, res: Response): Error {
     if (isMissingColumnError(data, "agency_id")) {
       return new Error(
         "В БД нет колонки properties.agency_id. Выполните supabase/self_hosted_agency_hotfix.sql",
+      );
+    }
+    if (isMissingColumnError(data, "telegram_")) {
+      return new Error(
+        "В БД нет полей Telegram для агентств. Выполните supabase/self_hosted_agency_telegram.sql",
       );
     }
     return new Error(combined);
@@ -325,7 +339,7 @@ export async function fetchInviteByTokenApi(token: string) {
 export async function fetchAgencyPropertiesApi(agencyId: string) {
   try {
     return await restGet<Record<string, unknown>[]>(
-      `properties?agency_id=eq.${agencyId}&moderation_status=eq.approved&is_active=eq.true&select=*&order=created_at.desc`,
+      `properties?agency_id=eq.${agencyId}&moderation_status=eq.published&is_active=eq.true&select=*&order=created_at.desc`,
     );
   } catch (err) {
     if (err instanceof Error && /agency_id|self_hosted_agency_hotfix/i.test(err.message)) {
@@ -383,4 +397,65 @@ export async function ensureAgencyForUserApi(userId: string, seed?: { name?: str
     account_type: "agency",
   });
   return { agency, membership: { agency_id: agency.id, user_id: userId, role: "owner" as const, created_at: new Date().toISOString() } };
+}
+
+
+export type AgencyTelegramSettings = {
+  telegram_enabled?: boolean;
+  telegram_notify_leads?: boolean;
+  telegram_notify_views?: boolean;
+};
+
+/** Нормализация ID группы/канала Telegram (-100…) */
+export function parseTelegramChatId(raw: string): number | null {
+  const s = raw.trim().replace(/\s/g, "");
+  if (!s) return null;
+  const n = Number(s);
+  if (!Number.isFinite(n) || !Number.isInteger(n)) return null;
+  return n;
+}
+
+export async function connectAgencyTelegramByChatIdApi(
+  agencyId: string,
+  chatIdRaw: string,
+  chatTitle?: string | null,
+) {
+  const chatId = parseTelegramChatId(chatIdRaw);
+  if (chatId == null) {
+    throw new Error("Укажите числовой ID чата, например -1001234567890");
+  }
+
+  const taken = await restGet<Pick<Agency, "id" | "name">[]>(
+    `agencies?telegram_chat_id=eq.${chatId}&select=id,name`,
+  );
+  if (taken?.[0] && taken[0].id !== agencyId) {
+    throw new Error(`Этот чат уже привязан к агентству «${taken[0].name}»`);
+  }
+
+  return updateAgencyApi(agencyId, {
+    telegram_chat_id: chatId,
+    telegram_chat_title: chatTitle?.trim() || null,
+    telegram_connected_at: new Date().toISOString(),
+    telegram_enabled: true,
+    telegram_connect_code: null,
+    telegram_connect_expires_at: null,
+  });
+}
+
+export async function updateAgencyTelegramSettingsApi(
+  agencyId: string,
+  settings: AgencyTelegramSettings,
+) {
+  return updateAgencyApi(agencyId, settings);
+}
+
+export async function disconnectAgencyTelegramApi(agencyId: string) {
+  return updateAgencyApi(agencyId, {
+    telegram_enabled: false,
+    telegram_chat_id: null,
+    telegram_chat_title: null,
+    telegram_connect_code: null,
+    telegram_connect_expires_at: null,
+    telegram_connected_at: null,
+  });
 }

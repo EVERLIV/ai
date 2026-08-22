@@ -38,3 +38,12 @@ verify_jwt = false
 
 [functions.send-agency-invite]
 verify_jwt = false
+
+[functions.agency-telegram-bot]
+verify_jwt = false
+
+[functions.agency-notify]
+verify_jwt = false
+
+[functions.track-property-view]
+verify_jwt = false

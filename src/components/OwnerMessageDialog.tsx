@@ -89,26 +89,26 @@ export default function OwnerMessageDialog({
         {trigger ?? defaultTrigger}
       </div>
       <DialogContent className="max-w-md">
+        <DialogHeader className={sent ? "sr-only" : undefined}>
+          <DialogTitle className={sent ? undefined : "flex items-center gap-2"}>
+            {!sent && <MessageSquareText className="w-4 h-4 text-primary" />}
+            {sent ? "Заявка отправлена" : title}
+          </DialogTitle>
+          <DialogDescription>
+            {sent
+              ? "Вам ответят в ближайшее время."
+              : `${ownerName ? `Контакт: ${ownerName}` : "Заявка разместившему объявление"}${propertyAddress ? ` · ${propertyAddress}` : ""}`}
+          </DialogDescription>
+        </DialogHeader>
         {sent ? (
           <div className="text-center py-6 space-y-3">
             <CheckCircle className="w-12 h-12 text-primary mx-auto" />
-            <h3 className="font-semibold">Заявка отправлена</h3>
+            <p className="font-semibold">Заявка отправлена</p>
             <p className="text-sm text-muted-foreground">Вам ответят в ближайшее время.</p>
             <Button variant="outline" onClick={() => setOpen(false)}>Закрыть</Button>
           </div>
         ) : (
-          <>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <MessageSquareText className="w-4 h-4 text-primary" />
-                {title}
-              </DialogTitle>
-              <DialogDescription>
-                {ownerName ? `Контакт: ${ownerName}` : "Заявка разместившему объявление"}
-                {propertyAddress && <> · {propertyAddress}</>}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-3 pt-2">
+          <form onSubmit={handleSubmit} className="space-y-3 pt-2">
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input name="name" placeholder="Ваше имя" required className="pl-9" />
@@ -130,7 +130,6 @@ export default function OwnerMessageDialog({
                 {loading ? "Отправка…" : "Отправить"}
               </Button>
             </form>
-          </>
         )}
       </DialogContent>
     </Dialog>

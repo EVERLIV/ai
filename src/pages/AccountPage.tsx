@@ -8,7 +8,7 @@ import ProfileTab from "@/components/account/ProfileTab";
 import MyLeadsTab from "@/components/account/MyLeadsTab";
 import StatsTab from "@/components/account/StatsTab";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import { Heart, FileText, User, LogOut, MapPin, Maximize2, ChevronRight, Building2, BarChart3, Users, Briefcase, Landmark } from "lucide-react";
+import { Heart, FileText, User, LogOut, MapPin, Maximize2, ChevronRight, Building2, BarChart3, Users, Briefcase, Landmark, MessageCircle } from "lucide-react";
 import { useProperties } from "@/hooks/useProperties";
 import { useProfile, ACCOUNT_TYPE_LABELS, isProfileVerified } from "@/hooks/useProfile";
 import { useMyAgency } from "@/hooks/useAgency";
@@ -16,6 +16,7 @@ import SeoHead from "@/components/SeoHead";
 import AgencyProfileTab from "@/components/account/AgencyProfileTab";
 import AgencyTeamTab from "@/components/account/AgencyTeamTab";
 import AgencyManagersTab from "@/components/account/AgencyManagersTab";
+import AgencyTelegramTab from "@/components/account/AgencyTelegramTab";
 
 const OWNER_TABS = [
   { key: "favorites", label: "Избранное", icon: Heart },
@@ -29,6 +30,7 @@ const AGENCY_EXTRA_TABS = [
   { key: "agency", label: "Агентство", icon: Landmark },
   { key: "team", label: "Команда", icon: Users },
   { key: "managers", label: "Менеджеры", icon: Briefcase },
+  { key: "telegram", label: "Telegram", icon: MessageCircle },
 ] as const;
 
 type Tab =
@@ -64,10 +66,10 @@ export default function AccountPage() {
       : undefined;
 
   useEffect(() => {
-    const hash = window.location.hash.replace("#", "");
+    const hash = location.hash.replace("#", "");
     if (VALID_TABS.has(hash)) setTab(hash as Tab);
     else if (initialRequestType) setTab("properties");
-  }, [initialRequestType]);
+  }, [location.hash, initialRequestType]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -230,6 +232,8 @@ export default function AccountPage() {
             {tab === "team" && <AgencyTeamTab />}
 
             {tab === "managers" && <AgencyManagersTab />}
+
+            {tab === "telegram" && <AgencyTelegramTab />}
 
             {tab === "profile" && <ProfileTab />}
           </div>

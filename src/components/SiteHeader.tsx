@@ -3,11 +3,12 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Phone, Mail,
   ChevronDown, User,
-  Heart, FileText, LogOut, Building2, Home,
-  ArrowUpRight, Newspaper, Info, BookOpen, Settings2, Briefcase, TreePine,
+  Heart, FileText, LogOut, Building2,
+  ArrowUpRight, Newspaper, Info, BookOpen, Settings2, Briefcase,
 } from "lucide-react";
 import AIWizardModal from "@/components/AIWizardModal";
-import { CatalogMegaMenuDesktop, CatalogMegaMenuMobile } from "@/components/CatalogMegaMenu";
+import { CatalogMegaMenuDesktop } from "@/components/CatalogMegaMenu";
+import MobileMenuDrawer from "@/components/mobile/MobileMenuDrawer";
 import BrandMark from "@/components/BrandMark";
 import { useAuth } from "@/hooks/useAuth";
 import { CONTACTS } from "@/config/company";
@@ -42,7 +43,6 @@ export type SiteHeaderProps = {
 
 export default function SiteHeader({ contextSegment = null, isLandContext = false }: SiteHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const [scrollPct, setScrollPct] = useState(0);
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -186,15 +186,28 @@ export default function SiteHeader({ contextSegment = null, isLandContext = fals
       </div>
 
       <div className={`transition-all duration-300 ${scrolled ? "bg-card/95 backdrop-blur-2xl shadow-[0_1px_0_0_hsl(var(--border)/0.6)]" : "bg-card"}`}>
-        <div className="container mx-auto flex items-center justify-between h-14 px-4 lg:px-8">
+        <div className="container mx-auto flex items-center h-14 px-4 lg:px-8 gap-2">
 
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <button
+            type="button"
+            aria-label="Меню"
+            className="lg:hidden w-9 h-9 flex items-center justify-center text-foreground shrink-0 -ml-1"
+            onClick={() => setMobileOpen(true)}
+          >
+            <span className="flex flex-col gap-[5px] w-5">
+              <span className="h-px bg-current" />
+              <span className="h-px bg-current" />
+              <span className="h-px bg-current" />
+            </span>
+          </button>
+
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 lg:flex-initial">
             <Link to="/" className="group flex items-center gap-2.5 shrink-0 min-w-0">
-              <div className="relative w-10 h-10 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shrink-0">
-                <BrandMark className="w-10 h-10" />
+              <div className="relative w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shrink-0">
+                <BrandMark className="w-9 h-9 lg:w-10 lg:h-10" />
               </div>
               <span className="flex flex-col leading-none min-w-0">
-                <span className="font-sans text-[15px] sm:text-[16px] font-bold tracking-tight text-foreground">
+                <span className="font-sans text-[14px] sm:text-[16px] font-bold tracking-tight text-foreground">
                   АРЕНДА<span className="text-primary">СИТИ</span>
                 </span>
                 <span className="text-[9px] font-medium tracking-wide text-muted-foreground mt-0.5 uppercase hidden sm:block">
@@ -203,6 +216,13 @@ export default function SiteHeader({ contextSegment = null, isLandContext = fals
               </span>
             </Link>
           </div>
+
+          <Link
+            to={placeHref}
+            className="lg:hidden shrink-0 h-8 px-2.5 flex items-center text-xs font-semibold text-primary whitespace-nowrap"
+          >
+            + Разместить
+          </Link>
 
           <nav className="hidden lg:flex items-center gap-1 ml-auto">
             {NAV_ITEMS.map((item, idx) => {
@@ -261,18 +281,6 @@ export default function SiteHeader({ contextSegment = null, isLandContext = fals
               onOpenWizard={() => setWizardOpen(true)}
             />
           </nav>
-
-          <button
-            aria-label="Меню"
-            className="lg:hidden ml-auto w-9 h-9 flex items-center justify-center text-foreground"
-            onClick={() => setMobileOpen(!mobileOpen)}
-          >
-            <span className="flex flex-col gap-[5px] w-5">
-              <span className={`h-px bg-current transition-all duration-300 origin-center ${mobileOpen ? "rotate-45 translate-y-[6px]" : ""}`} />
-              <span className={`h-px bg-current transition-all duration-200 ${mobileOpen ? "opacity-0 scale-x-0" : ""}`} />
-              <span className={`h-px bg-current transition-all duration-300 origin-center ${mobileOpen ? "-rotate-45 -translate-y-[6px]" : ""}`} />
-            </span>
-          </button>
         </div>
 
         <div className="h-1.5 bg-border/30">
@@ -280,104 +288,13 @@ export default function SiteHeader({ contextSegment = null, isLandContext = fals
         </div>
       </div>
 
-      <div
-        className={`lg:hidden overflow-hidden transition-[max-height,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-          mobileOpen ? "max-h-[90vh] opacity-100" : "max-h-0 opacity-0"
-        }`}
-        style={{ background: "hsl(var(--card))", boxShadow: mobileOpen ? "0 8px 32px -8px rgba(0,0,0,0.12)" : "none" }}
-      >
-        <div className="px-4 pt-2 pb-4 max-h-[90vh] overflow-y-auto">
-          <CatalogMegaMenuMobile
-            isLoggedIn={!!user}
-            onNavigate={() => setMobileOpen(false)}
-            onOpenWizard={() => setWizardOpen(true)}
-          />
-
-          <div className="my-3 h-px bg-border/50" />
-
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            <Link to="/zhilaya" onClick={() => setMobileOpen(false)}
-              className="flex flex-col items-center gap-1 rounded-md border border-border px-2 py-2.5 text-[11px] font-medium text-foreground hover:border-primary/40">
-              <Home className="w-4 h-4 text-primary" /> Жилая
-            </Link>
-            <Link to="/catalog" onClick={() => setMobileOpen(false)}
-              className="flex flex-col items-center gap-1 rounded-md border border-border px-2 py-2.5 text-[11px] font-medium text-foreground hover:border-primary/40">
-              <Building2 className="w-4 h-4 text-primary" /> Коммерция
-            </Link>
-            <Link to="/zhilaya/uchastki" onClick={() => setMobileOpen(false)}
-              className="flex flex-col items-center gap-1 rounded-md border border-border px-2 py-2.5 text-[11px] font-medium text-foreground hover:border-primary/40">
-              <TreePine className="w-4 h-4 text-primary" /> Участки
-            </Link>
-          </div>
-
-          <div className="space-y-px">
-            {NAV_ITEMS.map((item) => {
-              const active = isActive(item.href);
-              const hasMenu = !!item.submenu?.length;
-              const expanded = mobileExpanded === item.label;
-              return (
-                <div key={item.label}>
-                  <div className="flex items-center">
-                    <Link
-                      to={item.href}
-                      onClick={() => !hasMenu && setMobileOpen(false)}
-                      className={`flex-1 flex items-center py-2.5 px-2 text-sm transition-colors duration-150 ${
-                        active ? "text-primary font-medium" : "text-foreground/80 hover:text-foreground"
-                      }`}
-                    >
-                      <span>{item.label}</span>
-                    </Link>
-                    {hasMenu && (
-                      <button
-                        onClick={() => setMobileExpanded(expanded ? null : item.label)}
-                        className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
-                      </button>
-                    )}
-                    {active && !hasMenu && <span className="w-1 h-1 bg-primary mr-2" />}
-                  </div>
-                  {hasMenu && (
-                    <div className={`overflow-hidden transition-[max-height,opacity] duration-200 ${expanded ? "max-h-64 opacity-100" : "max-h-0 opacity-0"}`}>
-                      <div className="pl-4 pb-1 space-y-px ml-2 mt-0.5">
-                        {item.submenu!.map((s) => {
-                          const Icon = s.icon;
-                          return (
-                            <Link key={s.href} to={s.href}
-                              onClick={() => setMobileOpen(false)}
-                              className="flex items-center gap-2.5 py-2 px-2 text-xs text-muted-foreground hover:text-primary transition-colors duration-150 group">
-                              <Icon className="w-3.5 h-3.5 shrink-0 group-hover:text-primary transition-colors" />
-                              <span>{s.label}</span>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="my-3 h-px bg-border/50" />
-
-          <Link to={placeHref} onClick={() => setMobileOpen(false)}
-            className="flex items-center justify-center h-9 bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity">
-            Разместить за 0 ₽
-          </Link>
-          {user ? (
-            <Link to="/account" onClick={() => setMobileOpen(false)}
-              className="mt-1 flex items-center justify-center gap-1.5 h-8 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-              <User className="w-3.5 h-3.5" /> Кабинет
-            </Link>
-          ) : (
-            <Link to="/auth?tab=register" onClick={() => setMobileOpen(false)}
-              className="mt-1 flex items-center justify-center gap-1.5 h-8 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-              <User className="w-3.5 h-3.5" /> Войти
-            </Link>
-          )}
-        </div>
-      </div>
+      <MobileMenuDrawer
+        open={mobileOpen}
+        onOpenChange={setMobileOpen}
+        isLoggedIn={!!user}
+        placeHref={placeHref}
+        onOpenWizard={() => { setMobileOpen(false); setWizardOpen(true); }}
+      />
 
       <AIWizardModal open={wizardOpen} onClose={() => setWizardOpen(false)} segment={wizardSegment} />
     </header>

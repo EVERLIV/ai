@@ -19,6 +19,9 @@ import {
   updateAgencyManagerApi,
   updateAgencyMemberRoleApi,
   uploadAgencyAssetApi,
+  connectAgencyTelegramByChatIdApi,
+  updateAgencyTelegramSettingsApi,
+  disconnectAgencyTelegramApi,
   type Agency,
   type AgencyMemberRole,
   type AgencyManager,
@@ -188,6 +191,53 @@ export function useUploadAgencyLogo(agencyId: string | undefined) {
       const url = await uploadAgencyAssetApi(agencyId!, file, "logo");
       await updateAgency.mutateAsync({ agencyId: agencyId!, payload: { logo_url: url } });
       return url;
+    },
+  });
+}
+
+export function useConnectAgencyTelegramChat() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: ({
+      agencyId,
+      chatId,
+      chatTitle,
+    }: {
+      agencyId: string;
+      chatId: string;
+      chatTitle?: string | null;
+    }) => connectAgencyTelegramByChatIdApi(agencyId, chatId, chatTitle),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-agency", user?.id] });
+    },
+  });
+}
+
+export function useUpdateAgencyTelegramSettings() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: ({
+      agencyId,
+      settings,
+    }: {
+      agencyId: string;
+      settings: Parameters<typeof updateAgencyTelegramSettingsApi>[1];
+    }) => updateAgencyTelegramSettingsApi(agencyId, settings),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-agency", user?.id] });
+    },
+  });
+}
+
+export function useDisconnectAgencyTelegram() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: (agencyId: string) => disconnectAgencyTelegramApi(agencyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-agency", user?.id] });
     },
   });
 }

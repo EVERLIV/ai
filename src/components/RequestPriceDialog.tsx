@@ -99,30 +99,30 @@ export default function RequestPriceDialog({ propertyId, propertyAddress, basePr
         {trigger ?? defaultTrigger}
       </DialogTrigger>
       <DialogContent className="max-w-md p-0 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <DialogHeader className={sent ? "sr-only px-6 pt-6" : "px-6 pt-6 pb-4 bg-gradient-to-br from-primary/5 to-transparent border-b border-border space-y-1.5"}>
+          <DialogTitle className={sent ? undefined : "flex items-center gap-2 text-base"}>
+            {!sent && <Tag className="w-4 h-4 text-primary" />}
+            {sent ? "Заявка принята" : "Предложить свою цену"}
+          </DialogTitle>
+          <DialogDescription className={sent ? undefined : "text-xs leading-relaxed"}>
+            {sent
+              ? "Менеджер свяжется с вами в течение 15 минут и обсудит вашу цену."
+              : propertyAddress
+                ? <>Объект: <span className="text-foreground font-medium">{propertyAddress}</span></>
+                : "Оставьте контакты — обсудим вашу цену индивидуально."}
+          </DialogDescription>
+        </DialogHeader>
         {sent ? (
           <div className="text-center px-6 py-10 space-y-3">
             <CheckCircle className="w-14 h-14 text-primary mx-auto" />
-            <h3 className="font-display text-lg font-semibold text-foreground">Заявка принята</h3>
+            <p className="font-display text-lg font-semibold text-foreground">Заявка принята</p>
             <p className="text-sm text-muted-foreground">
               Менеджер свяжется с вами в течение 15 минут и обсудит вашу цену.
             </p>
             <Button variant="outline" onClick={() => setOpen(false)}>Закрыть</Button>
           </div>
         ) : (
-          <>
-            <div className="px-6 pt-6 pb-4 bg-gradient-to-br from-primary/5 to-transparent border-b border-border">
-              <DialogHeader className="space-y-1.5">
-                <DialogTitle className="flex items-center gap-2 text-base">
-                  <Tag className="w-4 h-4 text-primary" />
-                  Предложить свою цену
-                </DialogTitle>
-                <DialogDescription className="text-xs leading-relaxed">
-                  {propertyAddress ? <>Объект: <span className="text-foreground font-medium">{propertyAddress}</span></> : "Оставьте контакты — обсудим вашу цену индивидуально."}
-                </DialogDescription>
-              </DialogHeader>
-            </div>
-
-            <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
               {/* Цена + срок */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium text-foreground">
@@ -214,7 +214,6 @@ export default function RequestPriceDialog({ propertyId, propertyAddress, basePr
                 </Button>
               </div>
             </form>
-          </>
         )}
       </DialogContent>
     </Dialog>

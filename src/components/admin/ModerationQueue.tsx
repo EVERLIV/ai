@@ -165,6 +165,7 @@ export default function ModerationQueue() {
           },
         });
       }
+
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["moderation-queue"] });
@@ -178,7 +179,7 @@ export default function ModerationQueue() {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+    mutationFn: async ({ id, reason, agencyId, address }: { id: string; reason: string; agencyId?: string | null; address?: string }) => {
       const { data: { session } } = await supabase.auth.getSession();
       const moderatorId = session?.user?.id ?? user?.id ?? null;
 
@@ -189,6 +190,7 @@ export default function ModerationQueue() {
         moderated_at: new Date().toISOString(),
         moderated_by: moderatorId,
       });
+
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["moderation-queue"] });
@@ -341,7 +343,18 @@ export default function ModerationQueue() {
             <Button
               variant="destructive"
               disabled={!rejectReason.trim() || rejectMutation.isPending}
-              onClick={() => rejectId && rejectMutation.mutate({ id: rejectId, reason: rejectReason.trim() })}
+              onClick={() => {
+                if (!rejectId) return;
+                const item = queue.find((q) => q.id === rejectId);
+                const extras = (item?.extras || {}) as Record<string, unknown>;
+                const agencyId = (extras.agency_id as string) || null;
+                rejectMutation.mutate({
+                  id: rejectId,
+                  reason: rejectReason.trim(),
+                  agencyId,
+                  address: item?.address,
+                });
+              }}
             >
               Отклонить
             </Button>

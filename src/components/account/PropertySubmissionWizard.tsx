@@ -255,6 +255,7 @@ export default function PropertySubmissionWizard({
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [locationGeocoding, setLocationGeocoding] = useState(false);
   const wasRejected = editProperty?.moderation_status === "rejected";
 
   useEffect(() => {
@@ -458,10 +459,17 @@ export default function PropertySubmissionWizard({
             ? {
                 agent_name: selectedManager.full_name,
                 agent_phone: selectedManager.phone,
+                agent_avatar_url: selectedManager.photo_url || "",
                 listing_manager_id: selectedManager.id,
               }
             : { listing_manager_id: "" }),
-          ...(agencyId ? { agency_id: agencyId, agent_account_type: "agency" } : {}),
+          ...(agencyId
+            ? {
+                agency_id: agencyId,
+                agent_account_type: "agency",
+                agent_company: myAgency?.agency.name || "",
+              }
+            : {}),
         };
         (payload as { extras: Record<string, unknown> }).extras = extras;
       }
@@ -542,11 +550,43 @@ export default function PropertySubmissionWizard({
 
   const canNext = () => {
     if (step === "basic") return form.area > 0 && form.description.trim().length >= 10;
-    if (step === "location") return form.address.trim().length > 3;
+    if (step === "location") {
+      return form.address.trim().length >= 4 && !locationGeocoding;
+    }
     return true;
   };
 
-  const goNext = () => {
+  const goNext = async () => {
+    if (step === "location" && (form.lat == null || form.lng == null)) {
+      setLocationGeocoding(true);
+      try {
+        const hit = await geocodeAddress(form.address);
+        if (!hit) {
+          toast({
+            title: "Адрес не найден",
+            description: "Выберите адрес из подсказок или уточните улицу и номер дома",
+            variant: "destructive",
+          });
+          return;
+        }
+        setForm((prev) => ({
+          ...prev,
+          address: hit.address || prev.address,
+          lat: hit.lat,
+          lng: hit.lng,
+        }));
+      } catch (e) {
+        toast({
+          title: "Геокодер недоступен",
+          description: e instanceof Error ? e.message : "Проверьте ключ Яндекс.Карт",
+          variant: "destructive",
+        });
+        return;
+      } finally {
+        setLocationGeocoding(false);
+      }
+    }
+
     const idx = stepIndex + 1;
     if (idx < activeSteps.length) setStep(activeSteps[idx].key);
   };
@@ -614,7 +654,11 @@ export default function PropertySubmissionWizard({
 
   return (
     <Sheet open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl lg:max-w-3xl p-0 flex flex-col h-full gap-0 overflow-hidden">
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-2xl lg:max-w-3xl p-0 flex flex-col h-full gap-0 overflow-hidden"
+        aria-describedby={undefined}
+      >
         <SheetHeader className="shrink-0 bg-card border-b px-4 py-3">
           <SheetTitle className="text-base font-semibold">
             {editId ? "Редактировать объект" : "Добавить объект за 0 ₽"}
@@ -1408,8 +1452,8 @@ export default function PropertySubmissionWizard({
             </Button>
           ) : <div />}
           {step !== "submit" ? (
-            <Button type="button" onClick={goNext} disabled={!canNext()} className="min-w-[120px]">
-              Далее <ChevronRight className="w-4 h-4 ml-1" />
+            <Button type="button" onClick={() => void goNext()} disabled={!canNext()} className="min-w-[120px]">
+              {locationGeocoding ? "Проверка…" : "Далее"} <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
             <Button onClick={() => submitMutation.mutate()} disabled={submitMutation.isPending || uploading} className="min-w-[180px]">

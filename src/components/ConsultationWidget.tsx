@@ -57,7 +57,7 @@ export default function ConsultationWidget() {
     <>
       {/* ── BUBBLE TAB (closed) ── */}
       <div
-        className={`fixed right-5 bottom-6 z-40 transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+        className={`fixed right-5 bottom-20 lg:bottom-6 z-[45] transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] ${
           open ? "opacity-0 pointer-events-none scale-90" : "opacity-100 scale-100"
         }`}
       >
@@ -85,7 +85,7 @@ export default function ConsultationWidget() {
       {/* ── PANEL ── */}
       <div
         className={`
-          fixed z-50 right-0 bottom-6 w-[288px]
+          fixed z-50 right-0 bottom-20 lg:bottom-6 w-[288px]
           bg-card border-l border-y border-border
           shadow-[-12px_0_40px_-8px_rgba(0,0,0,0.15)]
           transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)]

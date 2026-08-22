@@ -168,7 +168,7 @@ export default function MapSection() {
   );
 
   return (
-    <section ref={ref} className="py-10 sm:py-16 bg-surface-warm">
+    <section ref={ref} id="map" className="py-10 sm:py-16 bg-surface-warm scroll-mt-20">
       <div className={`container mx-auto px-3 sm:px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
         <div className="flex items-end justify-between mb-5 sm:mb-8 flex-wrap gap-3">
           <div className="min-w-0">
