@@ -93,9 +93,9 @@ export default function NearbyPropertiesSlider({
           <Link
             key={p.id}
             to={`/property/${p.id}`}
-            className="group min-w-[280px] max-w-[280px] snap-start bg-card overflow-hidden hover:bg-muted/30 transition-colors"
+            className="group min-w-[280px] max-w-[280px] snap-start bg-card rounded-lg overflow-hidden hover:bg-muted/30 transition-colors"
           >
-            <div className="relative h-40 overflow-hidden bg-muted">
+            <div className="relative h-40 overflow-hidden bg-muted rounded-t-lg">
               {p.cover_photo ? (
                 <img
                   src={p.cover_photo}
@@ -112,7 +112,7 @@ export default function NearbyPropertiesSlider({
                 {p.deal_type === "Продажа" ? "Продажа" : "Аренда"}
               </span>
             </div>
-            <div className="p-3 space-y-1.5">
+            <div className="px-3.5 pt-3 pb-3.5 space-y-1.5">
               <div className="font-semibold text-xs text-foreground line-clamp-2 leading-snug">
                 {buildPropertyDisplayTitle(p)}
               </div>

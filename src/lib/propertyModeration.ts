@@ -20,6 +20,7 @@ export const EDITABLE_STATUSES: ModerationStatus[] = [
   "draft",
   "on_moderation",
   "rejected",
+  "published",
 ];
 export const CANCELLABLE_STATUSES: ModerationStatus[] = [
   "draft",

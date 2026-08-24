@@ -7,6 +7,7 @@ import {
   connectAgencyTelegramByChatIdApi,
   createAgencyInviteApi,
   createAgencyManagerApi,
+  createAgencyReviewApi,
   deleteAgencyInviteApi,
   deleteAgencyManagerApi,
   disconnectAgencyTelegramApi,
@@ -15,10 +16,17 @@ import {
   fetchAgencyManagersApi,
   fetchAgencyMembersApi,
   fetchAgencyPropertiesApi,
+  fetchAgencyReviewsApi,
+  fetchManagerByIdApi,
+  fetchManagerPropertiesApi,
   fetchMyAgencyApi,
   fetchMyAgencyPropertiesApi,
+  fetchMyAgencyReviewsApi,
+  fetchPublicAgenciesCatalogApi,
+  fetchPublicManagersApi,
   fetchVerifiedAgenciesApi,
   removeAgencyMemberApi,
+  replyToAgencyReviewApi,
   requestAgencyVerificationApi,
   updateAgencyApi,
   updateAgencyManagerApi,
@@ -32,6 +40,38 @@ export function useVerifiedAgencies() {
     queryKey: ["agencies-verified"],
     staleTime: 5 * 60_000,
     queryFn: fetchVerifiedAgenciesApi,
+  });
+}
+
+export function usePublicManagersCatalog() {
+  return useQuery({
+    queryKey: ["specialists-managers"],
+    staleTime: 5 * 60_000,
+    queryFn: fetchPublicManagersApi,
+  });
+}
+
+export function usePublicAgenciesCatalog() {
+  return useQuery({
+    queryKey: ["specialists-agencies"],
+    staleTime: 5 * 60_000,
+    queryFn: fetchPublicAgenciesCatalogApi,
+  });
+}
+
+export function useManagerPublic(managerId: string | undefined) {
+  return useQuery({
+    queryKey: ["manager-public", managerId],
+    enabled: !!managerId,
+    queryFn: () => fetchManagerByIdApi(managerId!),
+  });
+}
+
+export function useManagerPublicProperties(managerId: string | undefined) {
+  return useQuery({
+    queryKey: ["manager-properties-public", managerId],
+    enabled: !!managerId,
+    queryFn: () => fetchManagerPropertiesApi(managerId!),
   });
 }
 
@@ -262,6 +302,62 @@ export function useDisconnectAgencyTelegram() {
     mutationFn: (agencyId: string) => disconnectAgencyTelegramApi(agencyId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-agency", user?.id] });
+    },
+  });
+}
+
+export function useAgencyReviews(params: {
+  agencyId?: string;
+  managerId?: string | null;
+}) {
+  const { agencyId, managerId } = params;
+  return useQuery({
+    queryKey: ["agency-reviews", agencyId, managerId || null],
+    enabled: !!agencyId,
+    queryFn: () =>
+      fetchAgencyReviewsApi({
+        agencyId: agencyId!,
+        managerId: managerId || null,
+      }),
+  });
+}
+
+export function useMyAgencyReviews(agencyId?: string) {
+  return useQuery({
+    queryKey: ["my-agency-reviews", agencyId],
+    enabled: !!agencyId,
+    queryFn: () => fetchMyAgencyReviewsApi({ agencyId: agencyId! }),
+  });
+}
+
+export function useReplyToAgencyReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: replyToAgencyReviewApi,
+    onSuccess: (row) => {
+      queryClient.invalidateQueries({ queryKey: ["my-agency-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["agency-reviews"] });
+      queryClient.invalidateQueries({
+        queryKey: ["agency-reviews", row.agency_id],
+      });
+    },
+  });
+}
+
+export function useCreateAgencyReview() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: createAgencyReviewApi,
+    onSuccess: (_data, vars) => {
+      // Public list stays unchanged until admin publishes
+      queryClient.invalidateQueries({
+        queryKey: ["agency-reviews-pending"],
+      });
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: ["my-agency", user.id] });
+      }
+      void vars;
     },
   });
 }

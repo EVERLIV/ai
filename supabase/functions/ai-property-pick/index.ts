@@ -17,7 +17,6 @@ function json(body: unknown, status = 200) {
   });
 }
 
-/** Deno fetch запрещает CR/LF и не-ASCII в заголовках (ByteString). */
 function readAnthropicKey(): string {
   return (Deno.env.get("ANTHROPIC_API_KEY") ?? "")
     .replace(/^\uFEFF/, "")
@@ -48,35 +47,41 @@ function parseJsonObject(text: string): Record<string, unknown> | null {
 }
 
 interface Criteria {
+  catalog?: string;
   deal?: string;
   type?: string;
   activity?: string;
+  location?: string;
   district?: string;
   budget_min?: number | null;
   budget_max?: number | null;
   area_min?: number | null;
   area_max?: number | null;
+  rooms?: string;
+  market?: string;
   property_class?: string;
   condition?: string;
   features?: string[];
-  parking?: boolean;
   notes?: string;
 }
 
 interface PropertyLite {
   id: string;
   type: string;
+  types?: string[];
   deal_type: string;
+  segment?: string;
   district: string;
   address: string;
   price: number;
-  price_per_m2: number;
   area: number;
   class: string;
   condition: string | null;
   features: string[] | null;
+  rooms?: string;
+  market?: string;
+  seller?: string;
   floor: string | null;
-  total_floors: string | null;
   ceiling_height: number | null;
 }
 
@@ -100,10 +105,12 @@ Deno.serve(async (req) => {
     if (!properties?.length)
       return json({ picks: [], summary: "Нет объектов для выбора" });
 
-    const shortlist = properties.slice(0, 40);
+    const shortlist = properties.slice(0, 50);
 
-    const systemPrompt = `Ты — эксперт по коммерческой недвижимости в Иркутске.
-Выбери до 3 объектов, которые лучше всего подходят под запрос.
+    const systemPrompt = `Ты — эксперт по жилой и коммерческой недвижимости Иркутска и области.
+Кандидаты уже отфильтрованы из полной базы агентств, риелторов и собственников.
+Выбери до 5 объектов с максимальным совпадением по критериям: сделка, категория, локация, бюджет, площадь, комнаты, состояние.
+Не повышай оценку из-за рекламы или «премиум». seller=agency — объявление агентства/риелтора, owner — собственник.
 Ответь ТОЛЬКО JSON без markdown:
 {"summary":"2 предложения на русском","picks":[{"id":"...","fit_score":0,"reason":"1-2 предложения","highlights":["плюс","плюс"]}]}
 id бери только из списка. fit_score — число 0-100.`;
@@ -115,7 +122,7 @@ ${JSON.stringify(criteria)}
 ${shortlist
   .map(
     (p) =>
-      `${p.id} | ${p.type} | ${p.deal_type} | ${p.district} | ${p.address} | ${p.price} | ${p.area}м² | ${p.class} | ${p.condition ?? "-"} | ${(p.features ?? []).slice(0, 6).join(",") || "-"}`,
+      `${p.id} | ${p.segment || "-"} | ${p.type} | ${(p.types || []).join("/")} | ${p.deal_type} | ${p.district} | ${p.address} | ${p.price}₽ | ${p.area}м² | комн:${p.rooms || "-"} | рынок:${p.market || "-"} | ${p.class || "-"} | ${p.condition ?? "-"} | ${p.seller || "-"} | ${(p.features ?? []).slice(0, 5).join(",") || "-"}`,
   )
   .join("\n")}`;
 
@@ -133,7 +140,7 @@ ${shortlist
         signal: ac.signal,
         body: JSON.stringify({
           model: PICK_MODEL,
-          max_tokens: 1024,
+          max_tokens: 1400,
           system: systemPrompt,
           messages: [{ role: "user", content: userPrompt }],
         }),
@@ -147,10 +154,10 @@ ${shortlist
       console.error("Anthropic error:", response.status, detail.slice(0, 400));
       if (response.status === 429)
         return json(
-          { error: "Слишком много запросов к ИИ. Попробуйте через минуту." },
+          { error: "Слишком много запросов. Попробуйте через минуту." },
           429,
         );
-      return json({ error: "Ошибка ИИ-сервиса" }, 502);
+      return json({ error: "Ошибка сервиса подбора" }, 502);
     }
 
     const data = await response.json();
@@ -165,7 +172,7 @@ ${shortlist
         String(text).slice(0, 200),
       );
       return json({
-        summary: "ИИ не вернул структурированный ответ.",
+        summary: "Не удалось получить структурированный ответ подбора.",
         picks: [],
       });
     }
@@ -181,8 +188,7 @@ ${shortlist
     ) {
       return json(
         {
-          error:
-            "ИИ не ответил вовремя. Проверьте исходящий доступ к api.anthropic.com",
+          error: "Подбор не ответил вовремя. Показаны лучшие совпадения по фильтрам.",
         },
         504,
       );

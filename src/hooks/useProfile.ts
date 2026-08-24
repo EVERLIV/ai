@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchMyProfileApi, updateMyProfileApi } from "@/lib/userPropertyApi";
 
-export type ProfileAccountType = "owner" | "realtor" | "agency";
+export type ProfileAccountType = "seeker" | "owner" | "realtor" | "agency";
 export type VerificationStatus =
   | "unverified"
   | "pending"
@@ -22,11 +22,13 @@ export interface UserProfile {
   verification_status: VerificationStatus;
   verification_requested_at: string | null;
   verified_at: string | null;
+  ai_consultant_enabled?: boolean;
 }
 
 export const ACCOUNT_TYPE_LABELS: Record<ProfileAccountType, string> = {
+  seeker: "Ищу недвижимость",
   owner: "Собственник",
-  realtor: "Агентство",
+  realtor: "Риелтор",
   agency: "Агентство",
 };
 

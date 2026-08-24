@@ -7,7 +7,7 @@ interface Props {
   showLabel?: boolean;
 }
 
-/** Золотая галочка — «Верифицирован» (только иконка, без фона) */
+/** Зелёная галочка — «Верифицирован» (только иконка, без фона) */
 export default function VerifiedBadge({
   className,
   size = "sm",
@@ -21,13 +21,13 @@ export default function VerifiedBadge({
       className={cn(
         "inline-flex items-center gap-1 shrink-0",
         showLabel &&
-          cn("font-medium text-amber-600 dark:text-amber-400", textSize),
+          cn("font-medium text-emerald-700 dark:text-emerald-400", textSize),
         className,
       )}
       title="Верифицирован"
     >
       <BadgeCheck
-        className={cn(iconSize, "text-amber-500 fill-amber-400/35")}
+        className={cn(iconSize, "text-emerald-600 fill-emerald-500/30")}
       />
       {showLabel && "Верифицирован"}
     </span>

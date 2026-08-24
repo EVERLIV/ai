@@ -1,9 +1,25 @@
-import { Camera, Clock, Loader2, ShieldAlert, ShieldCheck } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  Camera,
+  Clock,
+  ExternalLink,
+  Loader2,
+  ShieldAlert,
+  ShieldCheck,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useToast } from "@/hooks/use-toast";
+import {
+  useMyAgency,
+  useRequestAgencyVerification,
+  useUpdateAgency,
+  useUploadAgencyLogo,
+} from "@/hooks/useAgency";
 import { useAuth } from "@/hooks/useAuth";
 import {
   ACCOUNT_TYPE_LABELS,
@@ -13,23 +29,102 @@ import {
   useUpdateProfile,
   VERIFICATION_LABELS,
 } from "@/hooks/useProfile";
+import { ensureAgencyForUserApi } from "@/lib/agencyApi";
 
+const inputClass =
+  "w-full h-7 px-3 rounded bg-background border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors";
+
+/**
+ * Единый профиль:
+ * — собственник / риелтор / ищущий: личные данные
+ * — агентство: название агентства + ответственный + публичные данные агентства
+ */
 export default function ProfileTab() {
   const { toast } = useToast();
-  const { data: profile, isLoading } = useProfile();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { data: profile, isLoading: profileLoading } = useProfile();
   const updateProfile = useUpdateProfile();
-  const requestVerification = useRequestVerification();
+  const requestOwnerVerification = useRequestVerification();
+
+  const isAgencyAccount = profile?.account_type === "agency";
+  const { data: agencyData, isLoading: agencyLoading, refetch } = useMyAgency();
+  const updateAgency = useUpdateAgency();
+  const requestAgencyVerification = useRequestAgencyVerification();
+  const agency = agencyData?.agency;
+  const uploadLogo = useUploadAgencyLogo(agency?.id);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [agencyName, setAgencyName] = useState("");
-  const [agencyStaffCount, setAgencyStaffCount] = useState("");
-  const [agencyAbout, setAgencyAbout] = useState("");
+  const [aboutSelf, setAboutSelf] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { user } = useAuth();
+
+  const [agencyName, setAgencyName] = useState("");
+  const [agencyAbout, setAgencyAbout] = useState("");
+  const [openedAt, setOpenedAt] = useState("");
+  const [workingHours, setWorkingHours] = useState("");
+  const [ensuring, setEnsuring] = useState(false);
+  const [aiConsultantEnabled, setAiConsultantEnabled] = useState(false);
+  const [aiConsultantSaving, setAiConsultantSaving] = useState(false);
+
+  const avatarRef = useRef<HTMLInputElement>(null);
+  const logoRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!profile) return;
+    setFullName(profile.full_name || "");
+    setEmail(profile.email || "");
+    setPhone(profile.phone || "");
+    setAboutSelf(profile.agency_about || "");
+    setAvatarUrl(profile.avatar_url || null);
+    if (!agency) {
+      setAgencyName(profile.agency_name || "");
+      setAiConsultantEnabled(!!profile.ai_consultant_enabled);
+    }
+  }, [profile, agency]);
+
+  useEffect(() => {
+    if (!agency) return;
+    setAgencyName(agency.name || "");
+    setAgencyAbout(agency.about || "");
+    setOpenedAt(agency.opened_at || "");
+    setWorkingHours(agency.working_hours || "");
+    setAiConsultantEnabled(!!agency.ai_consultant_enabled);
+  }, [agency]);
+
+  useEffect(() => {
+    if (!user || !isAgencyAccount || agencyLoading || agencyData || ensuring)
+      return;
+    setEnsuring(true);
+    ensureAgencyForUserApi(user.id, {
+      name: profile?.agency_name || undefined,
+      about: profile?.agency_about || undefined,
+    })
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["my-agency", user.id] });
+        refetch();
+      })
+      .catch((err) => {
+        toast({
+          title: "Не удалось создать агентство",
+          description: err instanceof Error ? err.message : "",
+          variant: "destructive",
+        });
+      })
+      .finally(() => setEnsuring(false));
+  }, [
+    user,
+    isAgencyAccount,
+    agencyLoading,
+    agencyData,
+    ensuring,
+    profile,
+    queryClient,
+    refetch,
+    toast,
+  ]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -75,30 +170,85 @@ export default function ProfileTab() {
     }
   };
 
-  useEffect(() => {
-    if (!profile) return;
-    setFullName(profile.full_name || "");
-    setEmail(profile.email || "");
-    setPhone(profile.phone || "");
-    setAgencyName(profile.agency_name || "");
-    setAgencyStaffCount(
-      profile.agency_staff_count != null
-        ? String(profile.agency_staff_count)
-        : "",
-    );
-    setAgencyAbout(profile.agency_about || "");
-    setAvatarUrl(profile.avatar_url || null);
-  }, [profile]);
+  const onLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !agency) return;
+    try {
+      await uploadLogo.mutateAsync(file);
+      toast({ title: "Логотип обновлён" });
+    } catch (err) {
+      toast({
+        title: "Не удалось загрузить логотип",
+        description: err instanceof Error ? err.message : "",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAiConsultantToggle = async (checked: boolean) => {
+    const prev = aiConsultantEnabled;
+    setAiConsultantEnabled(checked);
+    setAiConsultantSaving(true);
+    try {
+      if (isAgencyAccount && agency) {
+        await updateAgency.mutateAsync({
+          agencyId: agency.id,
+          payload: { ai_consultant_enabled: checked },
+        });
+      } else {
+        await updateProfile.mutateAsync({
+          ai_consultant_enabled: checked,
+        });
+      }
+      toast({
+        title: checked
+          ? "ИИ-консультант включён"
+          : "ИИ-консультант выключен",
+      });
+      void queryClient.invalidateQueries({ queryKey: ["ai-consultant-access"] });
+      void queryClient.invalidateQueries({ queryKey: ["my-agency"] });
+      void queryClient.invalidateQueries({ queryKey: ["profile"] });
+    } catch (err) {
+      setAiConsultantEnabled(prev);
+      toast({
+        title: "Не удалось сохранить",
+        description: err instanceof Error ? err.message : "Попробуйте позже",
+        variant: "destructive",
+      });
+    } finally {
+      setAiConsultantSaving(false);
+    }
+  };
 
   const handleSave = async () => {
     try {
+      if (isAgencyAccount) {
+        await updateProfile.mutateAsync({
+          full_name: fullName.trim(),
+          email: email.trim(),
+          phone: phone.trim() || null,
+          agency_name: agencyName.trim(),
+        });
+        if (agency) {
+          await updateAgency.mutateAsync({
+            agencyId: agency.id,
+            payload: {
+              name: agencyName.trim(),
+              about: agencyAbout.trim(),
+              opened_at: openedAt || null,
+              working_hours: workingHours.trim(),
+            },
+          });
+        }
+        toast({ title: "Данные сохранены" });
+        return;
+      }
+
       await updateProfile.mutateAsync({
         full_name: fullName.trim(),
         email: email.trim(),
         phone: phone.trim() || null,
-        agency_name: agencyName.trim(),
-        agency_staff_count: agencyStaffCount ? Number(agencyStaffCount) : null,
-        agency_about: agencyAbout.trim(),
+        agency_about: aboutSelf.trim(),
       });
       toast({ title: "Данные сохранены" });
     } catch (err) {
@@ -110,17 +260,15 @@ export default function ProfileTab() {
     }
   };
 
-  const handleRequestVerification = async () => {
+  const handleRequestOwnerVerification = async () => {
     try {
       await updateProfile.mutateAsync({
         full_name: fullName.trim(),
         email: email.trim(),
         phone: phone.trim() || null,
-        agency_name: agencyName.trim(),
-        agency_staff_count: agencyStaffCount ? Number(agencyStaffCount) : null,
-        agency_about: agencyAbout.trim(),
+        agency_about: aboutSelf.trim(),
       });
-      await requestVerification.mutateAsync();
+      await requestOwnerVerification.mutateAsync();
       toast({
         title: "Заявка отправлена",
         description: "Мы проверим данные и свяжемся с вами",
@@ -134,7 +282,10 @@ export default function ProfileTab() {
     }
   };
 
-  if (isLoading) {
+  const saving =
+    updateProfile.isPending || updateAgency.isPending || avatarUploading;
+
+  if (profileLoading || (isAgencyAccount && (agencyLoading || ensuring))) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="w-5 h-5 animate-spin mr-2" />
@@ -143,15 +294,245 @@ export default function ProfileTab() {
     );
   }
 
-  const isAgency =
-    profile?.account_type === "agency" || profile?.account_type === "realtor";
+  if (isAgencyAccount && !agency) {
+    return (
+      <p className="text-sm text-muted-foreground py-6">
+        Агентство не найдено. Обратитесь в поддержку.
+      </p>
+    );
+  }
+
+  /* ─── Agency unified profile ─── */
+  if (isAgencyAccount && agency) {
+    const verified = isProfileVerified(agency.verification_status);
+    const status = agency.verification_status;
+
+    return (
+      <div className="space-y-6 max-w-xl">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-xl font-bold text-foreground">
+              Профиль агентства
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Данные аккаунта и публичной страницы агентства
+            </p>
+          </div>
+          <Link
+            to={`/agentstvo/${agency.id}`}
+            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          >
+            Открыть страницу <ExternalLink className="w-3 h-3" />
+          </Link>
+        </div>
+
+        <div className="bg-card border border-border/60 rounded-lg p-5 space-y-5">
+          <div className="flex items-start gap-4">
+            <button
+              type="button"
+              onClick={() => logoRef.current?.click()}
+              className="relative w-20 h-20 rounded-xl border border-border overflow-hidden bg-muted flex items-center justify-center shrink-0"
+            >
+              {agency.logo_url ? (
+                <img
+                  src={agency.logo_url}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Camera className="w-5 h-5 text-muted-foreground" />
+              )}
+              {uploadLogo.isPending && (
+                <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                </div>
+              )}
+            </button>
+            <input
+              ref={logoRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={onLogo}
+            />
+            <div className="space-y-2 min-w-0">
+              <p className="text-xs text-muted-foreground">Логотип агентства</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium">
+                  {VERIFICATION_LABELS[status]}
+                </span>
+                {verified && <VerifiedBadge />}
+              </div>
+              {(status === "unverified" || status === "rejected") && (
+                <Button
+                  size="sm"
+                  className="rounded-md"
+                  disabled={requestAgencyVerification.isPending}
+                  onClick={async () => {
+                    try {
+                      await requestAgencyVerification.mutateAsync(agency.id);
+                      toast({ title: "Заявка на верификацию отправлена" });
+                    } catch (err) {
+                      toast({
+                        title: "Не удалось отправить",
+                        description: err instanceof Error ? err.message : "",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                >
+                  {requestAgencyVerification.isPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                  ) : status === "rejected" ? (
+                    <ShieldAlert className="w-3.5 h-3.5 mr-1" />
+                  ) : (
+                    <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+                  )}
+                  Запросить верификацию
+                </Button>
+              )}
+              {status === "pending" && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> На проверке у модераторов
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-1 border-t border-border/60">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+              Агентство
+            </p>
+            <div className="space-y-4">
+              <label className="block space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">
+                  Название агентства
+                </span>
+                <input
+                  value={agencyName}
+                  onChange={(e) => setAgencyName(e.target.value)}
+                  placeholder="ООО «АрендаСити»"
+                  className={inputClass}
+                />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">
+                  Описание
+                </span>
+                <Textarea
+                  value={agencyAbout}
+                  onChange={(e) => setAgencyAbout(e.target.value)}
+                  rows={4}
+                  placeholder="О компании, специализации, районах работы…"
+                />
+              </label>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Дата открытия
+                  </span>
+                  <input
+                    type="date"
+                    value={openedAt}
+                    onChange={(e) => setOpenedAt(e.target.value)}
+                    className={inputClass}
+                  />
+                </label>
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Часы работы
+                  </span>
+                  <input
+                    value={workingHours}
+                    onChange={(e) => setWorkingHours(e.target.value)}
+                    placeholder="Пн–Пт 10:00–19:00"
+                    className={inputClass}
+                  />
+                </label>
+              </div>
+
+              <div className="flex items-start justify-between gap-4 rounded-lg border border-border/60 bg-muted/30 px-3 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">
+                    ИИ-консультант
+                  </p>
+                  <p className="text-[12px] text-muted-foreground mt-0.5 leading-snug">
+                    Чат и голосовой звонок на ваших объектах. Рекомендует только
+                    объявления вашего агентства.
+                  </p>
+                </div>
+                <Switch
+                  checked={aiConsultantEnabled}
+                  disabled={aiConsultantSaving || updateAgency.isPending}
+                  onCheckedChange={handleAiConsultantToggle}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-1 border-t border-border/60">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+              Ответственный за аккаунт
+            </p>
+            <div className="space-y-4">
+              <label className="block space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">
+                  Имя ответственного
+                </span>
+                <input
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Иван Иванов"
+                  className={inputClass}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Кто регистрировал и управляет этим аккаунтом
+                </p>
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">
+                  Email
+                </span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">
+                  Телефон
+                </span>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+7 (999) 000-00-00"
+                  className={inputClass}
+                />
+              </label>
+            </div>
+          </div>
+
+          <Button onClick={handleSave} disabled={saving}>
+            {saving && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+            Сохранить
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ─── Owner / realtor / seeker ─── */
   const verified = isProfileVerified(profile?.verification_status);
   const pending = profile?.verification_status === "pending";
   const rejected = profile?.verification_status === "rejected";
-  const canRequest = !verified && !pending && !isAgency;
-
-  const inputClass =
-    "w-full h-10 px-3 bg-background border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors";
+  const canRequest =
+    !verified &&
+    !pending &&
+    profile?.account_type !== "realtor" &&
+    profile?.account_type !== "agency";
 
   return (
     <div>
@@ -190,19 +571,19 @@ export default function ProfileTab() {
                 ? "Заявка на проверке. Обычно это занимает 1–2 рабочих дня."
                 : rejected
                   ? "Заявка отклонена. Проверьте данные и подайте повторно."
-                  : "Заполните профиль и подайте заявку на верификацию — после проверки появится золотая отметка в каталоге."}
+                  : "Заполните профиль и подайте заявку на верификацию — после проверки появится зелёная отметка в каталоге."}
             </p>
             {canRequest && (
               <Button
                 size="sm"
                 className="mt-3 gap-1.5"
-                onClick={handleRequestVerification}
+                onClick={handleRequestOwnerVerification}
                 disabled={
-                  requestVerification.isPending || updateProfile.isPending
+                  requestOwnerVerification.isPending || updateProfile.isPending
                 }
               >
                 <ShieldCheck className="w-4 h-4" />
-                {requestVerification.isPending
+                {requestOwnerVerification.isPending
                   ? "Отправка..."
                   : "Подать на верификацию"}
               </Button>
@@ -214,7 +595,8 @@ export default function ProfileTab() {
       <div className="bg-card p-6 space-y-4">
         <div className="flex items-center gap-4 pb-4">
           <button
-            onClick={() => fileInputRef.current?.click()}
+            type="button"
+            onClick={() => avatarRef.current?.click()}
             className="relative w-16 h-16 rounded-full bg-muted shrink-0 overflow-hidden group"
             disabled={avatarUploading}
           >
@@ -238,7 +620,7 @@ export default function ProfileTab() {
             </div>
           </button>
           <input
-            ref={fileInputRef}
+            ref={avatarRef}
             type="file"
             accept="image/*"
             className="hidden"
@@ -256,7 +638,7 @@ export default function ProfileTab() {
           <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide block mb-1.5">
             Тип аккаунта
           </label>
-          <div className="h-10 px-3 bg-muted border border-border flex items-center text-sm text-foreground">
+          <div className="h-10 px-3 bg-muted border border-border flex items-center text-sm text-foreground rounded-md">
             {ACCOUNT_TYPE_LABELS[profile?.account_type || "owner"]}
           </div>
         </div>
@@ -300,39 +682,48 @@ export default function ProfileTab() {
           />
         </div>
 
-        {isAgency ? (
-          <p className="text-xs text-muted-foreground rounded-md border border-border bg-muted/40 px-3 py-2">
-            Название, логотип, описание и верификация агентства — во вкладке
-            «Агентство».
-          </p>
-        ) : (
-          <div>
-            <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide block mb-1.5">
-              О себе
-            </label>
-            <Textarea
-              value={agencyAbout}
-              onChange={(e) => setAgencyAbout(e.target.value)}
-              rows={4}
-              className="text-sm resize-none"
-              placeholder="Расскажите о себе как о собственнике..."
+        <div>
+          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide block mb-1.5">
+            О себе
+          </label>
+          <Textarea
+            value={aboutSelf}
+            onChange={(e) => setAboutSelf(e.target.value)}
+            rows={4}
+            className="text-sm resize-none"
+            placeholder="Расскажите о себе..."
+          />
+        </div>
+
+        {(profile?.account_type === "owner" ||
+          profile?.account_type === "realtor") && (
+          <div className="flex items-start justify-between gap-4 rounded-lg border border-border/60 bg-muted/30 px-3 py-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">
+                ИИ-консультант
+              </p>
+              <p className="text-[12px] text-muted-foreground mt-0.5 leading-snug">
+                Чат и голосовой звонок на ваших объявлениях. Рекомендует только
+                ваши объекты.
+              </p>
+            </div>
+            <Switch
+              checked={aiConsultantEnabled}
+              disabled={aiConsultantSaving || updateProfile.isPending}
+              onCheckedChange={handleAiConsultantToggle}
             />
           </div>
         )}
 
         <div className="flex flex-wrap gap-2 pt-2">
-          <Button
-            onClick={handleSave}
-            disabled={updateProfile.isPending}
-            variant="outline"
-          >
-            {updateProfile.isPending ? "Сохранение..." : "Сохранить"}
+          <Button onClick={handleSave} disabled={saving} variant="outline">
+            {saving ? "Сохранение..." : "Сохранить"}
           </Button>
           {canRequest && (
             <Button
-              onClick={handleRequestVerification}
+              onClick={handleRequestOwnerVerification}
               disabled={
-                requestVerification.isPending || updateProfile.isPending
+                requestOwnerVerification.isPending || updateProfile.isPending
               }
               className="gap-1.5"
             >

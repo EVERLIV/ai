@@ -754,7 +754,7 @@ export type Database = {
         | "digital_screen"
         | "flag_pole";
       app_role: "admin" | "manager" | "client";
-      profile_account_type: "owner" | "realtor" | "agency";
+      profile_account_type: "seeker" | "owner" | "realtor" | "agency";
       property_moderation_status:
         | "draft"
         | "on_moderation"
@@ -910,7 +910,7 @@ export const Constants = {
         "flag_pole",
       ],
       app_role: ["admin", "manager", "client"],
-      profile_account_type: ["owner", "realtor", "agency"],
+      profile_account_type: ["seeker", "owner", "realtor", "agency"],
       property_moderation_status: [
         "draft",
         "on_moderation",

@@ -208,3 +208,54 @@ export async function countPublishedBySubmitter(
   const data = await res.json();
   return Array.isArray(data) ? data.length : 0;
 }
+
+export type PendingAgencyReview = {
+  id: string;
+  agency_id: string;
+  manager_id: string | null;
+  author_name: string;
+  author_email: string | null;
+  user_id: string | null;
+  rating: number;
+  body: string;
+  status: string;
+  created_at: string;
+  agencies?: { id: string; name: string } | { id: string; name: string }[] | null;
+  agency_managers?:
+    | { id: string; full_name: string }
+    | { id: string; full_name: string }[]
+    | null;
+};
+
+export async function fetchPendingAgencyReviewsApi(): Promise<
+  PendingAgencyReview[]
+> {
+  const select = encodeURIComponent(
+    "*,agencies(id,name),agency_managers(id,full_name)",
+  );
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/agency_reviews?status=eq.pending&select=${select}&order=created_at.asc`,
+    { headers: adminHeaders },
+  );
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(parseAdminError(data, res));
+  return Array.isArray(data) ? data : [];
+}
+
+export async function adminUpdateAgencyReviewStatus(
+  id: string,
+  status: "published" | "rejected",
+) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/agency_reviews?id=eq.${id}`,
+    {
+      method: "PATCH",
+      headers: { ...adminHeaders, Prefer: "return=minimal" },
+      body: JSON.stringify({ status, updated_at: new Date().toISOString() }),
+    },
+  );
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(parseAdminError(data, res));
+  }
+}

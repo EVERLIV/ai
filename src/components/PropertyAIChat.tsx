@@ -17,6 +17,10 @@ import {
   stripVoiceStageDirections,
   useElevenLabsVoice,
 } from "@/hooks/useElevenLabsVoice";
+import {
+  OPEN_CONSULTANT_CHAT_EVENT,
+  type OpenConsultantChatDetail,
+} from "@/lib/aiConsultant";
 import { submitLead } from "@/lib/submitLead";
 
 const VISITOR_KEY = "ac_chat_visitor";
@@ -70,9 +74,17 @@ const FALLBACK_REPLY =
 interface Props {
   propertyId?: string;
   propertyAddress?: string;
+  avatarUrl?: string;
+  /** false — хост на каталоге/главной: без FAB, только по событию с карточки */
+  showFab?: boolean;
 }
 
-export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
+export default function PropertyAIChat({
+  propertyId: propertyIdProp,
+  propertyAddress: propertyAddressProp,
+  avatarUrl: avatarUrlProp,
+  showFab = true,
+}: Props) {
   const { toast } = useToast();
   const {
     isVoiceMode,
@@ -84,6 +96,11 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
   } = useElevenLabsVoice();
   const [open, setOpen] = useState(false);
   const [wiggle, setWiggle] = useState(false);
+  const [propertyId, setPropertyId] = useState(propertyIdProp);
+  const [propertyAddress, setPropertyAddress] = useState(propertyAddressProp);
+  const [avatarSrc, setAvatarSrc] = useState(
+    avatarUrlProp || consultantAvatar,
+  );
   const [visitor, setVisitor] = useState<Visitor | null>(() => loadVisitor());
   const [introName, setIntroName] = useState("");
   const [introPhone, setIntroPhone] = useState("");
@@ -102,28 +119,48 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
   const openedAt = useRef(0);
   const lastSentAt = useRef(0);
 
+  useEffect(() => {
+    setPropertyId(propertyIdProp);
+    setPropertyAddress(propertyAddressProp);
+    if (avatarUrlProp) setAvatarSrc(avatarUrlProp);
+  }, [propertyIdProp, propertyAddressProp, avatarUrlProp]);
+
   // Wiggle
   useEffect(() => {
-    if (open) return;
+    if (open || !showFab) return;
     const t1 = setTimeout(() => setWiggle(true), 4000);
     const iv = setInterval(() => setWiggle(true), 12000);
     return () => {
       clearTimeout(t1);
       clearInterval(iv);
     };
-  }, [open]);
+  }, [open, showFab]);
   useEffect(() => {
     if (!wiggle) return;
     const t = setTimeout(() => setWiggle(false), 800);
     return () => clearTimeout(t);
   }, [wiggle]);
 
-  // Global open
+  // Open from cards / «Написать»
   useEffect(() => {
-    const h = () => setOpen(true);
-    window.addEventListener("open-consultant-chat", h);
-    return () => window.removeEventListener("open-consultant-chat", h);
-  }, []);
+    const h = (ev: Event) => {
+      const detail =
+        (ev as CustomEvent<OpenConsultantChatDetail>).detail || {};
+      if (detail.propertyId) {
+        const switched = detail.propertyId !== propertyId;
+        setPropertyId(detail.propertyId);
+        setPropertyAddress(detail.propertyAddress);
+        if (detail.avatarUrl) setAvatarSrc(detail.avatarUrl);
+        if (switched) {
+          initialized.current = false;
+          setMsgs([]);
+        }
+      }
+      setOpen(true);
+    };
+    window.addEventListener(OPEN_CONSULTANT_CHAT_EVENT, h);
+    return () => window.removeEventListener(OPEN_CONSULTANT_CHAT_EVENT, h);
+  }, [propertyId]);
 
   // Focus on open
   useEffect(() => {
@@ -296,6 +333,7 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
   return (
     <>
       {/* ── BUBBLE ── */}
+      {showFab && (
       <div
         className={`fixed right-4 bottom-24 z-40 transition-all duration-300 ${open ? "opacity-0 pointer-events-none scale-90" : "opacity-100 scale-100"}`}
       >
@@ -306,8 +344,8 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
         >
           <div className="relative w-12 h-12 bg-card border border-border shadow-lg flex items-center justify-center">
             <img
-              src={consultantAvatar}
-              alt="Анастасия"
+              src={avatarSrc}
+              alt="Консультант"
               className="w-10 h-10 object-cover object-top"
             />
             <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-card rounded-full" />
@@ -322,6 +360,7 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
           </div>
         </button>
       </div>
+      )}
 
       {/* Backdrop мобайл */}
       {open && (
@@ -356,7 +395,7 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
           {/* Close */}
           <button
             onClick={() => setOpen(false)}
-            className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -364,7 +403,7 @@ export default function PropertyAIChat({ propertyId, propertyAddress }: Props) {
           {/* Avatar with online dot */}
           <div className="relative shrink-0">
             <img
-              src={consultantAvatar}
+              src={avatarSrc}
               alt=""
               className="w-10 h-10 rounded-full object-cover object-top shadow-sm"
             />

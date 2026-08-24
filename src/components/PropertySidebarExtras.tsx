@@ -19,6 +19,7 @@ import { Link } from "react-router-dom";
 interface Props {
   property: {
     agency_id?: string | null;
+    listing_manager_id?: string | null;
     type?: string | null;
     deal_type?: string | null;
     district?: string | null;
@@ -99,7 +100,30 @@ export default function PropertySidebarExtras({ property }: Props) {
     ? accountType
     : DEFAULT_AGENT.accountType;
   const displayStaffCount = hasOwnerData ? staffCount : undefined;
-  const agencyHref = d.agency_id ? `/agentstvo/${d.agency_id}` : null;
+  const agencyId =
+    d.agency_id ||
+    property.agency_id ||
+    (!hasOwnerData ? DEFAULT_AGENT.agencyId : "") ||
+    "";
+  const managerId =
+    d.listing_manager_id ||
+    property.listing_manager_id ||
+    (!hasOwnerData ? DEFAULT_AGENT.managerId : "") ||
+    "";
+  const agencyHref = agencyId ? `/agentstvo/${agencyId}` : null;
+  const managerHref = managerId ? `/rieltor/${managerId}` : null;
+  const displayRating =
+    d.agent_rating > 0
+      ? d.agent_rating
+      : !hasOwnerData
+        ? DEFAULT_AGENT.rating
+        : 0;
+  const displayResponseMin =
+    d.agent_response_min > 0
+      ? d.agent_response_min
+      : !hasOwnerData
+        ? DEFAULT_AGENT.responseMinutes
+        : 0;
 
   const conditionRows: { label: string; value: string }[] = [];
   if (vis.entrance && d.entrance_group !== "—")
@@ -214,9 +238,18 @@ export default function PropertySidebarExtras({ property }: Props) {
             />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-sm font-semibold text-foreground leading-snug">
-                  {displayAgentName}
-                </span>
+                {managerHref ? (
+                  <Link
+                    to={managerHref}
+                    className="text-sm font-semibold text-foreground leading-snug hover:underline"
+                  >
+                    {displayAgentName}
+                  </Link>
+                ) : (
+                  <span className="text-sm font-semibold text-foreground leading-snug">
+                    {displayAgentName}
+                  </span>
+                )}
                 {displayIsVerified && (
                   <VerifiedBadge size="sm" showLabel={false} />
                 )}
@@ -249,17 +282,17 @@ export default function PropertySidebarExtras({ property }: Props) {
             {displayObjectsLabel && (
               <SpecRow label="В каталоге" value={displayObjectsLabel} />
             )}
-            {!hasOwnerData && (
+            {displayRating > 0 && (
               <SpecRow
                 label="Рейтинг"
-                value={DEFAULT_AGENT.rating.toLocaleString("ru-RU")}
+                value={displayRating.toLocaleString("ru-RU", {
+                  minimumFractionDigits: 1,
+                  maximumFractionDigits: 1,
+                })}
               />
             )}
-            {!hasOwnerData && (
-              <SpecRow
-                label="Ответ"
-                value={`~${DEFAULT_AGENT.responseMinutes} мин`}
-              />
+            {displayResponseMin > 0 && (
+              <SpecRow label="Ответ" value={`~${displayResponseMin} мин`} />
             )}
             {displayIsRealtor &&
               displayStaffCount != null &&

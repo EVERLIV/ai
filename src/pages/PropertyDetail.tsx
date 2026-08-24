@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Columns2,
   Eye,
   FileText,
   Heart,
@@ -38,6 +39,7 @@ import PropertyJsonLd from "@/components/PropertyJsonLd";
 import PropertyMap from "@/components/PropertyMap";
 import PropertyShareButton from "@/components/PropertyShareButton";
 import PropertySidebarExtras from "@/components/PropertySidebarExtras";
+import { useCompareProperties } from "@/hooks/useCompareProperties";
 import { SpecGrid, SpecQuickStats, SpecRow } from "@/components/PropertySpecList";
 import PropertyStickyNav from "@/components/PropertyStickyNav";
 import PropertyUnitsTable from "@/components/PropertyUnitsTable";
@@ -54,9 +56,17 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useProperty } from "@/hooks/useProperties";
 import { trackPropertyView } from "@/lib/agencyNotify";
+import {
+  consultantAvatarForListing,
+  listingHasAiConsultant,
+  openConsultantChat,
+  useAiConsultantAccess,
+} from "@/lib/aiConsultant";
 import { isAgencyListing } from "@/lib/listingSource";
+import { trackPropertyPreference } from "@/lib/userPreferences";
 import {
   buildPropertyDisplayTitle,
+  formatListingActivityDates,
   formatListingViews,
   formatPropertyAddressShort,
 } from "@/lib/propertyCard";
@@ -74,6 +84,7 @@ import {
   buildPropertyShareOgDescription,
   buildPropertySharePayload,
 } from "@/lib/propertyShare";
+import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import {
   formatPropertyTypesLabel,
   getPrimaryPropertyType,
@@ -93,6 +104,7 @@ export default function PropertyDetail() {
   const navigate = useNavigate();
   const { data: property, isLoading } = useProperty(id);
   const { user } = useAuth();
+  const { data: consultantAccess } = useAiConsultantAccess();
   const [activePhoto, setActivePhoto] = useState(0);
   const [showPKK, setShowPKK] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
@@ -105,7 +117,16 @@ export default function PropertyDetail() {
     sessionStorage.setItem(key, "1");
     viewTrackedRef.current = true;
     void trackPropertyView(property.id);
-  }, [property?.id]);
+    trackPropertyPreference({
+      id: property.id,
+      type: property.type,
+      district: property.district,
+      deal_type: property.deal_type,
+      segment: property.segment,
+      price: property.price,
+      area: property.area,
+    });
+  }, [property]);
   const [contactForm, setContactForm] = useState({
     name: "",
     phone: "",
@@ -174,6 +195,8 @@ export default function PropertyDetail() {
     setSaved(next.includes(id));
   };
 
+  const { inCompare, toggleCompare } = useCompareProperties(id);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -212,6 +235,8 @@ export default function PropertyDetail() {
   const isLand = isAnyLand(property);
   const isSale = isSaleDeal(property.deal_type);
   const isResidential = isResidentialSegment(property.segment);
+  const hasAiConsultant =
+    !isResidential && listingHasAiConsultant(property, consultantAccess);
   const segmentHome = isResidential
     ? SEGMENT_ROUTES.residential.home
     : SEGMENT_ROUTES.commercial.home;
@@ -338,6 +363,7 @@ export default function PropertyDetail() {
   const sharePayload = buildPropertySharePayload(property);
   const displayTitle = seoTitle;
   const addressShort = formatPropertyAddressShort(property.address);
+  const listingActivity = formatListingActivityDates(property);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -496,7 +522,7 @@ export default function PropertyDetail() {
         </div>
       )}
 
-      <div className="mt-[56px] md:mt-[98px] border-b border-border/40">
+      <div className="mt-[56px] lg:mt-[104px] border-b border-border/40">
         <div className="container mx-auto px-3 lg:px-8 h-10 lg:h-11 flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
@@ -528,6 +554,19 @@ export default function PropertyDetail() {
 
           <div className="shrink-0 hidden lg:flex items-center gap-1">
             <button
+              type="button"
+              onClick={() => property && toggleCompare(property)}
+              aria-label={inCompare ? "Убрать из сравнения" : "Сравнить"}
+              aria-pressed={inCompare}
+              className={`flex items-center justify-center w-8 h-8 transition-colors ${
+                inCompare
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Columns2 className="w-4 h-4" />
+            </button>
+            <button
               onClick={handleSave}
               aria-label="Сохранить"
               className={`flex items-center justify-center w-8 h-8 transition-colors ${
@@ -548,7 +587,7 @@ export default function PropertyDetail() {
 
       {/* Mobile bottom action bar */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_24px_-12px_hsl(0_0%_0%/0.15)]">
-        <div className="grid grid-cols-4 px-2 py-2 gap-1 max-w-md mx-auto">
+        <div className="grid grid-cols-5 px-2 py-2 gap-1 max-w-lg mx-auto">
           <RevealListingPhone property={property} variant="bar" />
           {isResidential ? (
             <OwnerMessageDialog
@@ -587,6 +626,20 @@ export default function PropertyDetail() {
               </span>
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => toggleCompare(property)}
+            aria-label={inCompare ? "Убрать из сравнения" : "Сравнить"}
+            aria-pressed={inCompare}
+            className={`flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-md active:scale-95 transition-all ${
+              inCompare
+                ? "text-foreground bg-muted"
+                : "text-foreground hover:bg-muted"
+            }`}
+          >
+            <Columns2 className="w-6 h-6" strokeWidth={1.75} />
+            <span className="text-[10px] font-medium">Сравнить</span>
+          </button>
           <button
             type="button"
             onClick={handleSave}
@@ -723,15 +776,18 @@ export default function PropertyDetail() {
             </div>
 
             {/* Meta: date, views, ID — under gallery */}
-            <div className="flex items-center gap-4 mb-7 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" />
-                {property.published_date
-                  ? new Date(property.published_date).toLocaleDateString(
-                      "ru-RU",
-                    )
-                  : "—"}
-              </span>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-7 text-xs text-muted-foreground">
+              {listingActivity.addedLabel && (
+                <span className="flex items-center gap-1.5" title="Добавлен">
+                  <Clock className="w-3.5 h-3.5" />
+                  {listingActivity.addedLabel}
+                </span>
+              )}
+              {listingActivity.updatedLabel && (
+                <span className="flex items-center gap-1.5" title="Обновлён">
+                  обн. {listingActivity.updatedLabel}
+                </span>
+              )}
               <span className="flex items-center gap-1.5">
                 <Eye className="w-3.5 h-3.5" />
                 {formatListingViews(property.views_count)} просмотров
@@ -742,7 +798,10 @@ export default function PropertyDetail() {
             </div>
 
             <div className="lg:hidden mb-8">
-              <PropertyPriceBlock property={property} />
+              <PropertyPriceBlock
+                property={property}
+                hasAiConsultant={hasAiConsultant}
+              />
             </div>
 
             <section id="description" className="mb-10 scroll-mt-14">
@@ -811,16 +870,20 @@ export default function PropertyDetail() {
                 headerCollapsed ? "top-16" : "top-24"
               }`}
             >
-              <PropertyPriceBlock property={property} />
+              <PropertyPriceBlock
+                property={property}
+                hasAiConsultant={hasAiConsultant}
+              />
               <PropertySidebarExtras property={property} />
             </div>
           </aside>
         </div>
 
-        {!isResidential && (
+        {hasAiConsultant && (
           <PropertyAIChat
             propertyId={property.id}
             propertyAddress={property.address}
+            avatarUrl={consultantAvatarForListing(property, consultantAvatar)}
           />
         )}
 
@@ -843,7 +906,13 @@ export default function PropertyDetail() {
   );
 }
 
-function PropertyPriceBlock({ property }: { property: any }) {
+function PropertyPriceBlock({
+  property,
+  hasAiConsultant,
+}: {
+  property: any;
+  hasAiConsultant: boolean;
+}) {
   const extras = (property.extras || {}) as Record<string, unknown>;
   const ownerListing = isOwnerListing(extras, property.submitted_by);
   const agencyListing = isAgencyListing(property);
@@ -929,7 +998,25 @@ function PropertyPriceBlock({ property }: { property: any }) {
       )}
 
       <div className="grid grid-cols-2 gap-2">
-        {useOwnerInquiry ? (
+        {hasAiConsultant ? (
+          <button
+            type="button"
+            onClick={() =>
+              openConsultantChat({
+                propertyId: property.id,
+                propertyAddress: property.address,
+                avatarUrl: consultantAvatarForListing(
+                  property,
+                  consultantAvatar,
+                ),
+              })
+            }
+            className={`${propertyCtaButtonClass} bg-primary text-primary-foreground`}
+          >
+            <MessageSquareText className="w-4 h-4 shrink-0" />
+            Написать
+          </button>
+        ) : useOwnerInquiry ? (
           <OwnerMessageDialog
             propertyId={property.id}
             propertyAddress={property.address}
@@ -939,16 +1026,14 @@ function PropertyPriceBlock({ property }: { property: any }) {
             source={isResidential ? "property_inquiry" : "owner_message"}
           />
         ) : (
-          <button
-            type="button"
-            onClick={() =>
-              window.dispatchEvent(new CustomEvent("open-consultant-chat"))
-            }
-            className={`${propertyCtaButtonClass} bg-primary text-primary-foreground`}
-          >
-            <MessageSquareText className="w-4 h-4 shrink-0" />
-            Написать
-          </button>
+          <OwnerMessageDialog
+            propertyId={property.id}
+            propertyAddress={property.address}
+            ownerName={ownerName}
+            ownerUserId={ownerUserId || undefined}
+            title="Задать вопрос"
+            source="owner_message"
+          />
         )}
         <RevealListingPhone property={property} />
       </div>

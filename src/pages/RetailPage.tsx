@@ -11,7 +11,6 @@ import heroImg from "@/assets/hero-retail.jpg";
 import CategoryContactForm from "@/components/CategoryContactForm";
 import CategoryPropertySlider from "@/components/CategoryPropertySlider";
 import NewsSidebar from "@/components/NewsSidebar";
-import PropertyAIChat from "@/components/PropertyAIChat";
 import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
@@ -187,7 +186,6 @@ export default function RetailPage() {
       </section>
 
       <SiteFooter />
-      <PropertyAIChat />
     </div>
   );
 }

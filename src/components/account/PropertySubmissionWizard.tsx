@@ -732,7 +732,7 @@ export default function PropertySubmissionWizard({
               update("listing_manager_id", v === "none" ? "" : v)
             }
           >
-            <SelectTrigger className="h-10 text-sm bg-background">
+            <SelectTrigger className="h-7 text-sm bg-background">
               <SelectValue placeholder="Выберите менеджера" />
             </SelectTrigger>
             <SelectContent>
@@ -784,10 +784,10 @@ export default function PropertySubmissionWizard({
     >
       <SheetContent
         side="right"
-        className="w-full sm:max-w-2xl lg:max-w-3xl p-0 flex flex-col h-full gap-0 overflow-hidden"
+        className="w-full max-w-none sm:max-w-2xl lg:max-w-3xl p-0 flex flex-col h-[100dvh] gap-0 overflow-hidden"
         aria-describedby={undefined}
       >
-        <SheetHeader className="shrink-0 bg-card border-b px-4 py-3">
+        <SheetHeader className="shrink-0 bg-card border-b px-4 py-3 pr-12 text-left">
           <SheetTitle className="text-base font-semibold">
             {editId ? "Редактировать объект" : "Добавить объект за 0 ₽"}
           </SheetTitle>
@@ -2261,7 +2261,12 @@ export default function PropertySubmissionWizard({
           style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
         >
           {stepIndex > 0 ? (
-            <Button type="button" variant="outline" onClick={goBack}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={goBack}
+              className="shrink-0"
+            >
               <ChevronLeft className="w-4 h-4 mr-1" /> Назад
             </Button>
           ) : (
@@ -2272,7 +2277,7 @@ export default function PropertySubmissionWizard({
               type="button"
               onClick={() => void goNext()}
               disabled={!canNext()}
-              className="min-w-[120px]"
+              className="min-w-[110px] sm:min-w-[120px]"
             >
               {locationGeocoding ? "Проверка…" : "Далее"}{" "}
               <ChevronRight className="w-4 h-4 ml-1" />
@@ -2281,13 +2286,13 @@ export default function PropertySubmissionWizard({
             <Button
               onClick={() => submitMutation.mutate()}
               disabled={submitMutation.isPending || uploading}
-              className="min-w-[180px]"
+              className="min-w-0 flex-1 sm:flex-none sm:min-w-[180px]"
             >
               {submitMutation.isPending || uploading
                 ? "Сохранение…"
                 : editId
-                  ? "Сохранить изменения"
-                  : "Отправить на модерацию"}
+                  ? "Сохранить"
+                  : "На модерацию"}
             </Button>
           )}
         </div>

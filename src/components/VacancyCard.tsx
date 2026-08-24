@@ -26,7 +26,7 @@ export default function VacancyCard({ vacancy, onApply }: Props) {
           <button
             type="button"
             onClick={() => onApply(vacancy.title)}
-            className="shrink-0 h-10 px-5 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+            className="shrink-0 ui-btn-primary"
           >
             Откликнуться
           </button>

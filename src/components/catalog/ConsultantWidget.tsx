@@ -1,7 +1,8 @@
 import { MessageSquareText, Phone } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import { DEFAULT_AGENT } from "@/config/defaultAgent";
 import { Button } from "@/components/ui/button";
+import { DEFAULT_AGENT } from "@/config/defaultAgent";
+import { openConsultantChat } from "@/lib/aiConsultant";
 
 export default function ConsultantWidget() {
   const agent = DEFAULT_AGENT;
@@ -45,9 +46,7 @@ export default function ConsultantWidget() {
           type="button"
           size="sm"
           className="w-full h-9 gap-1.5"
-          onClick={() =>
-            window.dispatchEvent(new CustomEvent("open-consultant-chat"))
-          }
+          onClick={() => openConsultantChat()}
         >
           <MessageSquareText className="w-3.5 h-3.5" />
           Написать

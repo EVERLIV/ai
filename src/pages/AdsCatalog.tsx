@@ -422,8 +422,8 @@ function AdCard({ placement }: { placement: any }) {
   const availability = placement.availability as AvailabilityKey;
 
   return (
-    <article className="group bg-card border border-border overflow-hidden flex flex-col hover:border-foreground/30 transition-colors">
-      <div className="relative aspect-[4/3] bg-muted overflow-hidden">
+    <article className="group bg-card rounded-lg overflow-hidden flex flex-col">
+      <div className="relative aspect-[4/3] bg-muted overflow-hidden rounded-t-lg">
         <PropertyImage
           src={cover}
           alt={meta?.label || "Реклама"}
@@ -441,7 +441,7 @@ function AdCard({ placement }: { placement: any }) {
         </div>
       </div>
 
-      <div className="p-3 flex-1 flex flex-col">
+      <div className="px-3.5 pt-3 pb-3.5 flex-1 flex flex-col">
         <div className="font-display text-base font-bold text-foreground mb-0.5">
           {Number(placement.monthly_price).toLocaleString("ru-RU")} ₽
           <span className="text-[11px] font-normal text-muted-foreground">

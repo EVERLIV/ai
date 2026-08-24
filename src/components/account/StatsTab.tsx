@@ -7,7 +7,9 @@ import {
   MessageSquareText,
   Minus,
   Phone,
+  Search,
   TrendingUp,
+  X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -25,11 +27,13 @@ import {
   YAxis,
 } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyAgency } from "@/hooks/useAgency";
 import {
-  SERVICE_ROLE_KEY,
-  SUPABASE_URL,
-} from "@/integrations/supabase/adminClient";
-import { fetchMyPropertiesApi } from "@/lib/userPropertyApi";
+  fetchEventsForPropertyIdsApi,
+  fetchLeadsForPropertyIdsApi,
+  fetchMyPropertiesApi,
+} from "@/lib/userPropertyApi";
+import { formatPropertyAddressShort } from "@/lib/propertyCard";
 
 type Period = "7d" | "30d" | "90d" | "all";
 
@@ -66,28 +70,16 @@ interface EventRow {
   created_at: string;
 }
 
-const adminHeaders = {
-  apikey: SERVICE_ROLE_KEY,
-  Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-};
-
-async function fetchJson<T>(path: string): Promise<T> {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    headers: adminHeaders,
-  });
-  const data = await res.json().catch(() => []);
-  if (!res.ok) return [] as T;
-  return data as T;
-}
-
 function useAnalytics() {
   const { user } = useAuth();
+  const { data: myAgency, isLoading: agencyLoading } = useMyAgency();
+  const agencyId = myAgency?.agency.id;
 
   return useQuery({
-    queryKey: ["analytics", user?.id],
-    enabled: !!user,
+    queryKey: ["analytics", user?.id, agencyId ?? null],
+    enabled: !!user && !agencyLoading,
     queryFn: async () => {
-      const propsRaw = await fetchMyPropertiesApi(user?.id);
+      const propsRaw = await fetchMyPropertiesApi(user!.id, agencyId);
       const props = (propsRaw as PropertyStat[])
         .map((p) => ({
           id: p.id,
@@ -108,20 +100,16 @@ function useAnalytics() {
         };
       }
 
-      const propIds = props.map((p) => p.id).join(",");
+      const propIds = props.map((p) => p.id);
       const [leads, events] = await Promise.all([
-        fetchJson<LeadRow[]>(
-          `crm_leads?select=id,object_id,created_at,source,name,phone&object_id=in.(${propIds})&order=created_at.asc`,
-        ),
-        fetchJson<EventRow[]>(
-          `crm_events?select=id,object_id,event_type,created_at&object_id=in.(${propIds})&order=created_at.asc`,
-        ),
+        fetchLeadsForPropertyIdsApi(propIds),
+        fetchEventsForPropertyIdsApi(propIds),
       ]);
 
       return {
         properties: props,
-        leads: Array.isArray(leads) ? leads : [],
-        events: Array.isArray(events) ? events : [],
+        leads: (leads || []) as LeadRow[],
+        events: (events || []) as EventRow[],
       };
     },
   });
@@ -280,6 +268,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function StatsTab() {
   const { data, isLoading } = useAnalytics();
   const [period, setPeriod] = useState<Period>("30d");
+  const [propertyQuery, setPropertyQuery] = useState("");
 
   const analytics = useMemo(() => {
     if (!data) return null;
@@ -308,6 +297,13 @@ export default function StatsTab() {
     for (const l of periodLeads) {
       if (l.object_id)
         leadsByProperty[l.object_id] = (leadsByProperty[l.object_id] || 0) + 1;
+    }
+
+    const leadsByPropertyAll: Record<string, number> = {};
+    for (const l of leads) {
+      if (l.object_id)
+        leadsByPropertyAll[l.object_id] =
+          (leadsByPropertyAll[l.object_id] || 0) + 1;
     }
 
     const typeDistribution: Record<string, number> = {};
@@ -346,6 +342,7 @@ export default function StatsTab() {
       periodViews: periodViews.length,
       properties,
       leadsByProperty,
+      leadsByPropertyAll,
       combined,
       leadsTimeline,
       pieData,
@@ -354,6 +351,20 @@ export default function StatsTab() {
       leadsTrend: calcTrend(leadsTimeline),
     };
   }, [data, period]);
+
+  const propertyRows = useMemo(() => {
+    if (!analytics) return [];
+    const q = propertyQuery.trim().toLowerCase();
+    const list = analytics.properties;
+    if (!q) return list.slice(0, 10);
+    return list
+      .filter((p) => {
+        const address = (p.address || "").toLowerCase();
+        const type = (p.type || "").toLowerCase();
+        return address.includes(q) || type.includes(q);
+      })
+      .slice(0, 30);
+  }, [analytics, propertyQuery]);
 
   if (isLoading) {
     return (
@@ -623,6 +634,33 @@ export default function StatsTab() {
 
       {/* Per-property table */}
       <ChartCard title="Детализация по объектам">
+        <div className="mb-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <input
+              type="search"
+              value={propertyQuery}
+              onChange={(e) => setPropertyQuery(e.target.value)}
+              placeholder="Поиск по адресу или типу…"
+              className="w-full h-9 pl-8 pr-8 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+            />
+            {propertyQuery && (
+              <button
+                type="button"
+                onClick={() => setPropertyQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground"
+                aria-label="Очистить поиск"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground shrink-0">
+            {propertyQuery.trim()
+              ? `Найдено: ${propertyRows.length}`
+              : `Топ‑10 из ${analytics.properties.length}`}
+          </p>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
@@ -640,53 +678,70 @@ export default function StatsTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
-              {analytics.properties.map((p) => {
-                const leads = analytics.leadsByProperty[p.id] || 0;
-                const views = p.views_count || 0;
-                const conv =
-                  views > 0 ? ((leads / views) * 100).toFixed(1) : "—";
-                return (
-                  <tr key={p.id} className="group">
-                    <td className="py-2.5 pr-4">
-                      <div className="flex items-center gap-2.5">
-                        {p.cover_photo ? (
-                          <img
-                            src={p.cover_photo}
-                            alt=""
-                            className="w-8 h-8 rounded object-cover shrink-0"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded bg-muted flex items-center justify-center shrink-0">
-                            <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <div className="font-medium text-foreground truncate max-w-[200px]">
-                            {p.address}
-                          </div>
-                          <div className="text-[10px] text-muted-foreground">
-                            {p.type}
+              {propertyRows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="py-8 text-center text-muted-foreground"
+                  >
+                    {propertyQuery.trim()
+                      ? "Ничего не найдено"
+                      : "Нет объектов"}
+                  </td>
+                </tr>
+              ) : (
+                propertyRows.map((p) => {
+                  const leads = analytics.leadsByPropertyAll[p.id] || 0;
+                  const views = p.views_count || 0;
+                  const conv =
+                    views > 0 ? ((leads / views) * 100).toFixed(1) : "—";
+                  const title =
+                    formatPropertyAddressShort(p.address) ||
+                    p.address ||
+                    "Без адреса";
+                  return (
+                    <tr key={p.id} className="group">
+                      <td className="py-2.5 pr-4">
+                        <div className="flex items-center gap-2.5">
+                          {p.cover_photo ? (
+                            <img
+                              src={p.cover_photo}
+                              alt=""
+                              className="w-8 h-8 rounded object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded bg-muted flex items-center justify-center shrink-0">
+                              <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="font-medium text-foreground truncate max-w-[200px]">
+                              {title}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">
+                              {p.type}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-2 text-right text-foreground font-medium">
-                      {views.toLocaleString("ru-RU")}
-                    </td>
-                    <td className="py-2.5 px-2 text-right text-foreground font-medium">
-                      {leads}
-                    </td>
-                    <td className="py-2.5 pl-2 text-right">
-                      <span
-                        className={`font-medium ${typeof conv === "string" && conv !== "—" && parseFloat(conv) > 0 ? "text-emerald-600" : "text-muted-foreground"}`}
-                      >
-                        {conv}
-                        {conv !== "—" ? "%" : ""}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+                      <td className="py-2.5 px-2 text-right text-foreground font-medium">
+                        {views.toLocaleString("ru-RU")}
+                      </td>
+                      <td className="py-2.5 px-2 text-right text-foreground font-medium">
+                        {leads}
+                      </td>
+                      <td className="py-2.5 pl-2 text-right">
+                        <span
+                          className={`font-medium ${typeof conv === "string" && conv !== "—" && parseFloat(conv) > 0 ? "text-emerald-600" : "text-muted-foreground"}`}
+                        >
+                          {conv}
+                          {conv !== "—" ? "%" : ""}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

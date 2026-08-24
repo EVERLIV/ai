@@ -33,7 +33,8 @@ export default function ListingAgentFooter({
     isVerified: DEFAULT_AGENT.isVerified,
     isRealtor: false,
     isAgency: false,
-    agencyId: null,
+    agencyId: DEFAULT_AGENT.agencyId,
+    managerId: DEFAULT_AGENT.managerId,
     objectsCount: 0,
   };
 
@@ -48,6 +49,7 @@ export default function ListingAgentFooter({
     isAgency: isAgencyListing,
   });
   const agencyHref = agent.agencyId ? `/agentstvo/${agent.agencyId}` : null;
+  const managerHref = agent.managerId ? `/rieltor/${agent.managerId}` : null;
 
   const nameBlock = (
     <>
@@ -56,16 +58,29 @@ export default function ListingAgentFooter({
           agent.primaryLabel !== agent.secondaryLabel && (
             <Building2 className="w-3 h-3 text-primary shrink-0" />
           )}
-        <span
-          className={cn(
-            "text-xs font-semibold truncate leading-tight",
-            agencyHref
-              ? "text-primary group-hover/agent:underline"
-              : "text-foreground",
-          )}
-        >
-          {agent.primaryLabel}
-        </span>
+        {managerHref || agencyHref ? (
+          <Link
+            to={managerHref || agencyHref!}
+            onClick={(e) => e.stopPropagation()}
+            className={cn(
+              "text-xs font-semibold truncate leading-tight hover:underline",
+              agencyHref ? "text-primary" : "text-foreground",
+            )}
+          >
+            {agent.primaryLabel}
+          </Link>
+        ) : (
+          <span
+            className={cn(
+              "text-xs font-semibold truncate leading-tight",
+              agencyHref
+                ? "text-primary group-hover/agent:underline"
+                : "text-foreground",
+            )}
+          >
+            {agent.primaryLabel}
+          </span>
+        )}
         {agent.isVerified && (
           <VerifiedBadge size="sm" showLabel={false} className="shrink-0" />
         )}

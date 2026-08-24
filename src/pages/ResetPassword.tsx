@@ -78,8 +78,8 @@ export default function ResetPassword() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex items-center justify-between mb-10">
-          <Link to="/" className="flex items-center gap-2.5">
-            <BrandMark className="w-9 h-9" />
+          <Link to="/" className="flex items-center gap-2">
+            <BrandMark className="h-4 w-auto" />
             <span className="font-display text-lg font-bold text-foreground">
               АРЕНДА<span className="text-primary">СИТИ</span>
             </span>
@@ -138,7 +138,7 @@ export default function ResetPassword() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full h-7 bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5 rounded"
                 >
                   {loading ? (
                     "Отправка..."
@@ -204,7 +204,7 @@ export default function ResetPassword() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-7 bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5 rounded"
               >
                 {loading ? (
                   "Сохранение..."

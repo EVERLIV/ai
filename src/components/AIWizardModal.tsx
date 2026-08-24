@@ -1,9 +1,9 @@
-import { X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import AIPropertyWizard from "@/components/AIPropertyWizard";
 import type { PropertySegment } from "@/config/propertySegments";
-import { useProperties } from "@/hooks/useProperties";
+import { useAllActiveProperties } from "@/hooks/useProperties";
 
 interface AIWizardModalProps {
   open: boolean;
@@ -16,7 +16,7 @@ export default function AIWizardModal({
   onClose,
   segment = "commercial",
 }: AIWizardModalProps) {
-  const { data: properties = [] } = useProperties({ segment });
+  const { data: properties = [], isLoading } = useAllActiveProperties();
 
   useEffect(() => {
     if (!open) return;
@@ -44,46 +44,39 @@ export default function AIWizardModal({
       />
 
       <div
-        className="relative w-full max-w-lg bg-card shadow-[0_24px_64px_-12px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col h-[92dvh] rounded-t-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-none"
+        className="relative flex h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-card shadow-[0_24px_64px_-12px_rgba(0,0,0,0.3)] sm:h-auto sm:max-h-[90vh] sm:rounded-2xl"
         style={{
           animation:
             "ai-modal-in 250ms cubic-bezier(0.34,1.56,0.64,1) forwards",
         }}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 sm:px-5 sm:py-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-primary flex items-center justify-center">
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2.5"
-              >
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-              </svg>
+        <div className="flex shrink-0 items-center justify-between border-b border-border/50 px-4 py-3 sm:px-5 sm:py-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <Sparkles className="h-4 w-4" />
             </div>
             <div>
               <span className="text-sm font-bold text-foreground">
-                ИИ-подбор объекта
+                Умный подбор
               </span>
-              <p className="text-[11px] text-muted-foreground">
-                {segment === "residential"
-                  ? "Подбор жилья по параметрам за 1 минуту"
-                  : "Подбор коммерции по параметрам за 1 минуту"}
+              <p className="text-[12px] text-muted-foreground">
+                {isLoading
+                  ? "Загружаем каталог…"
+                  : `${properties.length} объектов · агентства и риелторы`}
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label="Закрыть"
           >
-            <X className="w-4 h-4" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overscroll-contain">
           <AIPropertyWizard
             properties={properties}
             onClose={onClose}

@@ -2,6 +2,15 @@ import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import { COMPANY, CONTACTS } from "@/config/company";
 
 /**
+ * Фиксированные UUID агентства АрендаСити / Анастасии.
+ * Должны совпадать с sql/seed_arendacity_agency.sql
+ */
+export const ARENDACITY_AGENCY_ID =
+  "a0000000-0000-4000-8000-000000000001" as const;
+export const ARENDACITY_MANAGER_ID =
+  "a0000000-0000-4000-8000-000000000002" as const;
+
+/**
  * Агент агентства по умолчанию.
  *
  * Объекты, добавленные не собственником через личный кабинет, ведёт агент
@@ -13,6 +22,8 @@ export const DEFAULT_AGENT = {
   /** Тип аккаунта в терминах ACCOUNT_TYPE_LABELS. */
   accountType: "agency" as const,
   agencyName: COMPANY.brand,
+  agencyId: ARENDACITY_AGENCY_ID,
+  managerId: ARENDACITY_MANAGER_ID,
   isVerified: true,
   avatar: consultantAvatar,
   rating: 4.9,

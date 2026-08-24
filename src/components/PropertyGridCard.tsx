@@ -1,19 +1,19 @@
-import { Eye, Landmark, Layers, MapPin, Maximize2, Square } from "lucide-react";
+import { Clock, Eye, Landmark, Layers, MapPin, Maximize2, Square } from "lucide-react";
 import { Link } from "react-router-dom";
-import CatalogSellerLine from "@/components/catalog/CatalogSellerLine";
+import ListingCategoryBadges from "@/components/ListingCategoryBadges";
+import PropertyCompareButton from "@/components/PropertyCompareButton";
 import PropertyImage from "@/components/PropertyImage";
 import PropertySaveButton from "@/components/PropertySaveButton";
 import { Skeleton } from "@/components/ui/skeleton";
-import VerifiedBadge from "@/components/VerifiedBadge";
 import type { DbProperty } from "@/hooks/useProperties";
 import {
   buildPropertyDisplayTitle,
+  formatListingActivityDates,
   formatListingViews,
   formatPropertyAddressShort,
   formatPropertyPrice,
-  isListingVerified,
 } from "@/lib/propertyCard";
-import { getLandUse, isAnyLand, LAND_TYPE_LABEL } from "@/lib/propertyLand";
+import { getLandUse, isAnyLand } from "@/lib/propertyLand";
 
 interface PropertyGridCardProps {
   property: DbProperty;
@@ -28,21 +28,28 @@ export default function PropertyGridCard({
   const price = formatPropertyPrice(p);
   const title = buildPropertyDisplayTitle(p);
   const addressShort = formatPropertyAddressShort(p.address);
+  const activity = formatListingActivityDates(p);
 
   return (
     <Link
       to={`/property/${p.id}`}
-      className="group flex flex-col h-full bg-card border border-border/50 rounded-md overflow-hidden hover:border-border transition-colors"
+      className="group flex flex-col h-full bg-card rounded-lg overflow-hidden"
     >
-      <div className="relative aspect-[4/3] bg-muted overflow-hidden">
+      <div className="relative aspect-[4/3] bg-muted overflow-hidden rounded-t-lg">
         <PropertyImage
           src={p.cover_photo}
           alt={title}
           imgClassName="transition-transform duration-500 group-hover:scale-[1.02]"
         />
-        <div className="absolute top-2 right-2 z-[1]">
+        <ListingCategoryBadges type={p.type} dealType={p.deal_type} />
+        <div className="absolute top-2 right-2 z-[1] flex flex-col gap-1">
           <PropertySaveButton
             propertyId={p.id}
+            className="w-7 h-7 shadow-sm"
+            iconClassName="w-3.5 h-3.5"
+          />
+          <PropertyCompareButton
+            property={p}
             className="w-7 h-7 shadow-sm"
             iconClassName="w-3.5 h-3.5"
           />
@@ -52,7 +59,7 @@ export default function PropertyGridCard({
         </div>
       </div>
 
-      <div className="flex flex-col flex-1 p-3 gap-1.5">
+      <div className="flex flex-col flex-1 px-3.5 pt-3 pb-3.5 gap-1.5">
         <div>
           <div className="price-display text-lg text-foreground leading-tight">
             {price ?? "По запросу"}
@@ -62,14 +69,9 @@ export default function PropertyGridCard({
           </div>
         </div>
 
-        <div className="flex items-start gap-1.5">
-          <h3 className="text-sm font-semibold text-foreground leading-snug group-hover:text-primary transition-colors flex-1 line-clamp-2">
-            {title}
-          </h3>
-          {isListingVerified(p) && (
-            <VerifiedBadge showLabel={false} className="shrink-0 mt-0.5" />
-          )}
-        </div>
+        <h3 className="text-sm font-semibold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2">
+          {title}
+        </h3>
 
         {addressShort && (
           <p className="text-[11px] text-muted-foreground leading-snug line-clamp-1 flex items-center gap-1">
@@ -122,10 +124,12 @@ export default function PropertyGridCard({
           </div>
         )}
 
-        <CatalogSellerLine
-          extras={p.extras as Record<string, unknown> | null}
-          className="mt-auto pt-2"
-        />
+        {activity.line && (
+          <p className="flex items-center gap-1 text-[10px] text-muted-foreground tabular-nums pt-0.5 mt-auto">
+            <Clock className="w-3 h-3 shrink-0" />
+            <span className="truncate">{activity.line}</span>
+          </p>
+        )}
       </div>
     </Link>
   );
@@ -133,19 +137,15 @@ export default function PropertyGridCard({
 
 export function PropertyGridCardSkeleton() {
   return (
-    <div className="bg-card overflow-hidden border border-border/50 rounded-md">
-      <div className="relative aspect-[4/3] overflow-hidden">
+    <div className="bg-card overflow-hidden rounded-lg">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg">
         <Skeleton className="absolute inset-0 rounded-none" />
       </div>
-      <div className="p-3 space-y-2">
+      <div className="px-3.5 pt-3 pb-3.5 space-y-2">
         <Skeleton className="h-5 w-28" />
         <Skeleton className="h-4 w-3/4" />
         <Skeleton className="h-3 w-full" />
         <Skeleton className="h-3 w-1/2" />
-        <div className="flex items-center gap-2 pt-1">
-          <Skeleton className="h-6 w-6 rounded" />
-          <Skeleton className="h-3 w-24" />
-        </div>
       </div>
     </div>
   );

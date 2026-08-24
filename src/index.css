@@ -15,8 +15,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 10%;
 
-    /* Conversion accent only — not a background brand color */
-    --primary: 0 72% 51%;
+    /* Conversion accent only — brand red #8B0015 */
+    --primary: 351 100% 27%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 35 30% 95%;
@@ -25,7 +25,7 @@
     --muted: 40 15% 94%;
     --muted-foreground: 220 10% 45%;
 
-    --accent: 38 65% 54%;
+    --accent: 40 15% 94%;
     --accent-foreground: 220 25% 10%;
 
     --destructive: 0 84.2% 60.2%;
@@ -33,12 +33,12 @@
 
     --border: 35 18% 93%;
     --input: 35 18% 93%;
-    --ring: 0 72% 51%;
+    --ring: 351 100% 27%;
 
     /* Unified radius scale: sm 4 / md 8 / lg-card 12 */
     --radius: 0.5rem;
 
-    /* Фирменный золотой (как в логотипе / письмах #c4a35a…#d39e3f) — hover/выбор в списках */
+    /* Фирменный золотой — только токены gold / декоративные акценты, не UI chrome */
     --gold: 38 65% 54%;
     --gold-light: 38 55% 90%;
     --gold-dark: 38 70% 40%;
@@ -71,7 +71,7 @@
     font-family: var(--font-body);
   }
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    @apply bg-background text-foreground font-body antialiased text-[14px] leading-normal;
     font-family: var(--font-body);
   }
   h1,
@@ -95,6 +95,20 @@
   }
   .scrollbar-none::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Компактные CTA вне shadcn Button: 28px / 14px medium / radius 4px */
+  .ui-btn {
+    @apply inline-flex items-center justify-center gap-1.5 h-7 px-[11px] py-[3px] rounded text-sm font-medium leading-none whitespace-nowrap transition-colors disabled:pointer-events-none disabled:opacity-50;
+  }
+  .ui-btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 h-7 px-[11px] py-[3px] rounded text-sm font-medium leading-none whitespace-nowrap transition-colors disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90;
+  }
+  .ui-btn-outline {
+    @apply inline-flex items-center justify-center gap-1.5 h-7 px-[11px] py-[3px] rounded text-sm font-medium leading-none whitespace-nowrap transition-colors disabled:pointer-events-none disabled:opacity-50 border border-border bg-background hover:bg-muted;
+  }
+  .ui-btn-soft {
+    @apply inline-flex items-center justify-center gap-1.5 h-7 px-[11px] py-[3px] rounded text-sm font-medium leading-none whitespace-nowrap transition-colors disabled:pointer-events-none disabled:opacity-50 bg-primary/10 text-primary hover:bg-primary/15;
   }
 
   .price-display {
@@ -129,14 +143,14 @@
     color: hsl(var(--gold));
   }
 
-  /* Выпадающие списки: hover/фокус — золото, не фирменный красный */
+  /* Выпадающие списки: нейтральный hover, не золото */
   [data-radix-select-viewport] [data-highlighted],
   [data-radix-collection-item][data-highlighted],
   [role="option"][data-highlighted],
   [role="menuitem"][data-highlighted],
   [role="menuitemcheckbox"][data-highlighted],
   [role="menuitemradio"][data-highlighted] {
-    background-color: hsl(var(--gold));
+    background-color: hsl(var(--muted));
     color: hsl(var(--foreground));
   }
   .bg-surface-warm {

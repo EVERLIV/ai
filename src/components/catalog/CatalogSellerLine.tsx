@@ -1,5 +1,6 @@
 import { Building2, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { formatAgentObjectsLabel } from "@/lib/propertyCard";
 import { getListingAgentDisplay } from "@/lib/propertySidebar";
@@ -8,6 +9,39 @@ import { cn } from "@/lib/utils";
 interface Props {
   extras?: Record<string, unknown> | null;
   className?: string;
+}
+
+/** Навигация без <a> — безопасно внутри карточки-Link. */
+function InlineNav({
+  to,
+  className,
+  children,
+}: {
+  to: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  const navigate = useNavigate();
+
+  const go = (e: MouseEvent | KeyboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(to);
+  };
+
+  return (
+    <span
+      role="link"
+      tabIndex={0}
+      className={cn("cursor-pointer", className)}
+      onClick={go}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") go(e);
+      }}
+    >
+      {children}
+    </span>
+  );
 }
 
 /**
@@ -35,9 +69,15 @@ export default function CatalogSellerLine({ extras, className }: Props) {
     isAgency: agent.isAgency || agent.isRealtor,
   });
   const agencyHref = agent.agencyId ? `/agentstvo/${agent.agencyId}` : null;
+  const managerHref = agent.managerId ? `/rieltor/${agent.managerId}` : null;
 
-  const body = (
-    <>
+  return (
+    <div
+      className={cn(
+        "group/seller flex items-center gap-1.5 text-[11px] min-w-0",
+        className,
+      )}
+    >
       {agent.avatarUrl ? (
         <img
           src={agent.avatarUrl}
@@ -55,21 +95,37 @@ export default function CatalogSellerLine({ extras, className }: Props) {
         </span>
       )}
       <span className="min-w-0 flex-1 truncate">
-        <span
-          className={cn(
-            "font-medium",
-            agencyHref ? "text-foreground group-hover/seller:underline" : "text-foreground",
-          )}
-        >
-          {agent.primaryLabel}
-        </span>
+        {agencyHref ? (
+          <InlineNav
+            to={agencyHref}
+            className={cn(
+              "font-medium text-foreground hover:underline",
+              "group-hover/seller:underline",
+            )}
+          >
+            {agent.primaryLabel}
+          </InlineNav>
+        ) : (
+          <span className="font-medium text-foreground">
+            {agent.primaryLabel}
+          </span>
+        )}
         {agent.secondaryLabel &&
           agent.secondaryLabel !== agent.primaryLabel && (
             <>
               <span className="mx-1 opacity-40">·</span>
-              <span className="text-muted-foreground">
-                {agent.secondaryLabel}
-              </span>
+              {managerHref ? (
+                <InlineNav
+                  to={managerHref}
+                  className="text-muted-foreground hover:underline"
+                >
+                  {agent.secondaryLabel}
+                </InlineNav>
+              ) : (
+                <span className="text-muted-foreground">
+                  {agent.secondaryLabel}
+                </span>
+              )}
             </>
           )}
         {objectsLabel && (
@@ -82,32 +138,6 @@ export default function CatalogSellerLine({ extras, className }: Props) {
       {agent.isVerified && (
         <VerifiedBadge size="sm" showLabel={false} className="shrink-0" />
       )}
-    </>
-  );
-
-  if (agencyHref) {
-    return (
-      <Link
-        to={agencyHref}
-        onClick={(e) => e.stopPropagation()}
-        className={cn(
-          "group/seller flex items-center gap-1.5 text-[11px] min-w-0",
-          className,
-        )}
-      >
-        {body}
-      </Link>
-    );
-  }
-
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-1.5 text-[11px] min-w-0",
-        className,
-      )}
-    >
-      {body}
     </div>
   );
 }

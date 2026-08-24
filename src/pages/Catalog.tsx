@@ -23,6 +23,8 @@ import CatalogPromoBanner, {
   getCatalogPromos,
   pickCatalogPromo,
 } from "@/components/CatalogPromoBanner";
+import LocationPickerModal from "@/components/LocationPickerModal";
+import PropertyAIChat from "@/components/PropertyAIChat";
 import PropertyGridCard, {
   PropertyGridCardSkeleton,
 } from "@/components/PropertyGridCard";
@@ -38,7 +40,14 @@ import {
 import { absoluteUrl } from "@/config/site";
 import { useVerifiedAgencies } from "@/hooks/useAgency";
 import { useProperties } from "@/hooks/useProperties";
-import { readCatalogFiltersFromSearchParams } from "@/lib/catalogLinks";
+import {
+  CATALOG_SORT_OPTIONS,
+  normalizeCatalogSortKey,
+  rankPropertyIdsByQuery,
+  sortCatalogProperties,
+  type CatalogSortKey,
+} from "@/lib/catalogSort";
+import { readCatalogFiltersFromSearchParams, serializeCatalogSearchParams } from "@/lib/catalogLinks";
 import { listPropertyPath } from "@/lib/listPropertyLinks";
 import {
   type ListingSellerFilter,
@@ -70,6 +79,7 @@ import {
   propertyMatchesSegment,
   propertyMatchesTypes,
 } from "@/lib/propertyTypes";
+import { trackSearchPreference } from "@/lib/userPreferences";
 
 const DEALS = ["Все", "Аренда", "Продажа"];
 const RESIDENTIAL_DEALS = ["Все", "Аренда", "Продажа", "Посуточно"];
@@ -81,13 +91,7 @@ const SELLER_OPTIONS: { value: ListingSellerFilter; label: string }[] = [
 const CLASSES = ["Все", "A", "A+", "B+", "B", "C"];
 const PRICE_MAX_DEFAULT = 50000000;
 const AREA_MAX_DEFAULT = 300000;
-const SORT_OPTIONS = [
-  { label: "Сначала новые", value: "date" },
-  { label: "Цена ↑", value: "price_asc" },
-  { label: "Цена ↓", value: "price_desc" },
-  { label: "Площадь ↑", value: "area_asc" },
-  { label: "Площадь ↓", value: "area_desc" },
-];
+const SORT_OPTIONS = CATALOG_SORT_OPTIONS;
 const CEILING_OPTIONS = [
   { label: "от 3 м", value: 3 },
   { label: "от 4 м", value: 4 },
@@ -138,7 +142,7 @@ function FilterDropdown({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md border text-xs font-medium transition-colors whitespace-nowrap ${
+        className={`inline-flex items-center gap-1.5 h-7 px-[11px] rounded border text-sm font-medium transition-colors whitespace-nowrap ${
           active
             ? "border-primary/60 text-primary bg-primary/5"
             : "border-border bg-card text-foreground hover:border-foreground/30"
@@ -175,14 +179,14 @@ function OptionRow({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-xs transition-colors ${
+      className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-sm transition-colors text-left ${
         selected
-          ? "bg-primary/10 text-primary font-semibold"
-          : "text-foreground hover:bg-muted"
+          ? "bg-primary/10 text-primary font-medium"
+          : "text-foreground hover:bg-muted/80"
       }`}
     >
-      <span className="truncate">{label}</span>
-      {selected && <Check className="w-3.5 h-3.5 shrink-0" />}
+      <span className="leading-snug">{label}</span>
+      {selected && <Check className="w-4 h-4 shrink-0 text-primary" />}
     </button>
   );
 }
@@ -337,7 +341,7 @@ function CtaBanner({ segment = "commercial" }: { segment?: PropertySegment }) {
           </ul>
           <Link
             to={listHref}
-            className="justify-self-start md:justify-self-end inline-flex items-center h-11 px-6 rounded-md bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+            className="justify-self-start md:justify-self-end inline-flex items-center h-11 px-6 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
           >
             Разместить объект
           </Link>
@@ -366,6 +370,7 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
 
   const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
   const [mobileFilters, setMobileFilters] = useState(false);
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [searchAlertOpen, setSearchAlertOpen] = useState(false);
@@ -380,7 +385,9 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
     initialFilters.propertyClass,
   );
   const [condition, setCondition] = useState(initialFilters.condition);
-  const [sort, setSort] = useState(initialFilters.sort);
+  const [sort, setSort] = useState<CatalogSortKey>(() =>
+    normalizeCatalogSortKey(initialFilters.sort),
+  );
   const [searchQuery, setSearchQuery] = useState(initialFilters.searchQuery);
   const [seller, setSeller] = useState<ListingSellerFilter>(
     initialFilters.seller,
@@ -417,14 +424,17 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
     [verifiedAgencies, agencyId],
   );
 
+  const applyingUrlRef = useRef(false);
+
   useEffect(() => {
+    applyingUrlRef.current = true;
     const next = readCatalogFiltersFromSearchParams(searchParams);
     setDealType(next.dealType);
     setSelectedTypes(next.selectedTypes);
     setDistrict(next.district);
     setPropertyClass(next.propertyClass);
     setCondition(next.condition);
-    setSort(next.sort);
+    setSort(normalizeCatalogSortKey(next.sort));
     setSearchQuery(next.searchQuery);
     setSeller(next.seller);
     setAgencyId(next.agencyId);
@@ -472,32 +482,36 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
     [properties],
   );
 
-  // Sync filters → URL
+  // Sync filters → URL (не перезаписывать, если адрес уже совпадает — иначе цикл Аренда↔Продажа)
   useEffect(() => {
-    const params: Record<string, string> = {};
-    if (dealType !== "Все") params.deal = dealType;
-    if (selectedTypes.length > 0) params.types = selectedTypes.join(",");
-    if (district !== "Все") params.district = district;
-    if (propertyClass !== "Все") params.cls = propertyClass;
-    if (condition !== "Все") params.cond = condition;
-    if (sort !== "date") params.sort = sort;
-    if (debouncedSearch) params.q = debouncedSearch;
-    if (priceMin > 0) params.priceMin = String(priceMin);
-    if (priceMax < PRICE_MAX_DEFAULT) params.priceMax = String(priceMax);
-    if (areaMin > 0) params.areaMin = String(areaMin);
-    if (areaMax < AREA_MAX_DEFAULT) params.areaMax = String(areaMax);
-    if (ceilingMin > 0) params.ceil = String(ceilingMin);
-    if (parkingOnly) params.parking = "1";
-    if (selectedLayouts.length > 0) params.layouts = selectedLayouts.join(",");
-    if (selectedRooms.length > 0) params.rooms = selectedRooms.join(",");
-    if (selectedMarket.length > 0) params.market = selectedMarket.join(",");
-    if (selectedBuildingTypes.length > 0)
-      params.bld = selectedBuildingTypes.join(",");
-    if (selectedFurniture.length > 0)
-      params.furniture = selectedFurniture.join(",");
-    if (seller !== "Все") params.seller = seller;
-    if (agencyId) params.agency = agencyId;
-    setSearchParams(params, { replace: true });
+    if (applyingUrlRef.current) {
+      applyingUrlRef.current = false;
+      return;
+    }
+    const next = serializeCatalogSearchParams({
+      dealType,
+      selectedTypes,
+      selectedRooms,
+      selectedMarket,
+      selectedBuildingTypes,
+      selectedFurniture,
+      district,
+      propertyClass,
+      condition,
+      sort,
+      searchQuery: debouncedSearch,
+      priceMin,
+      priceMax,
+      areaMin,
+      areaMax,
+      ceilingMin,
+      parkingOnly,
+      selectedLayouts,
+      seller,
+      agencyId,
+    });
+    if (next === searchParams.toString()) return;
+    setSearchParams(next, { replace: true });
   }, [
     dealType,
     selectedTypes,
@@ -519,8 +533,27 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
     selectedFurniture,
     seller,
     agencyId,
+    searchParams,
     setSearchParams,
   ]);
+
+  useEffect(() => {
+    if (
+      !debouncedSearch &&
+      selectedTypes.length === 0 &&
+      district === "Все" &&
+      dealType === "Все"
+    ) {
+      return;
+    }
+    trackSearchPreference({
+      query: debouncedSearch,
+      types: selectedTypes,
+      district,
+      dealType,
+      segment,
+    });
+  }, [debouncedSearch, selectedTypes, district, dealType, segment]);
 
   const toggleType = (t: string) => {
     setSelectedTypes((prev) =>
@@ -633,14 +666,8 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
       }
     }
     if (debouncedSearch) {
-      const q = debouncedSearch.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.address.toLowerCase().includes(q) ||
-          p.district.toLowerCase().includes(q) ||
-          getPropertyTypes(p).some((t) => t.toLowerCase().includes(q)) ||
-          (p.description || "").toLowerCase().includes(q),
-      );
+      const ranked = new Set(rankPropertyIdsByQuery(result, debouncedSearch));
+      result = result.filter((p) => ranked.has(p.id));
     }
     if (dealType !== "Все")
       result = result.filter((p) => p.deal_type === dealType);
@@ -711,21 +738,9 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
         return landUse ? selectedLayouts.includes(landUse) : false;
       });
 
-    switch (sort) {
-      case "price_asc":
-        result.sort((a, b) => Number(a.price) - Number(b.price));
-        break;
-      case "price_desc":
-        result.sort((a, b) => Number(b.price) - Number(a.price));
-        break;
-      case "area_asc":
-        result.sort((a, b) => Number(a.area) - Number(b.area));
-        break;
-      case "area_desc":
-        result.sort((a, b) => Number(b.area) - Number(a.area));
-        break;
-    }
-    return result;
+    return sortCatalogProperties(result, sort, {
+      searchQuery: debouncedSearch,
+    });
   }, [
     properties,
     dealType,
@@ -1113,18 +1128,30 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
               panelWidth={220}
             >
               {(close) => (
-                <div className="space-y-0.5 max-h-64 overflow-y-auto">
-                  {districts.map((d) => (
-                    <OptionRow
-                      key={d}
-                      label={d}
-                      selected={district === d}
-                      onClick={() => {
-                        setDistrict(d);
-                        close();
-                      }}
-                    />
-                  ))}
+                <div className="space-y-2 p-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      close();
+                      setLocationPickerOpen(true);
+                    }}
+                    className="w-full h-9 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90"
+                  >
+                    Выбрать город или район
+                  </button>
+                  <div className="space-y-0.5 max-h-56 overflow-y-auto">
+                    {districts.map((d) => (
+                      <OptionRow
+                        key={d}
+                        label={d}
+                        selected={district === d}
+                        onClick={() => {
+                          setDistrict(d);
+                          close();
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
             </FilterDropdown>
@@ -1234,38 +1261,54 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
               {moreFilterFields}
             </FilterDropdown>
 
-            {/* Поиск */}
+            {/* Поиск + регион */}
             <div
-              className={`flex items-center h-9 rounded-md border transition-all ${searchOpen || searchQuery ? "border-border bg-card pl-3 pr-2 w-56" : "border-transparent w-9"}`}
+              className={`flex items-center h-9 rounded-md border transition-all ${searchOpen || searchQuery || district !== "Все" ? "border-border bg-card pl-3 pr-1 w-[min(100%,22rem)]" : "border-transparent w-9"}`}
             >
               <button
                 type="button"
                 aria-label="Поиск"
                 onClick={() => setSearchOpen(true)}
-                className={`shrink-0 ${searchOpen || searchQuery ? "text-muted-foreground" : "w-9 h-9 flex items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:border-foreground/30"}`}
+                className={`shrink-0 ${searchOpen || searchQuery || district !== "Все" ? "text-muted-foreground" : "w-9 h-9 flex items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:border-foreground/30"}`}
               >
                 <Search className="w-3.5 h-3.5" />
               </button>
-              {(searchOpen || searchQuery) && (
+              {(searchOpen || searchQuery || district !== "Все") && (
                 <>
                   <input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setSearchOpen(true)}
                     onBlur={() => {
-                      if (!searchQuery) setSearchOpen(false);
+                      if (!searchQuery && district === "Все")
+                        setSearchOpen(false);
                     }}
                     placeholder="Адрес, район..."
                     className="flex-1 min-w-0 px-2 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
                   />
                   {searchQuery && (
                     <button
+                      type="button"
                       onClick={() => setSearchQuery("")}
                       aria-label="Очистить поиск"
-                      className="shrink-0 text-muted-foreground hover:text-foreground"
+                      className="shrink-0 text-muted-foreground hover:text-foreground px-1"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   )}
+                  <span className="w-px h-4 bg-border shrink-0 mx-0.5" />
+                  <button
+                    type="button"
+                    onClick={() => setLocationPickerOpen(true)}
+                    className={`shrink-0 px-2 h-7 rounded text-xs font-semibold transition-colors ${
+                      district !== "Все"
+                        ? "text-primary"
+                        : "text-primary/80 hover:text-primary"
+                    }`}
+                    title="Выбрать город или район"
+                  >
+                    {district !== "Все" ? district : "Регион"}
+                  </button>
                 </>
               )}
             </div>
@@ -1299,11 +1342,11 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
             <FilterDropdown
               label="Сортировка"
               valueLabel={SORT_OPTIONS.find((o) => o.value === sort)?.label}
-              active={sort !== "date"}
-              panelWidth={200}
+              active={sort !== "default"}
+              panelWidth={300}
             >
               {(close) => (
-                <div className="space-y-0.5">
+                <div className="space-y-0.5 py-0.5">
                   {SORT_OPTIONS.map((o) => (
                     <OptionRow
                       key={o.value}
@@ -1346,7 +1389,7 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
           <div className="px-6 py-3 flex lg:hidden items-center gap-3">
             <button
               onClick={() => setMobileFilters(true)}
-              className="inline-flex items-center gap-2 h-9 px-3.5 rounded-md border border-border bg-card text-xs font-medium text-foreground"
+              className="inline-flex items-center gap-1.5 h-7 px-[11px] rounded border border-border bg-card text-sm font-medium text-foreground"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
               Фильтры
@@ -1452,23 +1495,24 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
               </div>
               <div>
                 <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">
-                  Район
+                  Регион / город / район
                 </p>
-                <div className="relative rounded-md border border-border">
-                  <select
-                    value={district}
-                    onChange={(e) => setDistrict(e.target.value)}
-                    aria-label="Район"
-                    className="w-full appearance-none px-3 py-2 pr-8 bg-transparent text-xs text-foreground focus:outline-none cursor-pointer"
+                <button
+                  type="button"
+                  onClick={() => setLocationPickerOpen(true)}
+                  className="w-full flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-xs text-left bg-background"
+                >
+                  <span
+                    className={
+                      district !== "Все"
+                        ? "text-foreground font-medium"
+                        : "text-muted-foreground"
+                    }
                   >
-                    {districts.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                </div>
+                    {district !== "Все" ? district : "Иркутская область"}
+                  </span>
+                  <span className="text-primary font-semibold">Выбрать</span>
+                </button>
               </div>
               <div>
                 <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">
@@ -1670,7 +1714,17 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
         {viewMode !== "map" && <CtaBanner segment={segment} />}
       </div>
 
+      <LocationPickerModal
+        open={locationPickerOpen}
+        onOpenChange={setLocationPickerOpen}
+        value={district}
+        onSelect={(location) => {
+          setDistrict(location);
+          setSearchOpen(true);
+        }}
+      />
       <SiteFooter />
+      <PropertyAIChat showFab={false} />
       <CatalogSearchAlertDialog
         open={searchAlertOpen}
         onOpenChange={setSearchAlertOpen}

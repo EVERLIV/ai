@@ -26,7 +26,7 @@ export default defineConfig(() => ({
         name: "АрендаСити — Коммерческая недвижимость",
         short_name: "АрендаСити",
         description: "Аренда офисов, складов и торговых площадей в Иркутске",
-        theme_color: "#c0392b",
+        theme_color: "#8B0015",
         background_color: "#ffffff",
         display: "standalone",
         start_url: "/",

@@ -63,7 +63,7 @@ export default function OwnerSection() {
         {/* z-index above the floating consultation widget so the submit button stays clickable */}
         <div className="relative z-[45] bg-card rounded-3xl shadow-card overflow-hidden flex flex-col lg:flex-row">
           <div className="flex-1 p-8 lg:p-12">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gold/15 text-gold-dark text-xs font-medium mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4">
               <Building className="w-3.5 h-3.5" />
               Для собственников
             </div>

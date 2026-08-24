@@ -1,25 +1,22 @@
 import {
   BookOpen,
-  Building2,
   ChevronLeft,
+  Columns2,
   Heart,
-  Home,
   Info,
   LogIn,
   Mail,
   Newspaper,
-  Phone,
   Plus,
   Search,
   Sparkles,
-  TreePine,
   User,
+  Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { CONTACTS } from "@/config/company";
-import { SEGMENT_ROUTES } from "@/config/propertySegments";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import { getMainNavMegaMenus } from "@/lib/catalogMegaMenu";
 import { cn } from "@/lib/utils";
 
 type MenuItem = {
@@ -37,7 +34,7 @@ type Props = {
   onOpenWizard?: () => void;
 };
 
-function MenuRow({
+function SecondaryRow({
   item,
   onNavigate,
 }: {
@@ -46,7 +43,7 @@ function MenuRow({
 }) {
   const Icon = item.icon;
   const className = cn(
-    "flex items-center gap-3 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/60 transition-colors text-left",
+    "flex items-center gap-2.5 w-full px-4 py-[7px] text-[13px] leading-tight text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-left",
   );
 
   if (item.onClick) {
@@ -59,7 +56,7 @@ function MenuRow({
           onNavigate();
         }}
       >
-        <Icon className="w-5 h-5 text-muted-foreground shrink-0" />
+        <Icon className="w-4 h-4 shrink-0 opacity-70" />
         {item.label}
       </button>
     );
@@ -67,7 +64,7 @@ function MenuRow({
 
   return (
     <Link to={item.href!} className={className} onClick={onNavigate}>
-      <Icon className="w-5 h-5 text-muted-foreground shrink-0" />
+      <Icon className="w-4 h-4 shrink-0 opacity-70" />
       {item.label}
     </Link>
   );
@@ -81,113 +78,93 @@ export default function MobileMenuDrawer({
   onOpenWizard,
 }: Props) {
   const close = () => onOpenChange(false);
+  const megaMenus = getMainNavMegaMenus();
 
-  const mainItems: MenuItem[] = [
-    { label: "Новый поиск", href: "/catalog", icon: Search },
+  const secondaryItems: MenuItem[] = [
+    { label: "Риелторы", href: "/rieltory", icon: Users },
     { label: "Разместить за 0 ₽", href: placeHref, icon: Plus },
+    {
+      label: "Сравнение",
+      href: isLoggedIn ? "/compare" : "/auth?redirect=%2Fcompare",
+      icon: Columns2,
+    },
     { label: "Избранное", href: "/account#favorites", icon: Heart },
-    {
-      label: "Каталог жилья",
-      href: SEGMENT_ROUTES.residential.catalog,
-      icon: Home,
-    },
-    {
-      label: "Коммерция",
-      href: SEGMENT_ROUTES.commercial.catalog,
-      icon: Building2,
-    },
-    { label: "Участки", href: "/zhilaya/uchastki", icon: TreePine },
-  ];
-
-  const companyItems: MenuItem[] = [
+    { label: "Поиск по каталогу", href: "/catalog", icon: Search },
     { label: "О нас", href: "/about", icon: Info },
     { label: "Контакты", href: "/contacts", icon: BookOpen },
     { label: "Новости", href: "/news", icon: Newspaper },
     ...(onOpenWizard
-      ? [{ label: "ИИ-подбор", icon: Sparkles, onClick: onOpenWizard }]
+      ? [{ label: "Умный подбор", icon: Sparkles, onClick: onOpenWizard }]
       : []),
-  ];
-
-  const quickLinks = [
-    { label: "Аренда", href: buildCatalogUrl({ deal: "Аренда" }) },
-    { label: "Продажа", href: buildCatalogUrl({ deal: "Продажа" }) },
-    {
-      label: "Новостройки",
-      href: buildCatalogUrl({ segment: "residential", market: "Новостройка" }),
-    },
   ];
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="left"
-        className="w-[min(100vw,320px)] p-0 flex flex-col [&>button]:hidden"
+        className="w-[min(100vw,360px)] max-w-[100vw] p-0 gap-0 flex flex-col [&>button]:hidden"
         aria-describedby={undefined}
       >
         <SheetTitle className="sr-only">Меню</SheetTitle>
-        <div className="flex items-center gap-2 px-3 py-3 border-b border-border/60">
+        <div className="flex items-center h-14 px-3 gap-1 shrink-0 border-b border-border/50 bg-card">
           <button
             type="button"
             aria-label="Закрыть меню"
             onClick={close}
-            className="w-9 h-9 flex items-center justify-center text-foreground"
+            className="w-9 h-9 flex items-center justify-center text-foreground rounded-md hover:bg-muted shrink-0"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <Link
+            to="/"
+            onClick={close}
+            className="font-display text-[14px] font-bold tracking-tight text-foreground leading-none"
+          >
+            АРЕНДА<span className="text-primary">СИТИ</span>
+          </Link>
+          <Link
             to={isLoggedIn ? "/account" : "/auth"}
             onClick={close}
-            className="flex items-center gap-2 text-sm font-medium text-foreground"
+            className="ml-auto flex items-center gap-1.5 pr-1 text-[13px] text-muted-foreground hover:text-foreground"
           >
             {isLoggedIn ? (
-              <User className="w-5 h-5" />
+              <User className="w-4 h-4" />
             ) : (
-              <LogIn className="w-5 h-5" />
+              <LogIn className="w-4 h-4" />
             )}
             {isLoggedIn ? "Кабинет" : "Войти"}
           </Link>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="py-1">
-            {mainItems.map((item) => (
-              <MenuRow key={item.label} item={item} onNavigate={close} />
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          <nav className="pt-1">
+            {megaMenus.map((menu) => (
+              <Link
+                key={menu.id}
+                to={menu.catalogHref}
+                onClick={close}
+                className="block px-4 py-[7px] text-[15px] font-medium leading-tight text-foreground hover:bg-muted/50"
+              >
+                {menu.triggerLabel}
+              </Link>
             ))}
-          </div>
+          </nav>
 
-          <div className="border-t border-border/60 py-1">
-            {companyItems.map((item) => (
-              <MenuRow key={item.label} item={item} onNavigate={close} />
+          <div className="border-t border-border/60 mt-1 pt-1">
+            {secondaryItems.map((item) => (
+              <SecondaryRow key={item.label} item={item} onNavigate={close} />
             ))}
-          </div>
-
-          <div className="px-4 py-3 border-t border-border/60 space-y-2 text-xs text-muted-foreground">
-            <a
-              href={`tel:${CONTACTS.phoneTel}`}
-              className="flex items-center gap-2 hover:text-foreground"
-            >
-              <Phone className="w-4 h-4" /> {CONTACTS.phone}
-            </a>
-            <a
-              href={`mailto:${CONTACTS.email}`}
-              className="flex items-center gap-2 hover:text-foreground"
-            >
-              <Mail className="w-4 h-4" /> {CONTACTS.email}
-            </a>
           </div>
         </div>
 
-        <div className="border-t border-border/60 px-4 py-4 pb-safe flex flex-wrap gap-x-4 gap-y-2">
-          {quickLinks.map((link) => (
-            <Link
-              key={link.label}
-              to={link.href}
-              onClick={close}
-              className="text-sm font-medium text-foreground hover:text-primary transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
+        <div className="border-t border-border/60 px-4 py-3 shrink-0 bg-background">
+          <a
+            href={`mailto:${CONTACTS.email}?subject=${encodeURIComponent("Сотрудничество")}`}
+            className="inline-flex items-center gap-2 text-[13px] text-[#2a6fdb] hover:underline underline-offset-2"
+          >
+            <Mail className="w-4 h-4" />
+            Сотрудничество
+          </a>
         </div>
       </SheetContent>
     </Sheet>

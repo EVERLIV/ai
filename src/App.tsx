@@ -17,6 +17,7 @@ const TaskAnalyticsPage = lazy(() => import("./pages/TaskAnalyticsPage"));
 
 import CookieBanner from "@/components/CookieBanner";
 import InstallPrompt from "@/components/InstallPrompt";
+import ScrollToTop from "@/components/ScrollToTop";
 import MobileBottomNav from "@/components/mobile/MobileBottomNav";
 import AboutPage from "./pages/AboutPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
@@ -26,16 +27,22 @@ import Auth from "./pages/Auth.tsx";
 import Catalog from "./pages/Catalog.tsx";
 import ContactsPage from "./pages/ContactsPage.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
+import HelpCenterPage from "./pages/HelpCenterPage.tsx";
 import Index from "./pages/Index.tsx";
 import LandPage from "./pages/LandPage.tsx";
+import LegalDocPage from "./pages/LegalDocPage.tsx";
 import ListProperty from "./pages/ListProperty.tsx";
 import NewsPage from "./pages/NewsPage.tsx";
 import NewsPostPage from "./pages/NewsPostPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import OfficesPage from "./pages/OfficesPage.tsx";
+import ComparePage from "./pages/ComparePage.tsx";
 import PropertyDetail from "./pages/PropertyDetail.tsx";
+import RealtorPublicPage from "./pages/RealtorPublicPage.tsx";
+import RecommendationsPage from "./pages/RecommendationsPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import RetailPage from "./pages/RetailPage.tsx";
+import SpecialistsCatalog from "./pages/SpecialistsCatalog.tsx";
 import ApartmentsPage from "./pages/residential/ApartmentsPage.tsx";
 import HousesPage from "./pages/residential/HousesPage.tsx";
 import PlotsPage from "./pages/residential/PlotsPage.tsx";
@@ -57,6 +64,7 @@ const App = () => {
             <Sonner />
             <MotionConfig reducedMotion="user">
               <BrowserRouter>
+                <ScrollToTop />
                 <InstallPrompt />
                 <CookieBanner />
                 <div className="pb-mobile-nav">
@@ -68,6 +76,7 @@ const App = () => {
                     />
                     <Route path="/catalog" element={<Catalog />} />
                     <Route path="/property/:id" element={<PropertyDetail />} />
+                    <Route path="/compare" element={<ComparePage />} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/offices" element={<OfficesPage />} />
@@ -80,11 +89,29 @@ const App = () => {
                     <Route path="/news/:slug" element={<NewsPostPage />} />
                     <Route path="/about" element={<AboutPage />} />
                     <Route path="/account" element={<AccountPage />} />
+                    <Route path="/rieltory" element={<SpecialistsCatalog />} />
+                    <Route
+                      path="/rieltor/:id"
+                      element={<RealtorPublicPage />}
+                    />
                     <Route
                       path="/agentstvo/:id"
                       element={<AgencyPublicPage />}
                     />
                     <Route path="/contacts" element={<ContactsPage />} />
+                    <Route
+                      path="/privacy"
+                      element={<LegalDocPage kind="privacy" />}
+                    />
+                    <Route
+                      path="/terms"
+                      element={<LegalDocPage kind="terms" />}
+                    />
+                    <Route path="/help" element={<HelpCenterPage />} />
+                    <Route
+                      path="/recommendations"
+                      element={<RecommendationsPage />}
+                    />
                     <Route path="/vacancies" element={<VacanciesPage />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/zhilaya" element={<ResidentialHomePage />} />
@@ -174,7 +201,6 @@ const App = () => {
                         </Suspense>
                       }
                     />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </div>

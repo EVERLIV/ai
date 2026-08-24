@@ -30,6 +30,22 @@ describe("getListingAgentDisplay", () => {
       isRealtor: true,
       isAgency: true,
       isVerified: true,
+      managerId: null,
+      agencyId: null,
+    });
+  });
+
+  test("exposes agency and manager ids for public links", () => {
+    const agent = getListingAgentDisplay({
+      agent_name: "Анастасия Романова",
+      agent_company: "АрендаСити",
+      agency_id: "a0000000-0000-4000-8000-000000000001",
+      listing_manager_id: "a0000000-0000-4000-8000-000000000002",
+      agent_account_type: "agency",
+    });
+    expect(agent).toMatchObject({
+      agencyId: "a0000000-0000-4000-8000-000000000001",
+      managerId: "a0000000-0000-4000-8000-000000000002",
     });
   });
 

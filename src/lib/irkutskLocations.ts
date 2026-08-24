@@ -198,6 +198,49 @@ const IRKUTSK_AREA_HINTS: { needle: RegExp; district: string }[] = [
   { needle: /130/i, district: "130-й квартал" },
 ];
 
+const CITY_DISTRICT_SET = new Set<string>(IRKUTSK_CITY_DISTRICTS);
+const MICRODISTRICT_SET = new Set<string>(IRKUTSK_MICRODISTRICTS);
+const OBLAST_CITY_SET = new Set<string>(IRKUTSK_OBLAST_CITIES);
+
+export function isBroadLocation(location: string | null | undefined): boolean {
+  const loc = (location || "").trim();
+  return (
+    !loc ||
+    loc === "Любой" ||
+    loc === "Все" ||
+    loc === "Иркутская область"
+  );
+}
+
+/** Совпадение объекта с выбранным городом / районом / мкр. */
+export function propertyMatchesLocation(
+  property: { district?: string | null; address?: string | null },
+  location: string | null | undefined,
+): boolean {
+  if (isBroadLocation(location)) return true;
+  const loc = (location || "").trim();
+  const district = (property.district || "").trim();
+  const address = (property.address || "").trim();
+  const hay = `${district} ${address}`.toLowerCase();
+  const needle = loc.toLowerCase();
+
+  if (loc === "Иркутск") {
+    if (OBLAST_CITY_SET.has(district)) return false;
+    return (
+      CITY_DISTRICT_SET.has(district) ||
+      MICRODISTRICT_SET.has(district) ||
+      district.toLowerCase() === "иркутск" ||
+      /(?:^|[\s,])г\.?\s*иркутск\b/i.test(`${district} ${address}`)
+    );
+  }
+
+  if (district.toLowerCase() === needle) return true;
+  if (hay.includes(needle)) return true;
+
+  const inferred = inferDistrictFromAddress(address, "");
+  return Boolean(inferred && inferred.toLowerCase() === needle);
+}
+
 /** Подставить район/город из текста адреса Яндекса */
 export function inferDistrictFromAddress(
   address: string,

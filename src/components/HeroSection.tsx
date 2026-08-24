@@ -3,9 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import heroImg from "@/assets/hero-warehouses.jpg";
+import LocationPickerModal from "@/components/LocationPickerModal";
 import { useCountUp } from "@/hooks/useCountUp";
 import { useProperties } from "@/hooks/useProperties";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { buildCatalogUrl } from "@/lib/catalogLinks";
 import { buildPropertyDisplayTitle } from "@/lib/propertyCard";
 
 const stats = [
@@ -26,6 +28,8 @@ export default function HeroSection() {
   const { ref, isVisible } = useScrollReveal(0.1);
   const [searchType, setSearchType] = useState("Офис");
   const [searchQuery, setSearchQuery] = useState("");
+  const [district, setDistrict] = useState("");
+  const [locationOpen, setLocationOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [focused, setFocused] = useState(false);
   const [dropdownRect, setDropdownRect] = useState<DOMRect | null>(null);
@@ -86,10 +90,14 @@ export default function HeroSection() {
 
   const handleSearch = () => {
     setShowSuggestions(false);
-    const params = new URLSearchParams();
-    if (searchType !== "Офис") params.set("types", searchType);
-    if (searchQuery) params.set("q", searchQuery);
-    navigate(`/catalog${params.toString() ? `?${params.toString()}` : ""}`);
+    navigate(
+      buildCatalogUrl({
+        segment: "commercial",
+        types: searchType !== "Офис" ? searchType : undefined,
+        q: searchQuery || undefined,
+        district: district || undefined,
+      }),
+    );
   };
 
   return (
@@ -184,13 +192,14 @@ export default function HeroSection() {
                   }}
                   onBlur={() => setFocused(false)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  placeholder={`Поиск — ${searchType.toLowerCase()}, район или адрес...`}
+                  placeholder="Адрес, район или город..."
                   className="flex-1 px-3 py-3.5 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none min-w-0"
                 />
 
                 {/* Clear */}
                 {searchQuery && (
                   <button
+                    type="button"
                     onClick={() => {
                       setSearchQuery("");
                       setShowSuggestions(false);
@@ -201,6 +210,16 @@ export default function HeroSection() {
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
+
+                <button
+                  type="button"
+                  onClick={() => setLocationOpen(true)}
+                  className="hidden sm:inline-flex items-center shrink-0 px-3 text-xs font-semibold text-primary hover:text-primary/80 transition-colors whitespace-nowrap max-w-[9rem] truncate"
+                  title="Выбрать город или район"
+                >
+                  {district || "Регион"}
+                </button>
+                <span className="hidden sm:block w-px h-5 bg-border shrink-0" />
 
                 {/* Search button */}
                 <button
@@ -311,6 +330,15 @@ export default function HeroSection() {
           ))}
         </div>
       </div>
+
+      <LocationPickerModal
+        open={locationOpen}
+        onOpenChange={setLocationOpen}
+        value={district}
+        onSelect={(location) => {
+          setDistrict(location === "Все" ? "" : location);
+        }}
+      />
 
       <style>{`
         .scrollbar-none::-webkit-scrollbar { display: none; }

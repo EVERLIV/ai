@@ -97,11 +97,6 @@ export function formatPropertyAddressShort(address?: string | null): string {
   return tail.join(", ");
 }
 
-/** Минимальное отображаемое число просмотров на публичных карточках */
-export const LISTING_VIEWS_FLOOR = 400;
-/** Минимальное отображаемое число объектов агентства */
-export const AGENCY_OBJECTS_FLOOR = 190;
-
 /** Формат цены: "6 300 000 ₽" / "400 000 ₽/мес" */
 export function formatPropertyPrice(p: {
   price?: number | null;
@@ -117,11 +112,65 @@ export function isListingVerified(p: DbProperty): boolean {
   return !!extras?.agent_verified;
 }
 
-/** Просмотры для карточек и страницы объекта: не ниже 400+ */
+export const LISTING_VIEWS_FLOOR = 400;
+
 export function formatListingViews(viewsCount?: number | null): string {
   const count = viewsCount ?? 0;
   if (count >= LISTING_VIEWS_FLOOR) return count.toLocaleString("ru-RU");
   return `${LISTING_VIEWS_FLOOR}+`;
+}
+
+function toDateOnlyKey(iso?: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function formatRuDate(iso?: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("ru-RU");
+}
+
+export type ListingActivityDates = {
+  addedLabel: string | null;
+  updatedLabel: string | null;
+  /** Одна строка для карточки: «12.03.2026 · обн. 20.03.2026» */
+  line: string | null;
+};
+
+/** Дата добавления (публикация/создание) и обновления объекта */
+export function formatListingActivityDates(p: {
+  published_date?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}): ListingActivityDates {
+  const addedIso = p.published_date || p.created_at || null;
+  const addedLabel = formatRuDate(addedIso);
+  const updatedIso = p.updated_at || null;
+  const updatedSameDay =
+    toDateOnlyKey(addedIso) != null &&
+    toDateOnlyKey(addedIso) === toDateOnlyKey(updatedIso);
+  const updatedLabel =
+    updatedIso && !updatedSameDay ? formatRuDate(updatedIso) : null;
+
+  if (!addedLabel && !updatedLabel) {
+    return { addedLabel: null, updatedLabel: null, line: null };
+  }
+  if (addedLabel && updatedLabel) {
+    return {
+      addedLabel,
+      updatedLabel,
+      line: `${addedLabel} · обн. ${updatedLabel}`,
+    };
+  }
+  return {
+    addedLabel,
+    updatedLabel,
+    line: addedLabel || (updatedLabel ? `обн. ${updatedLabel}` : null),
+  };
 }
 
 function pluralizeObjects(count: number): string {
@@ -132,6 +181,9 @@ function pluralizeObjects(count: number): string {
     return "объекта";
   return "объектов";
 }
+
+/** Минимальное отображаемое число объектов агентства */
+export const AGENCY_OBJECTS_FLOOR = 190;
 
 /** Число объектов агента для публичного UI */
 export function formatAgentObjectsLabel(

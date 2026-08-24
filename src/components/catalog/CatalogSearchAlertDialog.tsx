@@ -123,7 +123,7 @@ export function CatalogSearchAlertButton({
     <button
       type="button"
       onClick={onClick}
-      className="hidden xl:inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-card text-xs font-medium text-foreground hover:bg-muted/60 transition-colors shrink-0"
+      className="hidden xl:inline-flex items-center gap-1.5 h-7 px-[11px] rounded border border-border bg-card text-sm font-medium text-foreground hover:bg-muted/60 transition-colors shrink-0"
     >
       <Bell className="w-3.5 h-3.5 text-primary" />
       Уведомить о новых

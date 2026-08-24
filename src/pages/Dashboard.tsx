@@ -36,6 +36,7 @@ import AdPlacementsTab from "@/components/admin/AdPlacementsTab";
 import CrmLeadsTab from "@/components/admin/CrmLeadsTab";
 import DictionariesTab from "@/components/admin/DictionariesTab";
 import ModerationQueue from "@/components/admin/ModerationQueue";
+import AgencyReviewsModeration from "@/components/admin/AgencyReviewsModeration";
 import PropertyUnitsManager from "@/components/admin/PropertyUnitsManager";
 import VerificationUsersTab from "@/components/admin/VerificationUsersTab";
 import LocationDistrictSelect from "@/components/LocationDistrictSelect";
@@ -2979,9 +2980,15 @@ export default function Dashboard() {
             <CrmLeadsTab />
           </TabsContent>
 
-          <TabsContent value="moderation" className="space-y-4">
-            <h2 className="text-lg font-semibold">Очередь модерации</h2>
-            <ModerationQueue />
+          <TabsContent value="moderation" className="space-y-8">
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Объекты</h2>
+              <ModerationQueue />
+            </div>
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Отзывы</h2>
+              <AgencyReviewsModeration />
+            </div>
           </TabsContent>
 
           <TabsContent value="clients" className="space-y-4">

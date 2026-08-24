@@ -4,6 +4,9 @@
  * Каталог читается по HTTP из боевой базы api.arendacity.com,
  * поэтому функция может жить в облачном проекте Supabase.
  *
+ * Каталог всегда режется по продавцу объекта (agency_id / submitted_by)
+ * и только если у продавца включён ai_consultant_enabled.
+ *
  * Переменные окружения (Project Settings → Edge Functions → Secrets):
  *   ANTHROPIC_API_KEY  — ключ Anthropic
  *   CATALOG_URL        — по умолчанию https://api.arendacity.com
@@ -27,10 +30,16 @@ const MAX_LENGTH = 1000;
 
 type Msg = { role: "user" | "assistant"; content: string };
 
+type SellerScope = {
+  cacheKey: string;
+  agencyId?: string;
+  submittedBy?: string;
+  focusAddress?: string;
+};
+
 const json = (body: unknown, status: number) =>
   new Response(JSON.stringify(body), {
     status,
-    // charset обязателен: без него кириллица приходит битой.
     headers: {
       ...corsHeaders,
       "Content-Type": "application/json; charset=utf-8",
@@ -39,19 +48,113 @@ const json = (body: unknown, status: number) =>
 
 const num = (v: unknown) => Number(v) || 0;
 
-/** Разряды пробелами без Intl: в Deno Edge нет полных данных ICU. */
 const fmt = (n: number) =>
   String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
-/** Каталог меняется редко — держим в памяти инстанса 5 минут. */
-let cache: { text: string; summary: string; at: number } = {
-  text: "",
-  summary: "",
-  at: 0,
+const catalogHeaders = () => ({
+  apikey: CATALOG_ANON_KEY,
+  Authorization: `Bearer ${CATALOG_ANON_KEY}`,
+});
+
+/** Кэш по продавцу, не общий на весь сайт. */
+const catalogCache = new Map<
+  string,
+  { text: string; summary: string; at: number }
+>();
+
+const EMPTY_CATALOG = {
+  text: "Каталог недоступен для этого чата.",
+  summary:
+    "Услуга ИИ-консультанта не подключена или объект не указан. Не рекомендуй чужие объекты.",
 };
 
-async function loadCatalog() {
-  if (cache.text && Date.now() - cache.at < 5 * 60_000) return cache;
+function extrasAgencyId(extras: unknown): string | null {
+  if (!extras || typeof extras !== "object" || Array.isArray(extras)) return null;
+  const id = (extras as Record<string, unknown>).agency_id;
+  return typeof id === "string" && id.trim() ? id.trim() : null;
+}
+
+function extrasOwnerId(extras: unknown): string | null {
+  if (!extras || typeof extras !== "object" || Array.isArray(extras)) return null;
+  const id = (extras as Record<string, unknown>).owner_user_id;
+  return typeof id === "string" && id.trim() ? id.trim() : null;
+}
+
+async function resolveSellerScope(
+  propertyId: string | undefined,
+): Promise<SellerScope | null> {
+  if (!propertyId || !CATALOG_ANON_KEY) return null;
+
+  const params = new URLSearchParams({
+    id: `eq.${propertyId}`,
+    select: "id,address,agency_id,submitted_by,extras",
+    limit: "1",
+  });
+  const resp = await fetch(`${CATALOG_URL}/rest/v1/properties?${params}`, {
+    headers: catalogHeaders(),
+  });
+  if (!resp.ok) throw new Error(`property ${resp.status}`);
+  const rows = (await resp.json()) as Record<string, unknown>[];
+  const prop = rows[0];
+  if (!prop) return null;
+
+  const agencyId =
+    (typeof prop.agency_id === "string" && prop.agency_id.trim()) ||
+    extrasAgencyId(prop.extras) ||
+    null;
+  const submittedBy =
+    (typeof prop.submitted_by === "string" && prop.submitted_by.trim()) ||
+    extrasOwnerId(prop.extras) ||
+    null;
+
+  if (agencyId) {
+    const flagParams = new URLSearchParams({
+      id: `eq.${agencyId}`,
+      select: "id,ai_consultant_enabled",
+      limit: "1",
+    });
+    const flagResp = await fetch(
+      `${CATALOG_URL}/rest/v1/agencies?${flagParams}`,
+      { headers: catalogHeaders() },
+    );
+    if (!flagResp.ok) return null;
+    const agencies = (await flagResp.json()) as Record<string, unknown>[];
+    if (!agencies[0]?.ai_consultant_enabled) return null;
+    return {
+      cacheKey: `agency:${agencyId}`,
+      agencyId,
+      focusAddress: typeof prop.address === "string" ? prop.address : undefined,
+    };
+  }
+
+  if (submittedBy) {
+    const flagParams = new URLSearchParams({
+      id: `eq.${submittedBy}`,
+      select: "id,ai_consultant_enabled",
+      limit: "1",
+    });
+    const flagResp = await fetch(
+      `${CATALOG_URL}/rest/v1/profiles?${flagParams}`,
+      { headers: catalogHeaders() },
+    );
+    if (!flagResp.ok) return null;
+    const profiles = (await flagResp.json()) as Record<string, unknown>[];
+    if (!profiles[0]?.ai_consultant_enabled) return null;
+    return {
+      cacheKey: `user:${submittedBy}`,
+      submittedBy,
+      focusAddress: typeof prop.address === "string" ? prop.address : undefined,
+    };
+  }
+
+  return null;
+}
+
+async function loadCatalog(scope: SellerScope | null) {
+  if (!scope) return EMPTY_CATALOG;
+
+  const cached = catalogCache.get(scope.cacheKey);
+  if (cached && Date.now() - cached.at < 5 * 60_000) return cached;
 
   const params = new URLSearchParams({
     is_active: "eq.true",
@@ -60,12 +163,12 @@ async function loadCatalog() {
       "public_id,type,district,address,price,price_per_m2,area,class,condition,features,floor,total_floors,deposit,contract_term",
     limit: "300",
   });
+  if (scope.agencyId) params.set("agency_id", `eq.${scope.agencyId}`);
+  else if (scope.submittedBy)
+    params.set("submitted_by", `eq.${scope.submittedBy}`);
 
   const resp = await fetch(`${CATALOG_URL}/rest/v1/properties?${params}`, {
-    headers: {
-      apikey: CATALOG_ANON_KEY,
-      Authorization: `Bearer ${CATALOG_ANON_KEY}`,
-    },
+    headers: catalogHeaders(),
   });
   if (!resp.ok) throw new Error(`catalog ${resp.status}`);
 
@@ -107,11 +210,16 @@ async function loadCatalog() {
   for (const p of rows)
     byType[String(p.type ?? "—")] = (byType[String(p.type ?? "—")] ?? 0) + 1;
 
+  const focus = scope.focusAddress
+    ? `Клиент смотрит объект: ${scope.focusAddress}.`
+    : "";
+
   const summary = [
-    `Всего объектов в аренду: ${rows.length}.`,
+    focus,
+    `Всего объектов продавца в аренду: ${rows.length}.`,
     `По типам: ${Object.entries(byType)
       .map(([t, n]) => `${t} — ${n}`)
-      .join(", ")}.`,
+      .join(", ") || "—"}.`,
     prices.length
       ? `Ставки: от ${fmt(Math.min(...prices))} до ${fmt(Math.max(...prices))} ₽/мес.`
       : "",
@@ -122,8 +230,9 @@ async function loadCatalog() {
     .filter(Boolean)
     .join(" ");
 
-  cache = { text, summary, at: Date.now() };
-  return cache;
+  const packed = { text, summary, at: Date.now() };
+  catalogCache.set(scope.cacheKey, packed);
+  return packed;
 }
 
 function systemPrompt(
@@ -144,7 +253,7 @@ function systemPrompt(
 - Не знаешь — скажи прямо и предложи уточнить у менеджера.
 
 ## О чём говоришь
-- ТОЛЬКО аренда коммерческой недвижимости из каталога ниже.
+- ТОЛЬКО аренда коммерческой недвижимости из каталога ниже (объекты этого продавца).
 - Про покупку: скажи, что помогаешь по аренде, а по продаже подскажет менеджер.
 - Не обсуждаешь жильё, чужие объекты и посторонние темы. Если вопрос не по теме —
   коротко верни к подбору, без морали.
@@ -200,16 +309,23 @@ Deno.serve(async (req) => {
       return json({ error: "Сообщение слишком длинное." }, 400);
     }
 
-    // Anthropic требует, чтобы первым шло сообщение пользователя.
     const messages = all
       .filter((m) => m.role === "user" || m.role === "assistant")
       .map((m) => ({ role: m.role, content: m.content }));
     while (messages.length && messages[0].role !== "user") messages.shift();
     if (messages.length === 0) return json({ error: "Пустой запрос." }, 400);
 
+    const propertyId =
+      typeof body.propertyId === "string"
+        ? body.propertyId
+        : typeof body.property_id === "string"
+          ? body.property_id
+          : undefined;
+
     let catalog;
     try {
-      catalog = await loadCatalog();
+      const scope = await resolveSellerScope(propertyId);
+      catalog = await loadCatalog(scope);
     } catch (e) {
       console.error("catalog:", e);
       return json({ error: "Каталог временно недоступен." }, 503);

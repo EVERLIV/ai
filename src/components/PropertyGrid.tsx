@@ -9,6 +9,7 @@ import type { PropertyFilters } from "@/components/SearchFilters";
 import { useProperties } from "@/hooks/useProperties";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { listingMatchesSellerFilter } from "@/lib/listingSource";
+import { rankByQualityMatch } from "@/lib/recommendationEngine";
 
 export default function PropertyGrid({
   filters,
@@ -21,31 +22,33 @@ export default function PropertyGrid({
   });
 
   const filtered = useMemo(() => {
-    if (!filters) return properties;
-    return properties.filter((p) => {
-      if (
-        filters.type !== "Все" &&
-        !(p.type ?? "").toLowerCase().includes(filters.type.toLowerCase())
-      )
-        return false;
-      const area = Number(p.area) || 0;
-      if (area < filters.areaMin || area > filters.areaMax) return false;
-      const price = Number(p.price) || 0;
-      if (price > 0 && (price < filters.priceMin || price > filters.priceMax))
-        return false;
-      if (filters.district !== "Все" && p.district !== filters.district)
-        return false;
-      if (filters.cls !== "Все" && p.class !== filters.cls) return false;
-      if (
-        !listingMatchesSellerFilter(
-          p,
-          filters.seller || "Все",
-          filters.agencyId || null,
-        )
-      )
-        return false;
-      return true;
-    });
+    const base = !filters
+      ? properties
+      : properties.filter((p) => {
+          if (
+            filters.type !== "Все" &&
+            !(p.type ?? "").toLowerCase().includes(filters.type.toLowerCase())
+          )
+            return false;
+          const area = Number(p.area) || 0;
+          if (area < filters.areaMin || area > filters.areaMax) return false;
+          const price = Number(p.price) || 0;
+          if (price > 0 && (price < filters.priceMin || price > filters.priceMax))
+            return false;
+          if (filters.district !== "Все" && p.district !== filters.district)
+            return false;
+          if (filters.cls !== "Все" && p.class !== filters.cls) return false;
+          if (
+            !listingMatchesSellerFilter(
+              p,
+              filters.seller || "Все",
+              filters.agencyId || null,
+            )
+          )
+            return false;
+          return true;
+        });
+    return rankByQualityMatch(base);
   }, [properties, filters]);
 
   return (
@@ -64,7 +67,7 @@ export default function PropertyGrid({
               <span className="hidden lg:inline">Актуальные объекты</span>
             </h2>
             <p className="text-muted-foreground mt-1 text-sm lg:text-base hidden lg:block">
-              Лучшие предложения на рынке
+              Подбор по качеству объявления — не по рекламному бюджету
             </p>
           </div>
           <Link
@@ -77,7 +80,7 @@ export default function PropertyGrid({
 
         {isLoading ? (
           <>
-            <div className="grid grid-cols-2 gap-2 lg:hidden">
+            <div className="grid grid-cols-2 gap-3 lg:hidden">
               {Array.from({ length: 6 }).map((_, i) => (
                 <PropertyGridCardSkeleton key={i} />
               ))}
@@ -95,7 +98,7 @@ export default function PropertyGrid({
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-2 lg:hidden">
+            <div className="grid grid-cols-2 gap-3 lg:hidden">
               {filtered.slice(0, 12).map((p) => (
                 <PropertyGridCardCompact key={p.id} property={p} />
               ))}

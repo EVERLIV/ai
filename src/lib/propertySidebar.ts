@@ -45,6 +45,7 @@ export type ListingAgentDisplay = {
   isRealtor: boolean;
   isAgency: boolean;
   agencyId: string | null;
+  managerId: string | null;
   objectsCount: number;
 };
 
@@ -95,6 +96,7 @@ export function getListingAgentDisplay(
     isRealtor,
     isAgency,
     agencyId: e.agency_id?.trim() || null,
+    managerId: e.listing_manager_id?.trim() || null,
     objectsCount: e.agent_objects_count ?? 0,
   };
 }
@@ -198,6 +200,8 @@ export function resolveSidebarDisplay(property: {
         : "owner",
     agent_agency_about: e.agent_agency_about?.trim() || "",
     agency_id: typeof e.agency_id === "string" ? e.agency_id : "",
+    listing_manager_id:
+      typeof e.listing_manager_id === "string" ? e.listing_manager_id : "",
     owner_user_id: typeof e.owner_user_id === "string" ? e.owner_user_id : "",
     showAgent: !!(
       e.agent_name?.trim() ||

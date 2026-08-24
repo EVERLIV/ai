@@ -1,26 +1,31 @@
+import logoAc from "@/assets/logo-ac.png";
 import { cn } from "@/lib/utils";
 
-/** Марка: буква «А» на фирменном красном */
+/** Марка: логотип AC — сохраняем пропорции (не квадрат), без обводки */
 export default function BrandMark({
   className,
   variant = "default",
 }: {
   className?: string;
-  /** inverse — на тёмном футере (красный остаётся акцентом) */
+  /** inverse — на тёмном футере (тот же знак) */
   variant?: "default" | "inverse";
 }) {
   return (
-    <div
+    <img
+      src={logoAc}
+      alt=""
+      width={422}
+      height={288}
+      aria-hidden
+      draggable={false}
+      decoding="async"
       className={cn(
-        "rounded-md flex items-center justify-center shrink-0 bg-primary text-primary-foreground",
-        variant === "inverse" && "ring-1 ring-background/20",
+        "shrink-0 select-none object-contain object-left",
+        /* чуть ниже высоты слова «АРЕНДАСИТИ» (~14–16px) */
+        "h-3.5 w-auto max-w-none",
         className,
       )}
-      aria-hidden
-    >
-      <span className="font-display font-bold text-base tracking-tight leading-none">
-        А
-      </span>
-    </div>
+      data-variant={variant}
+    />
   );
 }

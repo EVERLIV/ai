@@ -65,7 +65,7 @@ export default function AIAssistant({
       {!open && (
         <button
           onClick={onToggle}
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gold shadow-float flex items-center justify-center text-primary-foreground hover:scale-105 transition-transform group"
+          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary shadow-float flex items-center justify-center text-primary-foreground hover:scale-105 transition-transform group"
         >
           <Sparkles className="w-6 h-6" />
           <span className="absolute -top-8 right-0 bg-foreground text-background text-xs px-2.5 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -78,13 +78,11 @@ export default function AIAssistant({
         <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[420px] bg-card shadow-float flex flex-col border-l border-border">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center ${isVoiceMode ? "bg-primary/15" : "bg-gold/15"}`}
-              >
+              <div className="w-9 h-9 rounded-full flex items-center justify-center bg-primary/15">
                 {isVoiceMode ? (
                   <Phone className="w-4 h-4 text-primary" />
                 ) : (
-                  <Sparkles className="w-4 h-4 text-gold" />
+                  <Sparkles className="w-4 h-4 text-primary" />
                 )}
               </div>
               <div>

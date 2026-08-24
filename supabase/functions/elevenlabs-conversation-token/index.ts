@@ -3,7 +3,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 /**
  * Стартовый пакет для голосового агента ElevenLabs:
  *  - conversation token (WebRTC)
- *  - актуальный каталог объектов (чтобы агент «знал всё»)
+ *  - каталог только объектов продавца (agency_id / submitted_by)
+ *    при включённом ai_consultant_enabled
  *
  * Secrets: ELEVENLABS_API_KEY, CATALOG_URL, CATALOG_ANON_KEY
  * Optional body: { agent_id, property_id?, include_catalog?: true }
@@ -27,19 +28,119 @@ const num = (v: unknown) => Number(v) || 0;
 const fmt = (n: number) =>
   String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
-let catalogCache: { summary: string; text: string; at: number } = {
-  summary: "",
-  text: "",
+type SellerScope = {
+  cacheKey: string;
+  agencyId?: string;
+  submittedBy?: string;
+  focusPropertyId?: string;
+};
+
+const catalogHeaders = () => ({
+  apikey: CATALOG_ANON_KEY,
+  Authorization: `Bearer ${CATALOG_ANON_KEY}`,
+});
+
+const catalogCache = new Map<
+  string,
+  { summary: string; text: string; at: number; rows: Record<string, unknown>[] }
+>();
+
+const EMPTY_CATALOG = {
+  summary:
+    "Каталог недоступен: услуга ИИ-консультанта не подключена или объект не указан.",
+  text: "Опубликованных объектов продавца нет.",
+  rows: [] as Record<string, unknown>[],
   at: 0,
 };
 
-async function loadCatalog(propertyId?: string) {
-  if (
-    catalogCache.text &&
-    Date.now() - catalogCache.at < 5 * 60_000 &&
-    !propertyId
-  ) {
-    return catalogCache;
+function extrasAgencyId(extras: unknown): string | null {
+  if (!extras || typeof extras !== "object" || Array.isArray(extras)) return null;
+  const id = (extras as Record<string, unknown>).agency_id;
+  return typeof id === "string" && id.trim() ? id.trim() : null;
+}
+
+function extrasOwnerId(extras: unknown): string | null {
+  if (!extras || typeof extras !== "object" || Array.isArray(extras)) return null;
+  const id = (extras as Record<string, unknown>).owner_user_id;
+  return typeof id === "string" && id.trim() ? id.trim() : null;
+}
+
+async function resolveSellerScope(
+  propertyId: string | undefined,
+): Promise<SellerScope | null> {
+  if (!propertyId || !CATALOG_ANON_KEY) return null;
+
+  const params = new URLSearchParams({
+    id: `eq.${propertyId}`,
+    select: "id,agency_id,submitted_by,extras",
+    limit: "1",
+  });
+  const resp = await fetch(`${CATALOG_URL}/rest/v1/properties?${params}`, {
+    headers: catalogHeaders(),
+  });
+  if (!resp.ok) throw new Error(`property ${resp.status}`);
+  const rows = (await resp.json()) as Record<string, unknown>[];
+  const prop = rows[0];
+  if (!prop) return null;
+
+  const agencyId =
+    (typeof prop.agency_id === "string" && prop.agency_id.trim()) ||
+    extrasAgencyId(prop.extras) ||
+    null;
+  const submittedBy =
+    (typeof prop.submitted_by === "string" && prop.submitted_by.trim()) ||
+    extrasOwnerId(prop.extras) ||
+    null;
+
+  if (agencyId) {
+    const flagParams = new URLSearchParams({
+      id: `eq.${agencyId}`,
+      select: "id,ai_consultant_enabled",
+      limit: "1",
+    });
+    const flagResp = await fetch(
+      `${CATALOG_URL}/rest/v1/agencies?${flagParams}`,
+      { headers: catalogHeaders() },
+    );
+    if (!flagResp.ok) return null;
+    const agencies = (await flagResp.json()) as Record<string, unknown>[];
+    if (!agencies[0]?.ai_consultant_enabled) return null;
+    return {
+      cacheKey: `agency:${agencyId}`,
+      agencyId,
+      focusPropertyId: propertyId,
+    };
+  }
+
+  if (submittedBy) {
+    const flagParams = new URLSearchParams({
+      id: `eq.${submittedBy}`,
+      select: "id,ai_consultant_enabled",
+      limit: "1",
+    });
+    const flagResp = await fetch(
+      `${CATALOG_URL}/rest/v1/profiles?${flagParams}`,
+      { headers: catalogHeaders() },
+    );
+    if (!flagResp.ok) return null;
+    const profiles = (await flagResp.json()) as Record<string, unknown>[];
+    if (!profiles[0]?.ai_consultant_enabled) return null;
+    return {
+      cacheKey: `user:${submittedBy}`,
+      submittedBy,
+      focusPropertyId: propertyId,
+    };
+  }
+
+  return null;
+}
+
+async function loadCatalog(scope: SellerScope | null) {
+  if (!scope) return EMPTY_CATALOG;
+
+  const cached = catalogCache.get(scope.cacheKey);
+  if (cached && Date.now() - cached.at < 5 * 60_000) {
+    return withFocus(cached, scope.focusPropertyId);
   }
 
   const params = new URLSearchParams({
@@ -49,12 +150,12 @@ async function loadCatalog(propertyId?: string) {
     order: "price.asc.nullslast",
     limit: "300",
   });
+  if (scope.agencyId) params.set("agency_id", `eq.${scope.agencyId}`);
+  else if (scope.submittedBy)
+    params.set("submitted_by", `eq.${scope.submittedBy}`);
 
   const resp = await fetch(`${CATALOG_URL}/rest/v1/properties?${params}`, {
-    headers: {
-      apikey: CATALOG_ANON_KEY,
-      Authorization: `Bearer ${CATALOG_ANON_KEY}`,
-    },
+    headers: catalogHeaders(),
   });
   if (!resp.ok) throw new Error(`catalog ${resp.status}`);
 
@@ -82,21 +183,8 @@ async function loadCatalog(propertyId?: string) {
   for (const p of rows)
     byType[String(p.type ?? "—")] = (byType[String(p.type ?? "—")] ?? 0) + 1;
 
-  let focus = "";
-  if (propertyId) {
-    const hit = rows.find((p) => String(p.id) === propertyId);
-    if (hit) {
-      focus =
-        `Клиент открыл карточку объекта: [${hit.public_id || hit.id}] ${hit.address}` +
-        `${hit.district ? ` (${hit.district})` : ""}, ${num(hit.area)} м², ` +
-        `${num(hit.price) > 0 ? `${fmt(num(hit.price))} ₽` : "цена по запросу"}. ` +
-        `Ссылка: ${SITE_URL}/property/${hit.id}`;
-    }
-  }
-
   const summary = [
-    focus,
-    `Всего активных объектов: ${rows.length}.`,
+    `Всего активных объектов продавца: ${rows.length}.`,
     `По типам: ${
       Object.entries(byType)
         .map(([t, n]) => `${t} — ${n}`)
@@ -109,12 +197,35 @@ async function loadCatalog(propertyId?: string) {
     .filter(Boolean)
     .join(" ");
 
-  const packed = { summary, text, at: Date.now() };
-  if (!propertyId) catalogCache = packed;
-  return packed;
+  const packed = { summary, text, at: Date.now(), rows };
+  catalogCache.set(scope.cacheKey, packed);
+  return withFocus(packed, scope.focusPropertyId);
 }
 
-/** Поиск по каталогу для client tool агента */
+function withFocus(
+  packed: {
+    summary: string;
+    text: string;
+    at: number;
+    rows: Record<string, unknown>[];
+  },
+  propertyId?: string,
+) {
+  if (!propertyId) return packed;
+  const hit = packed.rows.find((p) => String(p.id) === propertyId);
+  if (!hit) return packed;
+  const focus =
+    `Клиент открыл карточку объекта: [${hit.public_id || hit.id}] ${hit.address}` +
+    `${hit.district ? ` (${hit.district})` : ""}, ${num(hit.area)} м², ` +
+    `${num(hit.price) > 0 ? `${fmt(num(hit.price))} ₽` : "цена по запросу"}. ` +
+    `Ссылка: ${SITE_URL}/property/${hit.id}`;
+  return {
+    ...packed,
+    summary: `${focus} ${packed.summary}`,
+  };
+}
+
+/** Поиск по каталогу продавца для client tool агента */
 async function searchCatalog(body: {
   query?: string;
   type?: string;
@@ -123,8 +234,10 @@ async function searchCatalog(body: {
   min_area?: number;
   max_area?: number;
   limit?: number;
+  property_id?: string;
 }) {
-  const cat = await loadCatalog();
+  const scope = await resolveSellerScope(body.property_id);
+  const cat = await loadCatalog(scope);
   const q = (body.query || "").toLowerCase().trim();
   const type = (body.type || "").toLowerCase().trim();
   const district = (body.district || "").toLowerCase().trim();
@@ -133,21 +246,7 @@ async function searchCatalog(body: {
   const maxArea = Number(body.max_area) || 0;
   const limit = Math.min(Math.max(Number(body.limit) || 8, 1), 20);
 
-  // Перечитываем сырые строки — проще фильтровать заново
-  const params = new URLSearchParams({
-    is_active: "eq.true",
-    select: "id,public_id,type,district,address,price,area,deal_type",
-    order: "price.asc.nullslast",
-    limit: "300",
-  });
-  const resp = await fetch(`${CATALOG_URL}/rest/v1/properties?${params}`, {
-    headers: {
-      apikey: CATALOG_ANON_KEY,
-      Authorization: `Bearer ${CATALOG_ANON_KEY}`,
-    },
-  });
-  if (!resp.ok) throw new Error(`catalog search ${resp.status}`);
-  let rows = (await resp.json()) as Record<string, unknown>[];
+  let rows = [...cat.rows];
 
   rows = rows.filter((p) => {
     if (
@@ -208,7 +307,8 @@ serve(async (req) => {
       unknown
     >;
 
-    // Режим поиска для client tool (без токена)
+    const propertyId = body.property_id ? String(body.property_id) : undefined;
+
     if (body.action === "search") {
       const data = await searchCatalog({
         query: String(body.query || ""),
@@ -218,6 +318,7 @@ serve(async (req) => {
         min_area: Number(body.min_area) || undefined,
         max_area: Number(body.max_area) || undefined,
         limit: Number(body.limit) || undefined,
+        property_id: propertyId,
       });
       return new Response(JSON.stringify(data), {
         headers: {
@@ -247,7 +348,6 @@ serve(async (req) => {
     }
 
     const includeCatalog = body.include_catalog !== false;
-    const propertyId = body.property_id ? String(body.property_id) : undefined;
 
     const tokenResp = await fetch(
       `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${encodeURIComponent(agent_id)}`,
@@ -270,8 +370,8 @@ serve(async (req) => {
     let catalog: { summary: string; text: string } | null = null;
     if (includeCatalog && CATALOG_ANON_KEY) {
       try {
-        const c = await loadCatalog(propertyId);
-        // Лимит контекста: summary всегда, полный список обрезаем
+        const scope = await resolveSellerScope(propertyId);
+        const c = await loadCatalog(scope);
         const maxChars = 14000;
         catalog = {
           summary: c.summary,

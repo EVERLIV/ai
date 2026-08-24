@@ -3,6 +3,7 @@ import {
   SUPABASE_URL,
   supabaseAdmin,
 } from "@/integrations/supabase/adminClient";
+import { supabase } from "@/integrations/supabase/client";
 
 const headers = {
   apikey: SERVICE_ROLE_KEY,
@@ -30,6 +31,9 @@ export type Agency = {
   verified_by: string | null;
   created_at: string;
   updated_at: string;
+  avg_rating?: number;
+  reviews_count?: number;
+  response_minutes?: number;
   telegram_enabled?: boolean;
   telegram_chat_id?: number | null;
   telegram_chat_title?: string | null;
@@ -39,6 +43,7 @@ export type Agency = {
   telegram_notify_leads?: boolean;
   telegram_notify_views?: boolean;
   telegram_notify_moderation?: boolean;
+  ai_consultant_enabled?: boolean;
 };
 
 export type AgencyMember = {
@@ -66,6 +71,33 @@ export type AgencyManager = {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  avg_rating?: number;
+  reviews_count?: number;
+  response_minutes?: number;
+  about?: string;
+};
+
+export type AgencyReviewStatus = "published" | "pending" | "rejected";
+
+export type AgencyReview = {
+  id: string;
+  agency_id: string;
+  manager_id: string | null;
+  author_name: string;
+  author_email: string | null;
+  user_id: string | null;
+  rating: number;
+  body: string;
+  status: AgencyReviewStatus;
+  reply_body?: string | null;
+  reply_at?: string | null;
+  reply_by?: string | null;
+  created_at: string;
+  updated_at: string;
+  agency_managers?:
+    | { id: string; full_name: string }
+    | { id: string; full_name: string }[]
+    | null;
 };
 
 export type AgencyInvite = {
@@ -112,6 +144,11 @@ function parseError(data: unknown, res: Response): Error {
     if (isMissingColumnError(data, "telegram_")) {
       return new Error(
         "В БД нет полей Telegram для агентств. Выполните supabase/self_hosted_agency_telegram.sql",
+      );
+    }
+    if (isMissingColumnError(data, "agency_reviews") || /agency_reviews/i.test(combined)) {
+      return new Error(
+        "В БД нет таблицы отзывов. Выполните supabase/self_hosted_agency_reviews.sql",
       );
     }
     return new Error(combined);
@@ -198,30 +235,278 @@ export async function fetchAgenciesAdminApi() {
   return restGet<Agency[]>(`agencies?select=*&order=created_at.desc`);
 }
 
+const ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4ODQyOTQwLCJleHAiOjE5MzY1MjI5NDB9.uK1BksB1rl0vNAlUc2nVpkqECeiWD9CKx0rIfHUlyWA";
+
+const anonHeaders = {
+  apikey: ANON_KEY,
+  Authorization: `Bearer ${ANON_KEY}`,
+};
+
+async function anonRestGet<T>(path: string): Promise<T> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: anonHeaders,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw parseError(data, res);
+  return data as T;
+}
+
 /** Публичный список верифицированных агентств для фильтров каталога */
 export async function fetchVerifiedAgenciesApi(): Promise<
   Pick<Agency, "id" | "name" | "logo_url" | "verification_status">[]
 > {
-  // anon REST: agencies в Database types может отсутствовать
-  const anonKey =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4ODQyOTQwLCJleHAiOjE5MzY1MjI5NDB9.uK1BksB1rl0vNAlUc2nVpkqECeiWD9CKx0rIfHUlyWA";
   const qs =
     "select=id,name,logo_url,verification_status&verification_status=eq.verified&order=name.asc";
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/agencies?${qs}`, {
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${anonKey}`,
-    },
-  });
-  const data = await res.json().catch(() => []);
-  if (!res.ok) {
-    const msg =
-      data && typeof data === "object" && "message" in data
-        ? String((data as { message: string }).message)
-        : `HTTP ${res.status}`;
-    throw new Error(msg);
-  }
+  const data = await anonRestGet<
+    Pick<Agency, "id" | "name" | "logo_url" | "verification_status">[]
+  >(`agencies?${qs}`);
   return Array.isArray(data) ? data : [];
+}
+
+export type PublicAgencyCard = Pick<
+  Agency,
+  | "id"
+  | "name"
+  | "logo_url"
+  | "verification_status"
+  | "about"
+  | "opened_at"
+  | "working_hours"
+  | "avg_rating"
+  | "reviews_count"
+  | "response_minutes"
+> & { objects_count: number; managers_count: number; districts: string[] };
+
+/** Верифицированные агентства с числом объектов и менеджеров (каталог). */
+export async function fetchPublicAgenciesCatalogApi(): Promise<
+  PublicAgencyCard[]
+> {
+  let agencies: Pick<
+    Agency,
+    | "id"
+    | "name"
+    | "logo_url"
+    | "verification_status"
+    | "about"
+    | "opened_at"
+    | "working_hours"
+    | "avg_rating"
+    | "reviews_count"
+    | "response_minutes"
+  >[] = [];
+  try {
+    agencies = await anonRestGet(
+      "agencies?select=id,name,logo_url,verification_status,about,opened_at,working_hours,avg_rating,reviews_count,response_minutes&verification_status=eq.verified&order=name.asc",
+    );
+  } catch {
+    agencies = await anonRestGet(
+      "agencies?select=id,name,logo_url,verification_status,about,opened_at,working_hours&verification_status=eq.verified&order=name.asc",
+    );
+  }
+  const list = Array.isArray(agencies) ? agencies : [];
+  if (!list.length) return [];
+
+  const ids = list.map((a) => a.id);
+  const idFilter = `in.(${ids.join(",")})`;
+
+  const [props, managers] = await Promise.all([
+    anonRestGet<{ agency_id: string; district: string | null }[]>(
+      `properties?agency_id=${idFilter}&moderation_status=eq.published&is_active=eq.true&select=agency_id,district`,
+    ).catch(() => [] as { agency_id: string; district: string | null }[]),
+    anonRestGet<{ agency_id: string }[]>(
+      `agency_managers?agency_id=${idFilter}&is_active=eq.true&select=agency_id`,
+    ).catch(() => [] as { agency_id: string }[]),
+  ]);
+
+  const propCounts = new Map<string, number>();
+  const districtMap = new Map<string, Set<string>>();
+  for (const p of props) {
+    propCounts.set(p.agency_id, (propCounts.get(p.agency_id) || 0) + 1);
+    if (p.district) {
+      if (!districtMap.has(p.agency_id)) districtMap.set(p.agency_id, new Set());
+      districtMap.get(p.agency_id)!.add(p.district);
+    }
+  }
+  const mgrCounts = new Map<string, number>();
+  for (const m of managers) {
+    mgrCounts.set(m.agency_id, (mgrCounts.get(m.agency_id) || 0) + 1);
+  }
+
+  return list.map((a) => ({
+    ...a,
+    about: a.about || "",
+    working_hours: a.working_hours || "",
+    objects_count: propCounts.get(a.id) || 0,
+    managers_count: mgrCounts.get(a.id) || 0,
+    districts: Array.from(districtMap.get(a.id) || []),
+  }));
+}
+
+export type PublicManagerAgency = Pick<
+  Agency,
+  "id" | "name" | "logo_url" | "verification_status"
+>;
+
+export type PublicManagerCard = AgencyManager & {
+  agency: PublicManagerAgency;
+  objects_count: number;
+  districts: string[];
+};
+
+type ManagerWithAgencyRow = AgencyManager & {
+  agencies: PublicManagerAgency | PublicManagerAgency[] | null;
+};
+
+function normalizeAgencyEmbed(
+  agencies: ManagerWithAgencyRow["agencies"],
+): PublicManagerAgency | null {
+  if (!agencies) return null;
+  const a = Array.isArray(agencies) ? agencies[0] : agencies;
+  if (!a?.id) return null;
+  return {
+    id: a.id,
+    name: a.name,
+    logo_url: a.logo_url,
+    verification_status: a.verification_status,
+  };
+}
+
+/** Активные менеджеры verified-агентств для каталога риелторов. */
+export async function fetchPublicManagersApi(): Promise<PublicManagerCard[]> {
+  let rows: ManagerWithAgencyRow[] = [];
+  try {
+    rows = await anonRestGet<ManagerWithAgencyRow[]>(
+      "agency_managers?is_active=eq.true&select=*,agencies!inner(id,name,logo_url,verification_status)&agencies.verification_status=eq.verified&order=sort_order.asc,full_name.asc",
+    );
+  } catch {
+    // Fallback без inner filter: фильтруем на клиенте
+    const [managers, agencies] = await Promise.all([
+      anonRestGet<AgencyManager[]>(
+        "agency_managers?is_active=eq.true&select=*&order=sort_order.asc,full_name.asc",
+      ),
+      fetchVerifiedAgenciesApi(),
+    ]);
+    const verified = new Set(agencies.map((a) => a.id));
+    const agencyMap = new Map(agencies.map((a) => [a.id, a]));
+    rows = (Array.isArray(managers) ? managers : [])
+      .filter((m) => verified.has(m.agency_id))
+      .map((m) => ({
+        ...m,
+        agencies: agencyMap.get(m.agency_id) ?? null,
+      }));
+  }
+
+  const list = (Array.isArray(rows) ? rows : [])
+    .map((row) => {
+      const agency = normalizeAgencyEmbed(row.agencies);
+      if (!agency || agency.verification_status !== "verified") return null;
+      const { agencies: _a, ...manager } = row;
+      return {
+        ...manager,
+        property_types: Array.isArray(manager.property_types)
+          ? manager.property_types
+          : [],
+        agency,
+        objects_count: 0,
+        districts: [],
+      } satisfies PublicManagerCard;
+    })
+    .filter(Boolean) as PublicManagerCard[];
+
+  if (!list.length) return [];
+
+  const mgrIds = list.map((m) => m.id);
+  const counts = await anonRestGet<
+    { listing_manager_id: string; district: string | null }[]
+  >(
+    `properties?listing_manager_id=in.(${mgrIds.join(",")})&moderation_status=eq.published&is_active=eq.true&select=listing_manager_id,district`,
+  ).catch(
+    () => [] as { listing_manager_id: string; district: string | null }[],
+  );
+
+  const countMap = new Map<string, number>();
+  const districtMap = new Map<string, Set<string>>();
+  for (const p of counts) {
+    if (!p.listing_manager_id) continue;
+    countMap.set(
+      p.listing_manager_id,
+      (countMap.get(p.listing_manager_id) || 0) + 1,
+    );
+    if (p.district) {
+      if (!districtMap.has(p.listing_manager_id)) {
+        districtMap.set(p.listing_manager_id, new Set());
+      }
+      districtMap.get(p.listing_manager_id)!.add(p.district);
+    }
+  }
+
+  return list.map((m) => ({
+    ...m,
+    objects_count: countMap.get(m.id) || 0,
+    districts: Array.from(districtMap.get(m.id) || []),
+  }));
+}
+
+export type PublicManagerDetail = PublicManagerCard;
+
+/** Публичный профиль менеджера + агентство + счётчик объектов. */
+export async function fetchManagerByIdApi(
+  managerId: string,
+): Promise<PublicManagerDetail> {
+  let row: ManagerWithAgencyRow | null = null;
+  try {
+    const rows = await anonRestGet<ManagerWithAgencyRow[]>(
+      `agency_managers?id=eq.${managerId}&is_active=eq.true&select=*,agencies(id,name,logo_url,verification_status)`,
+    );
+    row = Array.isArray(rows) ? rows[0] ?? null : null;
+  } catch {
+    const rows = await anonRestGet<AgencyManager[]>(
+      `agency_managers?id=eq.${managerId}&is_active=eq.true&select=*`,
+    );
+    const m = Array.isArray(rows) ? rows[0] : null;
+    if (!m) throw new Error("Риелтор не найден");
+    const agency = await fetchAgencyByIdApi(m.agency_id);
+    row = {
+      ...m,
+      agencies: {
+        id: agency.id,
+        name: agency.name,
+        logo_url: agency.logo_url,
+        verification_status: agency.verification_status,
+      },
+    };
+  }
+
+  if (!row) throw new Error("Риелтор не найден");
+  const agency = normalizeAgencyEmbed(row.agencies);
+  if (!agency) throw new Error("Риелтор не найден");
+
+  const props = await anonRestGet<{ listing_manager_id: string }[]>(
+    `properties?listing_manager_id=eq.${managerId}&moderation_status=eq.published&is_active=eq.true&select=listing_manager_id`,
+  ).catch(() => [] as { listing_manager_id: string }[]);
+
+  const { agencies: _a, ...manager } = row;
+  return {
+    ...manager,
+    property_types: Array.isArray(manager.property_types)
+      ? manager.property_types
+      : [],
+    agency,
+    objects_count: props.length,
+    districts: [],
+  };
+}
+
+/** Опубликованные объекты менеджера. */
+export async function fetchManagerPropertiesApi(managerId: string) {
+  try {
+    return await anonRestGet<Record<string, unknown>[]>(
+      `properties?listing_manager_id=eq.${managerId}&moderation_status=eq.published&is_active=eq.true&select=*&order=created_at.desc`,
+    );
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchAgencyMembersApi(agencyId: string) {
@@ -518,5 +803,202 @@ export async function disconnectAgencyTelegramApi(agencyId: string) {
     telegram_connect_code: null,
     telegram_connect_expires_at: null,
     telegram_connected_at: null,
+  });
+}
+
+async function anonRestMutate(
+  path: string,
+  method: "POST" | "PATCH" | "DELETE",
+  body?: unknown,
+): Promise<unknown> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      ...anonHeaders,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw parseError(data, res);
+  return data;
+}
+
+export async function fetchAgencyReviewsApi(params: {
+  agencyId: string;
+  managerId?: string | null;
+  limit?: number;
+}): Promise<AgencyReview[]> {
+  const limit = params.limit ?? 50;
+  let path = `agency_reviews?agency_id=eq.${params.agencyId}&status=eq.published&order=created_at.desc&limit=${limit}&select=*`;
+  if (params.managerId) {
+    path = `agency_reviews?manager_id=eq.${params.managerId}&status=eq.published&order=created_at.desc&limit=${limit}&select=*`;
+  }
+  try {
+    const rows = await anonRestGet<AgencyReview[]>(path);
+    return Array.isArray(rows) ? rows : [];
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      /agency_reviews|Could not find|PGRST/i.test(err.message)
+    ) {
+      return [];
+    }
+    throw err;
+  }
+}
+
+/** Все отзывы агентства (включая pending/rejected) — для кабинета участника */
+export async function fetchMyAgencyReviewsApi(params: {
+  agencyId: string;
+  limit?: number;
+}): Promise<AgencyReview[]> {
+  const limit = params.limit ?? 100;
+  const select = encodeURIComponent("*,agency_managers(id,full_name)");
+  try {
+    const rows = await restGet<AgencyReview[]>(
+      `agency_reviews?agency_id=eq.${params.agencyId}&select=${select}&order=created_at.desc&limit=${limit}`,
+    );
+    return Array.isArray(rows) ? rows : [];
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      /agency_reviews|Could not find|PGRST|column/i.test(err.message)
+    ) {
+      return [];
+    }
+    throw err;
+  }
+}
+
+export async function replyToAgencyReviewApi(params: {
+  reviewId: string;
+  reply: string;
+}): Promise<AgencyReview> {
+  const text = params.reply.trim();
+  if (text.length < 2) throw new Error("Напишите ответ подробнее");
+  if (text.length > 2000) {
+    throw new Error("Ответ слишком длинный (макс. 2000 символов)");
+  }
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("Войдите, чтобы ответить на отзыв");
+  }
+
+  // Предпочтительно RPC (проверяет членство агентства)
+  const rpcRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/reply_to_agency_review`, {
+    method: "POST",
+    headers: {
+      apikey: anonHeaders.apikey,
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      p_review_id: params.reviewId,
+      p_reply: text,
+    }),
+  });
+  const rpcData = await rpcRes.json().catch(() => ({}));
+  if (rpcRes.ok) {
+    return (Array.isArray(rpcData) ? rpcData[0] : rpcData) as AgencyReview;
+  }
+
+  // Fallback: PATCH reply columns (если RPC ещё не применён)
+  const missingRpc =
+    rpcRes.status === 404 ||
+    /function.*reply_to_agency_review|Could not find.*function/i.test(
+      errorBodyText(rpcData),
+    );
+  if (!missingRpc) {
+    throw parseError(rpcData, rpcRes);
+  }
+
+  try {
+    const data = await restMutate(
+      `agency_reviews?id=eq.${params.reviewId}`,
+      "PATCH",
+      {
+        reply_body: text,
+        reply_at: new Date().toISOString(),
+        reply_by: session.user.id,
+        updated_at: new Date().toISOString(),
+      },
+    );
+    const row = Array.isArray(data) ? data[0] : data;
+    return row as AgencyReview;
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      /reply_body|Could not find.*column/i.test(err.message)
+    ) {
+      throw new Error(
+        "В БД нет полей ответа. Выполните supabase/self_hosted_agency_reviews_reply.sql",
+      );
+    }
+    throw err;
+  }
+}
+
+export async function createAgencyReviewApi(payload: {
+  agency_id: string;
+  manager_id?: string | null;
+  author_name: string;
+  author_email?: string | null;
+  rating: number;
+  body: string;
+  user_id: string;
+}): Promise<AgencyReview> {
+  const name = payload.author_name.trim();
+  const body = payload.body.trim();
+  if (!payload.user_id) throw new Error("Войдите, чтобы оставить отзыв");
+  if (name.length < 2) throw new Error("Укажите имя");
+  if (body.length < 5) throw new Error("Напишите отзыв подробнее");
+  if (payload.rating < 1 || payload.rating > 5) {
+    throw new Error("Оценка от 1 до 5");
+  }
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("Войдите, чтобы оставить отзыв");
+  }
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/agency_reviews`, {
+    method: "POST",
+    headers: {
+      apikey: anonHeaders.apikey,
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify({
+      agency_id: payload.agency_id,
+      manager_id: payload.manager_id || null,
+      author_name: name,
+      author_email: payload.author_email?.trim() || null,
+      user_id: payload.user_id,
+      rating: payload.rating,
+      body,
+      status: "pending",
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw parseError(data, res);
+  const row = Array.isArray(data) ? data[0] : data;
+  return row as AgencyReview;
+}
+
+/** Форматирование рейтинга для UI */
+export function formatAvgRating(value?: number | null): string {
+  const n = Number(value || 0);
+  if (!n) return "—";
+  return n.toLocaleString("ru-RU", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
   });
 }

@@ -32,7 +32,7 @@ const pieData = [
 ];
 
 const PIE_COLORS = [
-  "hsl(0, 72%, 51%)",
+  "#8B0015",
   "hsl(38, 75%, 55%)",
   "hsl(220, 25%, 35%)",
   "hsl(35, 30%, 70%)",
@@ -85,9 +85,9 @@ export default function AnalyticsDashboard() {
                 <Line
                   type="monotone"
                   dataKey="rate"
-                  stroke="hsl(0, 72%, 51%)"
+                  stroke="#8B0015"
                   strokeWidth={2.5}
-                  dot={{ fill: "hsl(0, 72%, 51%)", r: 4 }}
+                  dot={{ fill: "#8B0015", r: 4 }}
                 />
               </LineChart>
             </ResponsiveContainer>

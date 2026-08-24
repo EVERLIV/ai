@@ -1,3 +1,5 @@
+import type { SmartPickCriteria, SmartPickLite } from "@/lib/smartPick";
+
 export type AIPick = {
   id: string;
   fit_score: number;
@@ -8,38 +10,6 @@ export type AIPick = {
 export type AIResponse = {
   summary: string;
   picks: AIPick[];
-};
-
-type PickCriteria = {
-  deal: string;
-  type: string;
-  activity: string;
-  district: string;
-  budget_min: number | null;
-  budget_max: number | null;
-  area_min: number | null;
-  area_max: number | null;
-  property_class: string;
-  condition: string;
-  features: string[];
-  notes: string;
-};
-
-type PropertyLite = {
-  id: string;
-  type: string;
-  deal_type: string;
-  district: string;
-  address: string;
-  price: number;
-  price_per_m2: number;
-  area: number;
-  class: string;
-  condition: string | null;
-  features: string[] | null;
-  floor: string | null;
-  total_floors: string | null;
-  ceiling_height: number | null;
 };
 
 const SELF_HOSTED_URL =
@@ -53,10 +23,31 @@ function pickEndpoint(): string {
   return import.meta.env.VITE_PROPERTY_PICK_API_URL || SELF_HOSTED_URL;
 }
 
-/** ИИ-подбор через self-hosted Supabase (api.arendacity.com). */
+export function criteriaToApiPayload(criteria: SmartPickCriteria) {
+  return {
+    catalog: criteria.catalog,
+    deal: criteria.deal,
+    type: criteria.type,
+    activity: criteria.activity,
+    location: criteria.location,
+    district: criteria.location,
+    budget_min: criteria.budgetMin,
+    budget_max: criteria.budgetMax,
+    area_min: criteria.areaMin,
+    area_max: criteria.areaMax,
+    rooms: criteria.rooms,
+    market: criteria.market,
+    property_class: criteria.propertyClass,
+    condition: criteria.condition,
+    features: criteria.features,
+    notes: criteria.notes,
+  };
+}
+
+/** Умный подбор через self-hosted Supabase (api.arendacity.com). */
 export async function invokePropertyPick(
-  criteria: PickCriteria,
-  properties: PropertyLite[],
+  criteria: SmartPickCriteria,
+  properties: SmartPickLite[],
 ): Promise<AIResponse> {
   const url = pickEndpoint();
   const headers: Record<string, string> = {
@@ -68,13 +59,16 @@ export async function invokePropertyPick(
   const resp = await fetch(url, {
     method: "POST",
     headers,
-    body: JSON.stringify({ criteria, properties }),
+    body: JSON.stringify({
+      criteria: criteriaToApiPayload(criteria),
+      properties,
+    }),
   });
 
   const data = await resp.json().catch(() => ({}));
   if (!resp.ok) {
     throw new Error(
-      data.error || data.msg || `Ошибка ИИ-сервиса (${resp.status})`,
+      data.error || data.msg || `Ошибка сервиса подбора (${resp.status})`,
     );
   }
   if (data?.error) throw new Error(data.error);
@@ -84,7 +78,7 @@ export async function invokePropertyPick(
   ) {
     throw new Error(data.msg);
   }
-  if (!data?.picks) throw new Error("ИИ не вернул результаты подбора");
+  if (!data?.picks) throw new Error("Сервис подбора не вернул результаты");
 
   return data as AIResponse;
 }

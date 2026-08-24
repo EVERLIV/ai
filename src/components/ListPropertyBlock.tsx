@@ -633,7 +633,7 @@ function PrimaryCta({
   return (
     <Link
       to={to}
-      className={`h-11 px-5 rounded-md inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity ${className}`}
+      className={`h-7 px-[11px] rounded inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity ${className}`}
     >
       {loggedIn ? (
         <Building2 className="w-4 h-4" />

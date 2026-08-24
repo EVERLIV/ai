@@ -64,6 +64,23 @@ export function useProperties(options: UsePropertiesOptions = {}) {
   });
 }
 
+export function useAllActiveProperties() {
+  return useQuery({
+    queryKey: ["properties", "all-active"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabasePublic
+        .from("properties")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(4000);
+      if (error) throw error;
+      return data as DbProperty[];
+    },
+  });
+}
+
 export function useCommercialProperties() {
   return useProperties({ segment: "commercial" });
 }

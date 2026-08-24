@@ -2,7 +2,6 @@ import { Building2, Home, TreePine } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import AboutSection from "@/components/AboutSection";
-import ConsultationWidget from "@/components/ConsultationWidget";
 import FeaturesSection from "@/components/FeaturesSection";
 import HeroSection from "@/components/HeroSection";
 import ListPropertyBlock from "@/components/ListPropertyBlock";
@@ -12,6 +11,7 @@ import NewsSection from "@/components/NewsSection";
 import OrganizationJsonLd from "@/components/OrganizationJsonLd";
 import OwnerSection from "@/components/OwnerSection";
 import PopularPropertiesSlider from "@/components/PopularPropertiesSlider";
+import PropertyAIChat from "@/components/PropertyAIChat";
 import PropertyGrid from "@/components/PropertyGrid";
 import RentSection from "@/components/RentSection";
 import SearchFilters, {
@@ -43,25 +43,25 @@ export default function Index() {
           <div className="flex flex-wrap gap-2">
             <Link
               to="/zhilaya"
-              className="inline-flex items-center gap-2 h-9 px-3.5 rounded-md border border-border bg-card text-sm font-medium text-foreground hover:border-primary/40 transition-colors"
+              className="inline-flex items-center gap-1.5 h-7 px-[11px] rounded border border-border bg-card text-sm font-medium text-foreground hover:border-primary/40 transition-colors"
             >
               <Home className="w-4 h-4 text-primary" /> Жилая
             </Link>
             <Link
               to="/catalog"
-              className="inline-flex items-center gap-2 h-9 px-3.5 rounded-md border border-border bg-card text-sm font-medium text-foreground hover:border-primary/40 transition-colors"
+              className="inline-flex items-center gap-1.5 h-7 px-[11px] rounded border border-border bg-card text-sm font-medium text-foreground hover:border-primary/40 transition-colors"
             >
               <Building2 className="w-4 h-4 text-primary" /> Коммерция
             </Link>
             <Link
               to="/zhilaya/uchastki"
-              className="inline-flex items-center gap-2 h-9 px-3.5 rounded-md border border-border bg-card text-sm font-medium text-foreground hover:border-primary/40 transition-colors"
+              className="inline-flex items-center gap-1.5 h-7 px-[11px] rounded border border-border bg-card text-sm font-medium text-foreground hover:border-primary/40 transition-colors"
             >
               <TreePine className="w-4 h-4 text-primary" /> Участки
             </Link>
             <Link
               to="/zhilaya/catalog"
-              className="inline-flex items-center gap-2 h-9 px-3.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-1.5 h-7 px-[11px] text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Каталог жилья →
             </Link>
@@ -69,23 +69,7 @@ export default function Index() {
         </div>
       </section>
 
-      <NewsSection />
-      <div className="hidden lg:block">
-        <SearchFilters
-          onAIClick={() => {}}
-          filters={filters}
-          onChange={setFilters}
-        />
-      </div>
-      <PropertyGrid filters={filters} />
-      <PopularPropertiesSlider />
-      <RentSection />
-      <MapSection />
-      <FeaturesSection />
-      <AboutSection />
-      <OwnerSection />
-      <ListPropertyBlock />
-      <section className="py-10 bg-muted/20 border-y border-border/40">
+      <section className="py-10 bg-muted/20 border-b border-border/40">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="rounded-2xl border border-border bg-card p-6 lg:p-8 flex flex-col lg:flex-row gap-5 lg:items-center lg:justify-between">
             <div>
@@ -103,15 +87,32 @@ export default function Index() {
             </div>
             <Link
               to="/zhilaya"
-              className="inline-flex items-center justify-center h-11 px-5 rounded-md bg-foreground text-background text-sm font-semibold hover:opacity-90 transition-opacity"
+              className="inline-flex items-center justify-center h-7 px-[11px] rounded bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity"
             >
               Перейти в жилой каталог
             </Link>
           </div>
         </div>
       </section>
+
+      <div className="hidden lg:block">
+        <SearchFilters
+          onAIClick={() => {}}
+          filters={filters}
+          onChange={setFilters}
+        />
+      </div>
+      <PropertyGrid filters={filters} />
+      <PopularPropertiesSlider />
+      <RentSection />
+      <MapSection />
+      <FeaturesSection />
+      <AboutSection />
+      <OwnerSection />
+      <ListPropertyBlock />
+      <NewsSection />
       <SiteFooter />
-      <ConsultationWidget />
+      <PropertyAIChat showFab={false} />
     </div>
   );
 }

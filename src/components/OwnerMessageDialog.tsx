@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 
 /** Единый стиль CTA-кнопок в сайдбаре объекта */
 export const propertyCtaButtonClass =
-  "inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-md text-sm font-semibold whitespace-nowrap transition-opacity hover:opacity-90 min-w-0 w-full";
+  "inline-flex items-center justify-center gap-1.5 h-7 px-[11px] rounded text-sm font-medium whitespace-nowrap transition-opacity hover:opacity-90 min-w-0 w-full";
 
 interface Props {
   propertyId: string;

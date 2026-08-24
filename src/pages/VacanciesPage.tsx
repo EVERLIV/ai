@@ -10,7 +10,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import heroImg from "@/assets/hero-commercial.jpg";
 import CompanyStatsSidebar from "@/components/CompanyStatsSidebar";
-import PropertyAIChat from "@/components/PropertyAIChat";
 import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
@@ -112,7 +111,7 @@ export default function VacanciesPage() {
       />
       <SiteHeader />
 
-      <div className="sticky top-[56px] md:top-[98px] z-30 mt-[56px] md:mt-[98px] bg-card/90 backdrop-blur-xl shadow-[0_1px_0_0_hsl(var(--border)/0.5)]">
+      <div className="sticky top-[56px] lg:top-[104px] z-30 mt-[56px] lg:mt-[104px] bg-card/90 backdrop-blur-xl shadow-[0_1px_0_0_hsl(var(--border)/0.5)]">
         <div className="container mx-auto px-4 lg:px-8 h-10 flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <Link to="/" className="hover:text-foreground transition-colors">
             Главная
@@ -310,7 +309,6 @@ export default function VacanciesPage() {
       </main>
 
       <SiteFooter />
-      <PropertyAIChat />
     </div>
   );
 }

@@ -1,17 +1,17 @@
 import { Clock, Eye, Landmark, Layers, Maximize2, Square } from "lucide-react";
 import { forwardRef } from "react";
 import { Link } from "react-router-dom";
-import CatalogSellerLine from "@/components/catalog/CatalogSellerLine";
+import ListingCategoryBadges from "@/components/ListingCategoryBadges";
+import PropertyCompareButton from "@/components/PropertyCompareButton";
 import PropertyImage from "@/components/PropertyImage";
 import PropertySaveButton from "@/components/PropertySaveButton";
-import VerifiedBadge from "@/components/VerifiedBadge";
 import type { DbProperty } from "@/hooks/useProperties";
 import {
   buildPropertyDisplayTitle,
+  formatListingActivityDates,
   formatListingViews,
   formatPropertyAddressShort,
   formatPropertyPrice,
-  isListingVerified,
 } from "@/lib/propertyCard";
 import { getLandUse, isAnyLand, LAND_TYPE_LABEL } from "@/lib/propertyLand";
 import { cn } from "@/lib/utils";
@@ -32,9 +32,7 @@ const CatalogListCard = forwardRef<HTMLElement, Props>(function CatalogListCard(
   const price = formatPropertyPrice(p);
   const title = buildPropertyDisplayTitle(p);
   const addressShort = formatPropertyAddressShort(p.address);
-  const published = p.published_date
-    ? new Date(p.published_date).toLocaleDateString("ru-RU")
-    : null;
+  const activity = formatListingActivityDates(p);
 
   return (
     <article
@@ -51,16 +49,22 @@ const CatalogListCard = forwardRef<HTMLElement, Props>(function CatalogListCard(
         to={`/property/${p.id}`}
         className="group flex gap-4 py-3 sm:py-3.5 min-h-0"
       >
-        <div className="relative hidden sm:block w-[200px] lg:w-[220px] shrink-0 aspect-[4/3] bg-muted overflow-hidden rounded-sm">
+        <div className="relative hidden sm:block w-[200px] lg:w-[220px] shrink-0 aspect-[4/3] bg-muted overflow-hidden rounded-lg">
           <PropertyImage
             src={p.cover_photo}
             alt={title}
             variant="listing"
             imgClassName="transition-transform duration-500 group-hover:scale-[1.02] object-top"
           />
-          <div className="absolute top-1.5 right-1.5 z-[1]">
+          <ListingCategoryBadges type={p.type} dealType={p.deal_type} />
+          <div className="absolute top-1.5 right-1.5 z-[1] flex flex-col gap-1">
             <PropertySaveButton
               propertyId={p.id}
+              className="w-7 h-7 shadow-sm"
+              iconClassName="w-3.5 h-3.5"
+            />
+            <PropertyCompareButton
+              property={p}
               className="w-7 h-7 shadow-sm"
               iconClassName="w-3.5 h-3.5"
             />
@@ -70,20 +74,30 @@ const CatalogListCard = forwardRef<HTMLElement, Props>(function CatalogListCard(
         <div className="flex-1 min-w-0 flex flex-col justify-between gap-2 py-0.5">
           <div>
             <div className="flex items-start gap-3 sm:hidden mb-2">
-              <div className="relative w-24 aspect-[4/3] shrink-0 overflow-hidden rounded-sm bg-muted">
+              <div className="relative w-24 aspect-[4/3] shrink-0 overflow-hidden rounded-md bg-muted">
                 <PropertyImage
                   src={p.cover_photo}
                   alt={title}
                   variant="listing"
                   imgClassName="object-top"
                 />
-                <div className="absolute top-1 right-1 z-[1]">
+                <div className="absolute top-1 right-1 z-[1] flex flex-col gap-0.5">
                   <PropertySaveButton
                     propertyId={p.id}
                     className="w-6 h-6"
                     iconClassName="w-3 h-3"
                   />
+                  <PropertyCompareButton
+                    property={p}
+                    className="w-6 h-6"
+                    iconClassName="w-3 h-3"
+                  />
                 </div>
+                <ListingCategoryBadges
+                  type={p.type}
+                  dealType={p.deal_type}
+                  className="top-1 left-1 scale-90 origin-top-left"
+                />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="price-display text-lg text-foreground">
@@ -95,11 +109,8 @@ const CatalogListCard = forwardRef<HTMLElement, Props>(function CatalogListCard(
               </div>
             </div>
 
-            <div className="text-[15px] font-semibold text-foreground leading-snug flex items-center gap-1.5 flex-wrap group-hover:text-primary transition-colors">
+            <div className="text-[15px] font-semibold text-foreground leading-snug group-hover:text-primary transition-colors">
               {title}
-              {isListingVerified(p) && (
-                <VerifiedBadge showLabel={false} className="shrink-0" />
-              )}
             </div>
             {addressShort && (
               <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
@@ -141,9 +152,31 @@ const CatalogListCard = forwardRef<HTMLElement, Props>(function CatalogListCard(
             )}
           </div>
 
-          <CatalogSellerLine
-            extras={p.extras as Record<string, unknown> | null}
-          />
+          {(p.features || []).length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {(p.features || []).slice(0, 3).map((feature) => (
+                <span
+                  key={feature}
+                  className="px-1.5 py-0.5 rounded bg-muted text-[10px] text-muted-foreground"
+                >
+                  {feature}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="sm:hidden flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground tabular-nums pt-0.5">
+            <span className="inline-flex items-center gap-1">
+              <Eye className="w-3 h-3" />
+              {formatListingViews(p.views_count)}
+            </span>
+            {activity.line && (
+              <span className="inline-flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {activity.line}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="hidden sm:flex flex-col items-end justify-between shrink-0 w-32 lg:w-36 pt-0.5">
@@ -160,10 +193,15 @@ const CatalogListCard = forwardRef<HTMLElement, Props>(function CatalogListCard(
               <Eye className="w-3 h-3" />
               {formatListingViews(p.views_count)}
             </span>
-            {published && (
-              <span className="inline-flex items-center gap-1">
+            {activity.addedLabel && (
+              <span className="inline-flex items-center gap-1" title="Добавлен">
                 <Clock className="w-3 h-3" />
-                {published}
+                {activity.addedLabel}
+              </span>
+            )}
+            {activity.updatedLabel && (
+              <span className="text-right" title="Обновлён">
+                обн. {activity.updatedLabel}
               </span>
             )}
           </div>

@@ -1,11 +1,9 @@
 import { ChevronDown, Search, X } from "lucide-react";
 import { useState } from "react";
+import LocationPickerModal from "@/components/LocationPickerModal";
 import { useVerifiedAgencies } from "@/hooks/useAgency";
-import {
-  IRKUTSK_CITY_DISTRICTS,
-  IRKUTSK_OBLAST_CITIES,
-} from "@/lib/irkutskLocations";
 import type { ListingSellerFilter } from "@/lib/listingSource";
+import { cn } from "@/lib/utils";
 
 export type PropertyFilters = {
   type: string;
@@ -32,7 +30,6 @@ export const defaultFilters: PropertyFilters = {
 };
 
 const tabs = ["Все", "Офис", "Торговая", "Склад", "ПСН", "Земля"];
-const districts = ["Все", ...IRKUTSK_CITY_DISTRICTS, ...IRKUTSK_OBLAST_CITIES];
 const classes = ["Все", "A", "B", "C"];
 const sellerOptions: { value: ListingSellerFilter; label: string }[] = [
   { value: "Все", label: "Все" },
@@ -95,7 +92,7 @@ function RangeInput({
           onChange={(e) => onMin(e.target.value)}
           onFocus={() => setFocusMin(true)}
           onBlur={() => setFocusMin(false)}
-          className="w-full h-9 px-2.5 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none tabular-nums"
+          className="w-full h-7 px-2.5 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none tabular-nums"
         />
         <span className="text-muted-foreground/40 text-xs px-1 shrink-0">
           —
@@ -107,7 +104,7 @@ function RangeInput({
           onChange={(e) => onMax(e.target.value)}
           onFocus={() => setFocusMax(true)}
           onBlur={() => setFocusMax(false)}
-          className="w-full h-9 px-2.5 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none tabular-nums"
+          className="w-full h-7 px-2.5 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none tabular-nums"
         />
         {suffix && (
           <span className="text-[10px] text-muted-foreground/50 pr-2 shrink-0">
@@ -162,6 +159,7 @@ export default function SearchFilters({ filters, onChange }: Props) {
   const [local, setLocal] = useState<PropertyFilters>(
     filters ?? defaultFilters,
   );
+  const [locationOpen, setLocationOpen] = useState(false);
   const f = filters ?? local;
   const { data: verifiedAgencies = [] } = useVerifiedAgencies();
 
@@ -216,15 +214,26 @@ export default function SearchFilters({ filters, onChange }: Props) {
             onMax={(v) => set({ priceMax: +v || 100000000 })}
           />
 
-          <SelectInput
-            label="Район"
-            value={f.district}
-            options={districts.map((d) => ({
-              value: d,
-              label: d === "Все" ? "Все районы" : d,
-            }))}
-            onChange={(v) => set({ district: v })}
-          />
+          <div className="w-full sm:flex-1 sm:min-w-0">
+            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Регион
+            </div>
+            <button
+              type="button"
+              onClick={() => setLocationOpen(true)}
+              className={cn(
+                "w-full h-7 px-3 flex items-center justify-between gap-2 bg-background border text-sm text-left transition-all duration-150",
+                f.district !== "Все"
+                  ? "border-primary/40 text-foreground"
+                  : "border-border text-muted-foreground hover:border-border/80",
+              )}
+            >
+              <span className="truncate">
+                {f.district !== "Все" ? f.district : "Иркутская область"}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+            </button>
+          </div>
 
           <SelectInput
             label="Кто сдаёт"
@@ -286,7 +295,7 @@ export default function SearchFilters({ filters, onChange }: Props) {
           <div className="flex gap-1.5 w-full sm:w-auto sm:shrink-0 sm:self-end">
             <button
               onClick={scrollToResults}
-              className="flex-1 sm:flex-none h-9 px-5 flex items-center justify-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 active:scale-[0.97] transition-all duration-150"
+              className="flex-1 sm:flex-none ui-btn-primary active:scale-[0.97]"
             >
               <Search className="w-3.5 h-3.5" />
               Найти
@@ -295,7 +304,7 @@ export default function SearchFilters({ filters, onChange }: Props) {
               <button
                 onClick={reset}
                 title="Сбросить"
-                className="h-9 w-9 flex items-center justify-center border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 active:scale-95 transition-all duration-150"
+                className="h-7 w-7 flex items-center justify-center rounded border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 active:scale-95 transition-all duration-150"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -357,6 +366,13 @@ export default function SearchFilters({ filters, onChange }: Props) {
           </div>
         )}
       </div>
+
+      <LocationPickerModal
+        open={locationOpen}
+        onOpenChange={setLocationOpen}
+        value={f.district}
+        onSelect={(location) => set({ district: location })}
+      />
 
       <style>{`
         .scrollbar-none::-webkit-scrollbar { display: none; }

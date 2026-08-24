@@ -102,10 +102,10 @@ export default function PopularPropertiesSlider() {
               <Link
                 key={p.id}
                 to={`/property/${p.id}`}
-                className="group shrink-0 w-[260px] bg-card border border-border hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300"
+                className="group shrink-0 w-[260px] bg-card rounded-lg overflow-hidden hover:-translate-y-0.5 transition-all duration-300"
                 style={{ scrollSnapAlign: "start" }}
               >
-                <div className="relative aspect-[4/3] bg-muted overflow-hidden">
+                <div className="relative aspect-[4/3] bg-muted overflow-hidden rounded-t-lg">
                   <PropertyImage
                     src={
                       p.cover_photo || getPropertyCover(p.cover_photo, p.type)
@@ -131,7 +131,7 @@ export default function PopularPropertiesSlider() {
                   )}
                 </div>
 
-                <div className="p-3 space-y-1.5">
+                <div className="px-3.5 pt-3 pb-3.5 space-y-1.5">
                   <div className="font-display text-base font-bold text-foreground leading-none">
                     {Number(p.price).toLocaleString("ru-RU")} ₽
                     <span className="text-[11px] font-normal text-muted-foreground">

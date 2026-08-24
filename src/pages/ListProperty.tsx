@@ -37,7 +37,7 @@ export default function ListProperty({
     <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
 
-      <div className="mt-[56px] md:mt-[98px] border-b border-border/40">
+      <div className="mt-[56px] lg:mt-[104px] border-b border-border/40">
         <div className="container mx-auto px-3 lg:px-8 h-10 lg:h-11 flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}

@@ -4,8 +4,8 @@ import { useScrollReveal } from "@/hooks/useScrollReveal";
 const features = [
   {
     icon: Brain,
-    title: "ИИ-подбор",
-    desc: "Опишите задачу голосом или текстом, ИИ найдёт лучшие варианты за секунды",
+    title: "Умный подбор",
+    desc: "Фильтры и точный анализ всей базы агентств и риелторов — варианты под задачу",
   },
   {
     icon: BarChart3,

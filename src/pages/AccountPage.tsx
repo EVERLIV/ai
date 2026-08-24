@@ -10,17 +10,18 @@ import {
   MapPin,
   Maximize2,
   MessageCircle,
+  MessageSquareText,
   User,
   Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AgencyManagersTab from "@/components/account/AgencyManagersTab";
-import AgencyProfileTab from "@/components/account/AgencyProfileTab";
 import AgencyTeamTab from "@/components/account/AgencyTeamTab";
 import AgencyTelegramTab from "@/components/account/AgencyTelegramTab";
 import MyLeadsTab from "@/components/account/MyLeadsTab";
 import MyPropertiesTab from "@/components/account/MyPropertiesTab";
+import MyReviewsTab from "@/components/account/MyReviewsTab";
 import ProfileTab from "@/components/account/ProfileTab";
 import StatsTab from "@/components/account/StatsTab";
 import SeoHead from "@/components/SeoHead";
@@ -29,6 +30,7 @@ import SiteHeader from "@/components/SiteHeader";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useMyAgency } from "@/hooks/useAgency";
 import { useAuth } from "@/hooks/useAuth";
+import { formatLeadBadge, useNewLeadsCount } from "@/hooks/useMyLeads";
 import {
   ACCOUNT_TYPE_LABELS,
   isProfileVerified,
@@ -44,8 +46,9 @@ const OWNER_TABS = [
   { key: "profile", label: "Мои данные", icon: User },
 ] as const;
 
+/** Без отдельного «Агентство» — профиль уже объединяет данные аккаунта и агентства */
 const AGENCY_EXTRA_TABS = [
-  { key: "agency", label: "Агентство", icon: Landmark },
+  { key: "reviews", label: "Мои отзывы", icon: MessageSquareText },
   { key: "team", label: "Команда", icon: Users },
   { key: "managers", label: "Менеджеры", icon: Briefcase },
   { key: "telegram", label: "Telegram", icon: MessageCircle },
@@ -68,13 +71,31 @@ export default function AccountPage() {
   const { data: properties = [] } = useProperties();
   const { data: profile } = useProfile();
   const { data: myAgency } = useMyAgency();
+  const { data: newLeadsCount = 0 } = useNewLeadsCount();
   const isAgencyAccount =
-    profile?.account_type === "agency" ||
-    profile?.account_type === "realtor" ||
-    !!myAgency;
+    profile?.account_type === "agency" || !!myAgency;
+  const isRealtorAccount = profile?.account_type === "realtor";
+  const isSeeker = profile?.account_type === "seeker";
+  const realtorReviewTab = AGENCY_EXTRA_TABS.filter((t) => t.key === "reviews");
   const tabs = isAgencyAccount
-    ? [...OWNER_TABS.slice(0, 4), ...AGENCY_EXTRA_TABS, OWNER_TABS[4]]
-    : [...OWNER_TABS];
+    ? [
+        ...OWNER_TABS.slice(0, 4),
+        ...AGENCY_EXTRA_TABS,
+        {
+          key: "profile" as const,
+          label: "Профиль",
+          icon: Landmark,
+        },
+      ]
+    : isRealtorAccount
+      ? [
+          ...OWNER_TABS.slice(0, 4),
+          ...realtorReviewTab,
+          OWNER_TABS[4],
+        ]
+      : isSeeker
+        ? OWNER_TABS.filter((t) => t.key !== "properties" && t.key !== "stats")
+        : [...OWNER_TABS];
   const searchParams = new URLSearchParams(location.search);
   const requestedSegment =
     searchParams.get("segment") === "residential"
@@ -88,6 +109,12 @@ export default function AccountPage() {
 
   useEffect(() => {
     const hash = location.hash.replace("#", "");
+    // Старый якорь #agency → единый профиль
+    if (hash === "agency") {
+      setTab("profile");
+      window.history.replaceState(null, "", `/account#profile`);
+      return;
+    }
     if (VALID_TABS.has(hash)) setTab(hash as Tab);
     else if (initialRequestType) setTab("properties");
   }, [location.hash, initialRequestType]);
@@ -127,8 +154,14 @@ export default function AccountPage() {
 
   const fullName = user.user_metadata?.full_name || "";
   const email = user.email || "";
-  const initials = fullName
-    ? fullName
+  const displayName =
+    (isAgencyAccount &&
+      (myAgency?.agency.name || profile?.agency_name || "").trim()) ||
+    fullName ||
+    profile?.full_name ||
+    "";
+  const initials = displayName
+    ? displayName
         .split(" ")
         .map((n: string) => n[0])
         .join("")
@@ -157,7 +190,7 @@ export default function AccountPage() {
       <SiteHeader />
 
       {/* Breadcrumbs */}
-      <div className="sticky top-[56px] md:top-[98px] z-30 mt-[56px] md:mt-[98px] bg-card/90 backdrop-blur-xl shadow-[0_1px_0_0_hsl(var(--border)/0.5)]">
+      <div className="sticky top-[56px] lg:top-[104px] z-30 mt-[56px] lg:mt-[104px] bg-card/90 backdrop-blur-xl shadow-[0_1px_0_0_hsl(var(--border)/0.5)]">
         <div className="container mx-auto px-4 lg:px-8 h-10 flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <Link to="/" className="hover:text-foreground transition-colors">
             Главная
@@ -179,14 +212,19 @@ export default function AccountPage() {
                   {initials}
                 </div>
                 <div className="min-w-0 flex-1">
-                  {fullName && (
+                  {displayName && (
                     <div className="text-sm font-semibold text-foreground truncate">
-                      {fullName}
+                      {displayName}
                     </div>
                   )}
                   <div className="text-xs text-muted-foreground truncate">
                     {email}
                   </div>
+                  {isAgencyAccount && fullName && (
+                    <div className="text-[10px] text-muted-foreground/80 truncate mt-0.5">
+                      Отв.: {fullName}
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-primary/10 text-primary font-medium">
@@ -215,10 +253,16 @@ export default function AccountPage() {
                     <Icon className="w-4 h-4" strokeWidth={1.75} />
                     {label}
                   </div>
-                  <ChevronRight
-                    className="w-3.5 h-3.5 text-muted-foreground"
-                    strokeWidth={1.75}
-                  />
+                  {key === "requests" && newLeadsCount > 0 ? (
+                    <span className="min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-4 text-center">
+                      {formatLeadBadge(newLeadsCount)}
+                    </span>
+                  ) : (
+                    <ChevronRight
+                      className="w-3.5 h-3.5 text-muted-foreground"
+                      strokeWidth={1.75}
+                    />
+                  )}
                 </button>
               ))}
               <button
@@ -260,9 +304,9 @@ export default function AccountPage() {
                       <Link
                         key={p.id}
                         to={`/property/${p.id}`}
-                        className="group flex gap-4 bg-card p-4 hover:shadow-md transition-all"
+                        className="group flex gap-4 bg-card rounded-lg p-4 hover:shadow-md transition-all"
                       >
-                        <div className="w-24 h-20 bg-muted shrink-0 overflow-hidden">
+                        <div className="w-24 h-20 bg-muted shrink-0 overflow-hidden rounded-md">
                           {p.cover_photo && (
                             <img
                               src={p.cover_photo}
@@ -322,7 +366,7 @@ export default function AccountPage() {
 
             {tab === "stats" && <StatsTab />}
 
-            {tab === "agency" && <AgencyProfileTab />}
+            {tab === "reviews" && <MyReviewsTab />}
 
             {tab === "team" && <AgencyTeamTab />}
 

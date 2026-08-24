@@ -178,7 +178,7 @@ export function readCatalogFiltersFromSearchParams(
     district: searchParams.get("district") || "Все",
     propertyClass: searchParams.get("cls") || "Все",
     condition: searchParams.get("cond") || "Все",
-    sort: searchParams.get("sort") || "date",
+    sort: searchParams.get("sort") || "default",
     searchQuery: searchParams.get("q") || "",
     priceMin: Number(searchParams.get("priceMin") || 0),
     priceMax: Number(searchParams.get("priceMax") || 50000000),
@@ -190,4 +190,55 @@ export function readCatalogFiltersFromSearchParams(
     seller: normalizeListingSeller(searchParams.get("seller")),
     agencyId: searchParams.get("agency") || "",
   };
+}
+
+export type CatalogUrlFilters = ReturnType<
+  typeof readCatalogFiltersFromSearchParams
+>;
+
+const PRICE_MAX_URL = 50_000_000;
+const AREA_MAX_URL = 300_000;
+
+/** Стабильная строка query для сравнения, без лишнего setSearchParams. */
+export function serializeCatalogSearchParams(
+  filters: CatalogUrlFilters,
+): string {
+  const p = new URLSearchParams();
+  if (filters.dealType !== "Все") p.set("deal", filters.dealType);
+  if (filters.selectedTypes.length > 0) {
+    p.set("types", filters.selectedTypes.join(","));
+  }
+  if (filters.district !== "Все") p.set("district", filters.district);
+  if (filters.propertyClass !== "Все") p.set("cls", filters.propertyClass);
+  if (filters.condition !== "Все") p.set("cond", filters.condition);
+  if (filters.sort && filters.sort !== "default") p.set("sort", filters.sort);
+  if (filters.searchQuery.trim()) p.set("q", filters.searchQuery.trim());
+  if (filters.priceMin > 0) p.set("priceMin", String(filters.priceMin));
+  if (filters.priceMax < PRICE_MAX_URL) {
+    p.set("priceMax", String(filters.priceMax));
+  }
+  if (filters.areaMin > 0) p.set("areaMin", String(filters.areaMin));
+  if (filters.areaMax < AREA_MAX_URL) {
+    p.set("areaMax", String(filters.areaMax));
+  }
+  if (filters.ceilingMin > 0) p.set("ceil", String(filters.ceilingMin));
+  if (filters.parkingOnly) p.set("parking", "1");
+  if (filters.selectedLayouts.length > 0) {
+    p.set("layouts", filters.selectedLayouts.join(","));
+  }
+  if (filters.selectedRooms.length > 0) {
+    p.set("rooms", filters.selectedRooms.join(","));
+  }
+  if (filters.selectedMarket.length > 0) {
+    p.set("market", filters.selectedMarket.join(","));
+  }
+  if (filters.selectedBuildingTypes.length > 0) {
+    p.set("bld", filters.selectedBuildingTypes.join(","));
+  }
+  if (filters.selectedFurniture.length > 0) {
+    p.set("furniture", filters.selectedFurniture.join(","));
+  }
+  if (filters.seller !== "Все") p.set("seller", String(filters.seller));
+  if (filters.agencyId) p.set("agency", filters.agencyId);
+  return p.toString();
 }

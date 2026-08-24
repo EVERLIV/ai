@@ -33,7 +33,9 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [accountType, setAccountType] = useState<"owner" | "agency">("owner");
+  const [accountType, setAccountType] = useState<
+    "seeker" | "owner" | "agency" | "realtor"
+  >("seeker");
   const [agencyName, setAgencyName] = useState("");
   const [agencyStaffCount, setAgencyStaffCount] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -229,8 +231,8 @@ export default function Auth() {
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-12 max-w-lg mx-auto w-full">
         {/* Logo + back */}
         <div className="flex items-center justify-between mb-10">
-          <Link to="/" className="flex items-center gap-2.5">
-            <BrandMark className="w-9 h-9" />
+          <Link to="/" className="flex items-center gap-2">
+            <BrandMark className="h-4 w-auto" />
             <span className="font-display text-lg font-bold text-foreground">
               АРЕНДА<span className="text-primary">СИТИ</span>
             </span>
@@ -320,7 +322,7 @@ export default function Auth() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-7 bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5 rounded"
               >
                 {loading ? (
                   "Вход..."
@@ -381,29 +383,26 @@ export default function Auth() {
               {!inviteToken && (
                 <div>
                   <label className="text-xs font-medium text-muted-foreground block mb-1.5">
-                    Вы —
+                    Я хочу
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(
-                      [
-                        ["owner", "Собственник"],
-                        ["agency", "Агентство"],
-                      ] as const
-                    ).map(([key, label]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setAccountType(key)}
-                        className={`h-10 text-xs font-semibold border transition-colors ${
-                          accountType === key
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border text-muted-foreground hover:border-primary/50"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
+                  <select
+                    value={accountType}
+                    onChange={(e) =>
+                      setAccountType(
+                        e.target.value as
+                          | "seeker"
+                          | "owner"
+                          | "agency"
+                          | "realtor",
+                      )
+                    }
+                    className="w-full h-11 px-3 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary"
+                  >
+                    <option value="seeker">Хочу найти</option>
+                    <option value="owner">Хочу сдать (собственник)</option>
+                    <option value="agency">Агентство</option>
+                    <option value="realtor">Риелтор</option>
+                  </select>
                 </div>
               )}
               {inviteToken && (
@@ -513,7 +512,7 @@ export default function Auth() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-7 bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5 rounded"
               >
                 {loading ? (
                   "Регистрация..."

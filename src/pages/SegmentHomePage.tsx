@@ -28,8 +28,8 @@ export default function SegmentHomePage() {
 
       <header className="relative z-10 border-b border-border/50 bg-card/70 backdrop-blur-md">
         <div className="container mx-auto px-4 lg:px-8 h-14 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <BrandMark className="w-9 h-9 shrink-0" />
+          <div className="flex items-center gap-2 min-w-0">
+            <BrandMark className="h-3.5 w-auto shrink-0" />
             <div className="leading-none min-w-0">
               <div className="font-sans text-[16px] font-bold tracking-tight text-foreground">
                 АРЕНДА<span className="text-primary">СИТИ</span>

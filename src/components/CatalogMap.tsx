@@ -266,9 +266,9 @@ export default function CatalogMap({
                   <button
                     key={p.id}
                     onClick={() => focusProperty(p)}
-                    className={`shrink-0 snap-start w-[260px] text-left bg-background border ${
-                      activeId === p.id ? "border-primary" : "border-border"
-                    } overflow-hidden transition-colors`}
+                    className={`shrink-0 snap-start w-[260px] text-left bg-background rounded-lg overflow-hidden transition-colors ${
+                      activeId === p.id ? "ring-1 ring-primary" : ""
+                    }`}
                   >
                     <MobileCard p={p} />
                   </button>
@@ -363,7 +363,7 @@ function MapListItem({
         active ? "bg-primary/5" : "hover:bg-muted/60"
       }`}
     >
-      <div className="w-20 h-20 shrink-0 bg-muted overflow-hidden">
+      <div className="w-20 h-20 shrink-0 bg-muted overflow-hidden rounded-md">
         <img
           src={getPropertyCover(p.cover_photo, p.type)}
           alt={p.address}
@@ -416,10 +416,10 @@ function ActiveCard({
 }) {
   const showStreetView = hasStreetView(p);
   return (
-    <div className="bg-card border border-border overflow-hidden">
+    <div className="bg-card rounded-lg overflow-hidden">
       <div className="flex">
         <div
-          className={`${compact ? "w-24 h-24" : "w-28 h-28"} shrink-0 bg-muted overflow-hidden`}
+          className={`${compact ? "w-24 h-24" : "w-28 h-28"} shrink-0 bg-muted overflow-hidden rounded-l-lg`}
         >
           <img
             src={getPropertyCover(p.cover_photo, p.type)}
@@ -487,7 +487,7 @@ function ActiveCard({
 function MobileCard({ p }: { p: DbProperty }) {
   return (
     <>
-      <div className="h-28 bg-muted overflow-hidden">
+      <div className="h-28 bg-muted overflow-hidden rounded-t-lg">
         <img
           src={getPropertyCover(p.cover_photo, p.type)}
           alt={p.address}
