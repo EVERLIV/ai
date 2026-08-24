@@ -10,7 +10,13 @@ type Props = {
 };
 
 /** Поле-триггер для picker (вместо native select) */
-export default function FilterPickerField({ label, value, placeholder, onClick, className }: Props) {
+export default function FilterPickerField({
+  label,
+  value,
+  placeholder,
+  onClick,
+  className,
+}: Props) {
   const display = value || placeholder || label;
 
   return (

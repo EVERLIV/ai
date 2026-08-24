@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { Plus, X } from "lucide-react";
-import { useCreateTask, type TaskStatus } from "@/hooks/useTasks";
+import { useState } from "react";
+import { type TaskStatus, useCreateTask } from "@/hooks/useTasks";
 
 interface Props {
   status: TaskStatus;
@@ -38,7 +38,6 @@ export default function QuickAddTask({ status, projectId }: Props) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-2.5 shadow-sm mt-1">
       <input
-        autoFocus
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => {
@@ -57,7 +56,10 @@ export default function QuickAddTask({ status, projectId }: Props) {
           Добавить
         </button>
         <button
-          onClick={() => { setOpen(false); setTitle(""); }}
+          onClick={() => {
+            setOpen(false);
+            setTitle("");
+          }}
           className="h-7 w-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
         >
           <X className="w-3.5 h-3.5" />

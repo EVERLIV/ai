@@ -2,7 +2,12 @@
 export const LAND_PROPERTY_TYPE = "Земля";
 export const RESIDENTIAL_LAND_TYPE = "Участок";
 
-export const FLAT_LIKE_TYPES = ["Квартира", "Комната", "Апартаменты", "Доля"] as const;
+export const FLAT_LIKE_TYPES = [
+  "Квартира",
+  "Комната",
+  "Апартаменты",
+  "Доля",
+] as const;
 export const HOUSE_LIKE_TYPES = ["Дом", "Коттедж", "Дача", "Таунхаус"] as const;
 export const PARKING_LIKE_TYPES = ["Гараж", "Машиноместо"] as const;
 
@@ -24,7 +29,9 @@ function collectTypes(source: PropertyTypesSource): string[] {
   }
   const fromExtras = source.extras?.property_types;
   if (Array.isArray(fromExtras) && fromExtras.length > 0) {
-    return fromExtras.filter((t): t is string => typeof t === "string" && t.trim().length > 0);
+    return fromExtras.filter(
+      (t): t is string => typeof t === "string" && t.trim().length > 0,
+    );
   }
   if (source.type?.trim()) return [source.type.trim()];
   return [];
@@ -45,7 +52,9 @@ export function isResidentialLand(source: PropertyTypesSource): boolean {
 /** Коммерческая «Земля» или жилой «Участок» */
 export function isAnyLand(source: PropertyTypesSource): boolean {
   const types = collectTypes(source);
-  return types.includes(LAND_PROPERTY_TYPE) || types.includes(RESIDENTIAL_LAND_TYPE);
+  return (
+    types.includes(LAND_PROPERTY_TYPE) || types.includes(RESIDENTIAL_LAND_TYPE)
+  );
 }
 
 /**

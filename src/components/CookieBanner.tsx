@@ -1,5 +1,5 @@
+import { Cookie, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { X, Cookie } from "lucide-react";
 
 export default function CookieBanner() {
   const [show, setShow] = useState(false);
@@ -39,14 +39,19 @@ export default function CookieBanner() {
         {/* Иконка + заголовок */}
         <div className="flex items-center gap-2 mb-2 pr-6">
           <Cookie className="w-4 h-4 text-primary shrink-0" />
-          <p className="text-sm font-semibold text-foreground">Мы используем cookies</p>
+          <p className="text-sm font-semibold text-foreground">
+            Мы используем cookies
+          </p>
         </div>
 
         {/* Текст */}
         <p className="text-[11px] text-muted-foreground leading-relaxed mb-4">
           Сайт использует файлы cookie для улучшения работы и анализа трафика.
           Продолжая пользоваться сайтом, вы соглашаетесь с{" "}
-          <a href="/privacy" className="text-primary hover:underline">политикой конфиденциальности</a>.
+          <a href="/privacy" className="text-primary hover:underline">
+            политикой конфиденциальности
+          </a>
+          .
         </p>
 
         {/* Кнопки */}

@@ -1,10 +1,10 @@
-import { Link } from "react-router-dom";
 import { ArrowRight, Building2, Home } from "lucide-react";
-import SeoHead from "@/components/SeoHead";
+import { Link } from "react-router-dom";
 import BrandMark from "@/components/BrandMark";
-import { absoluteUrl, SITE } from "@/config/site";
-import { SEGMENT_CHOOSER } from "@/config/propertySegments";
+import SeoHead from "@/components/SeoHead";
 import { CONTACTS } from "@/config/company";
+import { SEGMENT_CHOOSER } from "@/config/propertySegments";
+import { absoluteUrl, SITE } from "@/config/site";
 
 export default function SegmentHomePage() {
   const commercial = SEGMENT_CHOOSER.commercial;
@@ -54,7 +54,8 @@ export default function SegmentHomePage() {
             АрендаСити
           </h1>
           <p className="mt-3 text-center text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
-            Выберите раздел — и перейдите к нужным объектам. Сменить раздел можно в любой момент в шапке сайта.
+            Выберите раздел — и перейдите к нужным объектам. Сменить раздел
+            можно в любой момент в шапке сайта.
           </p>
 
           <div className="mt-8 sm:mt-10 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
@@ -110,7 +111,9 @@ function SegmentCard({
             <h2 className="font-display text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
               {title}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{subtitle}</p>
+            <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+              {subtitle}
+            </p>
           </div>
           <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
         </div>
@@ -127,8 +130,12 @@ function SegmentCard({
               to={item.href}
               className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2 rounded-lg px-2 py-2.5 -mx-2 hover:bg-muted/50 transition-colors"
             >
-              <span className="text-sm font-semibold text-foreground shrink-0">{item.label}</span>
-              <span className="text-xs sm:text-sm text-muted-foreground leading-snug">{item.desc}</span>
+              <span className="text-sm font-semibold text-foreground shrink-0">
+                {item.label}
+              </span>
+              <span className="text-xs sm:text-sm text-muted-foreground leading-snug">
+                {item.desc}
+              </span>
             </Link>
           </li>
         ))}

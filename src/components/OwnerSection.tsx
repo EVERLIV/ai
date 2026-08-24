@@ -1,7 +1,7 @@
+import { Building, CheckCircle2, Loader2, Phone } from "lucide-react";
 import { useState } from "react";
-import { CheckCircle2, Phone, Building, Loader2 } from "lucide-react";
-import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useToast } from "@/hooks/use-toast";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { submitLead } from "@/lib/submitLead";
 
 const perks = [
@@ -13,7 +13,7 @@ const perks = [
 ];
 
 const fieldClass =
-  "w-full px-4 py-3 rounded-xl bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary border border-border";
+  "w-full px-4 py-3 rounded-md bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground/30 border border-border";
 
 export default function OwnerSection() {
   const { ref, isVisible } = useScrollReveal();
@@ -57,7 +57,9 @@ export default function OwnerSection() {
 
   return (
     <section ref={ref} id="Сдать объект" className="py-20">
-      <div className={`container mx-auto px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
+      <div
+        className={`container mx-auto px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}
+      >
         {/* z-index above the floating consultation widget so the submit button stays clickable */}
         <div className="relative z-[45] bg-card rounded-3xl shadow-card overflow-hidden flex flex-col lg:flex-row">
           <div className="flex-1 p-8 lg:p-12">
@@ -69,14 +71,14 @@ export default function OwnerSection() {
               Доверьте аренду профессионалам
             </h2>
             <p className="text-muted-foreground mb-6 leading-relaxed">
-              АрендаСити — агентство коммерческой недвижимости в Иркутске.
-              Мы берём объекты собственников в управление и находим надёжных арендаторов.
-              Вы получаете стабильный доход без лишних забот.
+              АрендаСити — агентство коммерческой недвижимости в Иркутске. Мы
+              берём объекты собственников в управление и находим надёжных
+              арендаторов. Вы получаете стабильный доход без лишних забот.
             </p>
             <div className="space-y-3 mb-8">
               {perks.map((p) => (
                 <div key={p} className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                  <CheckCircle2 className="w-5 h-5 text-foreground shrink-0" strokeWidth={1.75} />
                   <span className="text-sm text-foreground">{p}</span>
                 </div>
               ))}
@@ -87,20 +89,28 @@ export default function OwnerSection() {
             {sent ? (
               <div className="flex flex-col items-center justify-center text-center py-8 gap-3 min-h-[280px]">
                 <CheckCircle2 className="w-12 h-12 text-emerald-500" />
-                <h3 className="font-display text-xl font-semibold text-foreground">Заявка отправлена</h3>
-                <p className="text-sm text-muted-foreground">Мы свяжемся с вами в течение 1 рабочего дня</p>
+                <h3 className="font-display text-xl font-semibold text-foreground">
+                  Заявка отправлена
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Мы свяжемся с вами в течение 1 рабочего дня
+                </p>
                 <button
                   type="button"
                   onClick={() => setSent(false)}
-                  className="mt-2 text-sm text-primary hover:underline"
+                  className="mt-2 text-sm text-foreground hover:underline"
                 >
                   Отправить ещё
                 </button>
               </div>
             ) : (
               <>
-                <h3 className="font-display text-xl font-semibold text-foreground mb-2">Оставьте заявку</h3>
-                <p className="text-sm text-muted-foreground mb-6">Мы свяжемся с вами в течение 1 рабочего дня</p>
+                <h3 className="font-display text-xl font-semibold text-foreground mb-2">
+                  Оставьте заявку
+                </h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Мы свяжемся с вами в течение 1 рабочего дня
+                </p>
                 <form className="space-y-4" onSubmit={handleSubmit}>
                   <input
                     name="name"
@@ -118,7 +128,11 @@ export default function OwnerSection() {
                     autoComplete="tel"
                     className={fieldClass}
                   />
-                  <select name="objectType" defaultValue="" className={fieldClass}>
+                  <select
+                    name="objectType"
+                    defaultValue=""
+                    className={fieldClass}
+                  >
                     <option value="" disabled>
                       Тип объекта
                     </option>
@@ -136,9 +150,13 @@ export default function OwnerSection() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60 disabled:pointer-events-none"
+                    className="w-full py-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60 disabled:pointer-events-none"
                   >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Phone className="w-4 h-4" />}
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Phone className="w-4 h-4" />
+                    )}
                     {loading ? "Отправка…" : "Отправить заявку"}
                   </button>
                 </form>

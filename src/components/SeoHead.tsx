@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { SITE, absoluteUrl } from "@/config/site";
+import { absoluteUrl, SITE } from "@/config/site";
 
 export type SeoHeadProps = {
   title: string;
@@ -21,7 +21,9 @@ function setMeta(attr: "name" | "property", key: string, content: string) {
 }
 
 function setLink(rel: string, href: string) {
-  let el = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null;
+  let el = document.querySelector(
+    `link[rel="${rel}"]`,
+  ) as HTMLLinkElement | null;
   if (!el) {
     el = document.createElement("link");
     el.rel = rel;
@@ -42,7 +44,9 @@ export default function SeoHead({
     const pageUrl = url || window.location.href;
     const canonical = pageUrl.split("#")[0].split("?")[0];
     const ogImage = absoluteUrl(image || SITE.ogImage);
-    const fullTitle = title.includes(SITE.name) ? title : `${title} — ${SITE.name}`;
+    const fullTitle = title.includes(SITE.name)
+      ? title
+      : `${title} — ${SITE.name}`;
     const desc = description.slice(0, 300);
 
     const prevTitle = document.title;

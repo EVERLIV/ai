@@ -1,4 +1,4 @@
-import { X, ExternalLink } from "lucide-react";
+import { ExternalLink, X } from "lucide-react";
 import { useEffect } from "react";
 
 interface StreetViewModalProps {
@@ -12,7 +12,12 @@ interface StreetViewModalProps {
  * Free street-level imagery via Yandex Panoramas embed (best coverage in Russia).
  * No API key required for the embed iframe. Falls back to a link to Yandex Maps panoramas.
  */
-export default function StreetViewModal({ lat, lng, address, onClose }: StreetViewModalProps) {
+export default function StreetViewModal({
+  lat,
+  lng,
+  address,
+  onClose,
+}: StreetViewModalProps) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -43,7 +48,9 @@ export default function StreetViewModal({ lat, lng, address, onClose }: StreetVi
             <p className="text-[10px] font-medium uppercase tracking-widest text-primary">
               Вид с улицы
             </p>
-            <p className="text-sm font-semibold text-foreground truncate">{address}</p>
+            <p className="text-sm font-semibold text-foreground truncate">
+              {address}
+            </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <a
@@ -74,8 +81,7 @@ export default function StreetViewModal({ lat, lng, address, onClose }: StreetVi
         </div>
 
         <div className="px-4 py-2 text-[10px] text-muted-foreground bg-muted/40 border-t border-border">
-          Если панорама недоступна для этой точки —
-          {" "}
+          Если панорама недоступна для этой точки —{" "}
           <a
             href={yandexLink}
             target="_blank"

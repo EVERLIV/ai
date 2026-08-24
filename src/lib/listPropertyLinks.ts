@@ -3,8 +3,12 @@ import type { RequestType } from "@/lib/propertyModeration";
 
 export type ListPropertyMode = "rent" | "management";
 
-export function listPropertyPath(segment: PropertySegment, mode?: ListPropertyMode): string {
-  const base = segment === "residential" ? "/zhilaya/list-property" : "/list-property";
+export function listPropertyPath(
+  segment: PropertySegment,
+  mode?: ListPropertyMode,
+): string {
+  const base =
+    segment === "residential" ? "/zhilaya/list-property" : "/list-property";
   return mode ? `${base}?mode=${mode}` : base;
 }
 

@@ -15,9 +15,13 @@ const INVITE_URL =
   ) ||
   "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/send-agency-invite";
 
-const NOTIFY_SECRET = import.meta.env.VITE_NOTIFY_EMAIL_SECRET as string | undefined;
+const NOTIFY_SECRET = import.meta.env.VITE_NOTIFY_EMAIL_SECRET as
+  | string
+  | undefined;
 
-export type SendAgencyInviteResult = { ok: true } | { ok: false; error: string };
+export type SendAgencyInviteResult =
+  | { ok: true }
+  | { ok: false; error: string };
 
 /** Отправка письма-приглашения в агентство через noreply (тот же SMTP, что у property-email). */
 export async function sendAgencyInviteEmail(
@@ -27,7 +31,9 @@ export async function sendAgencyInviteEmail(
     return { ok: false, error: "Нет email или ссылки приглашения" };
   }
 
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
   if (NOTIFY_SECRET) headers["x-notify-secret"] = NOTIFY_SECRET;
 
   try {
@@ -56,10 +62,18 @@ export async function sendAgencyInviteEmail(
     }
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Ошибка отправки" };
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Ошибка отправки",
+    };
   }
 }
 
-export function buildAgencyInviteLink(token: string, origin = typeof window !== "undefined" ? window.location.origin : "https://arendacity.com") {
+export function buildAgencyInviteLink(
+  token: string,
+  origin = typeof window !== "undefined"
+    ? window.location.origin
+    : "https://arendacity.com",
+) {
   return `${origin}/auth?tab=register&invite=${encodeURIComponent(token)}`;
 }

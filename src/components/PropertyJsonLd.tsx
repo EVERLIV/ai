@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { absoluteUrl, SITE_URL } from "@/config/site";
-import { buildPropertySeoDescription, buildPropertySeoTitle } from "@/lib/seo/propertySeoTitle";
+import {
+  buildPropertySeoDescription,
+  buildPropertySeoTitle,
+} from "@/lib/seo/propertySeoTitle";
 
 type Props = {
   id: string;
@@ -30,7 +33,16 @@ export default function PropertyJsonLd({
   photos,
 }: Props) {
   useEffect(() => {
-    const p = { deal_type, type, extras, address, district, price, area, description };
+    const p = {
+      deal_type,
+      type,
+      extras,
+      address,
+      district,
+      price,
+      area,
+      description,
+    };
     const title = buildPropertySeoTitle(p);
     const desc = buildPropertySeoDescription(p);
     const image = photos?.[0] || coverPhoto || undefined;
@@ -83,7 +95,19 @@ export default function PropertyJsonLd({
     return () => {
       script.remove();
     };
-  }, [id, deal_type, type, extras, address, district, price, area, description, coverPhoto, photos]);
+  }, [
+    id,
+    deal_type,
+    type,
+    extras,
+    address,
+    district,
+    price,
+    area,
+    description,
+    coverPhoto,
+    photos,
+  ]);
 
   return null;
 }

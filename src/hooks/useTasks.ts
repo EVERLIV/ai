@@ -1,10 +1,14 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type TaskStatus = "todo" | "in_progress" | "done";
 export type TaskPriority = "low" | "medium" | "high";
 
-export interface ChecklistItem { id: string; text: string; done: boolean; }
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  done: boolean;
+}
 
 export interface Task {
   id: string;
@@ -49,7 +53,10 @@ export function useProjects() {
   return useQuery({
     queryKey: ["task-projects"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("task_projects").select("*").order("created_at");
+      const { data, error } = await supabase
+        .from("task_projects")
+        .select("*")
+        .order("created_at");
       if (error) throw error;
       return data as TaskProject[];
     },
@@ -60,7 +67,11 @@ export function useCreateProject() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { name: string; color: string }) => {
-      const { data, error } = await supabase.from("task_projects").insert(input).select().single();
+      const { data, error } = await supabase
+        .from("task_projects")
+        .insert(input)
+        .select()
+        .single();
       if (error) throw error;
       return data as TaskProject;
     },
@@ -72,7 +83,10 @@ export function useDeleteProject() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("task_projects").delete().eq("id", id);
+      const { error } = await supabase
+        .from("task_projects")
+        .delete()
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -87,7 +101,10 @@ export function useTasks(projectId?: string) {
   return useQuery({
     queryKey: ["tasks", projectId],
     queryFn: async () => {
-      let q = supabase.from("tasks").select("*").order("created_at", { ascending: false });
+      let q = supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: false });
       if (projectId) q = q.eq("project_id", projectId);
       const { data, error } = await q;
       if (error) throw error;
@@ -105,9 +122,17 @@ export function useTask(id: string | undefined) {
     queryKey: ["task", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("tasks").select("*").eq("id", id!).single();
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .eq("id", id!)
+        .single();
       if (error) throw error;
-      return { ...data, tags: data.tags || [], checklist: data.checklist || [] } as Task;
+      return {
+        ...data,
+        tags: data.tags || [],
+        checklist: data.checklist || [],
+      } as Task;
     },
   });
 }
@@ -116,7 +141,11 @@ export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: Partial<Task>) => {
-      const { data, error } = await supabase.from("tasks").insert(input).select().single();
+      const { data, error } = await supabase
+        .from("tasks")
+        .insert(input)
+        .select()
+        .single();
       if (error) throw error;
       return data as Task;
     },
@@ -128,7 +157,12 @@ export function useUpdateTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: Partial<Task> & { id: string }) => {
-      const { data, error } = await supabase.from("tasks").update(input).eq("id", id).select().single();
+      const { data, error } = await supabase
+        .from("tasks")
+        .update(input)
+        .eq("id", id)
+        .select()
+        .single();
       if (error) throw error;
       return data as Task;
     },
@@ -157,7 +191,10 @@ export function useComments(taskId: string | undefined) {
     enabled: !!taskId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("task_comments").select("*").eq("task_id", taskId!).order("created_at");
+        .from("task_comments")
+        .select("*")
+        .eq("task_id", taskId!)
+        .order("created_at");
       if (error) throw error;
       return data as TaskComment[];
     },
@@ -167,12 +204,21 @@ export function useComments(taskId: string | undefined) {
 export function useAddComment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { task_id: string; content: string; author_name: string }) => {
-      const { data, error } = await supabase.from("task_comments").insert(input).select().single();
+    mutationFn: async (input: {
+      task_id: string;
+      content: string;
+      author_name: string;
+    }) => {
+      const { data, error } = await supabase
+        .from("task_comments")
+        .insert(input)
+        .select()
+        .single();
       if (error) throw error;
       return data as TaskComment;
     },
-    onSuccess: (c) => qc.invalidateQueries({ queryKey: ["task-comments", c.task_id] }),
+    onSuccess: (c) =>
+      qc.invalidateQueries({ queryKey: ["task-comments", c.task_id] }),
   });
 }
 
@@ -183,7 +229,8 @@ export function useDeleteComment() {
       await supabase.from("task_comments").delete().eq("id", id);
       return taskId;
     },
-    onSuccess: (taskId) => qc.invalidateQueries({ queryKey: ["task-comments", taskId] }),
+    onSuccess: (taskId) =>
+      qc.invalidateQueries({ queryKey: ["task-comments", taskId] }),
   });
 }
 
@@ -192,7 +239,12 @@ export interface AIReport {
   id: string;
   report_date: string;
   summary: string;
-  insights: { type: "warning"|"success"|"info"|"critical"; title: string; text: string; emoji: string }[];
+  insights: {
+    type: "warning" | "success" | "info" | "critical";
+    title: string;
+    text: string;
+    emoji: string;
+  }[];
   generated_at: string;
 }
 
@@ -215,9 +267,12 @@ export function useGenerateAIReport() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (force = false) => {
-      const { data, error } = await supabase.functions.invoke("task-ai-report", {
-        body: { force },
-      });
+      const { data, error } = await supabase.functions.invoke(
+        "task-ai-report",
+        {
+          body: { force },
+        },
+      );
       if (error) throw error;
       return data;
     },
@@ -230,10 +285,17 @@ export function useStaffMembers() {
   return useQuery({
     queryKey: ["staff-members"],
     queryFn: async () => {
-      const { data: roles } = await supabase.from("user_roles").select("user_id").in("role", ["admin", "staff", "manager"]);
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ["admin", "staff", "manager"]);
       if (!roles?.length) return [] as StaffMember[];
       const ids = [...new Set(roles.map((r: any) => r.user_id))];
-      const { data: profiles } = await supabase.from("profiles").select("id, full_name, email").in("id", ids).order("full_name");
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", ids)
+        .order("full_name");
       return (profiles || []) as StaffMember[];
     },
   });

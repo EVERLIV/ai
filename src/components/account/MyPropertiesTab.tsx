@@ -1,36 +1,58 @@
-import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Building2, Pencil, XCircle, ExternalLink, MapPin, Maximize2, Archive, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { updateMyPropertyApi, deleteMyPropertyApi } from "@/lib/userPropertyApi";
-import { useMyProperties, type MyProperty } from "@/hooks/useMyProperties";
+  Archive,
+  Building2,
+  ExternalLink,
+  MapPin,
+  Maximize2,
+  Pencil,
+  Plus,
+  Trash2,
+  XCircle,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import PropertySubmissionWizard from "@/components/account/PropertySubmissionWizard";
 import PropertyImage from "@/components/PropertyImage";
 import {
-  MODERATION_STATUS_LABELS,
-  REQUEST_TYPE_LABELS,
-  canEditProperty,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import type { PropertySegment } from "@/config/propertySegments";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { type MyProperty, useMyProperties } from "@/hooks/useMyProperties";
+import {
   canCancelProperty,
+  canEditProperty,
+  MODERATION_STATUS_LABELS,
   type ModerationStatus,
+  REQUEST_TYPE_LABELS,
   type RequestType,
 } from "@/lib/propertyModeration";
+import {
+  deleteMyPropertyApi,
+  updateMyPropertyApi,
+} from "@/lib/userPropertyApi";
 import { cn } from "@/lib/utils";
-import type { PropertySegment } from "@/config/propertySegments";
 
 const STATUS_STYLES: Record<ModerationStatus, string> = {
   draft: "bg-muted text-muted-foreground",
-  on_moderation: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300",
-  published: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300",
+  on_moderation:
+    "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300",
+  published:
+    "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300",
   rejected: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300",
   cancelled: "bg-muted text-muted-foreground",
-  archived: "bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-400",
+  archived:
+    "bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-400",
 };
 
 function StatusBadge({ status }: { status: ModerationStatus }) {
@@ -115,11 +137,15 @@ function PropertyCard({
               <Maximize2 className="w-3 h-3" />
               {p.area} м²
             </span>
-            <span className="font-semibold text-foreground">{formatPrice(p)}</span>
+            <span className="font-semibold text-foreground">
+              {formatPrice(p)}
+            </span>
           </div>
 
           {requestType && (
-            <p className="text-[10px] text-muted-foreground">{REQUEST_TYPE_LABELS[requestType]}</p>
+            <p className="text-[10px] text-muted-foreground">
+              {REQUEST_TYPE_LABELS[requestType]}
+            </p>
           )}
 
           {status === "rejected" && p.rejection_reason && (
@@ -131,7 +157,12 @@ function PropertyCard({
           {/* Действия */}
           <div className="flex items-center justify-end gap-1 mt-auto pt-2">
             {isPublished && (
-              <Button asChild variant="outline" size="sm" className="h-8 text-xs gap-1">
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs gap-1"
+              >
                 <Link to={`/property/${p.id}`}>
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Открыть</span>
@@ -171,7 +202,9 @@ function PropertyCard({
                 <span className="hidden sm:inline">В архив</span>
               </Button>
             )}
-            {(status === "cancelled" || status === "archived" || status === "draft") && (
+            {(status === "cancelled" ||
+              status === "archived" ||
+              status === "draft") && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -205,7 +238,9 @@ export default function MyPropertiesTab({
 
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editProperty, setEditProperty] = useState<MyProperty | null>(null);
-  const [wizardRequestType, setWizardRequestType] = useState<RequestType | undefined>(undefined);
+  const [wizardRequestType, setWizardRequestType] = useState<
+    RequestType | undefined
+  >(undefined);
   const [cancelTarget, setCancelTarget] = useState<MyProperty | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<MyProperty | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MyProperty | null>(null);
@@ -227,7 +262,10 @@ export default function MyPropertiesTab({
   const archiveMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!user) throw new Error("Не авторизован");
-      await updateMyPropertyApi(user.id, id, { moderation_status: "cancelled", is_active: false });
+      await updateMyPropertyApi(user.id, id, {
+        moderation_status: "cancelled",
+        is_active: false,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-properties"] });
@@ -236,7 +274,11 @@ export default function MyPropertiesTab({
       toast({ title: "Объект перемещён в архив" });
     },
     onError: (err: Error) => {
-      toast({ title: "Не удалось архивировать", description: err.message, variant: "destructive" });
+      toast({
+        title: "Не удалось архивировать",
+        description: err.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -252,14 +294,21 @@ export default function MyPropertiesTab({
       toast({ title: "Объект удалён" });
     },
     onError: (err: Error) => {
-      toast({ title: "Не удалось удалить", description: err.message, variant: "destructive" });
+      toast({
+        title: "Не удалось удалить",
+        description: err.message,
+        variant: "destructive",
+      });
     },
   });
 
   const cancelMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!user) throw new Error("Не авторизован");
-      await updateMyPropertyApi(user.id, id, { moderation_status: "cancelled", is_active: false });
+      await updateMyPropertyApi(user.id, id, {
+        moderation_status: "cancelled",
+        is_active: false,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-properties"] });
@@ -268,7 +317,11 @@ export default function MyPropertiesTab({
       toast({ title: "Заявка отменена" });
     },
     onError: (err: Error) => {
-      toast({ title: "Не удалось отменить", description: err.message, variant: "destructive" });
+      toast({
+        title: "Не удалось отменить",
+        description: err.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -287,7 +340,9 @@ export default function MyPropertiesTab({
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-        <h2 className="font-display text-xl font-bold text-foreground">Мои объекты</h2>
+        <h2 className="font-display text-xl font-bold text-foreground">
+          Мои объекты
+        </h2>
         <Button onClick={openNew} size="sm" className="shrink-0">
           <Plus className="w-4 h-4 mr-1" /> Добавить объект за 0 ₽
         </Button>
@@ -296,18 +351,31 @@ export default function MyPropertiesTab({
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2].map((i) => (
-            <div key={i} className="bg-card rounded-lg h-[140px] animate-pulse" />
+            <div
+              key={i}
+              className="bg-card rounded-lg h-[140px] animate-pulse"
+            />
           ))}
         </div>
       ) : properties.length === 0 ? (
-        <div className="bg-card rounded-lg p-8 sm:p-12 text-center">
-          <Building2 className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm font-medium text-foreground mb-1">Объектов пока нет</p>
-          <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">
+        <div className="bg-card rounded-lg p-12 sm:p-16 text-center">
+          <Building2
+            className="w-14 h-14 text-muted-foreground/40 mx-auto mb-6"
+            strokeWidth={1.25}
+          />
+          <p className="font-display text-base font-semibold text-foreground mb-2 tracking-[0.01em]">
+            Объектов пока нет
+          </p>
+          <p className="text-sm text-muted-foreground mb-8 max-w-sm mx-auto leading-relaxed">
             Добавьте объект бесплатно — мы проверим и опубликуем его в каталоге
           </p>
-          <Button onClick={openNew} size="sm">
-            <Plus className="w-4 h-4 mr-1" /> Добавить объект за 0 ₽
+          <Button
+            onClick={openNew}
+            variant="outline"
+            className="rounded-md border-foreground/20 hover:bg-foreground hover:text-background"
+          >
+            <Plus className="w-4 h-4 mr-1.5" strokeWidth={1.75} /> Добавить
+            объект за 0 ₽
           </Button>
         </div>
       ) : (
@@ -335,23 +403,35 @@ export default function MyPropertiesTab({
           }
         }}
         editProperty={editProperty}
-        segment={editProperty?.segment === "residential" ? "residential" : defaultSegment}
+        segment={
+          editProperty?.segment === "residential"
+            ? "residential"
+            : defaultSegment
+        }
         initialRequestType={wizardRequestType}
       />
 
-      <AlertDialog open={!!cancelTarget} onOpenChange={(o) => { if (!o) setCancelTarget(null); }}>
+      <AlertDialog
+        open={!!cancelTarget}
+        onOpenChange={(o) => {
+          if (!o) setCancelTarget(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Отменить заявку?</AlertDialogTitle>
             <AlertDialogDescription>
-              Объект {cancelTarget?.public_id || ""} ({cancelTarget?.address}) будет снят с модерации. Вы сможете создать новую заявку позже.
+              Объект {cancelTarget?.public_id || ""} ({cancelTarget?.address})
+              будет снят с модерации. Вы сможете создать новую заявку позже.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Назад</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => cancelTarget && cancelMutation.mutate(cancelTarget.id)}
+              onClick={() =>
+                cancelTarget && cancelMutation.mutate(cancelTarget.id)
+              }
             >
               Отменить заявку
             </AlertDialogAction>
@@ -359,18 +439,26 @@ export default function MyPropertiesTab({
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!archiveTarget} onOpenChange={(o) => { if (!o) setArchiveTarget(null); }}>
+      <AlertDialog
+        open={!!archiveTarget}
+        onOpenChange={(o) => {
+          if (!o) setArchiveTarget(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Архивировать объект?</AlertDialogTitle>
             <AlertDialogDescription>
-              Объект {archiveTarget?.public_id || ""} ({archiveTarget?.address}) будет скрыт из каталога. Вы сможете восстановить его позже.
+              Объект {archiveTarget?.public_id || ""} ({archiveTarget?.address})
+              будет скрыт из каталога. Вы сможете восстановить его позже.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Назад</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => archiveTarget && archiveMutation.mutate(archiveTarget.id)}
+              onClick={() =>
+                archiveTarget && archiveMutation.mutate(archiveTarget.id)
+              }
             >
               В архив
             </AlertDialogAction>
@@ -378,19 +466,27 @@ export default function MyPropertiesTab({
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (!o) setDeleteTarget(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Удалить объект?</AlertDialogTitle>
             <AlertDialogDescription>
-              Объект {deleteTarget?.public_id || ""} ({deleteTarget?.address}) будет удалён безвозвратно.
+              Объект {deleteTarget?.public_id || ""} ({deleteTarget?.address})
+              будет удалён безвозвратно.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Назад</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+              onClick={() =>
+                deleteTarget && deleteMutation.mutate(deleteTarget.id)
+              }
             >
               Удалить
             </AlertDialogAction>

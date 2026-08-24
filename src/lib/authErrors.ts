@@ -21,12 +21,16 @@ export function describeAuthError(error: AuthLikeError | null | undefined): {
   if (unconfirmed) {
     return {
       title: "Email ещё не подтверждён",
-      description: "Откройте письмо от АрендаСити и перейдите по ссылке. Проверьте папку «Спам».",
+      description:
+        "Откройте письмо от АрендаСити и перейдите по ссылке. Проверьте папку «Спам».",
       kind: "unconfirmed",
     };
   }
 
-  if (code === "invalid_credentials" || message.includes("invalid login credentials")) {
+  if (
+    code === "invalid_credentials" ||
+    message.includes("invalid login credentials")
+  ) {
     return {
       title: "Неверный email или пароль",
       description: "Проверьте данные или восстановите пароль, если забыли его.",
@@ -47,7 +51,10 @@ export function describeAuthError(error: AuthLikeError | null | undefined): {
     };
   }
 
-  if (code === "over_request_rate_limit" || code === "over_email_send_rate_limit") {
+  if (
+    code === "over_request_rate_limit" ||
+    code === "over_email_send_rate_limit"
+  ) {
     return {
       title: "Слишком много попыток",
       description: "Подождите пару минут и попробуйте снова.",
@@ -65,7 +72,8 @@ export function describeAuthError(error: AuthLikeError | null | undefined): {
 
   return {
     title: "Ошибка входа",
-    description: error?.message?.trim() || "Не удалось войти. Попробуйте ещё раз.",
+    description:
+      error?.message?.trim() || "Не удалось войти. Попробуйте ещё раз.",
     kind: "other",
   };
 }

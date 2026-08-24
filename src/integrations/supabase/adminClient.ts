@@ -1,16 +1,19 @@
 export const SUPABASE_URL = "https://api.arendacity.com";
-export const SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3Nzg4NDI5NDAsImV4cCI6MTkzNjUyMjk0MH0.3cy9jvXONpIRoTDA2YOvo13LdBCTZzWTPs-J6_1RhKg";
+export const SERVICE_ROLE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3Nzg4NDI5NDAsImV4cCI6MTkzNjUyMjk0MH0.3cy9jvXONpIRoTDA2YOvo13LdBCTZzWTPs-J6_1RhKg";
 
 const authHeaders = {
-  "apikey": SERVICE_ROLE_KEY,
-  "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
+  apikey: SERVICE_ROLE_KEY,
+  Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
   "Content-Type": "application/json",
 };
 
 export const supabaseAdmin = {
   db: {
     async select(table: string, query = "select=*") {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { headers: authHeaders });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
+        headers: authHeaders,
+      });
       const data = await res.json();
       if (!res.ok) return { data: null as any, error: data };
       return { data, error: null };
@@ -28,7 +31,10 @@ export const supabaseAdmin = {
     async upsert(table: string, row: Record<string, any>) {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
         method: "POST",
-        headers: { ...authHeaders, "Prefer": "resolution=merge-duplicates,return=representation" },
+        headers: {
+          ...authHeaders,
+          Prefer: "resolution=merge-duplicates,return=representation",
+        },
         body: JSON.stringify(row),
       });
       const data = await res.json();
@@ -38,7 +44,7 @@ export const supabaseAdmin = {
     async update(table: string, match: string, row: Record<string, any>) {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${match}`, {
         method: "PATCH",
-        headers: { ...authHeaders, "Prefer": "return=representation" },
+        headers: { ...authHeaders, Prefer: "return=representation" },
         body: JSON.stringify(row),
       });
       const data = await res.json();
@@ -50,7 +56,10 @@ export const supabaseAdmin = {
         method: "DELETE",
         headers: authHeaders,
       });
-      if (!res.ok) { const data = await res.json(); return { error: data }; }
+      if (!res.ok) {
+        const data = await res.json();
+        return { error: data };
+      }
       return { error: null };
     },
   },
@@ -65,7 +74,7 @@ export const supabaseAdmin = {
       if (role !== "client") {
         await fetch(`${SUPABASE_URL}/rest/v1/user_roles`, {
           method: "POST",
-          headers: { ...authHeaders, "Prefer": "return=minimal" },
+          headers: { ...authHeaders, Prefer: "return=minimal" },
           body: JSON.stringify({ user_id: userId, role }),
         });
       }
@@ -73,17 +82,23 @@ export const supabaseAdmin = {
     async toggle(userId: string, role: string, hasIt: boolean) {
       if (hasIt) {
         // Снимаем роль — возвращаем client
-        await fetch(`${SUPABASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&role=eq.${role}`, {
-          method: "DELETE",
-          headers: authHeaders,
-        });
+        await fetch(
+          `${SUPABASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&role=eq.${role}`,
+          {
+            method: "DELETE",
+            headers: authHeaders,
+          },
+        );
         // Если больше нет других ролей — ставим client
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&select=role`, { headers: authHeaders });
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&select=role`,
+          { headers: authHeaders },
+        );
         const remaining = await res.json();
         if (!remaining?.length) {
           await fetch(`${SUPABASE_URL}/rest/v1/user_roles`, {
             method: "POST",
-            headers: { ...authHeaders, "Prefer": "return=minimal" },
+            headers: { ...authHeaders, Prefer: "return=minimal" },
             body: JSON.stringify({ user_id: userId, role: "client" }),
           });
         }
@@ -95,27 +110,36 @@ export const supabaseAdmin = {
         });
         await fetch(`${SUPABASE_URL}/rest/v1/user_roles`, {
           method: "POST",
-          headers: { ...authHeaders, "Prefer": "return=minimal" },
+          headers: { ...authHeaders, Prefer: "return=minimal" },
           body: JSON.stringify({ user_id: userId, role }),
         });
       }
     },
   },
   storage: {
-    async upload(bucket: string, path: string, file: File): Promise<{ error: string | null }> {
-      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`, {
-        method: "POST",
-        headers: {
-          apikey: SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-          "Content-Type": file.type || "application/octet-stream",
-          "x-upsert": "true",
+    async upload(
+      bucket: string,
+      path: string,
+      file: File,
+    ): Promise<{ error: string | null }> {
+      const res = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`,
+        {
+          method: "POST",
+          headers: {
+            apikey: SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+            "Content-Type": file.type || "application/octet-stream",
+            "x-upsert": "true",
+          },
+          body: file,
         },
-        body: file,
-      });
+      );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        return { error: data.error ?? data.message ?? `Upload failed (${res.status})` };
+        return {
+          error: data.error ?? data.message ?? `Upload failed (${res.status})`,
+        };
       }
       return { error: null };
     },
@@ -140,15 +164,31 @@ export const supabaseAdmin = {
     if (!res.ok) {
       const msg =
         typeof data === "object" && data
-          ? String(data.message || data.msg || data.error || data.hint || JSON.stringify(data))
+          ? String(
+              data.message ||
+                data.msg ||
+                data.error ||
+                data.hint ||
+                JSON.stringify(data),
+            )
           : `HTTP ${res.status}`;
-      return { data: null, error: { message: msg, ...(typeof data === "object" && data ? data : {}) } };
+      return {
+        data: null,
+        error: {
+          message: msg,
+          ...(typeof data === "object" && data ? data : {}),
+        },
+      };
     }
     return { data, error: null };
   },
   auth: {
     admin: {
-      async createUser(attrs: { email: string; password: string; full_name?: string }) {
+      async createUser(attrs: {
+        email: string;
+        password: string;
+        full_name?: string;
+      }) {
         // Prefer GoTrue Admin; if gateway returns 403, create via Auth signup is not available
         // with email_confirm — use REST only after SQL helper exists is not enough for create.
         const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
@@ -158,7 +198,9 @@ export const supabaseAdmin = {
             email: attrs.email,
             password: attrs.password,
             email_confirm: true,
-            user_metadata: attrs.full_name ? { full_name: attrs.full_name } : {},
+            user_metadata: attrs.full_name
+              ? { full_name: attrs.full_name }
+              : {},
           }),
         });
         const data = await res.json().catch(() => ({}));
@@ -169,7 +211,11 @@ export const supabaseAdmin = {
               message:
                 res.status === 403
                   ? "Auth Admin API закрыт (403). Создание пользователей через /auth/v1/admin недоступно — откройте маршрут в Kong или создайте юзера через регистрацию."
-                  : String((data as any)?.msg || (data as any)?.message || `HTTP ${res.status}`),
+                  : String(
+                      (data as any)?.msg ||
+                        (data as any)?.message ||
+                        `HTTP ${res.status}`,
+                    ),
               ...((typeof data === "object" && data) || {}),
             },
           };
@@ -214,12 +260,18 @@ export const supabaseAdmin = {
         }));
         return { data: { users }, error: null };
       },
-      async updateUserById(userId: string, attrs: { password?: string; email_confirm?: boolean }) {
-        const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
-          method: "PUT",
-          headers: authHeaders,
-          body: JSON.stringify(attrs),
-        });
+      async updateUserById(
+        userId: string,
+        attrs: { password?: string; email_confirm?: boolean },
+      ) {
+        const res = await fetch(
+          `${SUPABASE_URL}/auth/v1/admin/users/${userId}`,
+          {
+            method: "PUT",
+            headers: authHeaders,
+            body: JSON.stringify(attrs),
+          },
+        );
         if (res.ok) {
           const data = await res.json();
           return { data, error: null };
@@ -243,7 +295,9 @@ export const supabaseAdmin = {
           }
         }
         if (attrs.email_confirm) {
-          const { error } = await supabaseAdmin.rpc("admin_confirm_user", { p_user_id: userId });
+          const { error } = await supabaseAdmin.rpc("admin_confirm_user", {
+            p_user_id: userId,
+          });
           if (error) {
             return {
               data: null,
@@ -270,12 +324,19 @@ export const supabaseAdmin = {
         );
         if (res.ok) return { error: null };
 
-        const { error } = await supabaseAdmin.rpc("admin_delete_user", { p_user_id: userId });
+        const { error } = await supabaseAdmin.rpc("admin_delete_user", {
+          p_user_id: userId,
+        });
         if (error) {
           const data = await res.json().catch(() => ({}));
           const authMsg =
             typeof data === "object" && data
-              ? String((data as any).msg || (data as any).message || (data as any).error || "")
+              ? String(
+                  (data as any).msg ||
+                    (data as any).message ||
+                    (data as any).error ||
+                    "",
+                )
               : "";
           return {
             error: {

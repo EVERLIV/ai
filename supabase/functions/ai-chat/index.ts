@@ -12,7 +12,8 @@
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Headers":
+    "authorization, apikey, content-type, x-client-info",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -30,16 +31,24 @@ const json = (body: unknown, status: number) =>
   new Response(JSON.stringify(body), {
     status,
     // charset обязателен: без него кириллица приходит битой.
-    headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json; charset=utf-8",
+    },
   });
 
 const num = (v: unknown) => Number(v) || 0;
 
 /** Разряды пробелами без Intl: в Deno Edge нет полных данных ICU. */
-const fmt = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+const fmt = (n: number) =>
+  String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
 /** Каталог меняется редко — держим в памяти инстанса 5 минут. */
-let cache: { text: string; summary: string; at: number } = { text: "", summary: "", at: 0 };
+let cache: { text: string; summary: string; at: number } = {
+  text: "",
+  summary: "",
+  at: 0,
+};
 
 async function loadCatalog() {
   if (cache.text && Date.now() - cache.at < 5 * 60_000) return cache;
@@ -53,52 +62,74 @@ async function loadCatalog() {
   });
 
   const resp = await fetch(`${CATALOG_URL}/rest/v1/properties?${params}`, {
-    headers: { apikey: CATALOG_ANON_KEY, Authorization: `Bearer ${CATALOG_ANON_KEY}` },
+    headers: {
+      apikey: CATALOG_ANON_KEY,
+      Authorization: `Bearer ${CATALOG_ANON_KEY}`,
+    },
   });
   if (!resp.ok) throw new Error(`catalog ${resp.status}`);
 
-  const rows = (await resp.json() as Record<string, unknown>[]).sort((a, b) => {
-    const pa = num(a.price), pb = num(b.price);
-    if (pa > 0 && pb > 0) return pa - pb;
-    if (pa > 0) return -1;
-    if (pb > 0) return 1;
-    return 0;
-  });
+  const rows = ((await resp.json()) as Record<string, unknown>[]).sort(
+    (a, b) => {
+      const pa = num(a.price),
+        pb = num(b.price);
+      if (pa > 0 && pb > 0) return pa - pb;
+      if (pa > 0) return -1;
+      if (pb > 0) return 1;
+      return 0;
+    },
+  );
 
-  const text = rows.map((p) => {
-    const parts = [
-      `${p.type} · ${p.address}${p.district ? ` (${p.district})` : ""}`,
-      `${num(p.area)} м²`,
-      num(p.price) > 0 ? `${fmt(num(p.price))} ₽/мес` : "по запросу",
-    ];
-    if (num(p.price_per_m2) > 0) parts.push(`${fmt(num(p.price_per_m2))} ₽/м²`);
-    if (p.class) parts.push(`класс ${p.class}`);
-    if (p.condition) parts.push(String(p.condition));
-    if (num(p.floor) > 0) parts.push(`этаж ${p.floor}/${p.total_floors ?? "—"}`);
-    if (p.deposit) parts.push(`депозит ${p.deposit}`);
-    if (Array.isArray(p.features) && p.features.length) parts.push((p.features as string[]).join(", "));
-    return `• [${p.public_id ?? "—"}] ${parts.join(" · ")}`;
-  }).join("\n") || "Сейчас в аренду ничего не опубликовано.";
+  const text =
+    rows
+      .map((p) => {
+        const parts = [
+          `${p.type} · ${p.address}${p.district ? ` (${p.district})` : ""}`,
+          `${num(p.area)} м²`,
+          num(p.price) > 0 ? `${fmt(num(p.price))} ₽/мес` : "по запросу",
+        ];
+        if (num(p.price_per_m2) > 0)
+          parts.push(`${fmt(num(p.price_per_m2))} ₽/м²`);
+        if (p.class) parts.push(`класс ${p.class}`);
+        if (p.condition) parts.push(String(p.condition));
+        if (num(p.floor) > 0)
+          parts.push(`этаж ${p.floor}/${p.total_floors ?? "—"}`);
+        if (p.deposit) parts.push(`депозит ${p.deposit}`);
+        if (Array.isArray(p.features) && p.features.length)
+          parts.push((p.features as string[]).join(", "));
+        return `• [${p.public_id ?? "—"}] ${parts.join(" · ")}`;
+      })
+      .join("\n") || "Сейчас в аренду ничего не опубликовано.";
 
   const prices = rows.map((p) => num(p.price)).filter((v) => v > 0);
   const areas = rows.map((p) => num(p.area)).filter((v) => v > 0);
   const byType: Record<string, number> = {};
-  for (const p of rows) byType[String(p.type ?? "—")] = (byType[String(p.type ?? "—")] ?? 0) + 1;
+  for (const p of rows)
+    byType[String(p.type ?? "—")] = (byType[String(p.type ?? "—")] ?? 0) + 1;
 
   const summary = [
     `Всего объектов в аренду: ${rows.length}.`,
-    `По типам: ${Object.entries(byType).map(([t, n]) => `${t} — ${n}`).join(", ")}.`,
+    `По типам: ${Object.entries(byType)
+      .map(([t, n]) => `${t} — ${n}`)
+      .join(", ")}.`,
     prices.length
       ? `Ставки: от ${fmt(Math.min(...prices))} до ${fmt(Math.max(...prices))} ₽/мес.`
       : "",
-    areas.length ? `Площади: от ${Math.min(...areas)} до ${Math.max(...areas)} м².` : "",
-  ].filter(Boolean).join(" ");
+    areas.length
+      ? `Площади: от ${Math.min(...areas)} до ${Math.max(...areas)} м².`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   cache = { text, summary, at: Date.now() };
   return cache;
 }
 
-function systemPrompt(cat: { text: string; summary: string }, userName: string) {
+function systemPrompt(
+  cat: { text: string; summary: string },
+  userName: string,
+) {
   return `Ты — Анастасия, консультант агентства недвижимости АРЕНДА СИТИ.
 Общаешься в чате на сайте. Помогаешь подобрать помещение в аренду.
 
@@ -146,7 +177,8 @@ ${cat.text}${userName ? `\n\nПользователя зовут ${userName}. О
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS")
+    return new Response(null, { headers: corsHeaders });
 
   try {
     const key = Deno.env.get("ANTHROPIC_API_KEY");
@@ -160,7 +192,11 @@ Deno.serve(async (req) => {
     if (all.filter((m) => m.role === "user").length > MAX_MESSAGES) {
       return json({ error: "Диалог слишком длинный. Позвоните нам." }, 400);
     }
-    if (all.some((m) => typeof m.content !== "string" || m.content.length > MAX_LENGTH)) {
+    if (
+      all.some(
+        (m) => typeof m.content !== "string" || m.content.length > MAX_LENGTH,
+      )
+    ) {
       return json({ error: "Сообщение слишком длинное." }, 400);
     }
 
@@ -189,7 +225,10 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 1024,
-        system: systemPrompt(catalog, typeof body.userName === "string" ? body.userName.slice(0, 60) : ""),
+        system: systemPrompt(
+          catalog,
+          typeof body.userName === "string" ? body.userName.slice(0, 60) : "",
+        ),
         messages,
       }),
     });
@@ -197,12 +236,18 @@ Deno.serve(async (req) => {
     if (!resp.ok) {
       const detail = await resp.text();
       console.error("anthropic", resp.status, detail.slice(0, 300));
-      if (resp.status === 429) return json({ error: "Слишком много запросов. Попробуйте через минуту." }, 429);
+      if (resp.status === 429)
+        return json(
+          { error: "Слишком много запросов. Попробуйте через минуту." },
+          429,
+        );
       return json({ error: "Чат временно недоступен." }, 502);
     }
 
     const data = await resp.json();
-    const text = (data.content ?? []).find((b: { type: string }) => b.type === "text")?.text ?? "";
+    const text =
+      (data.content ?? []).find((b: { type: string }) => b.type === "text")
+        ?.text ?? "";
     if (!text) return json({ error: "Пустой ответ модели." }, 502);
 
     return json({ reply: text }, 200);

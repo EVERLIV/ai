@@ -1,8 +1,8 @@
+import { ExternalLink, Eye, MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Eye, ExternalLink, MapPin, Building2 } from "lucide-react";
+import { IRKUTSK_CENTER_LNGLAT, loadYandexMaps } from "@/lib/yandexMaps";
 import StreetViewModal from "./StreetViewModal";
-import { loadYandexMaps, IRKUTSK_CENTER_LNGLAT } from "@/lib/yandexMaps";
 import YandexMapFallback from "./YandexMapFallback";
 
 interface PropertyMapProps {
@@ -13,7 +13,13 @@ interface PropertyMapProps {
   height?: number;
 }
 
-export default function PropertyMap({ address, district, lat, lng, height = 320 }: PropertyMapProps) {
+export default function PropertyMap({
+  address,
+  district,
+  lat,
+  lng,
+  height = 320,
+}: PropertyMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const [streetOpen, setStreetOpen] = useState(false);
@@ -25,7 +31,9 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
     !Number.isNaN(lat) &&
     !Number.isNaN(lng) &&
     !(lat === 0 && lng === 0);
-  const center: [number, number] = hasCoords ? [lng!, lat!] : IRKUTSK_CENTER_LNGLAT;
+  const center: [number, number] = hasCoords
+    ? [lng!, lat!]
+    : IRKUTSK_CENTER_LNGLAT;
 
   useEffect(() => {
     let cancelled = false;
@@ -35,7 +43,13 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
       .then((ymaps3) => {
         if (cancelled || !containerRef.current) return;
         setMapFailed(false);
-        const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapMarker, YMapControls } = ymaps3;
+        const {
+          YMap,
+          YMapDefaultSchemeLayer,
+          YMapDefaultFeaturesLayer,
+          YMapMarker,
+          YMapControls,
+        } = ymaps3;
         const { YMapZoomControl } = ymaps3.controls ?? {};
 
         map = new YMap(containerRef.current, {
@@ -56,7 +70,7 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
           el.className = "pm-pin";
           const shortAddr = address.split(",").slice(0, 2).join(",").trim();
           const iconSvg = renderToStaticMarkup(
-            <MapPin size={16} color="#fff" strokeWidth={2.5} />
+            <MapPin size={16} color="#fff" strokeWidth={2.5} />,
           );
           el.innerHTML = `
             <div class="pm-pin__bubble">
@@ -77,11 +91,13 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
 
     return () => {
       cancelled = true;
-      try { map?.destroy?.(); } catch {}
+      try {
+        map?.destroy?.();
+      } catch {}
       mapRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [hasCoords, center, address.split]);
 
   const yandexUrl = hasCoords
     ? `https://yandex.ru/maps/?ll=${lng},${lat}&z=16&pt=${lng},${lat},pm2rdm`
@@ -89,7 +105,10 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
 
   return (
     <div className="space-y-3">
-      <div className="relative bg-muted overflow-hidden rounded-xl" style={{ height }}>
+      <div
+        className="relative bg-muted overflow-hidden rounded-xl"
+        style={{ height }}
+      >
         <div ref={containerRef} className="absolute inset-0 map-canvas-muted" />
 
         {mapFailed && (
@@ -113,7 +132,12 @@ export default function PropertyMap({ address, district, lat, lng, height = 320 
         )}
 
         {streetOpen && hasCoords && (
-          <StreetViewModal lat={lat!} lng={lng!} address={address} onClose={() => setStreetOpen(false)} />
+          <StreetViewModal
+            lat={lat!}
+            lng={lng!}
+            address={address}
+            onClose={() => setStreetOpen(false)}
+          />
         )}
       </div>
 

@@ -1,5 +1,5 @@
+import { Download, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { X, Download } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -7,7 +7,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function InstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
   const [installing, setInstalling] = useState(false);
 
@@ -15,7 +16,8 @@ export default function InstallPrompt() {
     if (
       window.matchMedia("(display-mode: standalone)").matches ||
       localStorage.getItem("pwa_install_dismissed")
-    ) return;
+    )
+      return;
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -49,13 +51,17 @@ export default function InstallPrompt() {
       <div className="max-w-screen-xl mx-auto px-4 h-10 flex items-center gap-3">
         {/* Иконка */}
         <div className="w-5 h-5 bg-primary flex items-center justify-center shrink-0">
-          <span className="text-primary-foreground font-bold text-[10px]">А</span>
+          <span className="text-primary-foreground font-bold text-[10px]">
+            А
+          </span>
         </div>
 
         {/* Текст */}
         <p className="text-xs flex-1 min-w-0 truncate">
           <span className="font-semibold">АрендаСити</span>
-          <span className="text-background/60 ml-2 hidden sm:inline">— установите приложение для быстрого доступа к каталогу</span>
+          <span className="text-background/60 ml-2 hidden sm:inline">
+            — установите приложение для быстрого доступа к каталогу
+          </span>
         </p>
 
         {/* Кнопка установить */}

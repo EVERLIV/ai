@@ -199,7 +199,10 @@ const IRKUTSK_AREA_HINTS: { needle: RegExp; district: string }[] = [
 ];
 
 /** Подставить район/город из текста адреса Яндекса */
-export function inferDistrictFromAddress(address: string, fallback = "Кировский"): string {
+export function inferDistrictFromAddress(
+  address: string,
+  fallback = "Кировский",
+): string {
   const text = address.trim();
   if (!text) return fallback;
 
@@ -207,13 +210,16 @@ export function inferDistrictFromAddress(address: string, fallback = "Киров
     if (needle.test(text)) return district;
   }
 
-  const looksLikeIrkutsk = /иркутск/i.test(text) || !CITY_HINTS.some((h) => h.needle.test(text));
+  const looksLikeIrkutsk =
+    /иркутск/i.test(text) || !CITY_HINTS.some((h) => h.needle.test(text));
   if (looksLikeIrkutsk) {
     for (const { needle, district } of IRKUTSK_AREA_HINTS) {
       if (needle.test(text)) return district;
     }
   }
 
-  const exact = DISTRICTS.find((d) => text.toLowerCase().includes(d.toLowerCase()));
+  const exact = DISTRICTS.find((d) =>
+    text.toLowerCase().includes(d.toLowerCase()),
+  );
   return exact || fallback;
 }

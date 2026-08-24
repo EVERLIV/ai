@@ -1,12 +1,22 @@
-import { useState, useRef, useEffect } from "react";
-import { Sparkles, X, Send, Phone, PhoneOff, Mic } from "lucide-react";
+import { Mic, Phone, PhoneOff, Send, Sparkles, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useElevenLabsVoice } from "@/hooks/useElevenLabsVoice";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-const quickChips = ["Офис до 100 м² в Иркутске", "Склад в Ангарске", "Торговое на Карла Маркса"];
+const quickChips = [
+  "Офис до 100 м² в Иркутске",
+  "Склад в Ангарске",
+  "Торговое на Карла Маркса",
+];
 
-export default function AIAssistant({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+export default function AIAssistant({
+  open,
+  onToggle,
+}: {
+  open: boolean;
+  onToggle: () => void;
+}) {
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
@@ -28,7 +38,7 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading, transcripts, isVoiceMode]);
+  }, []);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
@@ -71,7 +81,11 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
               <div
                 className={`w-9 h-9 rounded-full flex items-center justify-center ${isVoiceMode ? "bg-primary/15" : "bg-gold/15"}`}
               >
-                {isVoiceMode ? <Phone className="w-4 h-4 text-primary" /> : <Sparkles className="w-4 h-4 text-gold" />}
+                {isVoiceMode ? (
+                  <Phone className="w-4 h-4 text-primary" />
+                ) : (
+                  <Sparkles className="w-4 h-4 text-gold" />
+                )}
               </div>
               <div>
                 <div className="text-sm font-semibold text-foreground">
@@ -81,7 +95,11 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${isVoiceMode ? "bg-primary animate-pulse" : "bg-green-500"} status-pulse`}
                   />
-                  {isVoiceMode ? (isSpeaking ? "говорит..." : "слушает...") : "онлайн"}
+                  {isVoiceMode
+                    ? isSpeaking
+                      ? "говорит..."
+                      : "слушает..."
+                    : "онлайн"}
                 </div>
               </div>
             </div>
@@ -99,17 +117,23 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
                 {transcripts.length === 0 && (
                   <div className="text-center text-muted-foreground text-sm py-8">
                     <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Mic className={`w-8 h-8 text-primary ${isSpeaking ? "" : "animate-pulse"}`} />
+                      <Mic
+                        className={`w-8 h-8 text-primary ${isSpeaking ? "" : "animate-pulse"}`}
+                      />
                     </div>
                     <p className="font-medium">Говорите — агент слушает</p>
-                    <p className="text-xs mt-1">Каталог объектов подгружен в контекст</p>
+                    <p className="text-xs mt-1">
+                      Каталог объектов подгружен в контекст
+                    </p>
                   </div>
                 )}
                 {transcripts.map((t, i) => (
                   <div
                     key={i}
                     className={`text-sm px-4 py-2.5 rounded-xl ${
-                      t.role === "user" ? "bg-primary/10 text-foreground ml-8" : "bg-muted text-foreground mr-8"
+                      t.role === "user"
+                        ? "bg-primary/10 text-foreground ml-8"
+                        : "bg-muted text-foreground mr-8"
                     }`}
                   >
                     {t.content}
@@ -132,7 +156,10 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
             <>
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
                 {messages.map((m, i) => (
-                  <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    key={i}
+                    className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
                     <div
                       className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                         m.role === "user"
@@ -199,7 +226,9 @@ export default function AIAssistant({ open, onToggle }: { open: boolean; onToggl
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/30 text-primary hover:bg-primary/5 transition-colors text-sm font-medium disabled:opacity-50"
                 >
                   <Phone className="w-4 h-4" />
-                  {isConnecting ? "Подключение..." : "Позвонить ИИ-консультанту"}
+                  {isConnecting
+                    ? "Подключение..."
+                    : "Позвонить ИИ-консультанту"}
                 </button>
               </div>
             </>

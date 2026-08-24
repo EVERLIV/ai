@@ -14,7 +14,10 @@ type SaJson = {
 };
 
 function sheetsConfigured() {
-  return Boolean(Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON") && Deno.env.get("GOOGLE_SHEETS_ID"));
+  return Boolean(
+    Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON") &&
+      Deno.env.get("GOOGLE_SHEETS_ID"),
+  );
 }
 
 function sheetId() {
@@ -26,7 +29,9 @@ function sheetRange() {
 }
 
 function parseSa(): SaJson {
-  let raw = (Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON") || "").trim().replace(/^\uFEFF/, "");
+  const raw = (Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON") || "")
+    .trim()
+    .replace(/^\uFEFF/, "");
   if (!raw) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON пуст");
 
   const tryParse = (s: string): unknown => JSON.parse(s);
@@ -37,14 +42,17 @@ function parseSa(): SaJson {
   } catch {
     // Секрет из dotenv часто приходит как {\"type\":...} или в лишних кавычках
     const unwrapped =
-      (raw.startsWith("'") && raw.endsWith("'")) || (raw.startsWith('"') && raw.endsWith('"'))
+      (raw.startsWith("'") && raw.endsWith("'")) ||
+      (raw.startsWith('"') && raw.endsWith('"'))
         ? raw.slice(1, -1)
         : raw;
     const unescaped = unwrapped.replace(/\\"/g, '"');
     try {
       parsed = tryParse(unescaped);
     } catch {
-      throw new Error("Ключ Google Sheets битый (JSON). Нужно заново вставить GOOGLE_SERVICE_ACCOUNT_JSON.");
+      throw new Error(
+        "Ключ Google Sheets битый (JSON). Нужно заново вставить GOOGLE_SERVICE_ACCOUNT_JSON.",
+      );
     }
   }
 
@@ -52,7 +60,9 @@ function parseSa(): SaJson {
     try {
       parsed = tryParse(parsed);
     } catch {
-      throw new Error("Ключ Google Sheets битый (JSON). Нужно заново вставить GOOGLE_SERVICE_ACCOUNT_JSON.");
+      throw new Error(
+        "Ключ Google Sheets битый (JSON). Нужно заново вставить GOOGLE_SERVICE_ACCOUNT_JSON.",
+      );
     }
   }
 
@@ -94,7 +104,8 @@ async function importPrivateKey(pem: string) {
 let cachedToken: { access: string; exp: number } | null = null;
 
 async function getAccessToken() {
-  if (cachedToken && Date.now() < cachedToken.exp - 60_000) return cachedToken.access;
+  if (cachedToken && Date.now() < cachedToken.exp - 60_000)
+    return cachedToken.access;
 
   const sa = parseSa();
   const now = Math.floor(Date.now() / 1000);
@@ -117,17 +128,22 @@ async function getAccessToken() {
   );
   const jwt = `${unsigned}.${b64url(sig)}`;
 
-  const resp = await fetch(sa.token_uri || "https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwt,
-    }),
-  });
+  const resp = await fetch(
+    sa.token_uri || "https://oauth2.googleapis.com/token",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        assertion: jwt,
+      }),
+    },
+  );
   const data = await resp.json();
   if (!resp.ok || !data.access_token) {
-    const desc = String(data.error_description || data.error || `Google token ${resp.status}`);
+    const desc = String(
+      data.error_description || data.error || `Google token ${resp.status}`,
+    );
     if (/account not found/i.test(desc)) {
       throw new Error(
         "Google не находит service account (ключ удалён или битый). Нужен новый JSON-ключ.",
@@ -135,20 +151,26 @@ async function getAccessToken() {
     }
     throw new Error(desc);
   }
-  cachedToken = { access: data.access_token, exp: Date.now() + (data.expires_in || 3600) * 1000 };
+  cachedToken = {
+    access: data.access_token,
+    exp: Date.now() + (data.expires_in || 3600) * 1000,
+  };
   return cachedToken.access;
 }
 
 async function sheetsFetch(path: string, init?: RequestInit) {
   const token = await getAccessToken();
-  const resp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId()}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
+  const resp = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${sheetId()}${path}`,
+    {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        ...(init?.headers || {}),
+      },
     },
-  });
+  );
   const data = await resp.json().catch(() => ({}));
   if (!resp.ok) {
     throw new Error(data.error?.message || `Sheets API ${resp.status}`);
@@ -173,7 +195,9 @@ function rangeStartRow(range: string): number {
   return 1;
 }
 
-export async function readSheetTable(range = sheetRange()): Promise<SheetTable> {
+export async function readSheetTable(
+  range = sheetRange(),
+): Promise<SheetTable> {
   const enc = encodeURIComponent(range);
   const data = await sheetsFetch(`/values/${enc}?majorDimension=ROWS`);
   const values: string[][] = data.values || [];
@@ -192,7 +216,9 @@ export async function readSheetTable(range = sheetRange()): Promise<SheetTable> 
 
 function colIndex(headers: string[], name: string) {
   const n = name.toLowerCase();
-  const i = headers.findIndex((h) => h.toLowerCase() === n || h.toLowerCase().includes(n));
+  const i = headers.findIndex(
+    (h) => h.toLowerCase() === n || h.toLowerCase().includes(n),
+  );
   return i;
 }
 

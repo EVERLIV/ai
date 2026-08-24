@@ -1,22 +1,45 @@
+import {
+  ArrowRight,
+  CheckCircle,
+  Ruler,
+  Shield,
+  Truck,
+  Warehouse,
+} from "lucide-react";
 import { Link } from "react-router-dom";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
-import CategoryPropertySlider from "@/components/CategoryPropertySlider";
+import heroImg from "@/assets/hero-warehouses.jpg";
 import CategoryContactForm from "@/components/CategoryContactForm";
+import CategoryPropertySlider from "@/components/CategoryPropertySlider";
 import NewsSidebar from "@/components/NewsSidebar";
 import PropertyAIChat from "@/components/PropertyAIChat";
-import heroImg from "@/assets/hero-warehouses.jpg";
-import { Warehouse, Truck, Shield, Ruler, CheckCircle, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import SeoHead from "@/components/SeoHead";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import SiteFooter from "@/components/SiteFooter";
+import SiteHeader from "@/components/SiteHeader";
+import { Button } from "@/components/ui/button";
 import { absoluteUrl } from "@/config/site";
+import { buildCatalogUrl } from "@/lib/catalogLinks";
 
 const benefits = [
-  { icon: Truck, title: "Логистика", desc: "Объекты рядом с федеральными трассами и ж/д узлами" },
-  { icon: Warehouse, title: "Любой формат", desc: "Отапливаемые, холодные, морозильные склады и ангары" },
-  { icon: Ruler, title: "Гибкая площадь", desc: "От 50 м² для малого бизнеса до 50 000 м² логистических комплексов" },
-  { icon: Shield, title: "Безопасность", desc: "Охрана, видеонаблюдение, контроль доступа на всех объектах" },
+  {
+    icon: Truck,
+    title: "Логистика",
+    desc: "Объекты рядом с федеральными трассами и ж/д узлами",
+  },
+  {
+    icon: Warehouse,
+    title: "Любой формат",
+    desc: "Отапливаемые, холодные, морозильные склады и ангары",
+  },
+  {
+    icon: Ruler,
+    title: "Гибкая площадь",
+    desc: "От 50 м² для малого бизнеса до 50 000 м² логистических комплексов",
+  },
+  {
+    icon: Shield,
+    title: "Безопасность",
+    desc: "Охрана, видеонаблюдение, контроль доступа на всех объектах",
+  },
 ];
 
 const features = [
@@ -41,7 +64,13 @@ export default function WarehousesPage() {
       {/* Hero */}
       <section className="relative pt-14 md:pt-[98px]">
         <div className="relative h-[480px] sm:h-[540px] overflow-hidden">
-          <img src={heroImg} alt="Складские помещения в Иркутске" width={1920} height={1080} className="w-full h-full object-cover" />
+          <img
+            src={heroImg}
+            alt="Складские помещения в Иркутске"
+            width={1920}
+            height={1080}
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/50 to-transparent" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
@@ -53,8 +82,9 @@ export default function WarehousesPage() {
                   Аренда складов и производственных помещений в&nbsp;Иркутске
                 </h1>
                 <p className="text-lg text-white/80 leading-relaxed">
-                  Складские комплексы, производственные базы и ангары в Иркутске, Ангарске и Шелехове. 
-                  Отапливаемые и холодные — от&nbsp;50&nbsp;м² до&nbsp;50&nbsp;000&nbsp;м².
+                  Складские комплексы, производственные базы и ангары в
+                  Иркутске, Ангарске и Шелехове. Отапливаемые и холодные —
+                  от&nbsp;50&nbsp;м² до&nbsp;50&nbsp;000&nbsp;м².
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <Link to={buildCatalogUrl({ types: "Склад" })}>
@@ -63,7 +93,11 @@ export default function WarehousesPage() {
                     </Button>
                   </Link>
                   <a href="#contact-form">
-                    <Button size="lg" variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+                    >
                       Оставить заявку
                     </Button>
                   </a>
@@ -82,12 +116,19 @@ export default function WarehousesPage() {
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {benefits.map((b) => (
-              <div key={b.title} className="p-6 rounded-xl border border-border bg-card hover:shadow-md transition-shadow">
+              <div
+                key={b.title}
+                className="p-6 rounded-xl border border-border bg-card hover:shadow-md transition-shadow"
+              >
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <b.icon className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="font-semibold text-foreground mb-2">{b.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{b.desc}</p>
+                <h3 className="font-semibold text-foreground mb-2">
+                  {b.title}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {b.desc}
+                </p>
               </div>
             ))}
           </div>
@@ -104,9 +145,25 @@ export default function WarehousesPage() {
                   Складские помещения в Иркутске — аренда и продажа
                 </h2>
                 <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
-                  <p>Иркутск занимает стратегическое положение на пересечении Транссибирской магистрали и федеральных автодорог, что делает город важным логистическим хабом Восточной Сибири. Складской рынок предлагает объекты от современных логистических комплексов класса A до производственных баз и ангаров.</p>
-                  <p>Основные складские зоны расположены в промышленных районах Иркутска, Ангарска и Шелехова. Ставки аренды варьируются от 200 до 800 ₽/м² в месяц в зависимости от класса и температурного режима.</p>
-                  <p>АрендаСити специализируется на подборе складских помещений с учётом требований к температурному режиму, грузоподъёмности полов, высоте потолков и транспортной доступности.</p>
+                  <p>
+                    Иркутск занимает стратегическое положение на пересечении
+                    Транссибирской магистрали и федеральных автодорог, что
+                    делает город важным логистическим хабом Восточной Сибири.
+                    Складской рынок предлагает объекты от современных
+                    логистических комплексов класса A до производственных баз и
+                    ангаров.
+                  </p>
+                  <p>
+                    Основные складские зоны расположены в промышленных районах
+                    Иркутска, Ангарска и Шелехова. Ставки аренды варьируются от
+                    200 до 800 ₽/м² в месяц в зависимости от класса и
+                    температурного режима.
+                  </p>
+                  <p>
+                    АрендаСити специализируется на подборе складских помещений с
+                    учётом требований к температурному режиму, грузоподъёмности
+                    полов, высоте потолков и транспортной доступности.
+                  </p>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {features.map((f) => (
@@ -117,12 +174,17 @@ export default function WarehousesPage() {
                   ))}
                 </div>
               </div>
-              <CategoryPropertySlider type="Склад" title="Складские помещения в каталоге" />
+              <CategoryPropertySlider
+                type="Склад"
+                title="Складские помещения в каталоге"
+              />
               <div id="contact-form">
                 <CategoryContactForm category="склад" />
               </div>
             </div>
-            <div className="hidden lg:block lg:w-[280px] xl:w-[300px] shrink-0 sticky top-[110px] self-start"><NewsSidebar /></div>
+            <div className="hidden lg:block lg:w-[280px] xl:w-[300px] shrink-0 sticky top-[110px] self-start">
+              <NewsSidebar />
+            </div>
           </div>
         </div>
       </section>

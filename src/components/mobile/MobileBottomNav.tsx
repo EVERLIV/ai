@@ -1,19 +1,39 @@
+import { Heart, Home, Plus, Search, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, Heart, Plus, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { placementCtaPath } from "@/lib/listPropertyLinks";
 import { cn } from "@/lib/utils";
 
 const tabs = [
-  { id: "home", label: "Главная", href: "/", icon: Home, match: (p: string) => p === "/" },
+  {
+    id: "home",
+    label: "Главная",
+    href: "/",
+    icon: Home,
+    match: (p: string) => p === "/",
+  },
   {
     id: "catalog",
     label: "Каталог",
     href: "/catalog",
     icon: Search,
-    match: (p: string) => p.startsWith("/catalog") || p.startsWith("/zhilaya/catalog") || p.startsWith("/offices") || p.startsWith("/retail") || p.startsWith("/warehouses") || p.startsWith("/land") || p.startsWith("/zhilaya/kvartiry"),
+    match: (p: string) =>
+      p.startsWith("/catalog") ||
+      p.startsWith("/zhilaya/catalog") ||
+      p.startsWith("/offices") ||
+      p.startsWith("/retail") ||
+      p.startsWith("/warehouses") ||
+      p.startsWith("/land") ||
+      p.startsWith("/zhilaya/kvartiry"),
   },
-  { id: "favorites", label: "Избранное", href: "/account#favorites", icon: Heart, match: (p: string, h: string) => p === "/account" && h.includes("favorites") },
+  {
+    id: "favorites",
+    label: "Избранное",
+    href: "/account#favorites",
+    icon: Heart,
+    match: (p: string, h: string) =>
+      p === "/account" && h.includes("favorites"),
+  },
   { id: "post", label: "Разместить", href: "", icon: Plus, match: () => false },
   {
     id: "profile",
@@ -46,7 +66,8 @@ export default function MobileBottomNav() {
             tab.id === "favorites"
               ? pathname === "/account" && hash.includes("favorites")
               : tab.id === "profile"
-                ? (pathname === "/account" && hash.includes("profile")) || pathname === "/auth"
+                ? (pathname === "/account" && hash.includes("profile")) ||
+                  pathname === "/auth"
                 : tab.match(pathname, hash);
 
           return (
@@ -58,7 +79,10 @@ export default function MobileBottomNav() {
                 active ? "text-primary" : "text-muted-foreground",
               )}
             >
-              <Icon className={cn("w-5 h-5", active && "stroke-[2.5px]")} strokeWidth={active ? 2.5 : 2} />
+              <Icon
+                className={cn("w-5 h-5", active && "stroke-[2.5px]")}
+                strokeWidth={active ? 2.5 : 2}
+              />
               <span className="leading-none">{tab.label}</span>
             </Link>
           );

@@ -1,5 +1,5 @@
-import { getPrimaryPropertyType } from "@/lib/propertyTypes";
 import { isSaleDeal } from "@/lib/propertyDeal";
+import { getPrimaryPropertyType } from "@/lib/propertyTypes";
 
 export type PropertySeoInput = {
   deal_type?: string | null;
@@ -22,7 +22,10 @@ const TYPE_SEO: Record<string, string> = {
   Киоск: "киоск",
 };
 
-export function formatPriceShort(price: number | null | undefined, dealType?: string | null): string {
+export function formatPriceShort(
+  price: number | null | undefined,
+  dealType?: string | null,
+): string {
   const n = Number(price) || 0;
   if (n <= 0) return "цена по запросу";
 
@@ -31,7 +34,10 @@ export function formatPriceShort(price: number | null | undefined, dealType?: st
 
   if (n >= 1_000_000) {
     const m = n / 1_000_000;
-    const label = m >= 10 ? `${Math.round(m)} млн` : `${m.toFixed(1).replace(".0", "")} млн`;
+    const label =
+      m >= 10
+        ? `${Math.round(m)} млн`
+        : `${m.toFixed(1).replace(".0", "")} млн`;
     return `${label}${suffix}`;
   }
   if (n >= 1_000) {
@@ -45,9 +51,16 @@ function typeSeoLabel(type: string): string {
   return TYPE_SEO[type] || type.toLowerCase() || "объект";
 }
 
-function parseAddress(address: string, district?: string | null): { location: string; street: string } {
-  const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
-  if (parts.length === 0) return { location: district?.trim() || "", street: "" };
+function parseAddress(
+  address: string,
+  district?: string | null,
+): { location: string; street: string } {
+  const parts = address
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (parts.length === 0)
+    return { location: district?.trim() || "", street: "" };
 
   const first = parts[0];
   const rest = parts.slice(1).join(", ");
@@ -86,6 +99,8 @@ export function buildPropertySeoDescription(p: PropertySeoInput): string {
   const price = formatPriceShort(Number(p.price) || null, p.deal_type);
   const district = p.district?.trim() ? `, ${p.district.trim()}` : "";
   const desc = (p.description || "").replace(/\s+/g, " ").trim().slice(0, 200);
-  const base = [typeLabel, area, price, district.replace(/^, /, "")].filter(Boolean).join(" · ");
+  const base = [typeLabel, area, price, district.replace(/^, /, "")]
+    .filter(Boolean)
+    .join(" · ");
   return desc ? `${base}. ${desc}` : base;
 }

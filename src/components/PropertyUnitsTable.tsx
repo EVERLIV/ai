@@ -1,21 +1,33 @@
+import { ChevronLeft, ChevronRight, ImageIcon, Layers, X } from "lucide-react";
 import { useState } from "react";
-import { usePropertyUnits, type PropertyUnit } from "@/hooks/usePropertyUnits";
-import { Layers, ChevronLeft, ChevronRight, X, ImageIcon } from "lucide-react";
-import { getDefaultPropertyImage } from "@/lib/propertyImages";
+import { type PropertyUnit, usePropertyUnits } from "@/hooks/usePropertyUnits";
 
 interface Props {
   propertyId: string;
 }
 
 const STATUS_LABEL: Record<string, { text: string; cls: string }> = {
-  available: { text: "Свободно", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  reserved: { text: "Бронь", cls: "bg-amber-50 text-amber-700 border-amber-200" },
-  occupied: { text: "Занято", cls: "bg-muted text-muted-foreground border-border" },
+  available: {
+    text: "Свободно",
+    cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  },
+  reserved: {
+    text: "Бронь",
+    cls: "bg-amber-50 text-amber-700 border-amber-200",
+  },
+  occupied: {
+    text: "Занято",
+    cls: "bg-muted text-muted-foreground border-border",
+  },
 };
 
 export default function PropertyUnitsTable({ propertyId }: Props) {
   const { data: units = [], isLoading } = usePropertyUnits(propertyId);
-  const [lightbox, setLightbox] = useState<{ photos: string[]; index: number; title: string } | null>(null);
+  const [lightbox, setLightbox] = useState<{
+    photos: string[];
+    index: number;
+    title: string;
+  } | null>(null);
 
   if (isLoading || units.length === 0) return null;
 
@@ -28,7 +40,9 @@ export default function PropertyUnitsTable({ propertyId }: Props) {
 
   const navLightbox = (delta: number) => {
     if (!lightbox) return;
-    const next = (lightbox.index + delta + lightbox.photos.length) % lightbox.photos.length;
+    const next =
+      (lightbox.index + delta + lightbox.photos.length) %
+      lightbox.photos.length;
     setLightbox({ ...lightbox, index: next });
   };
 
@@ -36,7 +50,9 @@ export default function PropertyUnitsTable({ propertyId }: Props) {
     <section className="mb-8">
       <h2 className="font-display text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
         <Layers className="w-5 h-5 text-primary" /> Помещения в объекте
-        <span className="text-sm font-normal text-muted-foreground">({units.length})</span>
+        <span className="text-sm font-normal text-muted-foreground">
+          ({units.length})
+        </span>
       </h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -70,7 +86,9 @@ export default function PropertyUnitsTable({ propertyId }: Props) {
                     +{photos.length - 1} фото
                   </span>
                 )}
-                <span className={`absolute top-2 left-2 inline-block px-2 py-0.5 rounded-full border text-[11px] font-medium ${st.cls}`}>
+                <span
+                  className={`absolute top-2 left-2 inline-block px-2 py-0.5 rounded-full border text-[11px] font-medium ${st.cls}`}
+                >
                   {st.text}
                 </span>
               </button>
@@ -83,7 +101,11 @@ export default function PropertyUnitsTable({ propertyId }: Props) {
                       onClick={() => openLightbox(u, i)}
                       className="shrink-0 w-12 h-9 rounded-md overflow-hidden border border-border hover:border-primary transition-colors"
                     >
-                      <img src={p} alt="" className="w-full h-full object-cover" />
+                      <img
+                        src={p}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
                     </button>
                   ))}
                 </div>
@@ -91,17 +113,27 @@ export default function PropertyUnitsTable({ propertyId }: Props) {
 
               <div className="p-4 space-y-2">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="font-semibold text-foreground">{u.name || "—"}</div>
+                  <div className="font-semibold text-foreground">
+                    {u.name || "—"}
+                  </div>
                   <div className="text-right shrink-0">
                     {Number(u.price) > 0 ? (
-                      <div className="font-semibold text-foreground tabular-nums">{fmt(Number(u.price))} ₽</div>
+                      <div className="font-semibold text-foreground tabular-nums">
+                        {fmt(Number(u.price))} ₽
+                      </div>
                     ) : (
-                      <div className="text-xs text-muted-foreground">по запросу</div>
+                      <div className="text-xs text-muted-foreground">
+                        по запросу
+                      </div>
                     )}
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                  {u.floor && <span>Этаж: <span className="text-foreground">{u.floor}</span></span>}
+                  {u.floor && (
+                    <span>
+                      Этаж: <span className="text-foreground">{u.floor}</span>
+                    </span>
+                  )}
                   {Number(u.area) > 0 && <span>{fmt(Number(u.area))} м²</span>}
                   {u.purpose && <span>{u.purpose}</span>}
                 </div>
@@ -130,13 +162,19 @@ export default function PropertyUnitsTable({ propertyId }: Props) {
           {lightbox.photos.length > 1 && (
             <>
               <button
-                onClick={(e) => { e.stopPropagation(); navLightbox(-1); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navLightbox(-1);
+                }}
                 className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-card flex items-center justify-center text-foreground hover:bg-muted transition-colors"
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); navLightbox(1); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navLightbox(1);
+                }}
                 className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-card flex items-center justify-center text-foreground hover:bg-muted transition-colors"
               >
                 <ChevronRight className="w-6 h-6" />

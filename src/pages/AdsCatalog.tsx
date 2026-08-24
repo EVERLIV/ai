@@ -1,18 +1,30 @@
+import {
+  ChevronDown,
+  MapPin,
+  Maximize2,
+  Megaphone,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import SiteHeader from "@/components/SiteHeader";
+import PropertyImage from "@/components/PropertyImage";
 import SiteFooter from "@/components/SiteFooter";
+import SiteHeader from "@/components/SiteHeader";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAdPlacementsWithProperty } from "@/hooks/useAdPlacements";
 import {
-  AD_TYPES, AD_TYPE_MAP, TRAFFIC_LABELS, TRAFFIC_BADGE,
-  AVAILABILITY_LABELS, AVAILABILITY_BADGE,
-  type AdTypeKey, type TrafficKey, type AvailabilityKey,
+  AD_TYPE_MAP,
+  AD_TYPES,
+  type AdTypeKey,
+  AVAILABILITY_BADGE,
+  AVAILABILITY_LABELS,
+  type AvailabilityKey,
+  TRAFFIC_BADGE,
+  TRAFFIC_LABELS,
+  type TrafficKey,
 } from "@/lib/adTypes";
-import { Skeleton } from "@/components/ui/skeleton";
-import PropertyImage from "@/components/PropertyImage";
-import {
-  MapPin, SlidersHorizontal, X, Maximize2, ChevronDown, Search, Megaphone,
-} from "lucide-react";
 
 const TRAFFIC_OPTIONS: { v: TrafficKey | "all"; label: string }[] = [
   { v: "all", label: "Любой" },
@@ -36,30 +48,35 @@ export default function AdsCatalog() {
   const [selectedTypes, setSelectedTypes] = useState<AdTypeKey[]>([]);
   const [district, setDistrict] = useState("Все");
   const [traffic, setTraffic] = useState<TrafficKey | "all">("all");
-  const [availability, setAvailability] = useState<AvailabilityKey | "all">("all");
+  const [availability, setAvailability] = useState<AvailabilityKey | "all">(
+    "all",
+  );
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
   const [sort, setSort] = useState<"date" | "price_asc" | "price_desc">("date");
 
   const districts = useMemo(() => {
     const s = new Set<string>();
-    placements.forEach((p) => p.property?.district && s.add(p.property.district));
+    placements.forEach(
+      (p) => p.property?.district && s.add(p.property.district),
+    );
     return ["Все", ...Array.from(s).sort()];
   }, [placements]);
 
   const toggleType = (k: AdTypeKey) =>
     setSelectedTypes((prev) =>
-      prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]
+      prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k],
     );
 
   const filtered = useMemo(() => {
     let list = [...placements];
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter((p) =>
-        (p.property?.address || "").toLowerCase().includes(q) ||
-        (p.property?.district || "").toLowerCase().includes(q) ||
-        (p.title || "").toLowerCase().includes(q)
+      list = list.filter(
+        (p) =>
+          (p.property?.address || "").toLowerCase().includes(q) ||
+          (p.property?.district || "").toLowerCase().includes(q) ||
+          (p.title || "").toLowerCase().includes(q),
       );
     }
     if (selectedTypes.length > 0)
@@ -67,26 +84,51 @@ export default function AdsCatalog() {
     if (district !== "Все")
       list = list.filter((p) => p.property?.district === district);
     if (traffic !== "all") list = list.filter((p) => p.traffic === traffic);
-    if (availability !== "all") list = list.filter((p) => p.availability === availability);
-    if (priceMin) list = list.filter((p) => Number(p.monthly_price) >= Number(priceMin));
-    if (priceMax) list = list.filter((p) => Number(p.monthly_price) <= Number(priceMax));
+    if (availability !== "all")
+      list = list.filter((p) => p.availability === availability);
+    if (priceMin)
+      list = list.filter((p) => Number(p.monthly_price) >= Number(priceMin));
+    if (priceMax)
+      list = list.filter((p) => Number(p.monthly_price) <= Number(priceMax));
 
     switch (sort) {
-      case "price_asc": list.sort((a, b) => Number(a.monthly_price) - Number(b.monthly_price)); break;
-      case "price_desc": list.sort((a, b) => Number(b.monthly_price) - Number(a.monthly_price)); break;
+      case "price_asc":
+        list.sort((a, b) => Number(a.monthly_price) - Number(b.monthly_price));
+        break;
+      case "price_desc":
+        list.sort((a, b) => Number(b.monthly_price) - Number(a.monthly_price));
+        break;
     }
     return list;
-  }, [placements, search, selectedTypes, district, traffic, availability, priceMin, priceMax, sort]);
+  }, [
+    placements,
+    search,
+    selectedTypes,
+    district,
+    traffic,
+    availability,
+    priceMin,
+    priceMax,
+    sort,
+  ]);
 
   const activeCount =
-    (search ? 1 : 0) + selectedTypes.length + (district !== "Все" ? 1 : 0) +
-    (traffic !== "all" ? 1 : 0) + (availability !== "all" ? 1 : 0) +
-    (priceMin ? 1 : 0) + (priceMax ? 1 : 0);
+    (search ? 1 : 0) +
+    selectedTypes.length +
+    (district !== "Все" ? 1 : 0) +
+    (traffic !== "all" ? 1 : 0) +
+    (availability !== "all" ? 1 : 0) +
+    (priceMin ? 1 : 0) +
+    (priceMax ? 1 : 0);
 
   const reset = () => {
-    setSearch(""); setSelectedTypes([]); setDistrict("Все");
-    setTraffic("all"); setAvailability("all");
-    setPriceMin(""); setPriceMax("");
+    setSearch("");
+    setSelectedTypes([]);
+    setDistrict("Все");
+    setTraffic("all");
+    setAvailability("all");
+    setPriceMin("");
+    setPriceMax("");
   };
 
   const filtersBlock = (
@@ -132,14 +174,20 @@ export default function AdsCatalog() {
 
       {/* District */}
       <div>
-        <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Район</label>
+        <label className="text-[11px] font-medium text-muted-foreground mb-1 block">
+          Район
+        </label>
         <div className="relative">
           <select
             value={district}
             onChange={(e) => setDistrict(e.target.value)}
             className="w-full appearance-none px-0 py-1.5 pr-7 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none focus:border-primary"
           >
-            {districts.map((d) => <option key={d} value={d}>{d}</option>)}
+            {districts.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
           </select>
           <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
         </div>
@@ -191,15 +239,21 @@ export default function AdsCatalog() {
 
       {/* Price range */}
       <div>
-        <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Цена за месяц, ₽</label>
+        <label className="text-[11px] font-medium text-muted-foreground mb-1 block">
+          Цена за месяц, ₽
+        </label>
         <div className="flex gap-1.5">
           <input
-            type="number" placeholder="от" value={priceMin}
+            type="number"
+            placeholder="от"
+            value={priceMin}
             onChange={(e) => setPriceMin(e.target.value)}
             className="w-full px-0 py-1.5 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none focus:border-primary"
           />
           <input
-            type="number" placeholder="до" value={priceMax}
+            type="number"
+            placeholder="до"
+            value={priceMax}
             onChange={(e) => setPriceMax(e.target.value)}
             className="w-full px-0 py-1.5 bg-transparent text-xs text-foreground border-0 border-b border-border focus:outline-none focus:border-primary"
           />
@@ -233,8 +287,9 @@ export default function AdsCatalog() {
               Каталог рекламных размещений
             </h1>
             <p className="text-sm text-muted-foreground max-w-2xl">
-              Билборды, фасадные баннеры, бегущие строки и брендирование на коммерческой
-              недвижимости в Иркутске и области. Фильтруйте по типу, району, трафику и цене.
+              Билборды, фасадные баннеры, бегущие строки и брендирование на
+              коммерческой недвижимости в Иркутске и области. Фильтруйте по
+              типу, району, трафику и цене.
             </p>
           </div>
         </section>
@@ -257,7 +312,9 @@ export default function AdsCatalog() {
               {/* Toolbar */}
               <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
                 <div className="text-xs text-muted-foreground">
-                  {isLoading ? "Загрузка..." : `Найдено ${filtered.length} ${filtered.length === 1 ? "позиция" : "позиций"}`}
+                  {isLoading
+                    ? "Загрузка..."
+                    : `Найдено ${filtered.length} ${filtered.length === 1 ? "позиция" : "позиций"}`}
                 </div>
                 <div className="flex items-center gap-2">
                   <select
@@ -294,7 +351,9 @@ export default function AdsCatalog() {
               ) : filtered.length === 0 ? (
                 <div className="border border-border bg-card p-10 text-center">
                   <Megaphone className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm text-foreground font-medium mb-1">Ничего не найдено</p>
+                  <p className="text-sm text-foreground font-medium mb-1">
+                    Ничего не найдено
+                  </p>
                   <p className="text-xs text-muted-foreground mb-4">
                     Попробуйте изменить фильтры или сбросить их
                   </p>
@@ -307,7 +366,9 @@ export default function AdsCatalog() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {filtered.map((p) => <AdCard key={p.id} placement={p} />)}
+                  {filtered.map((p) => (
+                    <AdCard key={p.id} placement={p} />
+                  ))}
                 </div>
               )}
             </div>
@@ -320,11 +381,16 @@ export default function AdsCatalog() {
         <div className="lg:hidden fixed inset-0 z-50 bg-background animate-fade-in">
           <div className="flex items-center justify-between px-4 h-14 border-b border-border">
             <span className="text-sm font-semibold">Фильтры</span>
-            <button onClick={() => setMobileFiltersOpen(false)} className="p-2 -mr-2">
+            <button
+              onClick={() => setMobileFiltersOpen(false)}
+              className="p-2 -mr-2"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="overflow-y-auto h-[calc(100vh-114px)]">{filtersBlock}</div>
+          <div className="overflow-y-auto h-[calc(100vh-114px)]">
+            {filtersBlock}
+          </div>
           <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-border bg-card flex gap-2">
             <button
               onClick={reset}
@@ -368,7 +434,9 @@ function AdCard({ placement }: { placement: any }) {
           <Icon className="w-3 h-3" />
           {meta?.short}
         </div>
-        <div className={`absolute top-2 right-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${AVAILABILITY_BADGE[availability]}`}>
+        <div
+          className={`absolute top-2 right-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${AVAILABILITY_BADGE[availability]}`}
+        >
           {AVAILABILITY_LABELS[availability]}
         </div>
       </div>
@@ -376,7 +444,9 @@ function AdCard({ placement }: { placement: any }) {
       <div className="p-3 flex-1 flex flex-col">
         <div className="font-display text-base font-bold text-foreground mb-0.5">
           {Number(placement.monthly_price).toLocaleString("ru-RU")} ₽
-          <span className="text-[11px] font-normal text-muted-foreground">/мес</span>
+          <span className="text-[11px] font-normal text-muted-foreground">
+            /мес
+          </span>
         </div>
 
         <div className="text-xs text-foreground font-medium truncate mb-1">

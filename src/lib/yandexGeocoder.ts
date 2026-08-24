@@ -54,7 +54,9 @@ async function geocodeQuery(geocode: string, results = 1): Promise<GeoHit[]> {
     bbox: "95.5,51.0,119.5,64.5",
   });
 
-  const resp = await fetch(`https://geocode-maps.yandex.ru/1.x/?${params.toString()}`);
+  const resp = await fetch(
+    `https://geocode-maps.yandex.ru/1.x/?${params.toString()}`,
+  );
   if (!resp.ok) {
     throw new Error(
       resp.status === 403
@@ -74,13 +76,19 @@ export async function geocodeAddress(address: string): Promise<GeoHit | null> {
   return hits[0] ?? null;
 }
 
-export async function reverseGeocode(lat: number, lng: number): Promise<GeoHit | null> {
+export async function reverseGeocode(
+  lat: number,
+  lng: number,
+): Promise<GeoHit | null> {
   const hits = await geocodeQuery(`${lng},${lat}`, 1);
   return hits[0] ?? null;
 }
 
 /** Подсказки адреса с координатами (Иркутск и область) */
-export async function suggestAddresses(query: string, limit = 7): Promise<GeoHit[]> {
+export async function suggestAddresses(
+  query: string,
+  limit = 7,
+): Promise<GeoHit[]> {
   const q = query.trim();
   if (q.length < 3) return [];
 

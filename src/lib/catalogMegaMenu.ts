@@ -1,6 +1,6 @@
+import { SEGMENT_ROUTES } from "@/config/propertySegments";
 import { buildCatalogUrl } from "@/lib/catalogLinks";
 import { placementCtaPath } from "@/lib/listPropertyLinks";
-import { SEGMENT_ROUTES } from "@/config/propertySegments";
 
 export type MegaLink = { label: string; href: string };
 export type MegaSection = { title: string; links: MegaLink[] };
@@ -31,13 +31,42 @@ export function getCatalogMegaMenu(isLoggedIn = false): MegaMenuConfig {
           {
             title: "Купить жильё",
             links: [
-              { label: "Все квартиры", href: r({ types: "Квартира", deal: "Продажа" }) },
-              { label: "Вторичка", href: r({ types: "Квартира", market: "Вторичка", deal: "Продажа" }) },
-              { label: "Новостройки", href: r({ types: "Квартира", market: "Новостройка", deal: "Продажа" }) },
-              { label: "Дома, дачи, коттеджи", href: r({ types: ["Дом", "Дача", "Коттедж"], deal: "Продажа" }) },
-              { label: "Таунхаусы", href: r({ types: "Таунхаус", deal: "Продажа" }) },
-              { label: "Апартаменты", href: r({ types: "Апартаменты", deal: "Продажа" }) },
-              { label: "Комнаты", href: r({ types: "Комната", deal: "Продажа" }) },
+              {
+                label: "Все квартиры",
+                href: r({ types: "Квартира", deal: "Продажа" }),
+              },
+              {
+                label: "Вторичка",
+                href: r({
+                  types: "Квартира",
+                  market: "Вторичка",
+                  deal: "Продажа",
+                }),
+              },
+              {
+                label: "Новостройки",
+                href: r({
+                  types: "Квартира",
+                  market: "Новостройка",
+                  deal: "Продажа",
+                }),
+              },
+              {
+                label: "Дома, дачи, коттеджи",
+                href: r({ types: ["Дом", "Дача", "Коттедж"], deal: "Продажа" }),
+              },
+              {
+                label: "Таунхаусы",
+                href: r({ types: "Таунхаус", deal: "Продажа" }),
+              },
+              {
+                label: "Апартаменты",
+                href: r({ types: "Апартаменты", deal: "Продажа" }),
+              },
+              {
+                label: "Комнаты",
+                href: r({ types: "Комната", deal: "Продажа" }),
+              },
             ],
           },
         ],
@@ -47,12 +76,33 @@ export function getCatalogMegaMenu(isLoggedIn = false): MegaMenuConfig {
           {
             title: "Снять / посуточно",
             links: [
-              { label: "Квартиры долгосрочно", href: r({ types: "Квартира", deal: "Аренда" }) },
-              { label: "Дома, дачи и коттеджи", href: r({ types: ["Дом", "Дача", "Коттедж"], deal: "Аренда" }) },
-              { label: "Комнаты", href: r({ types: "Комната", deal: "Аренда" }) },
-              { label: "Квартиры посуточно", href: r({ types: "Квартира", deal: "Посуточно" }) },
-              { label: "Дома посуточно", href: r({ types: ["Дом", "Дача", "Коттедж"], deal: "Посуточно" }) },
-              { label: "Весь каталог жилья", href: SEGMENT_ROUTES.residential.catalog },
+              {
+                label: "Квартиры долгосрочно",
+                href: r({ types: "Квартира", deal: "Аренда" }),
+              },
+              {
+                label: "Дома, дачи и коттеджи",
+                href: r({ types: ["Дом", "Дача", "Коттедж"], deal: "Аренда" }),
+              },
+              {
+                label: "Комнаты",
+                href: r({ types: "Комната", deal: "Аренда" }),
+              },
+              {
+                label: "Квартиры посуточно",
+                href: r({ types: "Квартира", deal: "Посуточно" }),
+              },
+              {
+                label: "Дома посуточно",
+                href: r({
+                  types: ["Дом", "Дача", "Коттедж"],
+                  deal: "Посуточно",
+                }),
+              },
+              {
+                label: "Весь каталог жилья",
+                href: SEGMENT_ROUTES.residential.catalog,
+              },
             ],
           },
         ],
@@ -67,8 +117,14 @@ export function getCatalogMegaMenu(isLoggedIn = false): MegaMenuConfig {
               { label: "Склады", href: "/warehouses" },
               { label: "Производство", href: c({ types: "Производство" }) },
               { label: "Весь каталог коммерции", href: c({}) },
-              { label: "Снять офис", href: c({ types: "Офис", deal: "Аренда" }) },
-              { label: "Купить помещение", href: c({ types: "Торговая", deal: "Продажа" }) },
+              {
+                label: "Снять офис",
+                href: c({ types: "Офис", deal: "Аренда" }),
+              },
+              {
+                label: "Купить помещение",
+                href: c({ types: "Торговая", deal: "Продажа" }),
+              },
             ],
           },
         ],
@@ -80,7 +136,10 @@ export function getCatalogMegaMenu(isLoggedIn = false): MegaMenuConfig {
             links: [
               { label: "Земельные участки", href: "/zhilaya/uchastki" },
               { label: "Земля (коммерция)", href: "/land" },
-              { label: "Гаражи и машиноместа", href: r({ types: ["Гараж", "Машиноместо"] }) },
+              {
+                label: "Гаражи и машиноместа",
+                href: r({ types: ["Гараж", "Машиноместо"] }),
+              },
               { label: "Реклама", href: "/ads" },
               { label: "Раздел жилья", href: SEGMENT_ROUTES.residential.home },
             ],
@@ -92,9 +151,18 @@ export function getCatalogMegaMenu(isLoggedIn = false): MegaMenuConfig {
       title: "Сервисы",
       links: [
         { label: "ИИ-подбор", href: "#ai-wizard" },
-        { label: "Разместить объект за 0 ₽", href: placementCtaPath("commercial", "rent", isLoggedIn) },
-        { label: "Разместить жильё за 0 ₽", href: placementCtaPath("residential", "rent", isLoggedIn) },
-        { label: "Передать в управление", href: placementCtaPath("commercial", "management", isLoggedIn) },
+        {
+          label: "Разместить объект за 0 ₽",
+          href: placementCtaPath("commercial", "rent", isLoggedIn),
+        },
+        {
+          label: "Разместить жильё за 0 ₽",
+          href: placementCtaPath("residential", "rent", isLoggedIn),
+        },
+        {
+          label: "Передать в управление",
+          href: placementCtaPath("commercial", "management", isLoggedIn),
+        },
         { label: "О компании", href: "/about" },
         { label: "Контакты", href: "/contacts" },
       ],

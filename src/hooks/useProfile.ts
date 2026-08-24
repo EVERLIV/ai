@@ -1,9 +1,13 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchMyProfileApi, updateMyProfileApi } from "@/lib/userPropertyApi";
 
 export type ProfileAccountType = "owner" | "realtor" | "agency";
-export type VerificationStatus = "unverified" | "pending" | "verified" | "rejected";
+export type VerificationStatus =
+  | "unverified"
+  | "pending"
+  | "verified"
+  | "rejected";
 
 export interface UserProfile {
   id: string;
@@ -44,7 +48,7 @@ export function useProfile() {
     queryKey: ["profile", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const data = await fetchMyProfileApi(user!.id);
+      const data = await fetchMyProfileApi(user?.id);
       return data as UserProfile;
     },
   });

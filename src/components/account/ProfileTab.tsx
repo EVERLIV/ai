@@ -1,18 +1,18 @@
-import { useState, useEffect, useRef } from "react";
-import { useToast } from "@/hooks/use-toast";
-import {
-  useProfile,
-  useUpdateProfile,
-  useRequestVerification,
-  ACCOUNT_TYPE_LABELS,
-  VERIFICATION_LABELS,
-  isProfileVerified,
-} from "@/hooks/useProfile";
-import { useAuth } from "@/hooks/useAuth";
-import VerifiedBadge from "@/components/VerifiedBadge";
+import { Camera, Clock, Loader2, ShieldAlert, ShieldCheck } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ShieldCheck, ShieldAlert, Clock, Loader2, Camera } from "lucide-react";
+import VerifiedBadge from "@/components/VerifiedBadge";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  ACCOUNT_TYPE_LABELS,
+  isProfileVerified,
+  useProfile,
+  useRequestVerification,
+  useUpdateProfile,
+  VERIFICATION_LABELS,
+} from "@/hooks/useProfile";
 
 export default function ProfileTab() {
   const { toast } = useToast();
@@ -35,7 +35,11 @@ export default function ProfileTab() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "Файл слишком большой", description: "Максимум 2 МБ", variant: "destructive" });
+      toast({
+        title: "Файл слишком большой",
+        description: "Максимум 2 МБ",
+        variant: "destructive",
+      });
       return;
     }
     setAvatarUploading(true);
@@ -61,7 +65,11 @@ export default function ProfileTab() {
       setAvatarUrl(dataUrl);
       toast({ title: "Фото обновлено" });
     } catch (err) {
-      toast({ title: "Не удалось загрузить фото", description: err instanceof Error ? err.message : "", variant: "destructive" });
+      toast({
+        title: "Не удалось загрузить фото",
+        description: err instanceof Error ? err.message : "",
+        variant: "destructive",
+      });
     } finally {
       setAvatarUploading(false);
     }
@@ -73,7 +81,11 @@ export default function ProfileTab() {
     setEmail(profile.email || "");
     setPhone(profile.phone || "");
     setAgencyName(profile.agency_name || "");
-    setAgencyStaffCount(profile.agency_staff_count != null ? String(profile.agency_staff_count) : "");
+    setAgencyStaffCount(
+      profile.agency_staff_count != null
+        ? String(profile.agency_staff_count)
+        : "",
+    );
     setAgencyAbout(profile.agency_about || "");
     setAvatarUrl(profile.avatar_url || null);
   }, [profile]);
@@ -131,7 +143,8 @@ export default function ProfileTab() {
     );
   }
 
-  const isAgency = profile?.account_type === "agency" || profile?.account_type === "realtor";
+  const isAgency =
+    profile?.account_type === "agency" || profile?.account_type === "realtor";
   const verified = isProfileVerified(profile?.verification_status);
   const pending = profile?.verification_status === "pending";
   const rejected = profile?.verification_status === "rejected";
@@ -143,7 +156,9 @@ export default function ProfileTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-5">
-        <h2 className="font-display text-xl font-bold text-foreground">Мои данные</h2>
+        <h2 className="font-display text-xl font-bold text-foreground">
+          Мои данные
+        </h2>
         {verified && <VerifiedBadge size="md" />}
       </div>
 
@@ -164,7 +179,11 @@ export default function ProfileTab() {
           )}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-foreground">
-              {VERIFICATION_LABELS[profile?.verification_status || "unverified"]}
+              {
+                VERIFICATION_LABELS[
+                  profile?.verification_status || "unverified"
+                ]
+              }
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               {pending
@@ -178,10 +197,14 @@ export default function ProfileTab() {
                 size="sm"
                 className="mt-3 gap-1.5"
                 onClick={handleRequestVerification}
-                disabled={requestVerification.isPending || updateProfile.isPending}
+                disabled={
+                  requestVerification.isPending || updateProfile.isPending
+                }
               >
                 <ShieldCheck className="w-4 h-4" />
-                {requestVerification.isPending ? "Отправка..." : "Подать на верификацию"}
+                {requestVerification.isPending
+                  ? "Отправка..."
+                  : "Подать на верификацию"}
               </Button>
             )}
           </div>
@@ -196,7 +219,11 @@ export default function ProfileTab() {
             disabled={avatarUploading}
           >
             {avatarUrl ? (
-              <img src={avatarUrl} alt="Аватар" className="w-full h-full object-cover" />
+              <img
+                src={avatarUrl}
+                alt="Аватар"
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground text-lg font-bold">
                 {(profile?.full_name || "?")[0]?.toUpperCase()}
@@ -219,7 +246,9 @@ export default function ProfileTab() {
           />
           <div>
             <p className="text-sm font-medium text-foreground">Фото профиля</p>
-            <p className="text-xs text-muted-foreground">Нажмите чтобы загрузить</p>
+            <p className="text-xs text-muted-foreground">
+              Нажмите чтобы загрузить
+            </p>
           </div>
         </div>
 
@@ -273,7 +302,8 @@ export default function ProfileTab() {
 
         {isAgency ? (
           <p className="text-xs text-muted-foreground rounded-md border border-border bg-muted/40 px-3 py-2">
-            Название, логотип, описание и верификация агентства — во вкладке «Агентство».
+            Название, логотип, описание и верификация агентства — во вкладке
+            «Агентство».
           </p>
         ) : (
           <div>
@@ -301,7 +331,9 @@ export default function ProfileTab() {
           {canRequest && (
             <Button
               onClick={handleRequestVerification}
-              disabled={requestVerification.isPending || updateProfile.isPending}
+              disabled={
+                requestVerification.isPending || updateProfile.isPending
+              }
               className="gap-1.5"
             >
               <ShieldCheck className="w-4 h-4" />

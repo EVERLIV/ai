@@ -1,17 +1,30 @@
+import {
+  CheckCircle,
+  Mail,
+  MessageSquareText,
+  Phone,
+  Send,
+  User,
+} from "lucide-react";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Send, CheckCircle, MessageSquareText, User, Phone, Mail } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { submitLead } from "@/lib/submitLead";
+import { cn } from "@/lib/utils";
 
 /** Единый стиль CTA-кнопок в сайдбаре объекта */
 export const propertyCtaButtonClass =
-  "inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg text-sm font-semibold whitespace-nowrap transition-opacity hover:opacity-90 min-w-0 w-full";
+  "inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-md text-sm font-semibold whitespace-nowrap transition-opacity hover:opacity-90 min-w-0 w-full";
 
 interface Props {
   propertyId: string;
@@ -65,7 +78,10 @@ export default function OwnerMessageDialog({
         business_category: propertyAddress,
       });
       setSent(true);
-      toast({ title: "Заявка отправлена", description: "Разместивший объявление получит ваше обращение." });
+      toast({
+        title: "Заявка отправлена",
+        description: "Разместивший объявление получит ваше обращение.",
+      });
     } catch {
       toast({ title: "Не удалось отправить", variant: "destructive" });
     } finally {
@@ -76,7 +92,11 @@ export default function OwnerMessageDialog({
   const defaultTrigger = (
     <button
       type="button"
-      className={cn(propertyCtaButtonClass, "bg-primary text-primary-foreground", className)}
+      className={cn(
+        propertyCtaButtonClass,
+        "bg-primary text-primary-foreground",
+        className,
+      )}
     >
       <MessageSquareText className="w-4 h-4 shrink-0" />
       {title}
@@ -84,7 +104,13 @@ export default function OwnerMessageDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setSent(false); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) setSent(false);
+      }}
+    >
       <div onClick={() => setOpen(true)} className="min-w-0">
         {trigger ?? defaultTrigger}
       </div>
@@ -104,32 +130,57 @@ export default function OwnerMessageDialog({
           <div className="text-center py-6 space-y-3">
             <CheckCircle className="w-12 h-12 text-primary mx-auto" />
             <p className="font-semibold">Заявка отправлена</p>
-            <p className="text-sm text-muted-foreground">Вам ответят в ближайшее время.</p>
-            <Button variant="outline" onClick={() => setOpen(false)}>Закрыть</Button>
+            <p className="text-sm text-muted-foreground">
+              Вам ответят в ближайшее время.
+            </p>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Закрыть
+            </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3 pt-2">
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input name="name" placeholder="Ваше имя" required className="pl-9" />
-              </div>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input name="phone" type="tel" placeholder="+7 (___) ___-__-__" required className="pl-9" />
-              </div>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input name="email" type="email" placeholder="Email (необязательно)" className="pl-9" />
-              </div>
-              <div>
-                <Label className="text-xs mb-1 block">Сообщение</Label>
-                <Textarea name="message" rows={4} placeholder="Здравствуйте, интересует объект…" required />
-              </div>
-              <Button type="submit" className="w-full gap-2" disabled={loading}>
-                <Send className="w-4 h-4" />
-                {loading ? "Отправка…" : "Отправить"}
-              </Button>
-            </form>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                name="name"
+                placeholder="Ваше имя"
+                required
+                className="pl-9"
+              />
+            </div>
+            <div className="relative">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                name="phone"
+                type="tel"
+                placeholder="+7 (___) ___-__-__"
+                required
+                className="pl-9"
+              />
+            </div>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                name="email"
+                type="email"
+                placeholder="Email (необязательно)"
+                className="pl-9"
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1 block">Сообщение</Label>
+              <Textarea
+                name="message"
+                rows={4}
+                placeholder="Здравствуйте, интересует объект…"
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full gap-2" disabled={loading}>
+              <Send className="w-4 h-4" />
+              {loading ? "Отправка…" : "Отправить"}
+            </Button>
+          </form>
         )}
       </DialogContent>
     </Dialog>

@@ -14,11 +14,15 @@
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Headers":
+    "authorization, apikey, content-type, x-client-info",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-import { fetchPropertyAgencyId, internalSecret } from "../_shared/agencyTelegram.ts";
+import {
+  fetchPropertyAgencyId,
+  internalSecret,
+} from "../_shared/agencyTelegram.ts";
 
 type LeadPayload = {
   id?: string | null;
@@ -53,10 +57,7 @@ function json(body: unknown, status = 200) {
 }
 
 function escapeHtml(s: string) {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function formatLead(lead: LeadPayload) {
@@ -69,7 +70,9 @@ function formatLead(lead: LeadPayload) {
     lead.business_category
       ? `📍 <b>Объект/тема:</b> ${escapeHtml(lead.business_category)}`
       : "",
-    lead.object_id ? `🆔 <b>ID объекта:</b> <code>${escapeHtml(lead.object_id)}</code>` : "",
+    lead.object_id
+      ? `🆔 <b>ID объекта:</b> <code>${escapeHtml(lead.object_id)}</code>`
+      : "",
     lead.message ? `\n💬 ${escapeHtml(lead.message)}` : "",
     lead.id ? `\n<code>${escapeHtml(lead.id)}</code>` : "",
   ];
@@ -102,11 +105,14 @@ async function sendTelegram(text: string) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS")
+    return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    const body = (await req.json().catch(() => ({}))) as LeadPayload & { website?: string };
+    const body = (await req.json().catch(() => ({}))) as LeadPayload & {
+      website?: string;
+    };
     // Honeypot from forms
     if (body.website) return json({ ok: true, skipped: "bot" });
 
@@ -134,7 +140,11 @@ Deno.serve(async (req) => {
               "Content-Type": "application/json",
               ...(secret ? { "X-Agency-Notify-Secret": secret } : {}),
             },
-            body: JSON.stringify({ type: "lead", agency_id: prop.agency_id, payload: body }),
+            body: JSON.stringify({
+              type: "lead",
+              agency_id: prop.agency_id,
+              payload: body,
+            }),
           }).catch((e) => console.warn("agency-notify:", e));
         }
       }

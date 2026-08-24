@@ -1,4 +1,6 @@
+import { Loader2, Mail, Trash2, UserPlus } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import {
   useAgencyInvites,
@@ -7,8 +9,6 @@ import {
   useMyAgency,
 } from "@/hooks/useAgency";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Loader2, Mail, Trash2, UserPlus } from "lucide-react";
 import type { AgencyMemberRole } from "@/lib/agencyApi";
 import {
   buildAgencyInviteLink,
@@ -34,9 +34,11 @@ export default function AgencyTeamTab() {
     user?.email ||
     "";
 
-  const { data: members = [], isLoading: membersLoading } = useAgencyMembers(agencyId);
+  const { data: members = [], isLoading: membersLoading } =
+    useAgencyMembers(agencyId);
   const { data: invites = [] } = useAgencyInvites(agencyId);
-  const { invite, revokeInvite, removeMember, setRole } = useAgencyTeamMutations(agencyId);
+  const { invite, revokeInvite, removeMember, setRole } =
+    useAgencyTeamMutations(agencyId);
 
   const [email, setEmail] = useState("");
   const [role, setInviteRole] = useState<AgencyMemberRole>("member");
@@ -96,7 +98,11 @@ export default function AgencyTeamTab() {
   };
 
   if (!agencyId) {
-    return <p className="text-sm text-muted-foreground py-6">Сначала заполните профиль агентства.</p>;
+    return (
+      <p className="text-sm text-muted-foreground py-6">
+        Сначала заполните профиль агентства.
+      </p>
+    );
   }
 
   return (
@@ -123,14 +129,20 @@ export default function AgencyTeamTab() {
             />
             <select
               value={role}
-              onChange={(e) => setInviteRole(e.target.value as AgencyMemberRole)}
+              onChange={(e) =>
+                setInviteRole(e.target.value as AgencyMemberRole)
+              }
               className="h-10 px-3 rounded-md border border-border bg-background text-sm"
             >
               <option value="member">Сотрудник</option>
               <option value="admin">Админ</option>
             </select>
             <Button onClick={onInvite} disabled={invite.isPending}>
-              {invite.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Пригласить"}
+              {invite.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Пригласить"
+              )}
             </Button>
           </div>
         </div>
@@ -146,12 +158,23 @@ export default function AgencyTeamTab() {
               const isMe = m.user_id === user?.id;
               const isOwner = m.role === "owner";
               return (
-                <li key={m.user_id} className="flex items-center gap-3 px-3 py-2.5 bg-card">
+                <li
+                  key={m.user_id}
+                  className="flex items-center gap-3 px-3 py-2.5 bg-card"
+                >
                   <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden">
                     {m.profiles?.avatar_url ? (
-                      <img src={m.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
+                      <img
+                        src={m.profiles.avatar_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
-                      (m.profiles?.full_name?.[0] || m.profiles?.email?.[0] || "?").toUpperCase()
+                      (
+                        m.profiles?.full_name?.[0] ||
+                        m.profiles?.email?.[0] ||
+                        "?"
+                      ).toUpperCase()
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -175,7 +198,8 @@ export default function AgencyTeamTab() {
                         } catch (err) {
                           toast({
                             title: "Ошибка",
-                            description: err instanceof Error ? err.message : "",
+                            description:
+                              err instanceof Error ? err.message : "",
                             variant: "destructive",
                           });
                         }
@@ -186,7 +210,9 @@ export default function AgencyTeamTab() {
                       <option value="member">Сотрудник</option>
                     </select>
                   ) : (
-                    <span className="text-[11px] text-muted-foreground">{ROLE_LABELS[m.role]}</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {ROLE_LABELS[m.role]}
+                    </span>
                   )}
                   {canManage && !isOwner && !isMe && (
                     <button
@@ -199,7 +225,8 @@ export default function AgencyTeamTab() {
                         } catch (err) {
                           toast({
                             title: "Ошибка",
-                            description: err instanceof Error ? err.message : "",
+                            description:
+                              err instanceof Error ? err.message : "",
                             variant: "destructive",
                           });
                         }
@@ -220,11 +247,15 @@ export default function AgencyTeamTab() {
           <h3 className="text-sm font-semibold">Ожидают принятия</h3>
           <ul className="divide-y divide-border rounded-lg border border-border overflow-hidden">
             {invites.map((inv) => (
-              <li key={inv.id} className="flex items-center gap-3 px-3 py-2.5 text-sm">
+              <li
+                key={inv.id}
+                className="flex items-center gap-3 px-3 py-2.5 text-sm"
+              >
                 <div className="flex-1 min-w-0">
                   <div className="truncate">{inv.email}</div>
                   <div className="text-[11px] text-muted-foreground">
-                    {ROLE_LABELS[inv.role]} · до {new Date(inv.expires_at).toLocaleDateString("ru-RU")}
+                    {ROLE_LABELS[inv.role]} · до{" "}
+                    {new Date(inv.expires_at).toLocaleDateString("ru-RU")}
                   </div>
                 </div>
                 <Button
@@ -241,7 +272,10 @@ export default function AgencyTeamTab() {
                         expiresAt: inv.expires_at,
                       });
                       if (mail.ok) {
-                        toast({ title: "Письмо отправлено", description: inv.email });
+                        toast({
+                          title: "Письмо отправлено",
+                          description: inv.email,
+                        });
                       } else {
                         toast({
                           title: "Не удалось отправить",
@@ -267,7 +301,9 @@ export default function AgencyTeamTab() {
                   variant="ghost"
                   onClick={async () => {
                     const link = buildAgencyInviteLink(inv.token);
-                    await navigator.clipboard.writeText(link).catch(() => undefined);
+                    await navigator.clipboard
+                      .writeText(link)
+                      .catch(() => undefined);
                     toast({ title: "Ссылка скопирована" });
                   }}
                 >

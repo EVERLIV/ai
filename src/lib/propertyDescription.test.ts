@@ -1,4 +1,4 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, test } from "vitest";
 import { parsePropertyDescription } from "./propertyDescription";
 
 describe("parsePropertyDescription", () => {
@@ -10,7 +10,8 @@ describe("parsePropertyDescription", () => {
 
   test("keeps a plain description as a single paragraph", () => {
     // Arrange
-    const raw = "Современный офис в деловом центре. Панорамные окна, качественный ремонт.";
+    const raw =
+      "Современный офис в деловом центре. Панорамные окна, качественный ремонт.";
 
     // Act
     const blocks = parsePropertyDescription(raw);
@@ -21,7 +22,9 @@ describe("parsePropertyDescription", () => {
 
   test("strips wrapping quotes added by import", () => {
     const blocks = parsePropertyDescription('"Офис в центре города."');
-    expect(blocks).toEqual([{ kind: "paragraph", text: "Офис в центре города." }]);
+    expect(blocks).toEqual([
+      { kind: "paragraph", text: "Офис в центре города." },
+    ]);
   });
 
   test("detects emoji headings and separates paragraphs", () => {
@@ -48,7 +51,11 @@ describe("parsePropertyDescription", () => {
       kind: "paragraph",
       text: "Продаётся земельный участок площадью 540 м².",
     });
-    expect(blocks[2]).toEqual({ kind: "heading", text: "Локация и окружение", icon: "📍" });
+    expect(blocks[2]).toEqual({
+      kind: "heading",
+      text: "Локация и окружение",
+      icon: "📍",
+    });
   });
 
   test("groups checkmark bullets into a list", () => {
@@ -78,7 +85,8 @@ describe("parsePropertyDescription", () => {
 
   test("splits inline checkmark bullets that lost their line breaks", () => {
     // Arrange — реальный случай: импорт схлопнул переносы в один абзац
-    const raw = "✅ Низкая цена — всего 200 000 ₽ ✅ Асфальтированный подъезд ✅ Чистый воздух";
+    const raw =
+      "✅ Низкая цена — всего 200 000 ₽ ✅ Асфальтированный подъезд ✅ Чистый воздух";
 
     // Act
     const blocks = parsePropertyDescription(raw);
@@ -135,7 +143,10 @@ describe("parsePropertyDescription", () => {
     const blocks = parsePropertyDescription(raw);
 
     // Assert
-    expect(blocks[0]).toMatchObject({ kind: "heading", text: "Идеально подходит для" });
+    expect(blocks[0]).toMatchObject({
+      kind: "heading",
+      text: "Идеально подходит для",
+    });
     expect(blocks[1]).toMatchObject({ kind: "list" });
     if (blocks[1].kind === "list") expect(blocks[1].items).toHaveLength(2);
   });
@@ -174,12 +185,16 @@ describe("parsePropertyDescription", () => {
   });
 
   test("strips an unbalanced leading quote left by import", () => {
-    const blocks = parsePropertyDescription('"🏭 Участок 28 соток\n\nПродаётся участок.');
+    const blocks = parsePropertyDescription(
+      '"🏭 Участок 28 соток\n\nПродаётся участок.',
+    );
     expect(blocks[0]).toMatchObject({ kind: "heading", icon: "🏭" });
   });
 
   test("does not treat a sentence ending in a period as a heading", () => {
-    const blocks = parsePropertyDescription("🚗 Транспорт до города занимает около часа.");
+    const blocks = parsePropertyDescription(
+      "🚗 Транспорт до города занимает около часа.",
+    );
     expect(blocks[0].kind).toBe("paragraph");
   });
 });

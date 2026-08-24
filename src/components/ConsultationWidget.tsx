@@ -1,5 +1,14 @@
-import { useState, useEffect } from "react";
-import { Phone, X, Send, Star, Clock3, BadgeCheck, CheckCircle2, Loader2 } from "lucide-react";
+import {
+  BadgeCheck,
+  CheckCircle2,
+  Clock3,
+  Loader2,
+  Phone,
+  Send,
+  Star,
+  X,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import { CONTACTS } from "@/config/company";
 import { submitLead } from "@/lib/submitLead";
@@ -23,7 +32,10 @@ export default function ConsultationWidget() {
     const interval = setInterval(() => {
       setWiggle(true);
     }, 12000);
-    return () => { clearTimeout(first); clearInterval(interval); };
+    return () => {
+      clearTimeout(first);
+      clearInterval(interval);
+    };
   }, [open]);
 
   useEffect(() => {
@@ -58,7 +70,9 @@ export default function ConsultationWidget() {
       {/* ── BUBBLE TAB (closed) ── */}
       <div
         className={`fixed right-5 bottom-20 lg:bottom-6 z-[45] transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-          open ? "opacity-0 pointer-events-none scale-90" : "opacity-100 scale-100"
+          open
+            ? "opacity-0 pointer-events-none scale-90"
+            : "opacity-100 scale-100"
         }`}
       >
         <button
@@ -68,7 +82,11 @@ export default function ConsultationWidget() {
         >
           {/* Avatar bubble + unread badge */}
           <div className="relative w-12 h-12 bg-card border border-border shadow-[0_4px_20px_-4px_rgba(0,0,0,0.18)] flex items-center justify-center group-hover:shadow-[0_6px_24px_-4px_rgba(0,0,0,0.22)] transition-shadow duration-200">
-            <img src={consultantAvatar} alt="Анастасия" className="w-10 h-10 object-cover" />
+            <img
+              src={consultantAvatar}
+              alt="Анастасия"
+              className="w-10 h-10 object-cover"
+            />
             <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-card" />
             {/* Unread badge */}
             <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center shadow-sm animate-[badge-pop_0.4s_cubic-bezier(0.34,1.56,0.64,1)]">
@@ -104,7 +122,9 @@ export default function ConsultationWidget() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1">
-              <span className="text-xs font-semibold text-foreground">Анастасия</span>
+              <span className="text-xs font-semibold text-foreground">
+                Анастасия
+              </span>
               <BadgeCheck className="w-3 h-3 text-primary shrink-0" />
             </div>
             <div className="flex items-center gap-2 mt-0.5">
@@ -114,7 +134,8 @@ export default function ConsultationWidget() {
               </span>
               <span className="text-border text-[10px]">·</span>
               <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                <Clock3 className="w-2.5 h-2.5" />~12 мин
+                <Clock3 className="w-2.5 h-2.5" />
+                ~12 мин
               </span>
             </div>
           </div>
@@ -131,12 +152,18 @@ export default function ConsultationWidget() {
           {sent ? (
             <div className="py-4 flex flex-col items-center gap-2 text-center">
               <CheckCircle2 className="w-9 h-9 text-emerald-500" />
-              <p className="text-sm font-semibold text-foreground">Заявка принята!</p>
+              <p className="text-sm font-semibold text-foreground">
+                Заявка принята!
+              </p>
               <p className="text-xs text-muted-foreground leading-snug">
                 Анастасия свяжется с вами в течение 15 минут
               </p>
               <button
-                onClick={() => { setSent(false); setName(""); setPhone(""); }}
+                onClick={() => {
+                  setSent(false);
+                  setName("");
+                  setPhone("");
+                }}
                 className="mt-1 text-[11px] text-primary hover:underline"
               >
                 Отправить ещё
@@ -168,17 +195,25 @@ export default function ConsultationWidget() {
                   disabled={loading}
                   className="w-full h-9 flex items-center justify-center gap-1.5 bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
-                  {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                  {loading ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Send className="w-3 h-3" />
+                  )}
                   Перезвоните мне
                 </button>
-                {error && <p className="text-[11px] text-destructive">{error}</p>}
+                {error && (
+                  <p className="text-[11px] text-destructive">{error}</p>
+                )}
               </form>
             </>
           )}
 
           <div className="flex items-center gap-2">
             <span className="flex-1 h-px bg-border/60" />
-            <span className="text-[9px] text-muted-foreground uppercase tracking-wider">или</span>
+            <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+              или
+            </span>
             <span className="flex-1 h-px bg-border/60" />
           </div>
 

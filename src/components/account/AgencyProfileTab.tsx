@@ -1,5 +1,17 @@
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  Camera,
+  Clock,
+  ExternalLink,
+  Loader2,
+  ShieldAlert,
+  ShieldCheck,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import { useToast } from "@/hooks/use-toast";
 import {
   useMyAgency,
@@ -7,15 +19,13 @@ import {
   useUpdateAgency,
   useUploadAgencyLogo,
 } from "@/hooks/useAgency";
-import { VERIFICATION_LABELS, isProfileVerified } from "@/hooks/useProfile";
-import VerifiedBadge from "@/components/VerifiedBadge";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Camera, Clock, ExternalLink, Loader2, ShieldAlert, ShieldCheck } from "lucide-react";
-import { ensureAgencyForUserApi } from "@/lib/agencyApi";
 import { useAuth } from "@/hooks/useAuth";
-import { useProfile } from "@/hooks/useProfile";
-import { useQueryClient } from "@tanstack/react-query";
+import {
+  isProfileVerified,
+  useProfile,
+  VERIFICATION_LABELS,
+} from "@/hooks/useProfile";
+import { ensureAgencyForUserApi } from "@/lib/agencyApi";
 
 export default function AgencyProfileTab() {
   const { toast } = useToast();
@@ -46,7 +56,11 @@ export default function AgencyProfileTab() {
 
   useEffect(() => {
     if (!user || isLoading || data || ensuring) return;
-    if (profile?.account_type !== "agency" && profile?.account_type !== "realtor") return;
+    if (
+      profile?.account_type !== "agency" &&
+      profile?.account_type !== "realtor"
+    )
+      return;
     setEnsuring(true);
     ensureAgencyForUserApi(user.id, {
       name: profile.agency_name || undefined,
@@ -114,7 +128,8 @@ export default function AgencyProfileTab() {
   if (!agency) {
     return (
       <p className="text-sm text-muted-foreground py-6">
-        Агентство не найдено. Зарегистрируйтесь как агентство или обратитесь в поддержку.
+        Агентство не найдено. Зарегистрируйтесь как агентство или обратитесь в
+        поддержку.
       </p>
     );
   }
@@ -126,7 +141,9 @@ export default function AgencyProfileTab() {
     <div className="space-y-6 max-w-xl">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Профиль агентства</h2>
+          <h2 className="text-lg font-semibold text-foreground">
+            Профиль агентства
+          </h2>
           <p className="text-xs text-muted-foreground mt-1">
             Эти данные видны на публичной странице агентства.
           </p>
@@ -146,7 +163,11 @@ export default function AgencyProfileTab() {
           className="relative w-20 h-20 rounded-xl border border-border overflow-hidden bg-muted flex items-center justify-center"
         >
           {agency.logo_url ? (
-            <img src={agency.logo_url} alt="" className="w-full h-full object-cover" />
+            <img
+              src={agency.logo_url}
+              alt=""
+              className="w-full h-full object-cover"
+            />
           ) : (
             <Camera className="w-5 h-5 text-muted-foreground" />
           )}
@@ -156,10 +177,18 @@ export default function AgencyProfileTab() {
             </div>
           )}
         </button>
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onLogo} />
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={onLogo}
+        />
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{VERIFICATION_LABELS[status]}</span>
+            <span className="text-sm font-medium">
+              {VERIFICATION_LABELS[status]}
+            </span>
             {verified && <VerifiedBadge />}
           </div>
           {(status === "unverified" || status === "rejected") && (
@@ -199,7 +228,9 @@ export default function AgencyProfileTab() {
       </div>
 
       <label className="block space-y-1.5">
-        <span className="text-xs font-medium text-muted-foreground">Название</span>
+        <span className="text-xs font-medium text-muted-foreground">
+          Название
+        </span>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -208,13 +239,21 @@ export default function AgencyProfileTab() {
       </label>
 
       <label className="block space-y-1.5">
-        <span className="text-xs font-medium text-muted-foreground">Описание</span>
-        <Textarea value={about} onChange={(e) => setAbout(e.target.value)} rows={4} />
+        <span className="text-xs font-medium text-muted-foreground">
+          Описание
+        </span>
+        <Textarea
+          value={about}
+          onChange={(e) => setAbout(e.target.value)}
+          rows={4}
+        />
       </label>
 
       <div className="grid sm:grid-cols-2 gap-4">
         <label className="block space-y-1.5">
-          <span className="text-xs font-medium text-muted-foreground">Дата открытия</span>
+          <span className="text-xs font-medium text-muted-foreground">
+            Дата открытия
+          </span>
           <input
             type="date"
             value={openedAt}
@@ -223,7 +262,9 @@ export default function AgencyProfileTab() {
           />
         </label>
         <label className="block space-y-1.5">
-          <span className="text-xs font-medium text-muted-foreground">Часы работы</span>
+          <span className="text-xs font-medium text-muted-foreground">
+            Часы работы
+          </span>
           <input
             value={workingHours}
             onChange={(e) => setWorkingHours(e.target.value)}
@@ -234,7 +275,9 @@ export default function AgencyProfileTab() {
       </div>
 
       <Button onClick={save} disabled={updateAgency.isPending}>
-        {updateAgency.isPending && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+        {updateAgency.isPending && (
+          <Loader2 className="w-4 h-4 animate-spin mr-1" />
+        )}
         Сохранить
       </Button>
     </div>

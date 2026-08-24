@@ -1,6 +1,9 @@
 export const TRACK_VIEW_URL =
   import.meta.env.VITE_TRACK_PROPERTY_VIEW_URL ||
-  import.meta.env.VITE_NOTIFY_LEAD_URL?.replace("/notify-lead", "/track-property-view") ||
+  import.meta.env.VITE_NOTIFY_LEAD_URL?.replace(
+    "/notify-lead",
+    "/track-property-view",
+  ) ||
   "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/track-property-view";
 
 export async function trackPropertyView(propertyId: string): Promise<void> {

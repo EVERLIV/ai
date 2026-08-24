@@ -6,9 +6,11 @@ export const FALLBACK_NEWS_POSTS: NewsPost[] = [
     created_at: "2026-08-13T09:00:00Z",
     updated_at: "2026-08-13T09:00:00Z",
     published_at: "2026-08-13T09:00:00Z",
-    title: "Ricci: спрос на офисы в Москве по итогам года может снизиться на треть",
+    title:
+      "Ricci: спрос на офисы в Москве по итогам года может снизиться на треть",
     slug: "ricci-office-demand-2026",
-    excerpt: "По оценке Ricci, совокупный спрос на офисную недвижимость Москвы в 2026 году может составить около 900 тыс. кв. м — на 34% ниже результата 2025 года.",
+    excerpt:
+      "По оценке Ricci, совокупный спрос на офисную недвижимость Москвы в 2026 году может составить около 900 тыс. кв. м — на 34% ниже результата 2025 года.",
     content: `По оценке Ricci, рынок офисной недвижимости Москвы в 2026 году перешел в более осторожную фазу. По итогам первого полугодия совокупный спрос составил **401 тыс. кв. м**, что на 35% меньше, чем годом ранее.
 
 Компании стали дольше принимать решения, чаще откладывают расширение и внимательнее относятся к бюджету сделки. При этом рынок не обрушился: текущая активность остается выше средних значений 2016–2022 годов.
@@ -25,7 +27,8 @@ export const FALLBACK_NEWS_POSTS: NewsPost[] = [
 Во втором полугодии рынок, вероятно, останется умеренно активным. Для арендаторов это означает больше пространства для переговоров, особенно в проектах с длительной экспозицией и на вторичном рынке.
 
 *Источник: [РБК Компании / Ricci](https://companies.rbc.ru/news/rQoKi7n62d/ricci-spros-na-ofisyi-v-moskve-po-itogam-goda-mozhet-snizitsya-na-tret/)*`,
-    cover_url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&q=80",
+    cover_url:
+      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&q=80",
     category: "Рынок",
     tags: ["офисы", "Москва", "аренда", "Ricci"],
     status: "published",
@@ -39,7 +42,8 @@ export const FALLBACK_NEWS_POSTS: NewsPost[] = [
     published_at: "2026-08-13T12:54:00Z",
     title: "IBC Real Estate: вакантность складов достигла 3,0 млн кв. м",
     slug: "ibc-warehouses-vacancy-2026",
-    excerpt: "По итогам II квартала 2026 года вакантность на складском рынке Москвы и области достигла 7,7% — это исторический максимум в абсолютных метрах.",
+    excerpt:
+      "По итогам II квартала 2026 года вакантность на складском рынке Москвы и области достигла 7,7% — это исторический максимум в абсолютных метрах.",
     content: `Складской рынок Московского региона зафиксировал исторический максимум вакансии: по данным IBC Real Estate, по итогам II квартала 2026 года свободными оказались **3,0 млн кв. м**, или **7,7%** всего объема.
 
 Эксперты связывают рост с несколькими факторами одновременно: вводом крупных спекулятивных проектов, паузой в программах расширения у части пользователей и ростом субарендного предложения.
@@ -57,7 +61,8 @@ export const FALLBACK_NEWS_POSTS: NewsPost[] = [
 Ближайшие 6–12 месяцев могут стать сильным окном для переговоров по аренде, пересогласованию действующих договоров и поиску готовых складов на выгодных условиях.
 
 *Источник: [Новости логистики / IBC Real Estate](https://lognews.ru/ibc-real-estate-vakantnost-skladov-v-moskve-i-oblasti-dostigla-istoricheskikh-30-mln-kv-m)*`,
-    cover_url: "https://images.unsplash.com/photo-1553413077-190dd305871c?w=1200&q=80",
+    cover_url:
+      "https://images.unsplash.com/photo-1553413077-190dd305871c?w=1200&q=80",
     category: "Рынок",
     tags: ["склады", "логистика", "вакантность", "IBC Real Estate"],
     status: "published",
@@ -71,7 +76,8 @@ export const FALLBACK_NEWS_POSTS: NewsPost[] = [
     published_at: "2026-08-06T10:00:00Z",
     title: "Рынок коммерческой недвижимости вошел в фазу балансировки",
     slug: "commercial-market-balance-2026",
-    excerpt: "Эксперты Avito, IBC Real Estate и Nikoliers отмечают коррекцию спроса на 5–20% в офисном, складском и торговом сегментах после перегретых 2024–2025 годов.",
+    excerpt:
+      "Эксперты Avito, IBC Real Estate и Nikoliers отмечают коррекцию спроса на 5–20% в офисном, складском и торговом сегментах после перегретых 2024–2025 годов.",
     content: `На рынке коммерческой недвижимости Московского региона в первом полугодии 2026 года усилилась фаза балансировки. После пиковых значений 2024–2025 годов игроки фиксируют более сдержанный спрос и более чувствительную работу с ценой.
 
 По оценкам участников рынка, корректировка спроса в разных сегментах составляет **от 5% до 20%**. Особенно заметно это в складах, где выросла вакансия, но похожая логика уже начинает проявляться и в офисах, и в торговой недвижимости.
@@ -88,7 +94,8 @@ export const FALLBACK_NEWS_POSTS: NewsPost[] = [
 Для арендаторов и покупателей это более рациональная среда: можно спокойнее сравнивать объекты, добиваться скидок и просить дополнительные условия в сделке.
 
 *Источник: [BFM.ru](https://www.bfm.ru/news/614138)*`,
-    cover_url: "https://images.unsplash.com/photo-1460317442991-0ec209397118?w=1200&q=80",
+    cover_url:
+      "https://images.unsplash.com/photo-1460317442991-0ec209397118?w=1200&q=80",
     category: "Рынок",
     tags: ["рынок", "офисы", "склады", "торговля"],
     status: "published",
@@ -102,7 +109,8 @@ export const FALLBACK_NEWS_POSTS: NewsPost[] = [
     published_at: "2026-08-14T08:00:00Z",
     title: "Ввод торговой недвижимости в России резко замедлился",
     slug: "retail-supply-slowdown-2026",
-    excerpt: "В первом полугодии 2026 года объем нового строительства торговой недвижимости составил 95–109 тыс. кв. м, что заметно ниже уровня прошлого года.",
+    excerpt:
+      "В первом полугодии 2026 года объем нового строительства торговой недвижимости составил 95–109 тыс. кв. м, что заметно ниже уровня прошлого года.",
     content: `Торговая недвижимость в 2026 году остается самым осторожным сегментом нового девелопмента. По оценкам консалтинговых компаний, за первое полугодие в России было введено лишь **95–109 тыс. кв. м** качественных торговых площадей — существенно меньше, чем годом ранее.
 
 В основе замедления — высокая ключевая ставка, рост налоговой нагрузки и более сложный поиск арендаторов для новых объектов. Из-за этого часть запусков переносится даже для уже технически готовых торговых центров.
@@ -119,7 +127,8 @@ export const FALLBACK_NEWS_POSTS: NewsPost[] = [
 В качественных действующих объектах хорошие лоты по‑прежнему конкурентны, но в новых проектах собственники чаще готовы обсуждать условия входа и маркетинговые каникулы.
 
 *Источники: [IBC Real Estate](https://ibcrealestate.ru/research/2026-q2-torgovaya-nedvizhimost-/), [Arendator.ru](https://www.arendator.ru/news/191103-vvod_tc_v_rossii_upal_na_67_god_k_godu/), [New Retail](https://new-retail.ru/novosti/retail/vvod_torgovykh_ploshchadey_sokratilsya_vdvoe_za_pervoe_polugodie/)*`,
-    cover_url: "https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=1200&q=80",
+    cover_url:
+      "https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=1200&q=80",
     category: "Рынок",
     tags: ["торговля", "ТЦ", "девелопмент", "ритейл"],
     status: "published",
@@ -133,7 +142,8 @@ export const FALLBACK_NEWS_POSTS: NewsPost[] = [
     published_at: "2026-07-27T09:00:00Z",
     title: "IBC: в столичных ТЦ вакантность держится на уровне 10,8%",
     slug: "ibc-retail-vacancy-2026",
-    excerpt: "По итогам первого полугодия 2026 года доля вакантных площадей в московских торговых центрах сохранилась на уровне 10,8%, а ввод новых объектов остался низким.",
+    excerpt:
+      "По итогам первого полугодия 2026 года доля вакантных площадей в московских торговых центрах сохранилась на уровне 10,8%, а ввод новых объектов остался низким.",
     content: `По данным IBC Real Estate, по итогам первого полугодия 2026 года доля вакантных площадей в столичных торговых центрах составила **10,8%**. Одновременно рынок получил только **95 тыс. кв. м** нового предложения по России за шесть месяцев.
 
 Отчет показывает, что ритейл остается в режиме сдержанного развития: новые проекты выводятся осторожно, а запуск ряда объектов переносится до появления устойчивого пула арендаторов.
@@ -147,7 +157,8 @@ export const FALLBACK_NEWS_POSTS: NewsPost[] = [
 IBC также отмечает дальнейший рост e-commerce: объем онлайн-продаж в первой половине 2026 года достиг **8 трлн рублей**, что продолжает влиять на структуру спроса в офлайн-ритейле.
 
 *Источник: [IBC Real Estate, 2026 Q2 Торговая недвижимость](https://ibcrealestate.ru/research/2026-q2-torgovaya-nedvizhimost-/)*`,
-    cover_url: "https://images.unsplash.com/photo-1481437156560-3205f6a55735?w=1200&q=80",
+    cover_url:
+      "https://images.unsplash.com/photo-1481437156560-3205f6a55735?w=1200&q=80",
     category: "Рынок",
     tags: ["торговля", "вакантность", "ТЦ", "IBC Real Estate"],
     status: "published",
@@ -156,11 +167,20 @@ IBC также отмечает дальнейший рост e-commerce: объ
   },
 ];
 
-export function sortNewsByDate<T extends { published_at: string | null; created_at: string }>(posts: T[]) {
-  return [...posts].sort((a, b) => new Date(b.published_at || b.created_at).getTime() - new Date(a.published_at || a.created_at).getTime());
+export function sortNewsByDate<
+  T extends { published_at: string | null; created_at: string },
+>(posts: T[]) {
+  return [...posts].sort(
+    (a, b) =>
+      new Date(b.published_at || b.created_at).getTime() -
+      new Date(a.published_at || a.created_at).getTime(),
+  );
 }
 
-export function mergeNewsPosts(primary: NewsPost[] = [], fallback: NewsPost[] = FALLBACK_NEWS_POSTS) {
+export function mergeNewsPosts(
+  primary: NewsPost[] = [],
+  fallback: NewsPost[] = FALLBACK_NEWS_POSTS,
+) {
   const bySlug = new Map<string, NewsPost>();
   for (const post of [...primary, ...fallback]) {
     if (!bySlug.has(post.slug)) bySlug.set(post.slug, post);

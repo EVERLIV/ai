@@ -1,7 +1,16 @@
-import { isAnyLand, LAND_PROPERTY_TYPE as LAND_TYPE_FROM_FAMILIES } from "@/lib/propertyTypeFamilies";
+import {
+  isAnyLand,
+  LAND_PROPERTY_TYPE as LAND_TYPE_FROM_FAMILIES,
+} from "@/lib/propertyTypeFamilies";
 
 export const LAND_PROPERTY_TYPE = LAND_TYPE_FROM_FAMILIES;
-export { RESIDENTIAL_LAND_TYPE, isAnyLand, isCommercialLand, isResidentialLand, expandLandFilterTypes } from "@/lib/propertyTypeFamilies";
+export {
+  expandLandFilterTypes,
+  isAnyLand,
+  isCommercialLand,
+  isResidentialLand,
+  RESIDENTIAL_LAND_TYPE,
+} from "@/lib/propertyTypeFamilies";
 
 export const LAND_TYPE_LABEL = "Тип";
 
@@ -21,18 +30,26 @@ export type PropertyExtrasLike = {
 
 /** Коммерческая земля («Земля»). Для жилого участка используйте isResidentialLand / isAnyLand. */
 export function isLandProperty(
-  typeOrProperty: string | { type?: string | null; extras?: PropertyExtrasLike | null } | null | undefined,
+  typeOrProperty:
+    | string
+    | { type?: string | null; extras?: PropertyExtrasLike | null }
+    | null
+    | undefined,
 ): boolean {
   if (!typeOrProperty) return false;
-  if (typeof typeOrProperty === "string") return typeOrProperty === LAND_PROPERTY_TYPE;
+  if (typeof typeOrProperty === "string")
+    return typeOrProperty === LAND_PROPERTY_TYPE;
 
   const extras = typeOrProperty.extras;
   const fromExtras = extras?.property_types;
-  if (Array.isArray(fromExtras) && fromExtras.includes(LAND_PROPERTY_TYPE)) return true;
+  if (Array.isArray(fromExtras) && fromExtras.includes(LAND_PROPERTY_TYPE))
+    return true;
   return typeOrProperty.type === LAND_PROPERTY_TYPE;
 }
 
-export function getLandCadastral(extras: PropertyExtrasLike | null | undefined): string | null {
+export function getLandCadastral(
+  extras: PropertyExtrasLike | null | undefined,
+): string | null {
   const value = extras?.cadastral_number?.trim();
   return value || null;
 }

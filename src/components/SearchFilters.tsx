@@ -1,7 +1,10 @@
+import { ChevronDown, Search, X } from "lucide-react";
 import { useState } from "react";
-import { Search, X, ChevronDown } from "lucide-react";
-import { IRKUTSK_CITY_DISTRICTS, IRKUTSK_OBLAST_CITIES } from "@/lib/irkutskLocations";
 import { useVerifiedAgencies } from "@/hooks/useAgency";
+import {
+  IRKUTSK_CITY_DISTRICTS,
+  IRKUTSK_OBLAST_CITIES,
+} from "@/lib/irkutskLocations";
 import type { ListingSellerFilter } from "@/lib/listingSource";
 
 export type PropertyFilters = {
@@ -44,59 +47,110 @@ interface Props {
 }
 
 function isDirty(f: PropertyFilters) {
-  return f.type !== "Все" || f.areaMin > 0 || f.areaMax < 100000
-    || f.priceMin > 0 || f.priceMax < 100000000
-    || f.district !== "Все" || f.cls !== "Все"
-    || f.seller !== "Все" || !!f.agencyId;
+  return (
+    f.type !== "Все" ||
+    f.areaMin > 0 ||
+    f.areaMax < 100000 ||
+    f.priceMin > 0 ||
+    f.priceMax < 100000000 ||
+    f.district !== "Все" ||
+    f.cls !== "Все" ||
+    f.seller !== "Все" ||
+    !!f.agencyId
+  );
 }
 
-function RangeInput({ label, valMin, valMax, placeholder, suffix, onMin, onMax }: {
-  label: string; valMin: number | string; valMax: number | string;
-  placeholder?: string; suffix?: string;
-  onMin: (v: string) => void; onMax: (v: string) => void;
+function RangeInput({
+  label,
+  valMin,
+  valMax,
+  placeholder,
+  suffix,
+  onMin,
+  onMax,
+}: {
+  label: string;
+  valMin: number | string;
+  valMax: number | string;
+  placeholder?: string;
+  suffix?: string;
+  onMin: (v: string) => void;
+  onMax: (v: string) => void;
 }) {
   const [focusMin, setFocusMin] = useState(false);
   const [focusMax, setFocusMax] = useState(false);
   const focused = focusMin || focusMax;
   return (
     <div className="w-full sm:flex-1 sm:min-w-0">
-      <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">{label}</div>
-      <div className={`flex items-center bg-background border transition-all duration-150 ${focused ? "border-primary/60 shadow-[0_0_0_2px_hsl(var(--primary)/0.12)]" : "border-border hover:border-border/80"}`}>
+      <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+        {label}
+      </div>
+      <div
+        className={`flex items-center bg-background border transition-all duration-150 ${focused ? "border-primary/60 shadow-[0_0_0_2px_hsl(var(--primary)/0.12)]" : "border-border hover:border-border/80"}`}
+      >
         <input
-          type="number" placeholder="от" value={valMin || ""}
+          type="number"
+          placeholder="от"
+          value={valMin || ""}
           onChange={(e) => onMin(e.target.value)}
-          onFocus={() => setFocusMin(true)} onBlur={() => setFocusMin(false)}
+          onFocus={() => setFocusMin(true)}
+          onBlur={() => setFocusMin(false)}
           className="w-full h-9 px-2.5 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none tabular-nums"
         />
-        <span className="text-muted-foreground/40 text-xs px-1 shrink-0">—</span>
+        <span className="text-muted-foreground/40 text-xs px-1 shrink-0">
+          —
+        </span>
         <input
-          type="number" placeholder="до" value={valMax || ""}
+          type="number"
+          placeholder="до"
+          value={valMax || ""}
           onChange={(e) => onMax(e.target.value)}
-          onFocus={() => setFocusMax(true)} onBlur={() => setFocusMax(false)}
+          onFocus={() => setFocusMax(true)}
+          onBlur={() => setFocusMax(false)}
           className="w-full h-9 px-2.5 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none tabular-nums"
         />
-        {suffix && <span className="text-[10px] text-muted-foreground/50 pr-2 shrink-0">{suffix}</span>}
+        {suffix && (
+          <span className="text-[10px] text-muted-foreground/50 pr-2 shrink-0">
+            {suffix}
+          </span>
+        )}
       </div>
     </div>
   );
 }
 
-function SelectInput({ label, value, options, onChange }: {
-  label: string; value: string; options: { value: string; label: string }[];
+function SelectInput({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
   onChange: (v: string) => void;
 }) {
   const [focused, setFocused] = useState(false);
   return (
     <div className="w-full sm:flex-1 sm:min-w-0">
-      <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">{label}</div>
-      <div className={`relative bg-background border transition-all duration-150 ${focused ? "border-primary/60 shadow-[0_0_0_2px_hsl(var(--primary)/0.12)]" : "border-border hover:border-border/80"}`}>
+      <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+        {label}
+      </div>
+      <div
+        className={`relative bg-background border transition-all duration-150 ${focused ? "border-primary/60 shadow-[0_0_0_2px_hsl(var(--primary)/0.12)]" : "border-border hover:border-border/80"}`}
+      >
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           className="w-full h-9 pl-3 pr-8 bg-transparent text-sm text-foreground focus:outline-none appearance-none cursor-pointer"
         >
-          {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
         </select>
         <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
       </div>
@@ -105,7 +159,9 @@ function SelectInput({ label, value, options, onChange }: {
 }
 
 export default function SearchFilters({ filters, onChange }: Props) {
-  const [local, setLocal] = useState<PropertyFilters>(filters ?? defaultFilters);
+  const [local, setLocal] = useState<PropertyFilters>(
+    filters ?? defaultFilters,
+  );
   const f = filters ?? local;
   const { data: verifiedAgencies = [] } = useVerifiedAgencies();
 
@@ -116,14 +172,15 @@ export default function SearchFilters({ filters, onChange }: Props) {
   };
   const reset = () => set(defaultFilters);
   const scrollToResults = () =>
-    document.getElementById("property-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .getElementById("property-results")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   const dirty = isDirty(f);
   const agencyName = verifiedAgencies.find((a) => a.id === f.agencyId)?.name;
 
   return (
     <section id="search" className="bg-card border-b border-border/60">
       <div className="container mx-auto px-4 lg:px-8 py-4">
-
         {/* Type tabs — одна строка, скролл на мобильных */}
         <div className="flex gap-1 overflow-x-auto scrollbar-none mb-4 pb-0.5">
           {tabs.map((t) => (
@@ -143,7 +200,6 @@ export default function SearchFilters({ filters, onChange }: Props) {
 
         {/* Filter row */}
         <div className="flex flex-col sm:flex-row sm:flex-wrap lg:flex-nowrap gap-2 items-stretch sm:items-end">
-
           <RangeInput
             label="Площадь, м²"
             valMin={f.areaMin || ""}
@@ -163,18 +219,26 @@ export default function SearchFilters({ filters, onChange }: Props) {
           <SelectInput
             label="Район"
             value={f.district}
-            options={districts.map((d) => ({ value: d, label: d === "Все" ? "Все районы" : d }))}
+            options={districts.map((d) => ({
+              value: d,
+              label: d === "Все" ? "Все районы" : d,
+            }))}
             onChange={(v) => set({ district: v })}
           />
 
           <SelectInput
             label="Кто сдаёт"
             value={f.seller}
-            options={sellerOptions.map((o) => ({ value: o.value, label: o.label }))}
-            onChange={(v) => set({
-              seller: v as ListingSellerFilter,
-              agencyId: v === "agency" ? f.agencyId : "",
-            })}
+            options={sellerOptions.map((o) => ({
+              value: o.value,
+              label: o.label,
+            }))}
+            onChange={(v) =>
+              set({
+                seller: v as ListingSellerFilter,
+                agencyId: v === "agency" ? f.agencyId : "",
+              })
+            }
           />
 
           {verifiedAgencies.length > 0 && (
@@ -182,13 +246,27 @@ export default function SearchFilters({ filters, onChange }: Props) {
               label="Агентство"
               value={f.agencyId}
               options={[
-                { value: "", label: f.seller === "agency" ? "Все агентства" : "Не выбрано" },
-                ...verifiedAgencies.map((a) => ({ value: a.id, label: a.name })),
+                {
+                  value: "",
+                  label: f.seller === "agency" ? "Все агентства" : "Не выбрано",
+                },
+                ...verifiedAgencies.map((a) => ({
+                  value: a.id,
+                  label: a.name,
+                })),
               ]}
-              onChange={(v) => set({
-                agencyId: v,
-                seller: v ? "agency" : f.seller === "owner" ? "owner" : v === "" && f.seller === "agency" ? "agency" : f.seller,
-              })}
+              onChange={(v) =>
+                set({
+                  agencyId: v,
+                  seller: v
+                    ? "agency"
+                    : f.seller === "owner"
+                      ? "owner"
+                      : v === "" && f.seller === "agency"
+                        ? "agency"
+                        : f.seller,
+                })
+              }
             />
           )}
 
@@ -196,7 +274,10 @@ export default function SearchFilters({ filters, onChange }: Props) {
             <SelectInput
               label="Класс"
               value={f.cls}
-              options={classes.map((c) => ({ value: c, label: c === "Все" ? "Любой" : c }))}
+              options={classes.map((c) => ({
+                value: c,
+                label: c === "Все" ? "Любой" : c,
+              }))}
               onChange={(v) => set({ cls: v })}
             />
           </div>
@@ -225,26 +306,52 @@ export default function SearchFilters({ filters, onChange }: Props) {
         {/* Active chips */}
         {dirty && (
           <div className="mt-3 flex items-center gap-1.5 flex-wrap">
-            {f.type !== "Все" && <Chip label={f.type} onRemove={() => set({ type: "Все" })} />}
+            {f.type !== "Все" && (
+              <Chip label={f.type} onRemove={() => set({ type: "Все" })} />
+            )}
             {(f.areaMin > 0 || f.areaMax < 100000) && (
-              <Chip label={`${f.areaMin || 0}–${f.areaMax >= 100000 ? "∞" : f.areaMax} м²`} onRemove={() => set({ areaMin: 0, areaMax: 100000 })} />
+              <Chip
+                label={`${f.areaMin || 0}–${f.areaMax >= 100000 ? "∞" : f.areaMax} м²`}
+                onRemove={() => set({ areaMin: 0, areaMax: 100000 })}
+              />
             )}
             {(f.priceMin > 0 || f.priceMax < 100000000) && (
-              <Chip label={`${f.priceMin ? (f.priceMin / 1000).toFixed(0) + "к" : "0"}–${f.priceMax >= 100000000 ? "∞" : (f.priceMax / 1000).toFixed(0) + "к"} ₽`}
-                onRemove={() => set({ priceMin: 0, priceMax: 100000000 })} />
+              <Chip
+                label={`${f.priceMin ? `${(f.priceMin / 1000).toFixed(0)}к` : "0"}–${f.priceMax >= 100000000 ? "∞" : `${(f.priceMax / 1000).toFixed(0)}к`} ₽`}
+                onRemove={() => set({ priceMin: 0, priceMax: 100000000 })}
+              />
             )}
-            {f.district !== "Все" && <Chip label={f.district} onRemove={() => set({ district: "Все" })} />}
-            {f.cls !== "Все" && <Chip label={`Класс ${f.cls}`} onRemove={() => set({ cls: "Все" })} />}
+            {f.district !== "Все" && (
+              <Chip
+                label={f.district}
+                onRemove={() => set({ district: "Все" })}
+              />
+            )}
+            {f.cls !== "Все" && (
+              <Chip
+                label={`Класс ${f.cls}`}
+                onRemove={() => set({ cls: "Все" })}
+              />
+            )}
             {f.agencyId && agencyName && (
-              <Chip label={agencyName} onRemove={() => set({ agencyId: "", seller: "agency" })} />
+              <Chip
+                label={agencyName}
+                onRemove={() => set({ agencyId: "", seller: "agency" })}
+              />
             )}
             {!f.agencyId && f.seller === "owner" && (
-              <Chip label="Собственник" onRemove={() => set({ seller: "Все" })} />
+              <Chip
+                label="Собственник"
+                onRemove={() => set({ seller: "Все" })}
+              />
             )}
             {!f.agencyId && f.seller === "agency" && (
               <Chip label="Агентство" onRemove={() => set({ seller: "Все" })} />
             )}
-            <button onClick={reset} className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+            <button
+              onClick={reset}
+              className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+            >
               Сбросить всё
             </button>
           </div>
@@ -263,7 +370,10 @@ function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
     <span className="inline-flex items-center gap-1 h-5 pl-2 pr-1 bg-primary/8 text-primary text-[10px] font-medium transition-colors">
       {label}
-      <button onClick={onRemove} className="hover:text-primary/60 transition-colors active:scale-90">
+      <button
+        onClick={onRemove}
+        className="hover:text-primary/60 transition-colors active:scale-90"
+      >
         <X className="w-2.5 h-2.5" />
       </button>
     </span>

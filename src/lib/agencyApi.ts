@@ -1,4 +1,8 @@
-import { SUPABASE_URL, SERVICE_ROLE_KEY, supabaseAdmin } from "@/integrations/supabase/adminClient";
+import {
+  SERVICE_ROLE_KEY,
+  SUPABASE_URL,
+  supabaseAdmin,
+} from "@/integrations/supabase/adminClient";
 
 const headers = {
   apikey: SERVICE_ROLE_KEY,
@@ -7,7 +11,11 @@ const headers = {
 };
 
 export type AgencyMemberRole = "owner" | "admin" | "member";
-export type AgencyVerificationStatus = "unverified" | "pending" | "verified" | "rejected";
+export type AgencyVerificationStatus =
+  | "unverified"
+  | "pending"
+  | "verified"
+  | "rejected";
 
 export type Agency = {
   id: string;
@@ -82,7 +90,8 @@ function errorBodyText(data: unknown): string {
 
 function isMissingColumnError(data: unknown, column?: string): boolean {
   const text = errorBodyText(data);
-  if (!/Could not find.*column|column .* does not exist|PGRST204/i.test(text)) return false;
+  if (!/Could not find.*column|column .* does not exist|PGRST204/i.test(text))
+    return false;
   if (!column) return true;
   return new RegExp(column, "i").test(text);
 }
@@ -148,7 +157,7 @@ export async function fetchMembershipApi(userId: string) {
   const rows = await restGet<AgencyMember[]>(
     `agency_members?user_id=eq.${userId}&select=*`,
   );
-  return Array.isArray(rows) ? rows[0] ?? null : null;
+  return Array.isArray(rows) ? (rows[0] ?? null) : null;
 }
 
 export async function fetchAgencyByIdApi(agencyId: string) {
@@ -165,7 +174,10 @@ export async function fetchMyAgencyApi(userId: string) {
   return { agency, membership };
 }
 
-export async function updateAgencyApi(agencyId: string, payload: Partial<Agency>) {
+export async function updateAgencyApi(
+  agencyId: string,
+  payload: Partial<Agency>,
+) {
   const data = await restMutate(`agencies?id=eq.${agencyId}`, "PATCH", payload);
   const row = Array.isArray(data) ? data[0] : data;
   return row as Agency;
@@ -175,7 +187,10 @@ export async function requestAgencyVerificationApi(agencyId: string) {
   return updateAgencyApi(agencyId, { verification_status: "pending" });
 }
 
-export async function adminUpdateAgencyApi(agencyId: string, payload: Partial<Agency>) {
+export async function adminUpdateAgencyApi(
+  agencyId: string,
+  payload: Partial<Agency>,
+) {
   return updateAgencyApi(agencyId, payload);
 }
 
@@ -234,7 +249,10 @@ export async function updateAgencyMemberRoleApi(
   );
 }
 
-export async function fetchAgencyManagersApi(agencyId: string, activeOnly = false) {
+export async function fetchAgencyManagersApi(
+  agencyId: string,
+  activeOnly = false,
+) {
   const filter = activeOnly ? "&is_active=eq.true" : "";
   const rows = await restGet<AgencyManager[]>(
     `agency_managers?agency_id=eq.${agencyId}${filter}&select=*&order=sort_order.asc,created_at.asc`,
@@ -270,7 +288,8 @@ export async function createAgencyManagerApi(
     // Колонка ещё не накатана — сохраняем менеджера без типов
     result = await restMutateRaw("agency_managers", "POST", base);
   }
-  if (!result.ok) throw parseError(result.data, { status: result.status } as Response);
+  if (!result.ok)
+    throw parseError(result.data, { status: result.status } as Response);
 
   const row = Array.isArray(result.data) ? result.data[0] : result.data;
   const manager = row as AgencyManager;
@@ -278,7 +297,7 @@ export async function createAgencyManagerApi(
     ...manager,
     property_types: Array.isArray(manager.property_types)
       ? manager.property_types
-      : payload.property_types ?? [],
+      : (payload.property_types ?? []),
   };
 }
 
@@ -286,15 +305,28 @@ export async function updateAgencyManagerApi(
   managerId: string,
   payload: Partial<AgencyManager>,
 ) {
-  let result = await restMutateRaw(`agency_managers?id=eq.${managerId}`, "PATCH", payload);
-  if (!result.ok && isMissingColumnError(result.data, "property_types") && "property_types" in payload) {
+  let result = await restMutateRaw(
+    `agency_managers?id=eq.${managerId}`,
+    "PATCH",
+    payload,
+  );
+  if (
+    !result.ok &&
+    isMissingColumnError(result.data, "property_types") &&
+    "property_types" in payload
+  ) {
     const { property_types: _drop, ...rest } = payload;
     if (Object.keys(rest).length === 0) {
       throw parseError(result.data, { status: result.status } as Response);
     }
-    result = await restMutateRaw(`agency_managers?id=eq.${managerId}`, "PATCH", rest);
+    result = await restMutateRaw(
+      `agency_managers?id=eq.${managerId}`,
+      "PATCH",
+      rest,
+    );
   }
-  if (!result.ok) throw parseError(result.data, { status: result.status } as Response);
+  if (!result.ok)
+    throw parseError(result.data, { status: result.status } as Response);
   const row = Array.isArray(result.data) ? result.data[0] : result.data;
   return row as AgencyManager;
 }
@@ -333,7 +365,7 @@ export async function fetchInviteByTokenApi(token: string) {
   const rows = await restGet<AgencyInvite[]>(
     `agency_invites?token=eq.${encodeURIComponent(token)}&accepted_at=is.null&select=*`,
   );
-  return Array.isArray(rows) ? rows[0] ?? null : null;
+  return Array.isArray(rows) ? (rows[0] ?? null) : null;
 }
 
 export async function fetchAgencyPropertiesApi(agencyId: string) {
@@ -342,7 +374,10 @@ export async function fetchAgencyPropertiesApi(agencyId: string) {
       `properties?agency_id=eq.${agencyId}&moderation_status=eq.published&is_active=eq.true&select=*&order=created_at.desc`,
     );
   } catch (err) {
-    if (err instanceof Error && /agency_id|self_hosted_agency_hotfix/i.test(err.message)) {
+    if (
+      err instanceof Error &&
+      /agency_id|self_hosted_agency_hotfix/i.test(err.message)
+    ) {
       return [];
     }
     throw err;
@@ -355,7 +390,10 @@ export async function fetchMyAgencyPropertiesApi(agencyId: string) {
       `properties?agency_id=eq.${agencyId}&select=*&order=created_at.desc`,
     );
   } catch (err) {
-    if (err instanceof Error && /agency_id|self_hosted_agency_hotfix/i.test(err.message)) {
+    if (
+      err instanceof Error &&
+      /agency_id|self_hosted_agency_hotfix/i.test(err.message)
+    ) {
       return [];
     }
     throw err;
@@ -370,16 +408,32 @@ function toPublicStorageUrl(url: string): string {
   );
 }
 
-export async function uploadAgencyAssetApi(agencyId: string, file: File, kind: "logo" | "manager") {
+export async function uploadAgencyAssetApi(
+  agencyId: string,
+  file: File,
+  kind: "logo" | "manager",
+) {
   const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const path = `${agencyId}/${kind}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabaseAdmin.storage.upload("agency-assets", path, file);
-  if (error) throw new Error(typeof error === "string" ? error : "Не удалось загрузить файл");
-  return toPublicStorageUrl(supabaseAdmin.storage.getPublicUrl("agency-assets", path));
+  const { error } = await supabaseAdmin.storage.upload(
+    "agency-assets",
+    path,
+    file,
+  );
+  if (error)
+    throw new Error(
+      typeof error === "string" ? error : "Не удалось загрузить файл",
+    );
+  return toPublicStorageUrl(
+    supabaseAdmin.storage.getPublicUrl("agency-assets", path),
+  );
 }
 
 /** Ensure agency exists for legacy realtor profiles when migration not yet run on row */
-export async function ensureAgencyForUserApi(userId: string, seed?: { name?: string; about?: string }) {
+export async function ensureAgencyForUserApi(
+  userId: string,
+  seed?: { name?: string; about?: string },
+) {
   const existing = await fetchMyAgencyApi(userId);
   if (existing) return existing;
 
@@ -396,9 +450,16 @@ export async function ensureAgencyForUserApi(userId: string, seed?: { name?: str
   await restMutate(`profiles?id=eq.${userId}`, "PATCH", {
     account_type: "agency",
   });
-  return { agency, membership: { agency_id: agency.id, user_id: userId, role: "owner" as const, created_at: new Date().toISOString() } };
+  return {
+    agency,
+    membership: {
+      agency_id: agency.id,
+      user_id: userId,
+      role: "owner" as const,
+      created_at: new Date().toISOString(),
+    },
+  };
 }
-
 
 export type AgencyTelegramSettings = {
   telegram_enabled?: boolean;

@@ -1,9 +1,9 @@
+import { X } from "lucide-react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
 import AIPropertyWizard from "@/components/AIPropertyWizard";
-import { useProperties } from "@/hooks/useProperties";
 import type { PropertySegment } from "@/config/propertySegments";
+import { useProperties } from "@/hooks/useProperties";
 
 interface AIWizardModalProps {
   open: boolean;
@@ -20,7 +20,9 @@ export default function AIWizardModal({
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     document.addEventListener("keydown", handler);
     document.body.style.overflow = "hidden";
     return () => {
@@ -43,17 +45,29 @@ export default function AIWizardModal({
 
       <div
         className="relative w-full max-w-lg bg-card shadow-[0_24px_64px_-12px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col h-[92dvh] rounded-t-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-none"
-        style={{ animation: "ai-modal-in 250ms cubic-bezier(0.34,1.56,0.64,1) forwards" }}
+        style={{
+          animation:
+            "ai-modal-in 250ms cubic-bezier(0.34,1.56,0.64,1) forwards",
+        }}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 sm:px-5 sm:py-4">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-primary flex items-center justify-center">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2.5"
+              >
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
               </svg>
             </div>
             <div>
-              <span className="text-sm font-bold text-foreground">ИИ-подбор объекта</span>
+              <span className="text-sm font-bold text-foreground">
+                ИИ-подбор объекта
+              </span>
               <p className="text-[11px] text-muted-foreground">
                 {segment === "residential"
                   ? "Подбор жилья по параметрам за 1 минуту"
@@ -70,7 +84,11 @@ export default function AIWizardModal({
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <AIPropertyWizard properties={properties} onClose={onClose} segment={segment} />
+          <AIPropertyWizard
+            properties={properties}
+            onClose={onClose}
+            segment={segment}
+          />
         </div>
       </div>
 
@@ -85,6 +103,6 @@ export default function AIWizardModal({
         }
       `}</style>
     </div>,
-    document.body
+    document.body,
   );
 }

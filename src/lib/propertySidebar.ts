@@ -1,6 +1,10 @@
-import { getLandUse, isLandProperty, LAND_TYPE_LABEL } from "@/lib/propertyLand";
-import { isSaleDeal } from "@/lib/propertyDeal";
 import { ACCOUNT_TYPE_LABELS } from "@/hooks/useProfile";
+import { isSaleDeal } from "@/lib/propertyDeal";
+import {
+  getLandUse,
+  isLandProperty,
+  LAND_TYPE_LABEL,
+} from "@/lib/propertyLand";
 
 export type PropertySidebarExtras = {
   entrance_group?: string;
@@ -78,7 +82,9 @@ export function getListingAgentDisplay(
   }
 
   if (secondaryLabel === primaryLabel) {
-    secondaryLabel = isAgency ? ACCOUNT_TYPE_LABELS.agency : ACCOUNT_TYPE_LABELS.owner;
+    secondaryLabel = isAgency
+      ? ACCOUNT_TYPE_LABELS.agency
+      : ACCOUNT_TYPE_LABELS.owner;
   }
 
   return {
@@ -128,6 +134,17 @@ function displayValue(value?: string | null): string {
   return trimmed || "—";
 }
 
+/** Срок аренды без дублирования «от от …». */
+function formatMinTerm(
+  minTerm?: string,
+  contractTerm?: string | null,
+): string {
+  const raw = minTerm?.trim() || contractTerm?.trim() || "";
+  if (!raw) return "—";
+  if (/^от\s/i.test(raw)) return raw;
+  return `от ${raw}`;
+}
+
 export function resolveSidebarDisplay(property: {
   type?: string | null;
   deal_type?: string | null;
@@ -158,7 +175,7 @@ export function resolveSidebarDisplay(property: {
     utilitiesAccent: (e.utilities_included || "").toLowerCase() === "включены",
     vat: displayValue(e.vat),
     indexation: displayValue(e.indexation),
-    min_term: displayValue(e.min_term || (property.contract_term ? `от ${property.contract_term}` : "")),
+    min_term: formatMinTerm(e.min_term, property.contract_term),
     pedestrian_traffic: pedestrian,
     trafficLabel,
     metro_minutes: displayValue(e.metro_minutes),
@@ -182,7 +199,12 @@ export function resolveSidebarDisplay(property: {
     agent_agency_about: e.agent_agency_about?.trim() || "",
     agency_id: typeof e.agency_id === "string" ? e.agency_id : "",
     owner_user_id: typeof e.owner_user_id === "string" ? e.owner_user_id : "",
-    showAgent: !!(e.agent_name?.trim() || e.agent_company?.trim() || e.owner_user_id || e.agency_id),
+    showAgent: !!(
+      e.agent_name?.trim() ||
+      e.agent_company?.trim() ||
+      e.owner_user_id ||
+      e.agency_id
+    ),
   };
 }
 

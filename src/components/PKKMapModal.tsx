@@ -1,4 +1,4 @@
-import { X, ExternalLink, Map } from "lucide-react";
+import { ExternalLink, Map, X } from "lucide-react";
 import { useEffect } from "react";
 
 interface PKKMapModalProps {
@@ -6,9 +6,14 @@ interface PKKMapModalProps {
   onClose: () => void;
 }
 
-export default function PKKMapModal({ cadastralNumber, onClose }: PKKMapModalProps) {
+export default function PKKMapModal({
+  cadastralNumber,
+  onClose,
+}: PKKMapModalProps) {
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => {
@@ -37,7 +42,9 @@ export default function PKKMapModal({ cadastralNumber, onClose }: PKKMapModalPro
               <p className="text-[10px] font-medium uppercase tracking-widest text-primary">
                 Кадастровая карта
               </p>
-              <p className="text-sm font-semibold text-foreground truncate font-mono">{cadastralNumber}</p>
+              <p className="text-sm font-semibold text-foreground truncate font-mono">
+                {cadastralNumber}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -70,7 +77,12 @@ export default function PKKMapModal({ cadastralNumber, onClose }: PKKMapModalPro
 
         <div className="px-4 py-2 text-[10px] text-muted-foreground bg-muted/40 border-t border-border">
           Данные Росреестра · Публичная кадастровая карта ·{" "}
-          <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          <a
+            href={mapUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
             Открыть в новой вкладке
           </a>
         </div>

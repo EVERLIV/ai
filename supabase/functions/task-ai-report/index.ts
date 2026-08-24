@@ -2,26 +2,29 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 /** Дешёвая текстовая модель: отчёт — это сводка по готовым цифрам. */
 const REPORT_MODEL = "claude-haiku-4-5";
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS")
+    return new Response("ok", { headers: corsHeaders });
 
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
     const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!anthropicKey) throw new Error("ANTHROPIC_API_KEY не настроен");
 
     // Дата для отчёта (сегодня или из тела запроса)
-    const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+    const body =
+      req.method === "POST" ? await req.json().catch(() => ({})) : {};
     const reportDate = body.date || new Date().toISOString().split("T")[0];
 
     // Проверить — отчёт за сегодня уже есть?
@@ -33,35 +36,55 @@ Deno.serve(async (req) => {
 
     // Если вызван вручную с force:true — перегенерируем
     if (existing && !body.force) {
-      return new Response(JSON.stringify({ ok: true, cached: true, report: existing }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ ok: true, cached: true, report: existing }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     // Получить все задачи
     const { data: tasks, error } = await supabase
       .from("tasks")
-      .select("id, title, description, assignee, status, priority, due_date, tags, created_at, updated_at");
+      .select(
+        "id, title, description, assignee, status, priority, due_date, tags, created_at, updated_at",
+      );
     if (error) throw error;
 
     // Статистика для контекста
     const total = tasks.length;
     const byStatus = {
-      todo: tasks.filter(t => t.status === "todo").length,
-      in_progress: tasks.filter(t => t.status === "in_progress").length,
-      done: tasks.filter(t => t.status === "done").length,
+      todo: tasks.filter((t) => t.status === "todo").length,
+      in_progress: tasks.filter((t) => t.status === "in_progress").length,
+      done: tasks.filter((t) => t.status === "done").length,
     };
-    const overdue = tasks.filter(t => t.due_date && t.status !== "done" && new Date(t.due_date) < new Date());
-    const dueToday = tasks.filter(t => t.due_date === reportDate && t.status !== "done");
-    const highPriority = tasks.filter(t => t.priority === "high" && t.status !== "done");
+    const overdue = tasks.filter(
+      (t) =>
+        t.due_date && t.status !== "done" && new Date(t.due_date) < new Date(),
+    );
+    const dueToday = tasks.filter(
+      (t) => t.due_date === reportDate && t.status !== "done",
+    );
+    const highPriority = tasks.filter(
+      (t) => t.priority === "high" && t.status !== "done",
+    );
 
     // Группировка по исполнителям
-    const byAssignee: Record<string, { todo: number; in_progress: number; done: number; overdue: number }> = {};
+    const byAssignee: Record<
+      string,
+      { todo: number; in_progress: number; done: number; overdue: number }
+    > = {};
     for (const t of tasks) {
       const key = t.assignee || "Не назначен";
-      if (!byAssignee[key]) byAssignee[key] = { todo: 0, in_progress: 0, done: 0, overdue: 0 };
-      byAssignee[key][t.status as keyof typeof byAssignee[string]]++;
-      if (t.due_date && t.status !== "done" && new Date(t.due_date) < new Date()) {
+      if (!byAssignee[key])
+        byAssignee[key] = { todo: 0, in_progress: 0, done: 0, overdue: 0 };
+      byAssignee[key][t.status as keyof (typeof byAssignee)[string]]++;
+      if (
+        t.due_date &&
+        t.status !== "done" &&
+        new Date(t.due_date) < new Date()
+      ) {
         byAssignee[key].overdue++;
       }
     }
@@ -79,18 +102,40 @@ Deno.serve(async (req) => {
 • Высокий приоритет (незакрытых): ${highPriority.length}
 
 По исполнителям:
-${Object.entries(byAssignee).map(([name, s]) =>
-  `  ${name}: в работе ${s.in_progress}, к выполнению ${s.todo}, готово ${s.done}${s.overdue > 0 ? `, просрочено ${s.overdue}` : ""}`
-).join("\n")}
+${Object.entries(byAssignee)
+  .map(
+    ([name, s]) =>
+      `  ${name}: в работе ${s.in_progress}, к выполнению ${s.todo}, готово ${s.done}${s.overdue > 0 ? `, просрочено ${s.overdue}` : ""}`,
+  )
+  .join("\n")}
 
 Просроченные задачи:
-${overdue.slice(0, 10).map(t => `  • "${t.title}" — ${t.assignee || "не назначена"}, срок: ${t.due_date}`).join("\n") || "  нет"}
+${
+  overdue
+    .slice(0, 10)
+    .map(
+      (t) =>
+        `  • "${t.title}" — ${t.assignee || "не назначена"}, срок: ${t.due_date}`,
+    )
+    .join("\n") || "  нет"
+}
 
 Задачи с дедлайном сегодня:
-${dueToday.slice(0, 10).map(t => `  • "${t.title}" — ${t.assignee || "не назначена"}`).join("\n") || "  нет"}
+${
+  dueToday
+    .slice(0, 10)
+    .map((t) => `  • "${t.title}" — ${t.assignee || "не назначена"}`)
+    .join("\n") || "  нет"
+}
 
 Задачи высокого приоритета в работе:
-${highPriority.filter(t => t.status === "in_progress").slice(0, 5).map(t => `  • "${t.title}" — ${t.assignee || "не назначена"}`).join("\n") || "  нет"}
+${
+  highPriority
+    .filter((t) => t.status === "in_progress")
+    .slice(0, 5)
+    .map((t) => `  • "${t.title}" — ${t.assignee || "не назначена"}`)
+    .join("\n") || "  нет"
+}
 
 ЧТО НУЖНО:
 • summary — 3–5 предложений: общий вывод о состоянии дел, ключевые проблемы и успехи.
@@ -124,7 +169,10 @@ ${highPriority.filter(t => t.status === "in_progress").slice(0, 5).map(t => `  �
                   items: {
                     type: "object",
                     properties: {
-                      type: { type: "string", enum: ["warning", "success", "info", "critical"] },
+                      type: {
+                        type: "string",
+                        enum: ["warning", "success", "info", "critical"],
+                      },
                       title: { type: "string" },
                       text: { type: "string" },
                       emoji: { type: "string" },
@@ -152,28 +200,35 @@ ${highPriority.filter(t => t.status === "in_progress").slice(0, 5).map(t => `  �
     if (aiData.stop_reason === "refusal") {
       throw new Error("Модель отклонила запрос");
     }
-    const textBlock = (aiData.content ?? []).find((b: { type: string }) => b.type === "text");
+    const textBlock = (aiData.content ?? []).find(
+      (b: { type: string }) => b.type === "text",
+    );
     if (!textBlock?.text) throw new Error("Пустой ответ модели");
     const parsed = JSON.parse(textBlock.text);
 
     // Сохранить отчёт
     const { data: saved, error: saveErr } = await supabase
       .from("task_ai_reports")
-      .upsert({
-        report_date: reportDate,
-        summary: parsed.summary,
-        insights: parsed.insights,
-        generated_at: new Date().toISOString(),
-      }, { onConflict: "report_date" })
+      .upsert(
+        {
+          report_date: reportDate,
+          summary: parsed.summary,
+          insights: parsed.insights,
+          generated_at: new Date().toISOString(),
+        },
+        { onConflict: "report_date" },
+      )
       .select()
       .single();
 
     if (saveErr) throw saveErr;
 
-    return new Response(JSON.stringify({ ok: true, cached: false, report: saved }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-
+    return new Response(
+      JSON.stringify({ ok: true, cached: false, report: saved }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   } catch (err: any) {
     console.error(err);
     return new Response(JSON.stringify({ ok: false, error: err.message }), {

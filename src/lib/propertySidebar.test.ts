@@ -1,11 +1,13 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, test } from "vitest";
 import { getListingAgentDisplay } from "./propertySidebar";
 
 describe("getListingAgentDisplay", () => {
   test("returns null when there is no agent and no owner", () => {
     expect(getListingAgentDisplay(null)).toBeNull();
     expect(getListingAgentDisplay({})).toBeNull();
-    expect(getListingAgentDisplay({ agent_name: "", agent_company: "" })).toBeNull();
+    expect(
+      getListingAgentDisplay({ agent_name: "", agent_company: "" }),
+    ).toBeNull();
   });
 
   test("shows an imported agency listing as a realtor card", () => {
@@ -43,6 +45,10 @@ describe("getListingAgentDisplay", () => {
     const agent = getListingAgentDisplay(extras);
 
     // Assert
-    expect(agent).toMatchObject({ primaryLabel: "Иван Петров", isRealtor: false, isAgency: false });
+    expect(agent).toMatchObject({
+      primaryLabel: "Иван Петров",
+      isRealtor: false,
+      isAgency: false,
+    });
   });
 });

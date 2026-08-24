@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 const GRID_ROOMS = ["1", "2", "3", "4", "5", "6+"] as const;
 const EXTRA_ROOMS = ["Студия", "Свободная планировка"] as const;
 
-export type RoomChoice = (typeof GRID_ROOMS)[number] | (typeof EXTRA_ROOMS)[number] | "";
+export type RoomChoice =
+  | (typeof GRID_ROOMS)[number]
+  | (typeof EXTRA_ROOMS)[number]
+  | "";
 
 export function roomsDisplayLabel(value: string): string {
   if (!value) return "Кол-во комнат";
@@ -23,7 +26,12 @@ type Props = {
   onChange: (value: string) => void;
 };
 
-export default function RoomsSheet({ open, onOpenChange, value, onChange }: Props) {
+export default function RoomsSheet({
+  open,
+  onOpenChange,
+  value,
+  onChange,
+}: Props) {
   const [draft, setDraft] = useState(value);
 
   useEffect(() => {
@@ -32,11 +40,17 @@ export default function RoomsSheet({ open, onOpenChange, value, onChange }: Prop
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="px-0 pb-0 pt-0 rounded-t-2xl [&>button]:hidden" aria-describedby={undefined}>
+      <SheetContent
+        side="bottom"
+        className="px-0 pb-0 pt-0 rounded-t-2xl [&>button]:hidden"
+        aria-describedby={undefined}
+      >
         <SheetTitle className="sr-only">Количество комнат</SheetTitle>
 
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
-          <span className="text-base font-semibold text-foreground">Количество комнат</span>
+          <span className="text-base font-semibold text-foreground">
+            Количество комнат
+          </span>
           <button
             type="button"
             aria-label="Закрыть"

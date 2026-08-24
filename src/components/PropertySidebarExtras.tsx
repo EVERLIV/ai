@@ -1,16 +1,20 @@
 import {
-  DoorOpen, Receipt, TrendingUp, MapPinned, Footprints, Train, ScrollText,
-  Building2, Home, Users, Star, Clock3,
+  Building2,
 } from "lucide-react";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
-import { resolveSidebarDisplay } from "@/lib/propertySidebar";
-import { isAgencyListing } from "@/lib/listingSource";
+import { SpecRow, SpecSectionTitle } from "@/components/PropertySpecList";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { DEFAULT_AGENT } from "@/config/defaultAgent";
 import { useOwnerListingCard } from "@/hooks/useOwnerListingCard";
 import { ACCOUNT_TYPE_LABELS } from "@/hooks/useProfile";
 import { useActivePropertiesCount } from "@/hooks/useProperties";
-import { DEFAULT_AGENT } from "@/config/defaultAgent";
-import { AGENCY_OBJECTS_FLOOR, formatAgentObjectsLabel } from "@/lib/propertyCard";
+import { isAgencyListing } from "@/lib/listingSource";
+import {
+  AGENCY_OBJECTS_FLOOR,
+  formatAgentObjectsLabel,
+} from "@/lib/propertyCard";
+import { resolveSidebarDisplay } from "@/lib/propertySidebar";
+import { Link } from "react-router-dom";
 
 interface Props {
   property: {
@@ -31,11 +35,15 @@ export default function PropertySidebarExtras({ property }: Props) {
   const { vis } = d;
   const agencyListing = isAgencyListing(property);
   const ownerUserId = d.owner_user_id || property.submitted_by || "";
-  const { data: liveOwner } = useOwnerListingCard(agencyListing ? null : ownerUserId || null);
+  const { data: liveOwner } = useOwnerListingCard(
+    agencyListing ? null : ownerUserId || null,
+  );
 
   const extrasAgentName = d.agent_name !== "—" ? d.agent_name : "";
   const extrasAgencyName =
-    d.agent_company !== "—" && d.agent_company !== "Собственник" ? d.agent_company : "";
+    d.agent_company !== "—" && d.agent_company !== "Собственник"
+      ? d.agent_company
+      : "";
 
   const agentName = agencyListing
     ? extrasAgentName
@@ -43,15 +51,20 @@ export default function PropertySidebarExtras({ property }: Props) {
   const agentAvatar = agencyListing
     ? d.agent_avatar_url || consultantAvatar
     : liveOwner?.avatar_url || d.agent_avatar_url || consultantAvatar;
-  const accountType = agencyListing ? d.agent_account_type : liveOwner?.account_type || d.agent_account_type;
-  const isRealtor = accountType === "realtor" || accountType === "agency" || agencyListing;
+  const accountType = agencyListing
+    ? d.agent_account_type
+    : liveOwner?.account_type || d.agent_account_type;
+  const isRealtor =
+    accountType === "realtor" || accountType === "agency" || agencyListing;
   const agencyName = agencyListing
     ? extrasAgencyName
     : liveOwner?.agency_name || extrasAgencyName;
-  const agencyAbout = agencyListing ? d.agent_agency_about : liveOwner?.agency_about || d.agent_agency_about;
+  const agencyAbout = agencyListing
+    ? d.agent_agency_about
+    : liveOwner?.agency_about || d.agent_agency_about;
   const objectsCount = agencyListing
     ? d.agent_objects_count
-    : liveOwner?.published_objects_count ?? d.agent_objects_count;
+    : (liveOwner?.published_objects_count ?? d.agent_objects_count);
   const isVerified = agencyListing
     ? d.agent_verified
     : liveOwner
@@ -63,16 +76,18 @@ export default function PropertySidebarExtras({ property }: Props) {
     ? !!(extrasAgentName || extrasAgencyName)
     : !!ownerUserId && !!(agentName || liveOwner?.full_name);
 
-  // Объекты без собственника ведёт агент агентства — берём его данные
-  // из единого конфига, а число объектов из фактического каталога.
   const { data: catalogCount } = useActivePropertiesCount();
 
   const showAgent = true;
   const displayAgentName = hasOwnerData ? agentName : DEFAULT_AGENT.name;
   const displayAgentAvatar = hasOwnerData ? agentAvatar : DEFAULT_AGENT.avatar;
-  const displayIsVerified = hasOwnerData ? isVerified : DEFAULT_AGENT.isVerified;
+  const displayIsVerified = hasOwnerData
+    ? isVerified
+    : DEFAULT_AGENT.isVerified;
   const displayIsRealtor = hasOwnerData ? isRealtor : true;
-  const displayAgencyName = hasOwnerData ? agencyName : DEFAULT_AGENT.agencyName;
+  const displayAgencyName = hasOwnerData
+    ? agencyName
+    : DEFAULT_AGENT.agencyName;
   const displayObjectsCount = hasOwnerData
     ? objectsCount
     : Math.max(catalogCount ?? 0, AGENCY_OBJECTS_FLOOR);
@@ -80,190 +95,186 @@ export default function PropertySidebarExtras({ property }: Props) {
     isAgency: !hasOwnerData || isRealtor,
   });
   const displayAgencyAbout = hasOwnerData ? agencyAbout : DEFAULT_AGENT.about;
-  const displayAccountType = hasOwnerData ? accountType : DEFAULT_AGENT.accountType;
+  const displayAccountType = hasOwnerData
+    ? accountType
+    : DEFAULT_AGENT.accountType;
   const displayStaffCount = hasOwnerData ? staffCount : undefined;
+  const agencyHref = d.agency_id ? `/agentstvo/${d.agency_id}` : null;
+
+  const conditionRows: { label: string; value: string }[] = [];
+  if (vis.entrance && d.entrance_group !== "—")
+    conditionRows.push({ label: "Вход", value: d.entrance_group });
+  if (d.utilities_included !== "—")
+    conditionRows.push({
+      label: "Коммунальные",
+      value: d.utilities_included,
+    });
+  if (d.vat !== "—") conditionRows.push({ label: "НДС", value: d.vat });
+  if (vis.indexation && d.indexation !== "—")
+    conditionRows.push({ label: "Индексация", value: d.indexation });
+  if (vis.minTerm && d.min_term !== "—")
+    conditionRows.push({ label: "Мин. срок", value: d.min_term });
+  if (vis.contractForm && d.contract_form !== "—")
+    conditionRows.push({ label: "Форма договора", value: d.contract_form });
+  if (d.landlord_type !== "—")
+    conditionRows.push({ label: vis.landlordLabel, value: d.landlord_type });
+  if (vis.sublease && d.sublease !== "—")
+    conditionRows.push({ label: "Субаренда", value: d.sublease });
+  if (d.purpose !== "—")
+    conditionRows.push({ label: vis.purposeLabel, value: d.purpose });
+
+  const locationRows: { label: string; value: string }[] = [];
+  if (d.metro_minutes !== "—")
+    locationRows.push({ label: "До метро", value: d.metro_minutes });
+  if (d.district !== "—")
+    locationRows.push({ label: "Район", value: d.district });
+  if (d.transport_hub !== "—")
+    locationRows.push({ label: "Транспортный узел", value: d.transport_hub });
 
   return (
-    <div className="space-y-3">
-      {vis.entrance && (
-        <div className="bg-card rounded-2xl shadow-card px-3 py-2.5 flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <DoorOpen className="w-3.5 h-3.5" />
-          </div>
-          <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Вход</span>
-            <span className="text-xs font-semibold text-foreground">{d.entrance_group}</span>
-          </div>
+    <div className="space-y-4">
+      {(conditionRows.length > 0 ||
+        (vis.pedestrianTraffic && d.pedestrian_traffic) ||
+        locationRows.length > 0) && (
+        <div className="rounded-lg border border-border/70 bg-card p-4 shadow-sm">
+          {conditionRows.length > 0 && (
+            <div>
+              <SpecSectionTitle className="mb-1.5">Условия</SpecSectionTitle>
+              {conditionRows.map((row) => (
+                <SpecRow
+                  key={row.label}
+                  label={row.label}
+                  value={row.value}
+                  emphasis={row.label === "Мин. срок"}
+                />
+              ))}
+            </div>
+          )}
+
+          {vis.pedestrianTraffic && d.pedestrian_traffic ? (
+            <div
+              className={
+                conditionRows.length > 0
+                  ? "border-t border-border/40 pt-0.5 mt-0.5"
+                  : ""
+              }
+            >
+              <SpecRow
+                label="Пешеходный трафик"
+                value={
+                  <span className="inline-flex flex-col items-end gap-1.5">
+                    <span>{d.trafficLabel}</span>
+                    <span className="flex gap-1 w-[5.5rem]">
+                      {[1, 2, 3, 4].map((i) => (
+                        <span
+                          key={i}
+                          className={`h-1 flex-1 rounded-full ${
+                            i <= (d.pedestrian_traffic || 0)
+                              ? "bg-foreground/75"
+                              : "bg-muted"
+                          }`}
+                        />
+                      ))}
+                    </span>
+                  </span>
+                }
+              />
+            </div>
+          ) : null}
+
+          {locationRows.length > 0 && (
+            <div
+              className={
+                conditionRows.length > 0 || d.pedestrian_traffic
+                  ? "border-t border-border/40 pt-0.5 mt-0.5"
+                  : ""
+              }
+            >
+              <SpecSectionTitle className="mb-1.5 mt-2">
+                Локация
+              </SpecSectionTitle>
+              {locationRows.map((row) => (
+                <SpecRow key={row.label} label={row.label} value={row.value} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      <Block title="Финансовые условия" icon={Receipt}>
-        <Row label="Коммунальные платежи" value={d.utilities_included} accent={d.utilitiesAccent} />
-        <Row label="НДС" value={d.vat} />
-        {vis.indexation && <Row label="Индексация" value={d.indexation} icon={TrendingUp} />}
-        {vis.minTerm && <Row label="Мин. срок аренды" value={d.min_term} />}
-      </Block>
-
-      <Block title="Трафик и локация">
-        {vis.pedestrianTraffic && d.pedestrian_traffic ? (
-          <div className="px-1 pb-2">
-            <div className="text-xs text-muted-foreground mb-1.5">Пешеходный трафик</div>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex gap-1.5">
-                {[1, 2, 3, 4].map((i) => (
-                  <span
-                    key={i}
-                    className={`h-2 w-9 rounded-full transition-colors ${
-                      i <= (d.pedestrian_traffic || 0) ? "bg-emerald-500" : "bg-muted"
-                    }`}
-                  />
-                ))}
-              </div>
-              <span className="text-xs font-medium text-foreground">{d.trafficLabel}</span>
-            </div>
-          </div>
-        ) : null}
-        <Row label="До метро" value={d.metro_minutes} icon={Train} />
-        <Row label="Район" value={d.district} icon={MapPinned} />
-        <Row label="Транспортный узел" value={d.transport_hub} icon={Footprints} />
-      </Block>
-
-      <Block title="Юридические условия" icon={ScrollText}>
-        {vis.contractForm && <Row label="Форма договора" value={d.contract_form} />}
-        <Row label={vis.landlordLabel} value={d.landlord_type} />
-        {vis.sublease && <Row label="Субаренда" value={d.sublease} />}
-        <Row label={vis.purposeLabel} value={d.purpose} />
-      </Block>
-
       {showAgent && (
-        <div className="bg-card rounded-2xl shadow-card p-3.5">
+        <div className="rounded-lg border border-border/70 bg-card p-4 shadow-sm">
+          <SpecSectionTitle className="mb-3">
+            {displayIsRealtor ? "Агентство / агент" : "Продавец"}
+          </SpecSectionTitle>
           <div className="flex items-start gap-3">
             <img
               src={displayAgentAvatar}
               alt={displayAgentName}
-              className="w-12 h-12 rounded-lg object-cover shrink-0 bg-muted"
+              className="w-12 h-12 rounded-md object-cover shrink-0 bg-muted"
             />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-sm font-semibold text-foreground leading-tight truncate">
+                <span className="text-sm font-semibold text-foreground leading-snug">
                   {displayAgentName}
                 </span>
-                {displayIsVerified && <VerifiedBadge size="sm" showLabel={false} />}
+                {displayIsVerified && (
+                  <VerifiedBadge size="sm" showLabel={false} />
+                )}
               </div>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                {hasOwnerData ? ACCOUNT_TYPE_LABELS[displayAccountType] : DEFAULT_AGENT.position}
+                {hasOwnerData
+                  ? ACCOUNT_TYPE_LABELS[displayAccountType]
+                  : DEFAULT_AGENT.position}
               </p>
               {displayIsRealtor && displayAgencyName && (
-                <p className="text-xs font-medium text-foreground mt-1 flex items-center gap-1 truncate">
-                  <Building2 className="w-3 h-3 text-primary shrink-0" />
-                  {displayAgencyName}
-                </p>
+                agencyHref ? (
+                  <Link
+                    to={agencyHref}
+                    className="text-xs font-medium text-foreground mt-1.5 inline-flex items-center gap-1 hover:underline"
+                  >
+                    <Building2 className="w-3 h-3 text-muted-foreground shrink-0" />
+                    {displayAgencyName}
+                  </Link>
+                ) : (
+                  <p className="text-xs font-medium text-foreground mt-1.5 flex items-center gap-1 truncate">
+                    <Building2 className="w-3 h-3 text-muted-foreground shrink-0" />
+                    {displayAgencyName}
+                  </p>
+                )
               )}
             </div>
           </div>
 
-          <div className="mt-3 grid gap-2">
+          <div className="mt-3 space-y-0 border-t border-border/40 pt-1">
             {displayObjectsLabel && (
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <Home className="w-3.5 h-3.5" />
-                  Объектов в каталоге
-                </span>
-                <span className="font-semibold text-foreground tabular-nums">
-                  {displayObjectsLabel}
-                </span>
-              </div>
+              <SpecRow label="В каталоге" value={displayObjectsLabel} />
             )}
             {!hasOwnerData && (
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <Star className="w-3.5 h-3.5" />
-                  Рейтинг
-                </span>
-                <span className="font-semibold text-foreground tabular-nums">
-                  {DEFAULT_AGENT.rating.toLocaleString("ru-RU")}
-                </span>
-              </div>
+              <SpecRow
+                label="Рейтинг"
+                value={DEFAULT_AGENT.rating.toLocaleString("ru-RU")}
+              />
             )}
             {!hasOwnerData && (
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <Clock3 className="w-3.5 h-3.5" />
-                  Среднее время ответа
-                </span>
-                <span className="font-semibold text-foreground tabular-nums">
-                  ~{DEFAULT_AGENT.responseMinutes} мин
-                </span>
-              </div>
+              <SpecRow
+                label="Ответ"
+                value={`~${DEFAULT_AGENT.responseMinutes} мин`}
+              />
             )}
-            {displayIsRealtor && displayStaffCount != null && displayStaffCount > 0 && (
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <Users className="w-3.5 h-3.5" />
-                  Сотрудников
-                </span>
-                <span className="font-semibold text-foreground tabular-nums">{displayStaffCount}</span>
-              </div>
-            )}
+            {displayIsRealtor &&
+              displayStaffCount != null &&
+              displayStaffCount > 0 && (
+                <SpecRow label="Сотрудников" value={String(displayStaffCount)} />
+              )}
           </div>
 
           {displayAgencyAbout && (
-            <p className="mt-2.5 text-[11px] text-muted-foreground leading-relaxed line-clamp-3">
+            <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed line-clamp-3">
               {displayAgencyAbout}
             </p>
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-function Block({
-  title,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  icon?: React.ElementType;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="bg-card rounded-2xl shadow-card p-3">
-      <div className="flex items-center gap-1.5 mb-1.5">
-        {Icon && <Icon className="w-3.5 h-3.5 text-primary" />}
-        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{title}</div>
-      </div>
-      <div className="divide-y divide-border/60">{children}</div>
-    </div>
-  );
-}
-
-function Row({
-  label,
-  value,
-  icon: Icon,
-  accent,
-}: {
-  label: string;
-  value: string;
-  icon?: React.ElementType;
-  accent?: boolean;
-}) {
-  if (value === "—") return null;
-
-  return (
-    <div className="flex items-center justify-between gap-3 py-1.5 first:pt-0 last:pb-0">
-      <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
-        {Icon && <Icon className="w-3 h-3" />}
-        {label}
-      </span>
-      <span
-        className={`text-xs text-right ${
-          accent ? "text-emerald-600 font-medium" : "text-foreground font-medium"
-        }`}
-      >
-        {value}
-      </span>
     </div>
   );
 }

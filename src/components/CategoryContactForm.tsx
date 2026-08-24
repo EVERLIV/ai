@@ -1,10 +1,10 @@
+import { CheckCircle, Loader2, Mail, Phone, Send } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { Send, Phone, Mail, CheckCircle, Loader2 } from "lucide-react";
 import { CONTACTS } from "@/config/company";
+import { useToast } from "@/hooks/use-toast";
 import { submitLead } from "@/lib/submitLead";
 
 interface Props {
@@ -40,7 +40,10 @@ export default function CategoryContactForm({ category }: Props) {
         business_category: category,
       });
       setSent(true);
-      toast({ title: "Заявка отправлена!", description: "Мы свяжемся с вами в ближайшее время." });
+      toast({
+        title: "Заявка отправлена!",
+        description: "Мы свяжемся с вами в ближайшее время.",
+      });
     } catch {
       toast({ title: "Не удалось отправить", variant: "destructive" });
     } finally {
@@ -57,8 +60,9 @@ export default function CategoryContactForm({ category }: Props) {
               Подберём {category} под ваши задачи
             </h2>
             <p className="text-muted-foreground leading-relaxed">
-              Оставьте заявку — наш менеджер свяжется с вами в течение 15 минут в рабочее время.
-              Мы подберём оптимальный вариант с учётом ваших требований к расположению, площади и бюджету.
+              Оставьте заявку — наш менеджер свяжется с вами в течение 15 минут
+              в рабочее время. Мы подберём оптимальный вариант с учётом ваших
+              требований к расположению, площади и бюджету.
             </p>
             <div className="space-y-4">
               <div className="flex items-center gap-3">
@@ -67,7 +71,9 @@ export default function CategoryContactForm({ category }: Props) {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Телефон</p>
-                  <p className="font-medium text-foreground">{CONTACTS.phone}</p>
+                  <p className="font-medium text-foreground">
+                    {CONTACTS.phone}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -76,7 +82,9 @@ export default function CategoryContactForm({ category }: Props) {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium text-foreground">{CONTACTS.email}</p>
+                  <p className="font-medium text-foreground">
+                    {CONTACTS.email}
+                  </p>
                 </div>
               </div>
             </div>
@@ -86,27 +94,50 @@ export default function CategoryContactForm({ category }: Props) {
             {sent ? (
               <div className="text-center py-8 space-y-4">
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
-                <h3 className="text-xl font-semibold text-foreground">Заявка принята!</h3>
-                <p className="text-muted-foreground">Менеджер свяжется с вами в ближайшее время.</p>
-                <Button variant="outline" onClick={() => setSent(false)}>Отправить ещё</Button>
+                <h3 className="text-xl font-semibold text-foreground">
+                  Заявка принята!
+                </h3>
+                <p className="text-muted-foreground">
+                  Менеджер свяжется с вами в ближайшее время.
+                </p>
+                <Button variant="outline" onClick={() => setSent(false)}>
+                  Отправить ещё
+                </Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground mb-2">Оставить заявку</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  Оставить заявку
+                </h3>
                 <Input name="name" placeholder="Ваше имя" required />
-                <Input name="phone" type="tel" placeholder="+7 (___) ___-__-__" required />
+                <Input
+                  name="phone"
+                  type="tel"
+                  placeholder="+7 (___) ___-__-__"
+                  required
+                />
                 <Input name="email" type="email" placeholder="Email" />
                 <Textarea
                   name="message"
                   placeholder={`Требования к ${category.toLowerCase()}: площадь, район, бюджет...`}
                   rows={3}
                 />
-                <Button type="submit" className="w-full gap-2" size="lg" disabled={loading}>
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                <Button
+                  type="submit"
+                  className="w-full gap-2"
+                  size="lg"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
                   Отправить заявку
                 </Button>
                 <p className="text-xs text-muted-foreground text-center">
-                  Нажимая кнопку, вы соглашаетесь с политикой обработки персональных данных
+                  Нажимая кнопку, вы соглашаетесь с политикой обработки
+                  персональных данных
                 </p>
               </form>
             )}

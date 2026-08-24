@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import type { PropertySegment } from "@/config/propertySegments";
 import { supabasePublic } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
-import type { PropertySegment } from "@/config/propertySegments";
 import { isCommercialLand } from "@/lib/propertyTypeFamilies";
 
 export type DbProperty = Tables<"properties">;
@@ -14,7 +14,8 @@ function mergeById(a: DbProperty[], b: DbProperty[]): DbProperty[] {
   const map = new Map<string, DbProperty>();
   for (const row of [...a, ...b]) map.set(row.id, row);
   return Array.from(map.values()).sort(
-    (x, y) => new Date(y.created_at).getTime() - new Date(x.created_at).getTime(),
+    (x, y) =>
+      new Date(y.created_at).getTime() - new Date(x.created_at).getTime(),
   );
 }
 
@@ -43,9 +44,9 @@ export function useProperties(options: UsePropertiesOptions = {}) {
         if (commercialLandRes.error) throw commercialLandRes.error;
 
         const residential = (residentialRes.data || []) as DbProperty[];
-        const commercialLand = ((commercialLandRes.data || []) as DbProperty[]).filter(
-          (p) => isCommercialLand(p),
-        );
+        const commercialLand = (
+          (commercialLandRes.data || []) as DbProperty[]
+        ).filter((p) => isCommercialLand(p));
         return mergeById(residential, commercialLand);
       }
 
@@ -54,7 +55,9 @@ export function useProperties(options: UsePropertiesOptions = {}) {
         .select("*")
         .eq("is_active", true);
       if (options.segment) query = query.eq("segment", options.segment);
-      const { data, error } = await query.order("created_at", { ascending: false });
+      const { data, error } = await query.order("created_at", {
+        ascending: false,
+      });
       if (error) throw error;
       return data as DbProperty[];
     },

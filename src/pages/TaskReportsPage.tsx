@@ -1,11 +1,13 @@
+import { Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import TasksSidebar from "@/components/tasks/TasksSidebar";
-import { useTasks, type Task, type TaskStatus } from "@/hooks/useTasks";
+import { type TaskStatus, useTasks } from "@/hooks/useTasks";
 
 const statusLabels: Record<TaskStatus, string> = {
-  todo: "К выполнению", in_progress: "В работе", done: "Готово",
+  todo: "К выполнению",
+  in_progress: "В работе",
+  done: "Готово",
 };
 const statusColors: Record<TaskStatus, string> = {
   todo: "bg-gray-100 text-gray-600",
@@ -13,7 +15,9 @@ const statusColors: Record<TaskStatus, string> = {
   done: "bg-green-100 text-green-700",
 };
 const priorityLabels: Record<string, string> = {
-  low: "Низкий", medium: "Средний", high: "Высокий",
+  low: "Низкий",
+  medium: "Средний",
+  high: "Высокий",
 };
 
 export default function TaskReportsPage() {
@@ -23,15 +27,21 @@ export default function TaskReportsPage() {
   const [dateTo, setDateTo] = useState("");
 
   const assignees = useMemo(
-    () => Array.from(new Set(tasks.map((t) => t.assignee).filter(Boolean) as string[])).sort(),
-    [tasks]
+    () =>
+      Array.from(
+        new Set(tasks.map((t) => t.assignee).filter(Boolean) as string[]),
+      ).sort(),
+    [tasks],
   );
 
   const filtered = useMemo(() => {
     let result = [...tasks];
-    if (filterAssignee) result = result.filter((t) => t.assignee === filterAssignee);
-    if (dateFrom) result = result.filter((t) => t.due_date && t.due_date >= dateFrom);
-    if (dateTo)   result = result.filter((t) => t.due_date && t.due_date <= dateTo);
+    if (filterAssignee)
+      result = result.filter((t) => t.assignee === filterAssignee);
+    if (dateFrom)
+      result = result.filter((t) => t.due_date && t.due_date >= dateFrom);
+    if (dateTo)
+      result = result.filter((t) => t.due_date && t.due_date <= dateTo);
     return result;
   }, [tasks, filterAssignee, dateFrom, dateTo]);
 
@@ -53,36 +63,62 @@ export default function TaskReportsPage() {
       <main className="flex-1 p-4 md:p-8 pt-16 md:pt-8 overflow-x-hidden">
         <div className="mb-6">
           <h1 className="text-lg font-bold text-gray-900">Отчёты</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Статистика по задачам сотрудников</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Статистика по задачам сотрудников
+          </p>
         </div>
 
         {/* Фильтры */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-wrap gap-3">
           <div>
-            <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Исполнитель</label>
+            <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              Исполнитель
+            </label>
             <select
               value={filterAssignee}
               onChange={(e) => setFilterAssignee(e.target.value)}
               className="h-9 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white min-w-[160px]"
             >
               <option value="">Все</option>
-              {assignees.map((a) => <option key={a} value={a}>{a}</option>)}
+              {assignees.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
             </select>
           </div>
           <div>
-            <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Срок от</label>
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-              className="h-9 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+            <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              Срок от
+            </label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="h-9 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            />
           </div>
           <div>
-            <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Срок до</label>
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-              className="h-9 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+            <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              Срок до
+            </label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="h-9 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            />
           </div>
           {(filterAssignee || dateFrom || dateTo) && (
             <div className="flex items-end">
-              <button onClick={() => { setFilterAssignee(""); setDateFrom(""); setDateTo(""); }}
-                className="h-9 px-3 text-sm text-gray-500 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              <button
+                onClick={() => {
+                  setFilterAssignee("");
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+                className="h-9 px-3 text-sm text-gray-500 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
                 Сбросить
               </button>
             </div>
@@ -98,11 +134,18 @@ export default function TaskReportsPage() {
             {/* Статистика по сотрудникам */}
             {stats.length > 0 && (
               <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-                <h2 className="text-sm font-bold text-gray-800 mb-4">По исполнителям</h2>
+                <h2 className="text-sm font-bold text-gray-800 mb-4">
+                  По исполнителям
+                </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {stats.map((s) => (
-                    <div key={s.name} className="border border-gray-200 rounded-lg p-3">
-                      <p className="text-sm font-semibold text-gray-800 mb-2">{s.name}</p>
+                    <div
+                      key={s.name}
+                      className="border border-gray-200 rounded-lg p-3"
+                    >
+                      <p className="text-sm font-semibold text-gray-800 mb-2">
+                        {s.name}
+                      </p>
                       <div className="flex gap-2 flex-wrap">
                         <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
                           К выполнению: {s.todo}
@@ -124,49 +167,86 @@ export default function TaskReportsPage() {
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-gray-800">Задачи</h2>
-                <span className="text-xs text-gray-500">{filtered.length} записей</span>
+                <span className="text-xs text-gray-500">
+                  {filtered.length} записей
+                </span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 bg-gray-50">
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Название</th>
-                      <th className="hidden sm:table-cell text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Исполнитель</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Статус</th>
-                      <th className="hidden md:table-cell text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Приоритет</th>
-                      <th className="hidden sm:table-cell text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Срок</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Название
+                      </th>
+                      <th className="hidden sm:table-cell text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Исполнитель
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Статус
+                      </th>
+                      <th className="hidden md:table-cell text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Приоритет
+                      </th>
+                      <th className="hidden sm:table-cell text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Срок
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="text-center py-12 text-gray-400 text-sm">Нет задач</td>
+                        <td
+                          colSpan={5}
+                          className="text-center py-12 text-gray-400 text-sm"
+                        >
+                          Нет задач
+                        </td>
                       </tr>
-                    ) : filtered.map((task) => (
-                      <tr key={task.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3">
-                          <Link to={`/tasks/${task.id}`} className="font-medium text-gray-900 hover:text-gray-600 transition-colors">
-                            {task.title}
-                          </Link>
-                          {/* На мобильном показываем статус под названием */}
-                          <div className="sm:hidden mt-1">
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusColors[task.status]}`}>
+                    ) : (
+                      filtered.map((task) => (
+                        <tr
+                          key={task.id}
+                          className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="px-4 py-3">
+                            <Link
+                              to={`/tasks/${task.id}`}
+                              className="font-medium text-gray-900 hover:text-gray-600 transition-colors"
+                            >
+                              {task.title}
+                            </Link>
+                            {/* На мобильном показываем статус под названием */}
+                            <div className="sm:hidden mt-1">
+                              <span
+                                className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusColors[task.status]}`}
+                              >
+                                {statusLabels[task.status]}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="hidden sm:table-cell px-4 py-3 text-gray-600">
+                            {task.assignee || "—"}
+                          </td>
+                          <td className="hidden sm:table-cell px-4 py-3">
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[task.status]}`}
+                            >
                               {statusLabels[task.status]}
                             </span>
-                          </div>
-                        </td>
-                        <td className="hidden sm:table-cell px-4 py-3 text-gray-600">{task.assignee || "—"}</td>
-                        <td className="hidden sm:table-cell px-4 py-3">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[task.status]}`}>
-                            {statusLabels[task.status]}
-                          </span>
-                        </td>
-                        <td className="hidden md:table-cell px-4 py-3 text-gray-600 text-xs">{priorityLabels[task.priority]}</td>
-                        <td className="hidden sm:table-cell px-4 py-3 text-gray-600 text-xs">
-                          {task.due_date ? new Date(task.due_date).toLocaleDateString("ru-RU") : "—"}
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="hidden md:table-cell px-4 py-3 text-gray-600 text-xs">
+                            {priorityLabels[task.priority]}
+                          </td>
+                          <td className="hidden sm:table-cell px-4 py-3 text-gray-600 text-xs">
+                            {task.due_date
+                              ? new Date(task.due_date).toLocaleDateString(
+                                  "ru-RU",
+                                )
+                              : "—"}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

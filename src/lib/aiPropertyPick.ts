@@ -42,7 +42,8 @@ type PropertyLite = {
   ceiling_height: number | null;
 };
 
-const SELF_HOSTED_URL = "https://api.arendacity.com/functions/v1/ai-property-pick";
+const SELF_HOSTED_URL =
+  "https://api.arendacity.com/functions/v1/ai-property-pick";
 
 const ANON_KEY =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
@@ -72,10 +73,15 @@ export async function invokePropertyPick(
 
   const data = await resp.json().catch(() => ({}));
   if (!resp.ok) {
-    throw new Error(data.error || data.msg || `Ошибка ИИ-сервиса (${resp.status})`);
+    throw new Error(
+      data.error || data.msg || `Ошибка ИИ-сервиса (${resp.status})`,
+    );
   }
   if (data?.error) throw new Error(data.error);
-  if (data?.msg?.includes?.("InvalidWorkerCreation") || data?.msg?.includes?.("entrypoint")) {
+  if (
+    data?.msg?.includes?.("InvalidWorkerCreation") ||
+    data?.msg?.includes?.("entrypoint")
+  ) {
     throw new Error(data.msg);
   }
   if (!data?.picks) throw new Error("ИИ не вернул результаты подбора");

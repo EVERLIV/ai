@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isDailyDeal, isLongTermRent, isRentDeal, isSaleDeal } from "@/lib/propertyDeal";
+import {
+  isDailyDeal,
+  isLongTermRent,
+  isRentDeal,
+  isSaleDeal,
+} from "@/lib/propertyDeal";
 import {
   isAnyLand,
   isDwellingLike,

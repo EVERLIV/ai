@@ -1,26 +1,51 @@
-import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  Building2,
+  Check,
+  Mail,
+  MapPin,
+  Maximize2,
+  Phone,
+  User,
+  X,
+} from "lucide-react";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useModerationQueue } from "@/hooks/useMyProperties";
-import { adminInsertCrmLead, adminUpdateProperty, countPublishedBySubmitter } from "@/lib/adminModeration";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
-} from "@/components/ui/dialog";
-import { getPropertyTypes, formatPropertyTypesLabel } from "@/lib/propertyTypes";
-import { Check, X, MapPin, Maximize2, User, Phone, Mail, Building2 } from "lucide-react";
+  adminInsertCrmLead,
+  adminUpdateProperty,
+  countPublishedBySubmitter,
+} from "@/lib/adminModeration";
+import {
+  fetchAgencyByIdApi,
+  fetchAgencyManagersApi,
+  fetchMembershipApi,
+} from "@/lib/agencyApi";
+import { notifyPropertyEmail } from "@/lib/notifyPropertyEmail";
 import {
   REQUEST_TYPE_LABELS,
   REQUEST_TYPE_SHORT,
   type RequestType,
 } from "@/lib/propertyModeration";
-import { notifyPropertyEmail } from "@/lib/notifyPropertyEmail";
-import { fetchAgencyByIdApi, fetchAgencyManagersApi, fetchMembershipApi } from "@/lib/agencyApi";
+import {
+  formatPropertyTypesLabel,
+  getPropertyTypes,
+} from "@/lib/propertyTypes";
 
 type QueueItem = {
   id: string;
@@ -57,19 +82,29 @@ export default function ModerationQueue() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: queue = [], isLoading, isError, error, refetch } = useModerationQueue();
+  const {
+    data: queue = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useModerationQueue();
 
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
   const approveMutation = useMutation({
     mutationFn: async (item: QueueItem) => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const moderatorId = session?.user?.id ?? user?.id ?? null;
 
       const submitter = item.submitter;
       const isFreeListing = item.request_type === "free_listing";
-      const membership = submitter?.id ? await fetchMembershipApi(submitter.id) : null;
+      const membership = submitter?.id
+        ? await fetchMembershipApi(submitter.id)
+        : null;
       const agencyId =
         membership?.agency_id ||
         (item as { agency_id?: string | null }).agency_id ||
@@ -84,13 +119,21 @@ export default function ModerationQueue() {
         }
       }
 
-      const isAgency = !!agency || submitter?.account_type === "agency" || submitter?.account_type === "realtor";
+      const isAgency =
+        !!agency ||
+        submitter?.account_type === "agency" ||
+        submitter?.account_type === "realtor";
       const isVerified = agency
         ? agency.verification_status === "verified"
         : submitter?.verification_status === "verified";
 
-      const listingManagerId = (item as { listing_manager_id?: string | null }).listing_manager_id;
-      let manager: { full_name: string; phone: string; photo_url: string | null } | null = null;
+      const listingManagerId = (item as { listing_manager_id?: string | null })
+        .listing_manager_id;
+      let manager: {
+        full_name: string;
+        phone: string;
+        photo_url: string | null;
+      } | null = null;
       if (agencyId && listingManagerId) {
         const managers = await fetchAgencyManagersApi(agencyId);
         const found = managers.find((m) => m.id === listingManagerId);
@@ -106,10 +149,11 @@ export default function ModerationQueue() {
       const extras = {
         agent_name: manager?.full_name || submitter?.full_name || "Собственник",
         agent_company: isAgency
-          ? (agency?.name || submitter?.agency_name || "Агентство")
+          ? agency?.name || submitter?.agency_name || "Агентство"
           : "Собственник",
         agent_verified: isVerified,
-        agent_avatar_url: manager?.photo_url || agency?.logo_url || submitter?.avatar_url || "",
+        agent_avatar_url:
+          manager?.photo_url || agency?.logo_url || submitter?.avatar_url || "",
         agent_account_type: isAgency ? "agency" : "owner",
         agent_objects_count: objectsCount,
         agent_agency_about: agency?.about || submitter?.agency_about || "",
@@ -165,7 +209,6 @@ export default function ModerationQueue() {
           },
         });
       }
-
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["moderation-queue"] });
@@ -174,13 +217,29 @@ export default function ModerationQueue() {
       toast({ title: "Объект одобрен" });
     },
     onError: (err: Error) => {
-      toast({ title: "Ошибка", description: err.message, variant: "destructive" });
+      toast({
+        title: "Ошибка",
+        description: err.message,
+        variant: "destructive",
+      });
     },
   });
 
   const rejectMutation = useMutation({
-    mutationFn: async ({ id, reason, agencyId, address }: { id: string; reason: string; agencyId?: string | null; address?: string }) => {
-      const { data: { session } } = await supabase.auth.getSession();
+    mutationFn: async ({
+      id,
+      reason,
+      agencyId,
+      address,
+    }: {
+      id: string;
+      reason: string;
+      agencyId?: string | null;
+      address?: string;
+    }) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const moderatorId = session?.user?.id ?? user?.id ?? null;
 
       await adminUpdateProperty(id, {
@@ -190,7 +249,6 @@ export default function ModerationQueue() {
         moderated_at: new Date().toISOString(),
         moderated_by: moderatorId,
       });
-
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["moderation-queue"] });
@@ -200,22 +258,38 @@ export default function ModerationQueue() {
       toast({ title: "Объект отклонён" });
     },
     onError: (err: Error) => {
-      toast({ title: "Ошибка", description: err.message, variant: "destructive" });
+      toast({
+        title: "Ошибка",
+        description: err.message,
+        variant: "destructive",
+      });
     },
   });
 
   if (isLoading) {
-    return <div className="text-sm text-muted-foreground py-8 text-center">Загрузка очереди…</div>;
+    return (
+      <div className="text-sm text-muted-foreground py-8 text-center">
+        Загрузка очереди…
+      </div>
+    );
   }
 
   if (isError) {
     return (
       <div className="text-center py-12 border border-dashed border-destructive/40 rounded-lg bg-destructive/5">
-        <p className="text-sm font-medium text-destructive">Не удалось загрузить очередь</p>
-        <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
-          {(error as Error)?.message || "Проверьте миграции moderation_status и RLS"}
+        <p className="text-sm font-medium text-destructive">
+          Не удалось загрузить очередь
         </p>
-        <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>
+        <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+          {(error as Error)?.message ||
+            "Проверьте миграции moderation_status и RLS"}
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4"
+          onClick={() => refetch()}
+        >
           Повторить
         </Button>
       </div>
@@ -226,8 +300,12 @@ export default function ModerationQueue() {
     return (
       <div className="text-center py-12 border border-dashed border-border rounded-lg">
         <Building2 className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-        <p className="text-sm font-medium text-foreground">Очередь модерации пуста</p>
-        <p className="text-xs text-muted-foreground mt-1">Новые заявки от пользователей появятся здесь</p>
+        <p className="text-sm font-medium text-foreground">
+          Очередь модерации пуста
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Новые заявки от пользователей появятся здесь
+        </p>
         <p className="text-[10px] text-muted-foreground/70 mt-2">
           Убедитесь, что выполнен SQL: self_hosted_client_properties.sql
         </p>
@@ -239,11 +317,18 @@ export default function ModerationQueue() {
     <>
       <div className="space-y-4">
         {(queue as QueueItem[]).map((item) => (
-          <div key={item.id} className="border border-border rounded-lg overflow-hidden bg-card">
+          <div
+            key={item.id}
+            className="border border-border rounded-lg overflow-hidden bg-card"
+          >
             <div className="flex flex-col lg:flex-row">
               <div className="lg:w-48 h-36 lg:h-auto bg-muted shrink-0">
                 {item.cover_photo ? (
-                  <img src={item.cover_photo} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={item.cover_photo}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <Building2 className="w-8 h-8 text-muted-foreground/30" />
@@ -253,28 +338,53 @@ export default function ModerationQueue() {
               <div className="flex-1 p-4 space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
                   {item.request_type && (
-                    <Badge variant={item.request_type === "free_listing" ? "default" : "secondary"}>
+                    <Badge
+                      variant={
+                        item.request_type === "free_listing"
+                          ? "default"
+                          : "secondary"
+                      }
+                    >
                       {REQUEST_TYPE_SHORT[item.request_type]}
                     </Badge>
                   )}
-                  <Badge variant="outline">{REQUEST_TYPE_LABELS[item.request_type || "free_listing"]}</Badge>
-                  <span className="text-xs text-muted-foreground">{formatPropertyTypesLabel(getPropertyTypes(item))} · {item.deal_type}</span>
+                  <Badge variant="outline">
+                    {REQUEST_TYPE_LABELS[item.request_type || "free_listing"]}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {formatPropertyTypesLabel(getPropertyTypes(item))} ·{" "}
+                    {item.deal_type}
+                  </span>
                 </div>
                 <div>
-                  <div className="font-semibold text-foreground">{item.address}</div>
+                  <div className="font-semibold text-foreground">
+                    {item.address}
+                  </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                     {item.public_id && (
-                      <span className="font-mono font-bold text-primary">{item.public_id}</span>
+                      <span className="font-mono font-bold text-primary">
+                        {item.public_id}
+                      </span>
                     )}
-                    <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{item.district}</span>
-                    <span className="flex items-center gap-1"><Maximize2 className="w-3 h-3" />{item.area} м²</span>
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {item.district}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Maximize2 className="w-3 h-3" />
+                      {item.area} м²
+                    </span>
                     {Number(item.price) > 0 && (
-                      <span>{Number(item.price).toLocaleString("ru-RU")} ₽</span>
+                      <span>
+                        {Number(item.price).toLocaleString("ru-RU")} ₽
+                      </span>
                     )}
                   </div>
                 </div>
                 {item.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-2 whitespace-pre-wrap">{item.description}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-2 whitespace-pre-wrap">
+                    {item.description}
+                  </p>
                 )}
 
                 {item.submitter && (
@@ -323,11 +433,21 @@ export default function ModerationQueue() {
         ))}
       </div>
 
-      <Dialog open={!!rejectId} onOpenChange={(o) => { if (!o) { setRejectId(null); setRejectReason(""); } }}>
+      <Dialog
+        open={!!rejectId}
+        onOpenChange={(o) => {
+          if (!o) {
+            setRejectId(null);
+            setRejectReason("");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Отклонить объект</DialogTitle>
-            <DialogDescription>Укажите причину — пользователь увидит её в личном кабинете.</DialogDescription>
+            <DialogDescription>
+              Укажите причину — пользователь увидит её в личном кабинете.
+            </DialogDescription>
           </DialogHeader>
           <div>
             <Label className="text-xs mb-1 block">Причина отклонения</Label>
@@ -339,7 +459,9 @@ export default function ModerationQueue() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectId(null)}>Отмена</Button>
+            <Button variant="outline" onClick={() => setRejectId(null)}>
+              Отмена
+            </Button>
             <Button
               variant="destructive"
               disabled={!rejectReason.trim() || rejectMutation.isPending}

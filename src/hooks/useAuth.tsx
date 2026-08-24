@@ -1,7 +1,16 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import type { Session, User } from "@supabase/supabase-js";
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import {
+  SERVICE_ROLE_KEY,
+  SUPABASE_URL,
+} from "@/integrations/supabase/adminClient";
 import { supabase } from "@/integrations/supabase/client";
-import { SUPABASE_URL, SERVICE_ROLE_KEY } from "@/integrations/supabase/adminClient";
-import type { User, Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
   user: User | null;
@@ -27,10 +36,10 @@ async function fetchRolesForUser(userId: string): Promise<string[]> {
       `${SUPABASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&select=role`,
       {
         headers: {
-          "apikey": SERVICE_ROLE_KEY,
-          "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
+          apikey: SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
         },
-      }
+      },
     );
     const data = await res.json();
     return Array.isArray(data) ? data.map((r: any) => r.role) : [];
@@ -58,19 +67,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // Слушаем изменения
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          const r = await fetchRolesForUser(session.user.id);
-          setRoles(r);
-        } else {
-          setRoles([]);
-        }
-        setLoading(false);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        const r = await fetchRolesForUser(session.user.id);
+        setRoles(r);
+      } else {
+        setRoles([]);
       }
-    );
+      setLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -85,7 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, roles, hasRole, signOut }}>
+    <AuthContext.Provider
+      value={{ user, session, loading, roles, hasRole, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   );

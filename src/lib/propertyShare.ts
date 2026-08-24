@@ -1,5 +1,5 @@
 import { COMPANY } from "@/config/company";
-import { SITE_URL, absoluteUrl } from "@/config/site";
+import { absoluteUrl, SITE_URL } from "@/config/site";
 import {
   buildPropertyDisplayTitle,
   formatPropertyAddressShort,
@@ -31,7 +31,9 @@ export type PropertySharePayload = {
 };
 
 function firstImage(property: PropertyShareInput): string | null {
-  const photo = property.photos?.find((url) => typeof url === "string" && url.trim()) || property.cover_photo;
+  const photo =
+    property.photos?.find((url) => typeof url === "string" && url.trim()) ||
+    property.cover_photo;
   return photo?.trim() ? absoluteUrl(photo.trim()) : null;
 }
 
@@ -49,7 +51,9 @@ function buildShareMessage(property: PropertyShareInput): string {
 }
 
 /** SEO/OG описание карточки объекта */
-export function buildPropertyShareOgDescription(property: PropertyShareInput): string {
+export function buildPropertyShareOgDescription(
+  property: PropertyShareInput,
+): string {
   const message = buildShareMessage(property);
   const catalogUrl = absoluteUrl("/catalog");
   const full = `${message}\n\n${SHARE_CTA} → ${catalogUrl}`;
@@ -62,10 +66,14 @@ export function buildPropertySharePayload(
 ): PropertySharePayload {
   const title = buildPropertyDisplayTitle(property);
   const message = buildShareMessage(property);
-  const url = pageUrl || (property.id ? absoluteUrl(`/property/${property.id}`) : SITE_URL);
+  const url =
+    pageUrl ||
+    (property.id ? absoluteUrl(`/property/${property.id}`) : SITE_URL);
   const catalogUrl = absoluteUrl("/catalog");
 
-  const text = [message, url, `${SHARE_CTA} → ${catalogUrl}`].filter(Boolean).join("\n\n");
+  const text = [message, url, `${SHARE_CTA} → ${catalogUrl}`]
+    .filter(Boolean)
+    .join("\n\n");
 
   return {
     title,
@@ -79,11 +87,15 @@ export function buildPropertySharePayload(
 }
 
 export function canUseNativeShare(): boolean {
-  return typeof navigator !== "undefined" && typeof navigator.share === "function";
+  return (
+    typeof navigator !== "undefined" && typeof navigator.share === "function"
+  );
 }
 
 /** Нативный шаринг: только текст + URL. Картинку подтягивает Open Graph по ссылке. */
-export async function sharePropertyNative(payload: PropertySharePayload): Promise<"shared" | "cancelled"> {
+export async function sharePropertyNative(
+  payload: PropertySharePayload,
+): Promise<"shared" | "cancelled"> {
   if (!canUseNativeShare()) {
     throw new Error("Native share unavailable");
   }
@@ -96,12 +108,15 @@ export async function sharePropertyNative(payload: PropertySharePayload): Promis
     });
     return "shared";
   } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") return "cancelled";
+    if (error instanceof DOMException && error.name === "AbortError")
+      return "cancelled";
     throw error;
   }
 }
 
-export async function copyPropertyShareText(payload: PropertySharePayload): Promise<void> {
+export async function copyPropertyShareText(
+  payload: PropertySharePayload,
+): Promise<void> {
   if (!navigator.clipboard?.writeText) {
     throw new Error("Clipboard unavailable");
   }

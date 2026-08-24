@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LOCATION_GROUPS, DISTRICTS } from "@/lib/irkutskLocations";
+import { DISTRICTS, LOCATION_GROUPS } from "@/lib/irkutskLocations";
 
 type Props = {
   value: string;

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
@@ -27,7 +27,10 @@ export function useUpsertUnit(propertyId: string) {
     mutationFn: async (unit: Partial<PropertyUnit> & { id?: string }) => {
       if (unit.id) {
         const { id, ...patch } = unit;
-        const { error } = await supabase.from("property_units").update(patch).eq("id", id);
+        const { error } = await supabase
+          .from("property_units")
+          .update(patch)
+          .eq("id", id);
         if (error) throw error;
       } else {
         const payload: TablesInsert<"property_units"> = {
@@ -47,7 +50,8 @@ export function useUpsertUnit(propertyId: string) {
         if (error) throw error;
       }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["property-units", propertyId] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["property-units", propertyId] }),
   });
 }
 
@@ -55,9 +59,13 @@ export function useDeleteUnit(propertyId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("property_units").delete().eq("id", id);
+      const { error } = await supabase
+        .from("property_units")
+        .delete()
+        .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["property-units", propertyId] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["property-units", propertyId] }),
   });
 }

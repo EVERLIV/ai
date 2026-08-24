@@ -1,6 +1,6 @@
 import { ChevronLeft } from "lucide-react";
-import { createPortal } from "react-dom";
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -45,10 +45,14 @@ export default function MobileFullScreenPicker({
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
-        <h2 className="flex-1 text-center text-base font-semibold text-foreground pr-10">{title}</h2>
+        <h2 className="flex-1 text-center text-base font-semibold text-foreground pr-10">
+          {title}
+        </h2>
       </header>
 
-      <div className="flex-1 overflow-y-auto overscroll-contain">{children}</div>
+      <div className="flex-1 overflow-y-auto overscroll-contain">
+        {children}
+      </div>
 
       <footer className="shrink-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-border/60 bg-background">
         <button

@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Building2,
@@ -7,24 +6,27 @@ import {
   Sparkles,
   Tag,
 } from "lucide-react";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
-import ListPropertyBlock from "@/components/ListPropertyBlock";
-import SeoHead from "@/components/SeoHead";
-import { absoluteUrl } from "@/config/site";
-import { useProperties } from "@/hooks/useProperties";
-import PropertyGridCard, { PropertyGridCardSkeleton } from "@/components/PropertyGridCard";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
-import residentialHero from "@/assets/residential-hero.jpg";
-import residentialBannerFree from "@/assets/residential-banner-free.jpg";
+import { Link } from "react-router-dom";
+import landImg from "@/assets/property-land.jpg";
 import residentialBannerAd from "@/assets/residential-banner-ad.jpg";
 import residentialBannerAgency from "@/assets/residential-banner-agency.jpg";
-import residentialBannerSlot from "@/assets/residential-banner-slot.jpg";
 import residentialBannerDomnd from "@/assets/residential-banner-domnd.png";
+import residentialBannerFree from "@/assets/residential-banner-free.jpg";
+import residentialBannerSlot from "@/assets/residential-banner-slot.jpg";
 import residentialCategoryApartment from "@/assets/residential-category-apartment.jpg";
 import residentialCategoryHouse from "@/assets/residential-category-house.jpg";
 import residentialCategoryRoom from "@/assets/residential-category-room.jpg";
-import landImg from "@/assets/property-land.jpg";
+import residentialHero from "@/assets/residential-hero.jpg";
+import ListPropertyBlock from "@/components/ListPropertyBlock";
+import PropertyGridCard, {
+  PropertyGridCardSkeleton,
+} from "@/components/PropertyGridCard";
+import SeoHead from "@/components/SeoHead";
+import SiteFooter from "@/components/SiteFooter";
+import SiteHeader from "@/components/SiteHeader";
+import { absoluteUrl } from "@/config/site";
+import { useProperties } from "@/hooks/useProperties";
+import { buildCatalogUrl } from "@/lib/catalogLinks";
 import { getPropertySegment, propertyMatchesTypes } from "@/lib/propertyTypes";
 
 const categories = [
@@ -63,7 +65,9 @@ const categories = [
 ];
 
 export default function ResidentialHomePage() {
-  const { data: properties = [], isLoading } = useProperties({ segment: "residential" });
+  const { data: properties = [], isLoading } = useProperties({
+    segment: "residential",
+  });
   const featured = properties
     .filter((p) => getPropertySegment(p) === "residential")
     .slice(0, 12);
@@ -105,14 +109,21 @@ export default function ResidentialHomePage() {
                 Снять, сдать и купить жильё в Иркутске и области
               </h1>
               <p className="max-w-2xl text-sm leading-relaxed text-white/82 sm:text-base">
-                Квартиры, дома и комнаты в одном каталоге. Размещение для собственников за 0 ₽.
+                Квартиры, дома и комнаты в одном каталоге. Размещение для
+                собственников за 0 ₽.
               </p>
 
               <div className="flex flex-wrap gap-3">
-                <Link to="/zhilaya/catalog" className="inline-flex h-11 items-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+                <Link
+                  to="/zhilaya/catalog"
+                  className="inline-flex h-11 items-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                >
                   Смотреть каталог <ArrowRight className="w-4 h-4" />
                 </Link>
-                <Link to="/zhilaya/list-property?mode=rent" className="inline-flex h-11 items-center gap-2 rounded-md border border-white/25 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white/15">
+                <Link
+                  to="/zhilaya/list-property?mode=rent"
+                  className="inline-flex h-11 items-center gap-2 rounded-md border border-white/25 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white/15"
+                >
                   <KeyRound className="w-4 h-4" />
                   Разместить объект за 0 ₽
                 </Link>
@@ -120,16 +131,24 @@ export default function ResidentialHomePage() {
 
               <div className="grid gap-3 pt-2 sm:grid-cols-3">
                 <div className="rounded-xl border border-white/12 bg-white/10 p-4 backdrop-blur">
-                  <div className="text-2xl font-bold">{properties.length || "0"}</div>
-                  <div className="text-xs text-white/70">объектов в жилом разделе</div>
+                  <div className="text-2xl font-bold">
+                    {properties.length || "0"}
+                  </div>
+                  <div className="text-xs text-white/70">
+                    объектов в жилом разделе
+                  </div>
                 </div>
                 <div className="rounded-xl border border-white/12 bg-white/10 p-4 backdrop-blur">
                   <div className="text-2xl font-bold">0 ₽</div>
-                  <div className="text-xs text-white/70">размещение для собственников</div>
+                  <div className="text-xs text-white/70">
+                    размещение для собственников
+                  </div>
                 </div>
                 <div className="rounded-xl border border-white/12 bg-white/10 p-4 backdrop-blur">
                   <div className="text-2xl font-bold">Иркутск</div>
-                  <div className="text-xs text-white/70">и вся область в одном каталоге</div>
+                  <div className="text-xs text-white/70">
+                    и вся область в одном каталоге
+                  </div>
                 </div>
               </div>
             </div>
@@ -137,13 +156,25 @@ export default function ResidentialHomePage() {
 
           <div className="border-t border-white/10 bg-[#0d1420]">
             <div className="container mx-auto flex flex-wrap items-center gap-3 px-4 py-4 lg:px-8">
-              <Link to={buildCatalogUrl({ segment: "residential", deal: "Продажа" })} className="inline-flex h-10 items-center rounded-full border border-white/10 bg-white px-4 text-sm font-medium text-foreground">
+              <Link
+                to={buildCatalogUrl({
+                  segment: "residential",
+                  deal: "Продажа",
+                })}
+                className="inline-flex h-10 items-center rounded-full border border-white/10 bg-white px-4 text-sm font-medium text-foreground"
+              >
                 Купить
               </Link>
-              <Link to={buildCatalogUrl({ segment: "residential", deal: "Аренда" })} className="inline-flex h-10 items-center rounded-full border border-white/15 bg-white/10 px-4 text-sm font-medium text-white">
+              <Link
+                to={buildCatalogUrl({ segment: "residential", deal: "Аренда" })}
+                className="inline-flex h-10 items-center rounded-full border border-white/15 bg-white/10 px-4 text-sm font-medium text-white"
+              >
                 Снять надолго
               </Link>
-              <Link to="/zhilaya/list-property?mode=rent" className="inline-flex h-10 items-center rounded-full border border-primary/30 bg-primary/15 px-4 text-sm font-semibold text-white">
+              <Link
+                to="/zhilaya/list-property?mode=rent"
+                className="inline-flex h-10 items-center rounded-full border border-primary/30 bg-primary/15 px-4 text-sm font-semibold text-white"
+              >
                 Сдать жильё за 0 ₽
               </Link>
               <div className="ml-auto text-sm text-white/70">
@@ -172,7 +203,9 @@ export default function ResidentialHomePage() {
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,20,0.28)_0%,rgba(8,12,20,0.72)_55%,rgba(8,12,20,0.88)_100%)]" />
                 <div className="relative flex h-full min-h-[220px] flex-col justify-end p-6 text-white">
                   <div className="mb-1 text-lg font-semibold">{item.title}</div>
-                  <p className="text-sm leading-relaxed text-white/78">{item.body}</p>
+                  <p className="text-sm leading-relaxed text-white/78">
+                    {item.body}
+                  </p>
                   <div className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-primary">
                     {countsByType.get(item.type) || 0} объектов
                     <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
@@ -196,7 +229,10 @@ export default function ResidentialHomePage() {
                 Актуальные квартиры, дома и комнаты
               </h2>
             </div>
-            <Link to="/zhilaya/catalog" className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-card px-5 text-sm font-semibold text-foreground transition-colors hover:bg-background">
+            <Link
+              to="/zhilaya/catalog"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-card px-5 text-sm font-semibold text-foreground transition-colors hover:bg-background"
+            >
               Все объекты <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -256,30 +292,52 @@ export default function ResidentialHomePage() {
             </div>
 
             <aside className="space-y-4">
-              <Link to="/zhilaya/list-property?mode=rent" className="group block overflow-hidden rounded-2xl border border-border bg-card">
+              <Link
+                to="/zhilaya/list-property?mode=rent"
+                className="group block overflow-hidden rounded-2xl border border-border bg-card"
+              >
                 <div className="relative h-56 overflow-hidden">
-                  <img src={residentialBannerFree} alt="Бесплатное размещение жилья" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <img
+                    src={residentialBannerFree}
+                    alt="Бесплатное размещение жилья"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,20,0.04)_0%,rgba(8,12,20,0.8)_100%)]" />
                   <div className="absolute inset-x-0 bottom-0 p-5 text-white">
                     <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur">
                       <Tag className="h-4 w-4" />
                     </div>
-                    <div className="mt-3 text-lg font-semibold">Разместить за 0 ₽</div>
-                    <p className="mt-1 text-sm text-white/78">Квартира, дом или комната.</p>
+                    <div className="mt-3 text-lg font-semibold">
+                      Разместить за 0 ₽
+                    </div>
+                    <p className="mt-1 text-sm text-white/78">
+                      Квартира, дом или комната.
+                    </p>
                   </div>
                 </div>
               </Link>
 
-              <Link to="/contacts" className="group block overflow-hidden rounded-2xl border border-dashed border-primary/35 bg-card">
+              <Link
+                to="/contacts"
+                className="group block overflow-hidden rounded-2xl border border-dashed border-primary/35 bg-card"
+              >
                 <div className="relative h-56 overflow-hidden">
-                  <img src={residentialBannerAd} alt="Рекламный баннер для агентства" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <img
+                    src={residentialBannerAd}
+                    alt="Рекламный баннер для агентства"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,20,0.08)_0%,rgba(8,12,20,0.82)_100%)]" />
                   <div className="absolute inset-x-0 bottom-0 p-5 text-white">
                     <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur">
                       <Building2 className="h-4 w-4" />
                     </div>
-                    <div className="mt-3 text-lg font-semibold">Сдаётся место</div>
-                    <p className="mt-1 text-sm text-white/78">Баннер для агентства или ЖК.</p>
+                    <div className="mt-3 text-lg font-semibold">
+                      Сдаётся место
+                    </div>
+                    <p className="mt-1 text-sm text-white/78">
+                      Баннер для агентства или ЖК.
+                    </p>
                   </div>
                 </div>
               </Link>
@@ -296,10 +354,17 @@ export default function ResidentialHomePage() {
                 <Sparkles className="h-4 w-4" />
                 Для собственников
               </div>
-              <h2 className="mt-2 text-2xl font-display font-bold text-foreground">Разместите жильё бесплатно и получайте заявки</h2>
-              <p className="mt-2 text-sm text-muted-foreground">Публикация занимает несколько минут.</p>
+              <h2 className="mt-2 text-2xl font-display font-bold text-foreground">
+                Разместите жильё бесплатно и получайте заявки
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Публикация занимает несколько минут.
+              </p>
             </div>
-            <Link to="/zhilaya/list-property?mode=rent" className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 lg:mt-0">
+            <Link
+              to="/zhilaya/list-property?mode=rent"
+              className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 lg:mt-0"
+            >
               Добавить объект
             </Link>
           </div>
@@ -309,20 +374,40 @@ export default function ResidentialHomePage() {
       <section className="bg-background py-8">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="grid gap-4 md:grid-cols-2">
-            <Link to="/contacts" className="group relative overflow-hidden rounded-2xl border border-border bg-card min-h-[180px]">
-              <img src={residentialBannerAgency} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            <Link
+              to="/contacts"
+              className="group relative overflow-hidden rounded-2xl border border-border bg-card min-h-[180px]"
+            >
+              <img
+                src={residentialBannerAgency}
+                alt=""
+                aria-hidden
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
               <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,12,20,0.78)_0%,rgba(8,12,20,0.35)_70%,rgba(8,12,20,0.15)_100%)]" />
               <div className="relative flex h-full min-h-[180px] flex-col justify-end p-6 text-white">
                 <div className="text-lg font-semibold">Реклама агентства</div>
-                <p className="mt-1 text-sm text-white/78">Для агентства, ЖК или партнёра.</p>
+                <p className="mt-1 text-sm text-white/78">
+                  Для агентства, ЖК или партнёра.
+                </p>
               </div>
             </Link>
-            <Link to="/contacts" className="group relative overflow-hidden rounded-2xl border border-border bg-card min-h-[180px]">
-              <img src={residentialBannerSlot} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            <Link
+              to="/contacts"
+              className="group relative overflow-hidden rounded-2xl border border-border bg-card min-h-[180px]"
+            >
+              <img
+                src={residentialBannerSlot}
+                alt=""
+                aria-hidden
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
               <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,12,20,0.78)_0%,rgba(8,12,20,0.35)_70%,rgba(8,12,20,0.15)_100%)]" />
               <div className="relative flex h-full min-h-[180px] flex-col justify-end p-6 text-white">
                 <div className="text-lg font-semibold">Место сдаётся</div>
-                <p className="mt-1 text-sm text-white/78">Под акцию, ЖК или подборку объектов.</p>
+                <p className="mt-1 text-sm text-white/78">
+                  Под акцию, ЖК или подборку объектов.
+                </p>
               </div>
             </Link>
           </div>

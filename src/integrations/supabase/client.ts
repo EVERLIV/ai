@@ -10,7 +10,8 @@ const restWithAnonFallback: typeof fetch = async (input, init) => {
   const res = await fetch(input, init);
   const url = String(input);
   const method = (init?.method || "GET").toUpperCase();
-  if (res.status !== 401 || !url.includes("/rest/") || method !== "GET") return res;
+  if (res.status !== 401 || !url.includes("/rest/") || method !== "GET")
+    return res;
 
   const headers = new Headers(init?.headers);
   headers.set("apikey", SUPABASE_PUBLISHABLE_KEY);
@@ -18,15 +19,19 @@ const restWithAnonFallback: typeof fetch = async (input, init) => {
   return fetch(input, { ...init, headers });
 };
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
-    storageKey: "sb-api-auth-token",
+export const supabase = createClient<Database>(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+      storageKey: "sb-api-auth-token",
+    },
+    global: { fetch: restWithAnonFallback },
   },
-  global: { fetch: restWithAnonFallback },
-});
+);
 
 const memoryStorage = {
   getItem: () => null,
@@ -34,13 +39,17 @@ const memoryStorage = {
   removeItem: () => {},
 };
 
-export const supabasePublic = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-    detectSessionInUrl: false,
-    storage: memoryStorage,
-    storageKey: "ac-anon-only",
+export const supabasePublic = createClient<Database>(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      storage: memoryStorage,
+      storageKey: "ac-anon-only",
+    },
+    global: { fetch: restWithAnonFallback },
   },
-  global: { fetch: restWithAnonFallback },
-});
+);

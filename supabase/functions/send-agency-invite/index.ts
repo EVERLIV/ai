@@ -204,7 +204,7 @@ class SmtpConn {
   }
 
   async writeLine(line: string) {
-    await this.conn.write(encoder.encode(line + "\r\n"));
+    await this.conn.write(encoder.encode(`${line}\r\n`));
   }
 
   async readReply(): Promise<{ code: number; text: string }> {
@@ -247,9 +247,12 @@ class SmtpConn {
   async cmd(line: string, expected?: number | number[]) {
     await this.writeLine(line);
     const reply = await this.readReply();
-    const ok = expected === undefined
-      ? reply.code >= 200 && reply.code < 400
-      : (Array.isArray(expected) ? expected : [expected]).includes(reply.code);
+    const ok =
+      expected === undefined
+        ? reply.code >= 200 && reply.code < 400
+        : (Array.isArray(expected) ? expected : [expected]).includes(
+            reply.code,
+          );
     if (!ok) throw new Error(`SMTP ${line.split(" ")[0]} → ${reply.text}`);
     return reply;
   }
@@ -316,9 +319,10 @@ async function sendSmtp(opts: {
       ".",
     ].join("\r\n");
 
-    await smtp.conn.write(encoder.encode(payload + "\r\n"));
+    await smtp.conn.write(encoder.encode(`${payload}\r\n`));
     const dataReply = await smtp.readReply();
-    if (dataReply.code !== 250) throw new Error(`SMTP DATA → ${dataReply.text}`);
+    if (dataReply.code !== 250)
+      throw new Error(`SMTP DATA → ${dataReply.text}`);
     await smtp.cmd("QUIT", [221, 250]);
   } finally {
     smtp.close();
@@ -326,7 +330,8 @@ async function sendSmtp(opts: {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS")
+    return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {

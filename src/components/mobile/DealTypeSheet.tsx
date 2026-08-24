@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 export type DealChoice = "Аренда" | "Продажа" | "Посуточно";
 
-const OPTIONS: { label: string; value: DealChoice; residentialOnly?: boolean }[] = [
+const OPTIONS: {
+  label: string;
+  value: DealChoice;
+  residentialOnly?: boolean;
+}[] = [
   { label: "Купить", value: "Продажа" },
   { label: "Снять", value: "Аренда" },
   { label: "Посуточно", value: "Посуточно", residentialOnly: true },
@@ -23,7 +27,13 @@ type Props = {
   residential?: boolean;
 };
 
-export default function DealTypeSheet({ open, onOpenChange, value, onChange, residential = true }: Props) {
+export default function DealTypeSheet({
+  open,
+  onOpenChange,
+  value,
+  onChange,
+  residential = true,
+}: Props) {
   const items = OPTIONS.filter((o) => !o.residentialOnly || residential);
   const [draft, setDraft] = useState(value);
 
@@ -33,11 +43,17 @@ export default function DealTypeSheet({ open, onOpenChange, value, onChange, res
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="px-0 pb-0 pt-0 rounded-t-2xl [&>button]:hidden" aria-describedby={undefined}>
+      <SheetContent
+        side="bottom"
+        className="px-0 pb-0 pt-0 rounded-t-2xl [&>button]:hidden"
+        aria-describedby={undefined}
+      >
         <SheetTitle className="sr-only">Тип сделки</SheetTitle>
 
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
-          <span className="text-base font-semibold text-foreground">Тип сделки</span>
+          <span className="text-base font-semibold text-foreground">
+            Тип сделки
+          </span>
           <button
             type="button"
             aria-label="Закрыть"
@@ -57,7 +73,12 @@ export default function DealTypeSheet({ open, onOpenChange, value, onChange, res
                 onClick={() => setDraft(opt.value)}
               >
                 {opt.label}
-                <Check className={cn("w-5 h-5 text-primary", draft === opt.value ? "opacity-100" : "opacity-0")} />
+                <Check
+                  className={cn(
+                    "w-5 h-5 text-primary",
+                    draft === opt.value ? "opacity-100" : "opacity-0",
+                  )}
+                />
               </button>
             </li>
           ))}

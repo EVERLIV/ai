@@ -13,13 +13,26 @@ describe("listingSource", () => {
   });
 
   it("detects owner without agency", () => {
-    expect(isOwnerListing({ agency_id: null, extras: { agent_account_type: "owner" } })).toBe(true);
-    expect(isAgencyListing({ extras: { agent_account_type: "owner" } })).toBe(false);
+    expect(
+      isOwnerListing({
+        agency_id: null,
+        extras: { agent_account_type: "owner" },
+      }),
+    ).toBe(true);
+    expect(isAgencyListing({ extras: { agent_account_type: "owner" } })).toBe(
+      false,
+    );
   });
 
   it("filters by seller and agency", () => {
-    const agency = { agency_id: "ag-1", extras: { agent_account_type: "agency" as const } };
-    const owner = { agency_id: null, extras: { agent_account_type: "owner" as const } };
+    const agency = {
+      agency_id: "ag-1",
+      extras: { agent_account_type: "agency" as const },
+    };
+    const owner = {
+      agency_id: null,
+      extras: { agent_account_type: "owner" as const },
+    };
     expect(listingMatchesSellerFilter(agency, "agency", null)).toBe(true);
     expect(listingMatchesSellerFilter(owner, "agency", null)).toBe(false);
     expect(listingMatchesSellerFilter(agency, "owner", null)).toBe(false);

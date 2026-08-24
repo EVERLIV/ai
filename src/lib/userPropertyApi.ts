@@ -1,4 +1,8 @@
-import { SUPABASE_URL, SERVICE_ROLE_KEY, supabaseAdmin } from "@/integrations/supabase/adminClient";
+import {
+  SERVICE_ROLE_KEY,
+  SUPABASE_URL,
+  supabaseAdmin,
+} from "@/integrations/supabase/adminClient";
 
 /**
  * Кабинет клиента: PostgREST на api.arendacity.com часто отклоняет user JWT
@@ -14,13 +18,17 @@ const headers = {
 function parseError(data: unknown, res: Response): Error {
   if (data && typeof data === "object") {
     const o = data as Record<string, unknown>;
-    if (typeof o.message === "string" && o.message.trim()) return new Error(o.message);
+    if (typeof o.message === "string" && o.message.trim())
+      return new Error(o.message);
     if (typeof o.hint === "string" && o.hint.trim()) return new Error(o.hint);
   }
   return new Error(`HTTP ${res.status}`);
 }
 
-export async function fetchMyPropertiesApi(userId: string, agencyId?: string | null) {
+export async function fetchMyPropertiesApi(
+  userId: string,
+  agencyId?: string | null,
+) {
   if (agencyId) {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/properties?or=(submitted_by.eq.${userId},agency_id.eq.${agencyId})&select=*&order=created_at.desc`,
@@ -71,14 +79,11 @@ export async function updateMyPropertyApi(
   const filter = agencyId
     ? `id=eq.${propertyId}&or=(submitted_by.eq.${userId},agency_id.eq.${agencyId})`
     : `id=eq.${propertyId}&submitted_by=eq.${userId}`;
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/properties?${filter}`,
-    {
-      method: "PATCH",
-      headers: { ...headers, Prefer: "return=minimal" },
-      body: JSON.stringify(payload),
-    },
-  );
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/properties?${filter}`, {
+    method: "PATCH",
+    headers: { ...headers, Prefer: "return=minimal" },
+    body: JSON.stringify(payload),
+  });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw parseError(data, res);
@@ -98,8 +103,15 @@ export async function deleteMyPropertyApi(userId: string, propertyId: string) {
 
 export async function uploadMyPropertyPhotoApi(propertyId: string, file: File) {
   const path = `${propertyId}/${crypto.randomUUID()}.jpg`;
-  const { error } = await supabaseAdmin.storage.upload("property-photos", path, file);
-  if (error) throw new Error(typeof error === "string" ? error : "Не удалось загрузить фото");
+  const { error } = await supabaseAdmin.storage.upload(
+    "property-photos",
+    path,
+    file,
+  );
+  if (error)
+    throw new Error(
+      typeof error === "string" ? error : "Не удалось загрузить фото",
+    );
   return supabaseAdmin.storage.getPublicUrl("property-photos", path);
 }
 
@@ -115,7 +127,10 @@ export async function fetchMyProfileApi(userId: string) {
   return row;
 }
 
-export async function updateMyProfileApi(userId: string, payload: Record<string, unknown>) {
+export async function updateMyProfileApi(
+  userId: string,
+  payload: Record<string, unknown>,
+) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
     method: "PATCH",
     headers: { ...headers, Prefer: "return=minimal" },

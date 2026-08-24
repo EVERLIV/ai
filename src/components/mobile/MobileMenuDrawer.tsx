@@ -1,8 +1,21 @@
-import { Link } from "react-router-dom";
 import {
-  Search, Plus, Heart, Home, Building2, TreePine, Info, BookOpen, Newspaper,
-  Sparkles, LogIn, User, Phone, Mail, ChevronLeft,
+  BookOpen,
+  Building2,
+  ChevronLeft,
+  Heart,
+  Home,
+  Info,
+  LogIn,
+  Mail,
+  Newspaper,
+  Phone,
+  Plus,
+  Search,
+  Sparkles,
+  TreePine,
+  User,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { CONTACTS } from "@/config/company";
 import { SEGMENT_ROUTES } from "@/config/propertySegments";
@@ -24,7 +37,13 @@ type Props = {
   onOpenWizard?: () => void;
 };
 
-function MenuRow({ item, onNavigate }: { item: MenuItem; onNavigate: () => void }) {
+function MenuRow({
+  item,
+  onNavigate,
+}: {
+  item: MenuItem;
+  onNavigate: () => void;
+}) {
   const Icon = item.icon;
   const className = cn(
     "flex items-center gap-3 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/60 transition-colors text-left",
@@ -32,7 +51,14 @@ function MenuRow({ item, onNavigate }: { item: MenuItem; onNavigate: () => void 
 
   if (item.onClick) {
     return (
-      <button type="button" className={className} onClick={() => { item.onClick?.(); onNavigate(); }}>
+      <button
+        type="button"
+        className={className}
+        onClick={() => {
+          item.onClick?.();
+          onNavigate();
+        }}
+      >
         <Icon className="w-5 h-5 text-muted-foreground shrink-0" />
         {item.label}
       </button>
@@ -47,15 +73,29 @@ function MenuRow({ item, onNavigate }: { item: MenuItem; onNavigate: () => void 
   );
 }
 
-export default function MobileMenuDrawer({ open, onOpenChange, isLoggedIn, placeHref, onOpenWizard }: Props) {
+export default function MobileMenuDrawer({
+  open,
+  onOpenChange,
+  isLoggedIn,
+  placeHref,
+  onOpenWizard,
+}: Props) {
   const close = () => onOpenChange(false);
 
   const mainItems: MenuItem[] = [
     { label: "Новый поиск", href: "/catalog", icon: Search },
     { label: "Разместить за 0 ₽", href: placeHref, icon: Plus },
     { label: "Избранное", href: "/account#favorites", icon: Heart },
-    { label: "Каталог жилья", href: SEGMENT_ROUTES.residential.catalog, icon: Home },
-    { label: "Коммерция", href: SEGMENT_ROUTES.commercial.catalog, icon: Building2 },
+    {
+      label: "Каталог жилья",
+      href: SEGMENT_ROUTES.residential.catalog,
+      icon: Home,
+    },
+    {
+      label: "Коммерция",
+      href: SEGMENT_ROUTES.commercial.catalog,
+      icon: Building2,
+    },
     { label: "Участки", href: "/zhilaya/uchastki", icon: TreePine },
   ];
 
@@ -71,7 +111,10 @@ export default function MobileMenuDrawer({ open, onOpenChange, isLoggedIn, place
   const quickLinks = [
     { label: "Аренда", href: buildCatalogUrl({ deal: "Аренда" }) },
     { label: "Продажа", href: buildCatalogUrl({ deal: "Продажа" }) },
-    { label: "Новостройки", href: buildCatalogUrl({ segment: "residential", market: "Новостройка" }) },
+    {
+      label: "Новостройки",
+      href: buildCatalogUrl({ segment: "residential", market: "Новостройка" }),
+    },
   ];
 
   return (
@@ -96,7 +139,11 @@ export default function MobileMenuDrawer({ open, onOpenChange, isLoggedIn, place
             onClick={close}
             className="flex items-center gap-2 text-sm font-medium text-foreground"
           >
-            {isLoggedIn ? <User className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
+            {isLoggedIn ? (
+              <User className="w-5 h-5" />
+            ) : (
+              <LogIn className="w-5 h-5" />
+            )}
             {isLoggedIn ? "Кабинет" : "Войти"}
           </Link>
         </div>
@@ -115,10 +162,16 @@ export default function MobileMenuDrawer({ open, onOpenChange, isLoggedIn, place
           </div>
 
           <div className="px-4 py-3 border-t border-border/60 space-y-2 text-xs text-muted-foreground">
-            <a href={`tel:${CONTACTS.phoneTel}`} className="flex items-center gap-2 hover:text-foreground">
+            <a
+              href={`tel:${CONTACTS.phoneTel}`}
+              className="flex items-center gap-2 hover:text-foreground"
+            >
               <Phone className="w-4 h-4" /> {CONTACTS.phone}
             </a>
-            <a href={`mailto:${CONTACTS.email}`} className="flex items-center gap-2 hover:text-foreground">
+            <a
+              href={`mailto:${CONTACTS.email}`}
+              className="flex items-center gap-2 hover:text-foreground"
+            >
               <Mail className="w-4 h-4" /> {CONTACTS.email}
             </a>
           </div>

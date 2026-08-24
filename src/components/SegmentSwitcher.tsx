@@ -1,6 +1,6 @@
+import { Building2, Check, ChevronDown, Home } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Building2, Check, ChevronDown, Home } from "lucide-react";
 import { SEGMENT_ROUTES } from "@/config/propertySegments";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +53,7 @@ export default function SegmentSwitcher({ className, onNavigate }: Props) {
 
   useEffect(() => {
     setOpen(false);
-  }, [pathname]);
+  }, []);
 
   return (
     <div ref={rootRef} className={cn("relative shrink-0", className)}>
@@ -101,7 +101,8 @@ export default function SegmentSwitcher({ className, onNavigate }: Props) {
           </div>
           <div className="px-1.5 pb-1.5 space-y-0.5">
             {SEGMENTS.map(({ id, label, hint, href, Icon }) => {
-              const active = id === "residential" ? isResidential : !isResidential;
+              const active =
+                id === "residential" ? isResidential : !isResidential;
               return (
                 <Link
                   key={id}
@@ -120,17 +121,26 @@ export default function SegmentSwitcher({ className, onNavigate }: Props) {
                   <span
                     className={cn(
                       "mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                      active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                      active
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground",
                     )}
                   >
                     <Icon className="w-4 h-4" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1.5">
-                      <span className={cn("text-sm font-semibold", active ? "text-foreground" : "text-foreground/90")}>
+                      <span
+                        className={cn(
+                          "text-sm font-semibold",
+                          active ? "text-foreground" : "text-foreground/90",
+                        )}
+                      >
                         {label}
                       </span>
-                      {active && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                      {active && (
+                        <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                      )}
                     </span>
                     <span className="block text-[11px] text-muted-foreground leading-snug mt-0.5">
                       {hint}

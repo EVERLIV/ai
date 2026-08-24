@@ -1,4 +1,4 @@
-import { Briefcase, Clock, MapPin, Banknote, CheckCircle2 } from "lucide-react";
+import { Banknote, Briefcase, CheckCircle2, Clock, MapPin } from "lucide-react";
 import type { Vacancy } from "@/data/vacancies";
 
 type Props = {
@@ -16,8 +16,12 @@ export default function VacancyCard({ vacancy, onApply }: Props) {
               <Briefcase className="w-3 h-3" />
               {vacancy.department}
             </div>
-            <h2 className="font-display text-2xl font-bold text-foreground">{vacancy.title}</h2>
-            <p className="text-sm text-muted-foreground mt-2 max-w-2xl leading-relaxed">{vacancy.intro}</p>
+            <h2 className="font-display text-2xl font-bold text-foreground">
+              {vacancy.title}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-2 max-w-2xl leading-relaxed">
+              {vacancy.intro}
+            </p>
           </div>
           <button
             type="button"
@@ -47,10 +51,15 @@ export default function VacancyCard({ vacancy, onApply }: Props) {
 
       <div className="p-6 sm:p-8 grid sm:grid-cols-3 gap-8">
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-foreground mb-3">Задачи</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-foreground mb-3">
+            Задачи
+          </h3>
           <ul className="space-y-2">
             {vacancy.tasks.map((item) => (
-              <li key={item} className="flex gap-2 text-sm text-muted-foreground leading-relaxed">
+              <li
+                key={item}
+                className="flex gap-2 text-sm text-muted-foreground leading-relaxed"
+              >
                 <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span>{item}</span>
               </li>
@@ -58,10 +67,15 @@ export default function VacancyCard({ vacancy, onApply }: Props) {
           </ul>
         </div>
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-foreground mb-3">Требования</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-foreground mb-3">
+            Требования
+          </h3>
           <ul className="space-y-2">
             {vacancy.requirements.map((item) => (
-              <li key={item} className="flex gap-2 text-sm text-muted-foreground leading-relaxed">
+              <li
+                key={item}
+                className="flex gap-2 text-sm text-muted-foreground leading-relaxed"
+              >
                 <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span>{item}</span>
               </li>
@@ -69,10 +83,15 @@ export default function VacancyCard({ vacancy, onApply }: Props) {
           </ul>
         </div>
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-foreground mb-3">Условия</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-foreground mb-3">
+            Условия
+          </h3>
           <ul className="space-y-2">
             {vacancy.conditions.map((item) => (
-              <li key={item} className="flex gap-2 text-sm text-muted-foreground leading-relaxed">
+              <li
+                key={item}
+                className="flex gap-2 text-sm text-muted-foreground leading-relaxed"
+              >
                 <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span>{item}</span>
               </li>

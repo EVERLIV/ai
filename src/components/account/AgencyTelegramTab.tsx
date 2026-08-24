@@ -1,19 +1,20 @@
+import { Bell, Loader2, MessageCircle, Unplug } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import {
-  useMyAgency,
   useConnectAgencyTelegramChat,
-  useUpdateAgencyTelegramSettings,
   useDisconnectAgencyTelegram,
+  useMyAgency,
+  useUpdateAgencyTelegramSettings,
 } from "@/hooks/useAgency";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Bell, Loader2, MessageCircle, Unplug } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const BOT_USERNAME = import.meta.env.VITE_AGENCY_BOT_USERNAME || "ArendaCityAgencyBot";
+const BOT_USERNAME =
+  import.meta.env.VITE_AGENCY_BOT_USERNAME || "ArendaCityAgencyBot";
 
 export default function AgencyTelegramTab() {
   const { toast } = useToast();
@@ -31,10 +32,15 @@ export default function AgencyTelegramTab() {
 
   const connected = !!agency?.telegram_chat_id;
 
-  const patchSettings = async (patch: Parameters<typeof updateSettings.mutateAsync>[0]["settings"]) => {
+  const patchSettings = async (
+    patch: Parameters<typeof updateSettings.mutateAsync>[0]["settings"],
+  ) => {
     if (!agency) return;
     try {
-      await updateSettings.mutateAsync({ agencyId: agency.id, settings: patch });
+      await updateSettings.mutateAsync({
+        agencyId: agency.id,
+        settings: patch,
+      });
     } catch (e) {
       toast({
         title: "Ошибка",
@@ -107,7 +113,8 @@ export default function AgencyTelegramTab() {
           Telegram-уведомления
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Укажите ID группы или канала, добавьте бота — заявки и просмотры по вашим объектам будут приходить туда.
+          Укажите ID группы или канала, добавьте бота — заявки и просмотры по
+          вашим объектам будут приходить туда.
         </p>
       </div>
 
@@ -117,37 +124,54 @@ export default function AgencyTelegramTab() {
             <p className="text-sm font-semibold text-foreground">Статус</p>
             {connected ? (
               <p className="text-sm text-emerald-700 dark:text-emerald-400 mt-0.5">
-                ID чата: <span className="font-mono">{agency.telegram_chat_id}</span>
-                {agency.telegram_chat_title && <> · {agency.telegram_chat_title}</>}
+                ID чата:{" "}
+                <span className="font-mono">{agency.telegram_chat_id}</span>
+                {agency.telegram_chat_title && (
+                  <> · {agency.telegram_chat_title}</>
+                )}
               </p>
             ) : (
-              <p className="text-sm text-muted-foreground mt-0.5">Чат не указан</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Чат не указан
+              </p>
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Label htmlFor="tg-enabled" className="text-xs text-muted-foreground">Вкл.</Label>
+            <Label
+              htmlFor="tg-enabled"
+              className="text-xs text-muted-foreground"
+            >
+              Вкл.
+            </Label>
             <Switch
               id="tg-enabled"
               checked={!!agency.telegram_enabled}
               disabled={!connected || updateSettings.isPending}
-              onCheckedChange={(v) => void patchSettings({ telegram_enabled: v })}
+              onCheckedChange={(v) =>
+                void patchSettings({ telegram_enabled: v })
+              }
             />
           </div>
         </div>
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="tg-chat-id" className="text-xs">ID группы или канала</Label>
+            <Label htmlFor="tg-chat-id" className="text-xs">
+              ID группы или канала
+            </Label>
             <Input
               id="tg-chat-id"
               inputMode="numeric"
-              placeholder={connected ? String(agency.telegram_chat_id) : "-1001234567890"}
+              placeholder={
+                connected ? String(agency.telegram_chat_id) : "-1001234567890"
+              }
               value={chatIdInput}
               onChange={(e) => setChatIdInput(e.target.value)}
               className="font-mono text-sm"
             />
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Обычно начинается с <code className="bg-muted px-1">-100</code>. Узнать ID: добавьте в группу бота{" "}
+              Обычно начинается с <code className="bg-muted px-1">-100</code>.
+              Узнать ID: добавьте в группу бота{" "}
               <a
                 href="https://t.me/getmyid_bot"
                 target="_blank"
@@ -161,7 +185,9 @@ export default function AgencyTelegramTab() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="tg-chat-title" className="text-xs">Название (необязательно)</Label>
+            <Label htmlFor="tg-chat-title" className="text-xs">
+              Название (необязательно)
+            </Label>
             <Input
               id="tg-chat-title"
               placeholder="Рабочая группа агентства"
@@ -176,16 +202,24 @@ export default function AgencyTelegramTab() {
             onClick={() => void handleSaveChat()}
             disabled={connectChat.isPending || !chatIdInput.trim()}
           >
-            {connectChat.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+            {connectChat.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-1" />
+            ) : null}
             Сохранить ID чата
           </Button>
         </div>
 
         <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground space-y-1.5 leading-relaxed">
-          <p className="font-medium text-foreground text-sm">После сохранения</p>
+          <p className="font-medium text-foreground text-sm">
+            После сохранения
+          </p>
           <ol className="list-decimal list-inside space-y-1">
             <li>Добавьте @{BOT_USERNAME} в эту группу или канал</li>
-            <li>Сделайте бота <strong className="text-foreground">администратором</strong> (иначе не сможет писать)</li>
+            <li>
+              Сделайте бота{" "}
+              <strong className="text-foreground">администратором</strong>{" "}
+              (иначе не сможет писать)
+            </li>
             <li>Включите переключатель «Вкл.» и типы уведомлений ниже</li>
           </ol>
         </div>
@@ -205,14 +239,27 @@ export default function AgencyTelegramTab() {
         )}
       </div>
 
-      <div className={cn("bg-card border border-border/60 rounded-lg p-4 space-y-4", !connected && "opacity-60 pointer-events-none")}>
+      <div
+        className={cn(
+          "bg-card border border-border/60 rounded-lg p-4 space-y-4",
+          !connected && "opacity-60 pointer-events-none",
+        )}
+      >
         <p className="text-sm font-semibold text-foreground flex items-center gap-2">
           <Bell className="w-4 h-4" /> Что присылать
         </p>
 
         {[
-          { key: "telegram_notify_leads" as const, label: "Новые заявки", desc: "Формы на ваших объектах" },
-          { key: "telegram_notify_views" as const, label: "Просмотры", desc: "Когда открывают карточку объекта" },
+          {
+            key: "telegram_notify_leads" as const,
+            label: "Новые заявки",
+            desc: "Формы на ваших объектах",
+          },
+          {
+            key: "telegram_notify_views" as const,
+            label: "Просмотры",
+            desc: "Когда открывают карточку объекта",
+          },
         ].map(({ key, label, desc }) => (
           <div key={key} className="flex items-center justify-between gap-3">
             <div>

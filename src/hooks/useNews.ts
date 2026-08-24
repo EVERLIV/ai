@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabaseAdmin } from "@/integrations/supabase/adminClient";
+import { supabase } from "@/integrations/supabase/client";
 
 export type NewsPost = {
   id: string;
@@ -58,7 +58,10 @@ export function useAllNewsPosts() {
   return useQuery({
     queryKey: ["news_admin"],
     queryFn: async () => {
-      const { data, error } = await supabaseAdmin.db.select("news_posts", "select=*&order=created_at.desc");
+      const { data, error } = await supabaseAdmin.db.select(
+        "news_posts",
+        "select=*&order=created_at.desc",
+      );
       if (error) throw error;
       return (data ?? []) as NewsPost[];
     },
@@ -68,11 +71,16 @@ export function useAllNewsPosts() {
 export function useUpsertNews() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (post: Partial<NewsPost> & { title: string; slug: string }) => {
+    mutationFn: async (
+      post: Partial<NewsPost> & { title: string; slug: string },
+    ) => {
       const row = { ...post, updated_at: new Date().toISOString() };
       const { data, error } = post.id
         ? await supabaseAdmin.db.update("news_posts", `id=eq.${post.id}`, row)
-        : await supabaseAdmin.db.upsert("news_posts", { ...row, created_at: new Date().toISOString() });
+        : await supabaseAdmin.db.upsert("news_posts", {
+            ...row,
+            created_at: new Date().toISOString(),
+          });
       if (error) throw error;
       return data;
     },
@@ -87,7 +95,10 @@ export function useDeleteNews() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabaseAdmin.db.delete("news_posts", `id=eq.${id}`);
+      const { error } = await supabaseAdmin.db.delete(
+        "news_posts",
+        `id=eq.${id}`,
+      );
       if (error) throw error;
     },
     onSuccess: () => {

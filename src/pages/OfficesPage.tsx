@@ -1,22 +1,45 @@
+import {
+  ArrowRight,
+  CheckCircle,
+  Clock,
+  MapPin,
+  Shield,
+  Users,
+} from "lucide-react";
 import { Link } from "react-router-dom";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
-import CategoryPropertySlider from "@/components/CategoryPropertySlider";
+import heroImg from "@/assets/hero-offices.jpg";
 import CategoryContactForm from "@/components/CategoryContactForm";
+import CategoryPropertySlider from "@/components/CategoryPropertySlider";
 import NewsSidebar from "@/components/NewsSidebar";
 import PropertyAIChat from "@/components/PropertyAIChat";
-import heroImg from "@/assets/hero-offices.jpg";
-import { Building2, MapPin, Shield, Clock, Users, CheckCircle, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import SeoHead from "@/components/SeoHead";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import SiteFooter from "@/components/SiteFooter";
+import SiteHeader from "@/components/SiteHeader";
+import { Button } from "@/components/ui/button";
 import { absoluteUrl } from "@/config/site";
+import { buildCatalogUrl } from "@/lib/catalogLinks";
 
 const benefits = [
-  { icon: MapPin, title: "Центральные районы", desc: "Офисы в деловых центрах Кировского, Октябрьского и Свердловского районов" },
-  { icon: Shield, title: "Юридическая чистота", desc: "Проверяем документы, помогаем с оформлением договора аренды" },
-  { icon: Clock, title: "Быстрый подбор", desc: "Покажем подходящие варианты в течение 24 часов после обращения" },
-  { icon: Users, title: "Персональный менеджер", desc: "Ведём сделку от подбора до заключения договора" },
+  {
+    icon: MapPin,
+    title: "Центральные районы",
+    desc: "Офисы в деловых центрах Кировского, Октябрьского и Свердловского районов",
+  },
+  {
+    icon: Shield,
+    title: "Юридическая чистота",
+    desc: "Проверяем документы, помогаем с оформлением договора аренды",
+  },
+  {
+    icon: Clock,
+    title: "Быстрый подбор",
+    desc: "Покажем подходящие варианты в течение 24 часов после обращения",
+  },
+  {
+    icon: Users,
+    title: "Персональный менеджер",
+    desc: "Ведём сделку от подбора до заключения договора",
+  },
 ];
 
 const features = [
@@ -41,7 +64,13 @@ export default function OfficesPage() {
       {/* Hero */}
       <section className="relative pt-14 md:pt-[98px]">
         <div className="relative h-[480px] sm:h-[540px] overflow-hidden">
-          <img src={heroImg} alt="Офисные помещения в Иркутске" width={1920} height={1080} className="w-full h-full object-cover" />
+          <img
+            src={heroImg}
+            alt="Офисные помещения в Иркутске"
+            width={1920}
+            height={1080}
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/50 to-transparent" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
@@ -53,8 +82,9 @@ export default function OfficesPage() {
                   Аренда и продажа офисов в&nbsp;Иркутске
                 </h1>
                 <p className="text-lg text-white/80 leading-relaxed">
-                  Более 150 офисных помещений в бизнес-центрах Иркутска и Иркутской области.
-                  Класс&nbsp;А, B+ и B — от&nbsp;15&nbsp;м² для стартапов до 5&nbsp;000&nbsp;м² для крупных компаний.
+                  Более 150 офисных помещений в бизнес-центрах Иркутска и
+                  Иркутской области. Класс&nbsp;А, B+ и B — от&nbsp;15&nbsp;м²
+                  для стартапов до 5&nbsp;000&nbsp;м² для крупных компаний.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <Link to={buildCatalogUrl({ types: "Офис" })}>
@@ -63,7 +93,11 @@ export default function OfficesPage() {
                     </Button>
                   </Link>
                   <a href="#contact-form">
-                    <Button size="lg" variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+                    >
                       Оставить заявку
                     </Button>
                   </a>
@@ -82,12 +116,19 @@ export default function OfficesPage() {
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {benefits.map((b) => (
-              <div key={b.title} className="p-6 rounded-xl border border-border bg-card hover:shadow-md transition-shadow">
+              <div
+                key={b.title}
+                className="p-6 rounded-xl border border-border bg-card hover:shadow-md transition-shadow"
+              >
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <b.icon className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="font-semibold text-foreground mb-2">{b.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{b.desc}</p>
+                <h3 className="font-semibold text-foreground mb-2">
+                  {b.title}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {b.desc}
+                </p>
               </div>
             ))}
           </div>
@@ -105,9 +146,24 @@ export default function OfficesPage() {
                   Офисные помещения в аренду в Иркутске — полный обзор рынка
                 </h2>
                 <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
-                  <p>Рынок офисной недвижимости Иркутска — один из наиболее динамичных в Восточной Сибири. Город располагает современными бизнес-центрами классов A и B+, сосредоточенными преимущественно в Кировском и Октябрьском районах. Средняя ставка аренды офисных помещений составляет от 600 до 1 500 ₽/м² в месяц.</p>
-                  <p>Бизнес-центры Иркутска предлагают полную инфраструктуру: круглосуточную охрану, систему кондиционирования, скоростной интернет, конференц-залы и зоны отдыха.</p>
-                  <p>Для малого бизнеса доступны компактные офисы от 15 м² в коворкинг-пространствах. Крупные компании могут арендовать целые этажи площадью до 5 000 м².</p>
+                  <p>
+                    Рынок офисной недвижимости Иркутска — один из наиболее
+                    динамичных в Восточной Сибири. Город располагает
+                    современными бизнес-центрами классов A и B+,
+                    сосредоточенными преимущественно в Кировском и Октябрьском
+                    районах. Средняя ставка аренды офисных помещений составляет
+                    от 600 до 1 500 ₽/м² в месяц.
+                  </p>
+                  <p>
+                    Бизнес-центры Иркутска предлагают полную инфраструктуру:
+                    круглосуточную охрану, систему кондиционирования, скоростной
+                    интернет, конференц-залы и зоны отдыха.
+                  </p>
+                  <p>
+                    Для малого бизнеса доступны компактные офисы от 15 м² в
+                    коворкинг-пространствах. Крупные компании могут арендовать
+                    целые этажи площадью до 5 000 м².
+                  </p>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {features.map((f) => (
@@ -120,7 +176,10 @@ export default function OfficesPage() {
               </div>
 
               {/* Property Slider */}
-              <CategoryPropertySlider type="Офис" title="Офисные помещения в каталоге" />
+              <CategoryPropertySlider
+                type="Офис"
+                title="Офисные помещения в каталоге"
+              />
 
               {/* Contact Form */}
               <div id="contact-form">
@@ -128,7 +187,9 @@ export default function OfficesPage() {
               </div>
             </div>
 
-            <div className="hidden lg:block lg:w-[280px] xl:w-[300px] shrink-0 sticky top-[110px] self-start"><NewsSidebar /></div>
+            <div className="hidden lg:block lg:w-[280px] xl:w-[300px] shrink-0 sticky top-[110px] self-start">
+              <NewsSidebar />
+            </div>
           </div>
         </div>
       </section>

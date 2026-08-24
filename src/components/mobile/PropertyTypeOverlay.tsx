@@ -1,7 +1,11 @@
-import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
+import { useEffect, useState } from "react";
 import MobileFullScreenPicker from "@/components/mobile/MobileFullScreenPicker";
-import { COMMERCIAL_PROPERTY_TYPES, RESIDENTIAL_PROPERTY_TYPES, type PropertySegment } from "@/config/propertySegments";
+import {
+  COMMERCIAL_PROPERTY_TYPES,
+  type PropertySegment,
+  RESIDENTIAL_PROPERTY_TYPES,
+} from "@/config/propertySegments";
 import { cn } from "@/lib/utils";
 
 type Category = { title: string; items: readonly string[] };
@@ -53,14 +57,21 @@ type Props = {
   onChange: (value: string) => void;
 };
 
-export default function PropertyTypeOverlay({ open, onOpenChange, segment, value, onChange }: Props) {
+export default function PropertyTypeOverlay({
+  open,
+  onOpenChange,
+  segment,
+  value,
+  onChange,
+}: Props) {
   const [draft, setDraft] = useState(value);
 
   useEffect(() => {
     if (open) setDraft(value);
   }, [open, value]);
 
-  const categories = segment === "residential" ? RESIDENTIAL_CATEGORIES : COMMERCIAL_CATEGORIES;
+  const categories =
+    segment === "residential" ? RESIDENTIAL_CATEGORIES : COMMERCIAL_CATEGORIES;
   const known = new Set(categories.flatMap((c) => c.items));
   const extras = allTypes(segment).filter((t) => !known.has(t));
   const displayCategories = extras.length
@@ -77,7 +88,9 @@ export default function PropertyTypeOverlay({ open, onOpenChange, segment, value
       <div className="py-2">
         {displayCategories.map((cat) => (
           <div key={cat.title} className="mb-1">
-            <p className="px-4 py-2 text-sm font-bold text-foreground">{cat.title}</p>
+            <p className="px-4 py-2 text-sm font-bold text-foreground">
+              {cat.title}
+            </p>
             <ul>
               {cat.items.map((item) => {
                 const selected = draft === item;
@@ -92,10 +105,14 @@ export default function PropertyTypeOverlay({ open, onOpenChange, segment, value
                       <span
                         className={cn(
                           "w-5 h-5 flex items-center justify-center shrink-0",
-                          selected ? "bg-primary text-primary-foreground" : "border border-border/80",
+                          selected
+                            ? "bg-primary text-primary-foreground"
+                            : "border border-border/80",
                         )}
                       >
-                        {selected && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
+                        {selected && (
+                          <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                        )}
                       </span>
                     </button>
                   </li>

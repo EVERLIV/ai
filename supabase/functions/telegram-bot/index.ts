@@ -24,23 +24,31 @@
  */
 
 import {
+  appendRow,
+  colLetter,
+  findCol,
   isGoogleSheetsReady,
   readSheetTable,
-  updateCell,
-  appendRow,
-  findCol,
-  colLetter,
-  sheetTabFromRange,
-  sheetPublicUrl,
   type SheetTable,
+  sheetPublicUrl,
+  sheetTabFromRange,
+  updateCell,
 } from "./googleSheets.ts";
 
 const MODEL = "claude-haiku-4-5";
 const CATALOG_URL = Deno.env.get("CATALOG_URL") || "https://api.arendacity.com";
 const CATALOG_ANON_KEY = Deno.env.get("CATALOG_ANON_KEY") || "";
-const SITE_URL = (Deno.env.get("SITE_URL") || "https://arendacity.com").replace(/\/$/, "");
+const SITE_URL = (Deno.env.get("SITE_URL") || "https://arendacity.com").replace(
+  /\/$/,
+  "",
+);
 
-type TgUser = { id: number; first_name?: string; username?: string; is_bot?: boolean };
+type TgUser = {
+  id: number;
+  first_name?: string;
+  username?: string;
+  is_bot?: boolean;
+};
 type TgChat = { id: number; type: string; title?: string };
 type TgMessage = {
   message_id: number;
@@ -71,9 +79,15 @@ type CatalogRow = {
 };
 
 const num = (v: unknown) => Number(v) || 0;
-const fmt = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+const fmt = (n: number) =>
+  String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
-let catalogCache: { text: string; summary: string; rows: CatalogRow[]; at: number } = {
+let catalogCache: {
+  text: string;
+  summary: string;
+  rows: CatalogRow[];
+  at: number;
+} = {
   text: "",
   summary: "",
   rows: [],
@@ -127,7 +141,8 @@ async function reply(chatId: number, text: string, replyTo?: number) {
 }
 
 async function loadCatalog() {
-  if (catalogCache.text && Date.now() - catalogCache.at < 5 * 60_000) return catalogCache;
+  if (catalogCache.text && Date.now() - catalogCache.at < 5 * 60_000)
+    return catalogCache;
 
   const params = new URLSearchParams({
     is_active: "eq.true",
@@ -147,7 +162,9 @@ async function loadCatalog() {
   });
   if (!resp.ok) {
     const detail = await resp.text().catch(() => "");
-    throw new Error(`catalog ${resp.status}${detail ? `: ${detail.slice(0, 120)}` : ""}`);
+    throw new Error(
+      `catalog ${resp.status}${detail ? `: ${detail.slice(0, 120)}` : ""}`,
+    );
   }
 
   const rows = (await resp.json()) as CatalogRow[];
@@ -156,13 +173,22 @@ async function loadCatalog() {
   const prices = rows.map((p) => num(p.price)).filter((v) => v > 0);
   const areas = rows.map((p) => num(p.area)).filter((v) => v > 0);
   const byType: Record<string, number> = {};
-  for (const p of rows) byType[String(p.type ?? "—")] = (byType[String(p.type ?? "—")] ?? 0) + 1;
+  for (const p of rows)
+    byType[String(p.type ?? "—")] = (byType[String(p.type ?? "—")] ?? 0) + 1;
 
   const summary = [
     `Всего активных объектов: ${rows.length}.`,
-    `По типам: ${Object.entries(byType).map(([t, n]) => `${t} — ${n}`).join(", ") || "—"}.`,
-    prices.length ? `Цены: от ${fmt(Math.min(...prices))} до ${fmt(Math.max(...prices))} ₽.` : "",
-    areas.length ? `Площади: от ${Math.min(...areas)} до ${Math.max(...areas)} м².` : "",
+    `По типам: ${
+      Object.entries(byType)
+        .map(([t, n]) => `${t} — ${n}`)
+        .join(", ") || "—"
+    }.`,
+    prices.length
+      ? `Цены: от ${fmt(Math.min(...prices))} до ${fmt(Math.max(...prices))} ₽.`
+      : "",
+    areas.length
+      ? `Площади: от ${Math.min(...areas)} до ${Math.max(...areas)} м².`
+      : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -183,12 +209,14 @@ function formatCatalogRows(rows: CatalogRow[]) {
             ? `${fmt(num(p.price))} ₽${(p.deal_type || "").includes("Продаж") ? "" : "/мес"}`
             : "по запросу",
         ];
-        if (num(p.price_per_m2) > 0) parts.push(`${fmt(num(p.price_per_m2))} ₽/м²`);
+        if (num(p.price_per_m2) > 0)
+          parts.push(`${fmt(num(p.price_per_m2))} ₽/м²`);
         if (p.class) parts.push(`класс ${p.class}`);
         if (p.condition) parts.push(String(p.condition));
         if (p.floor) parts.push(`этаж ${p.floor}/${p.total_floors ?? "—"}`);
         if (p.deposit) parts.push(`депозит ${p.deposit}`);
-        if (Array.isArray(p.features) && p.features.length) parts.push(p.features.slice(0, 6).join(", "));
+        if (Array.isArray(p.features) && p.features.length)
+          parts.push(p.features.slice(0, 6).join(", "));
         return `• [${p.public_id || p.id.slice(0, 8)}] ${parts.join(" · ")}\n  Ссылка: ${link}`;
       })
       .join("\n") || "Сейчас опубликованных объектов нет."
@@ -219,7 +247,11 @@ function parseMoney(q: string): number | null {
   return n;
 }
 
-type PropertyFilters = { place: string | null; maxPrice: number | null; type: string | null };
+type PropertyFilters = {
+  place: string | null;
+  maxPrice: number | null;
+  type: string | null;
+};
 
 function extractPropertyFilters(question: string): PropertyFilters {
   const q = normalizeSpeech(question);
@@ -229,20 +261,32 @@ function extractPropertyFilters(question: string): PropertyFilters {
     const stem = placeMatch[1].replace(/(ске|цке|ке|е|и|у|а|я|ой|ом|ем)$/i, "");
     if (stem.length >= 4) place = stem;
   }
-  const typeMatch = q.match(/\b(офис\w*|склад\w*|торгов\w*|производ\w*|помещен\w*|земл\w*|здан\w*)/i);
+  const typeMatch = q.match(
+    /\b(офис\w*|склад\w*|торгов\w*|производ\w*|помещен\w*|земл\w*|здан\w*)/i,
+  );
   return {
     place,
     maxPrice: parseMoney(q),
-    type: typeMatch ? typeMatch[1].replace(/(а|у|е|ом|ов|ы|и)$/i, "").slice(0, 6) : null,
+    type: typeMatch
+      ? typeMatch[1].replace(/(а|у|е|ом|ов|ы|и)$/i, "").slice(0, 6)
+      : null,
   };
 }
 
 function applyPropertyFilters(rows: CatalogRow[], f: PropertyFilters) {
   return rows.filter((p) => {
-    const hay = `${p.district || ""} ${p.address || ""} ${p.type || ""}`.toLowerCase().replace(/ё/g, "е");
+    const hay = `${p.district || ""} ${p.address || ""} ${p.type || ""}`
+      .toLowerCase()
+      .replace(/ё/g, "е");
     if (f.place && !hay.includes(f.place)) return false;
-    if (f.type && !hay.includes(f.type) && !(p.type || "").toLowerCase().includes(f.type)) return false;
-    if (f.maxPrice && num(p.price) > 0 && num(p.price) > f.maxPrice) return false;
+    if (
+      f.type &&
+      !hay.includes(f.type) &&
+      !(p.type || "").toLowerCase().includes(f.type)
+    )
+      return false;
+    if (f.maxPrice && num(p.price) > 0 && num(p.price) > f.maxPrice)
+      return false;
     return true;
   });
 }
@@ -258,7 +302,9 @@ function describeFilters(f: PropertyFilters) {
 
 function isPropertyIntent(q: string) {
   const t = normalizeSpeech(q);
-  return /(объект|офис|склад|торг|помещ|аренда|продаж|м²|м2|руб|бюджет|ангар|иркут|шелех|усолье|подобрать|подбер|нужен|ищу|найд|вариант|площад|помещение|лот)/i.test(t);
+  return /(объект|офис|склад|торг|помещ|аренда|продаж|м²|м2|руб|бюджет|ангар|иркут|шелех|усолье|подобрать|подбер|нужен|ищу|найд|вариант|площад|помещение|лот)/i.test(
+    t,
+  );
 }
 
 function consultantPrompt(
@@ -290,30 +336,42 @@ ${userName ? `Собеседника зовут ${userName}.` : ""}`;
 }
 
 /** «Катя …» в начале или рядом с началом фразы */
-function parseKatyaAddress(text: string): { addressed: boolean; question: string } {
+function parseKatyaAddress(text: string): {
+  addressed: boolean;
+  question: string;
+} {
   const t = text.trim();
   const m = t.match(/^катя(?:и|е|ю|й)?(?:\s*[,.:;!\-—–]+\s*|\s+)(.+)$/iu);
   if (m) return { addressed: true, question: m[1].trim() };
   if (/^катя(?:и|е|ю|й)?[!?.…]*$/iu.test(t)) {
     return { addressed: true, question: "" };
   }
-  const anywhere = t.match(/^(.{0,20}?)катя(?:и|е|ю|й)?\s*[,.:;!\-—–]?\s+(.+)$/iu);
+  const anywhere = t.match(
+    /^(.{0,20}?)катя(?:и|е|ю|й)?\s*[,.:;!\-—–]?\s+(.+)$/iu,
+  );
   if (anywhere) return { addressed: true, question: anywhere[2].trim() };
   return { addressed: false, question: t };
 }
 
 /** Быстрый ответ «только число», если явно просят кол-во по месту */
-function tryCountOnlyAnswer(question: string, rows: CatalogRow[]): string | null {
+function tryCountOnlyAnswer(
+  question: string,
+  rows: CatalogRow[],
+): string | null {
   const q = question.toLowerCase();
-  const wantsCount = /(кол[- ]?во|количеств|сколько|число)/i.test(q) &&
+  const wantsCount =
+    /(кол[- ]?во|количеств|сколько|число)/i.test(q) &&
     /(только|лишь|просто|одну?\s+цифр)/i.test(q);
   // «сколько …» тоже часто = только число
-  const wantsHowMany = /^сколько\b/i.test(question.trim()) ||
+  const wantsHowMany =
+    /^сколько\b/i.test(question.trim()) ||
     (/(сколько|кол[- ]?во)/i.test(q) && /(только|напиши)/i.test(q));
   if (!wantsCount && !wantsHowMany) return null;
 
   // Вытаскиваем топоним после в/на/по
-  const placeMatch = q.match(/\b(?:в|на|по)\s+([а-яёa-z0-9\-]+(?:\s+[а-яёa-z0-9\-]+)?)/i);
+  const placeMatch = q.match(
+    /\b(?:в|на|по)\s+([а-яёa-z0-9-]+(?:\s+[а-яёa-z0-9-]+)?)/i,
+  );
   const place = placeMatch?.[1]?.replace(/\s+/g, " ").trim();
   if (!place || place.length < 3) return null;
 
@@ -345,13 +403,19 @@ async function handlePropertyQuestion(msg: TgMessage, text: string) {
               : ""),
         };
 
-  const quick = tryCountOnlyAnswer(text, hasFilter && matched.length ? matched : cat.rows);
+  const quick = tryCountOnlyAnswer(
+    text,
+    hasFilter && matched.length ? matched : cat.rows,
+  );
   if (quick != null) {
     await reply(msg.chat.id, quick, msg.message_id);
     return;
   }
   const name = msg.from?.first_name || "";
-  const answer = await askClaude(consultantPrompt(pack, name, hasFilter ? filters : undefined), text);
+  const answer = await askClaude(
+    consultantPrompt(pack, name, hasFilter ? filters : undefined),
+    text,
+  );
   await reply(msg.chat.id, toTelegramHtml(answer), msg.message_id);
 }
 
@@ -361,8 +425,9 @@ function isTaskReadIntent(q: string) {
   // «задача для …» — это СОЗДАНИЕ, не чтение
   if (/задач[ауие]\s+для(?:\s|[-–—:]|$)/i.test(t)) return false;
   if (
-    /(список|покаж|вывед|сводк|аналитик|статистик|отчёт|отчет|срез|дай\s+задач|какие\s+задач|все\s+задач|мои\s+задач|наши\s+задач|по\s+задачам|статус(ы)?\s+задач|сколько\s+задач)/i
-      .test(t)
+    /(список|покаж|вывед|сводк|аналитик|статистик|отчёт|отчет|срез|дай\s+задач|какие\s+задач|все\s+задач|мои\s+задач|наши\s+задач|по\s+задачам|статус(ы)?\s+задач|сколько\s+задач)/i.test(
+      t,
+    )
   ) {
     return true;
   }
@@ -384,13 +449,18 @@ function isTaskWriteIntent(q: string) {
   // Главный паттерн: «задача для Марии …» / «задача для - Мария …»
   if (/задач[ауие]\s+для(?:\s|[-–—:]|$)/i.test(t)) return true;
   if (
-    /(запиш|добав|создай|занес|внеси|поставь|зафиксир|кинь|закинь).{0,80}(задач|таск|tasker|таблиц|план|канбан|sheets?)/i
-      .test(t)
+    /(запиш|добав|создай|занес|внеси|поставь|зафиксир|кинь|закинь).{0,80}(задач|таск|tasker|таблиц|план|канбан|sheets?)/i.test(
+      t,
+    )
   ) {
     return true;
   }
-  if (/(^|[\s])(новая\s+задача|в\s+задачи|в\s+планер|в\s+таблицу)/i.test(t)) return true;
-  if (/задач[ауие]/i.test(t) && /(марии|надежд|анастаси|ответствен|срок|до\s*\d)/i.test(t)) {
+  if (/(^|[\s])(новая\s+задача|в\s+задачи|в\s+планер|в\s+таблицу)/i.test(t))
+    return true;
+  if (
+    /задач[ауие]/i.test(t) &&
+    /(марии|надежд|анастаси|ответствен|срок|до\s*\d)/i.test(t)
+  ) {
     return true;
   }
   if (/задач[ауие]\s*[:\-–—]/i.test(t)) return true;
@@ -469,7 +539,10 @@ function parseTaskSpeech(q: string): ParsedTaskSpeech | null {
     const first = dashParts[0];
     if (!/^(текст|title|задача)$/i.test(first) && first.length >= 2) {
       titleHint = first;
-    } else if (dashParts[1] && !/(до|срок|дедлайн|задач|ответствен)/i.test(dashParts[1])) {
+    } else if (
+      dashParts[1] &&
+      !/(до|срок|дедлайн|задач|ответствен)/i.test(dashParts[1])
+    ) {
       titleHint = dashParts[1];
     }
   }
@@ -527,7 +600,9 @@ function parseTaskSpeech(q: string): ParsedTaskSpeech | null {
 }
 
 /** Fallback: Claude вытаскивает поля задачи из свободной фразы */
-async function parseTaskSpeechWithAi(q: string): Promise<ParsedTaskSpeech | null> {
+async function parseTaskSpeechWithAi(
+  q: string,
+): Promise<ParsedTaskSpeech | null> {
   try {
     const raw = await askClaude(
       `Извлеки задачу из русской фразы. Ответь ТОЛЬКО JSON без markdown:
@@ -586,11 +661,21 @@ function buildTaskRow(
     const key = h.toLowerCase().trim();
     if (key === "id" || key === "№" || key === "no" || key === "#") return id;
     // Точное «задача», не «дней до дедлайна»
-    if (key === "задача" || key === "title" || key === "название" || key === "task") return parsed.title;
+    if (
+      key === "задача" ||
+      key === "title" ||
+      key === "название" ||
+      key === "task"
+    )
+      return parsed.title;
     if (key.includes("проект") || key === "project") return parsed.project;
     if (key === "тип" || key === "type") return "Другое";
     if (key.includes("постановщик")) return poster;
-    if (key.includes("ответствен") || key.includes("исполн") || key === "assignee") {
+    if (
+      key.includes("ответствен") ||
+      key.includes("исполн") ||
+      key === "assignee"
+    ) {
       return parsed.assignee || "";
     }
     if (key.includes("приоритет") || key === "priority") return parsed.priority;
@@ -634,35 +719,58 @@ async function handleKatyaTaskCreate(msg: TgMessage, question: string) {
     const table = await readSheetTable();
     const headers = table.headers.length
       ? table.headers
-      : ["ID", "Задача", "Проект", "Тип", "Постановщик", "Ответственный", "Приоритет", "Статус", "Поставлена", "Взята в работу", "Дедлайн (желаемый)"];
+      : [
+          "ID",
+          "Задача",
+          "Проект",
+          "Тип",
+          "Постановщик",
+          "Ответственный",
+          "Приоритет",
+          "Статус",
+          "Поставлена",
+          "Взята в работу",
+          "Дедлайн (желаемый)",
+        ];
 
     const id = await nextTaskId(table);
     const poster = msg.from?.first_name || "Telegram";
-    const hasTitleCol = findCol(headers, ["задача", "title", "название", "task"]) >= 0;
+    const hasTitleCol =
+      findCol(headers, ["задача", "title", "название", "task"]) >= 0;
     const values = hasTitleCol
       ? buildTaskRow(headers, parsed, id, poster)
       : [
-        id,
-        parsed.title,
-        parsed.project,
-        "Другое",
-        poster,
-        parsed.assignee || "",
-        parsed.priority,
-        "Создана",
-        todayRu(),
-        "",
-        parsed.due || "",
-      ];
+          id,
+          parsed.title,
+          parsed.project,
+          "Другое",
+          poster,
+          parsed.assignee || "",
+          parsed.priority,
+          "Создана",
+          todayRu(),
+          "",
+          parsed.due || "",
+        ];
 
     const rowNum = await appendRow(values);
-    console.log("task created", { id, rowNum, title: parsed.title, assignee: parsed.assignee, due: parsed.due });
+    console.log("task created", {
+      id,
+      rowNum,
+      title: parsed.title,
+      assignee: parsed.assignee,
+      due: parsed.due,
+    });
 
     const bits = [
       `✅ Записала в задачи (строка ${rowNum}): <b>${escapeHtml(parsed.title)}</b>`,
-      parsed.assignee ? `Ответственный: <b>${escapeHtml(parsed.assignee)}</b>` : null,
+      parsed.assignee
+        ? `Ответственный: <b>${escapeHtml(parsed.assignee)}</b>`
+        : null,
       parsed.due ? `Срок: <b>${escapeHtml(parsed.due)}</b>` : null,
-      sheetPublicUrl() ? `<a href="${sheetPublicUrl()}">Открыть таблицу</a>` : null,
+      sheetPublicUrl()
+        ? `<a href="${sheetPublicUrl()}">Открыть таблицу</a>`
+        : null,
     ].filter(Boolean);
 
     await reply(msg.chat.id, bits.join("\n"), msg.message_id);
@@ -702,7 +810,9 @@ async function askClaude(system: string, userText: string) {
   }
 
   const data = await resp.json();
-  const text = (data.content ?? []).find((b: { type: string }) => b.type === "text")?.text ?? "";
+  const text =
+    (data.content ?? []).find((b: { type: string }) => b.type === "text")
+      ?.text ?? "";
   if (!text) throw new Error("Пустой ответ модели");
   return text;
 }
@@ -730,12 +840,36 @@ type TaskRow = {
 };
 
 function sheetToTasks(table: SheetTable): TaskRow[] {
-  const titleI = findCol(table.headers, ["title", "задача", "task", "name", "название"]);
+  const titleI = findCol(table.headers, [
+    "title",
+    "задача",
+    "task",
+    "name",
+    "название",
+  ]);
   const statusI = findCol(table.headers, ["status", "статус", "state"]);
   const priorityI = findCol(table.headers, ["priority", "приоритет"]);
-  const assigneeI = findCol(table.headers, ["assignee", "ответственный", "owner", "исполнитель"]);
-  const dueI = findCol(table.headers, ["дедлайн", "due_date", "due", "deadline", "желаемый", "срок"]);
-  const notesI = findCol(table.headers, ["notes", "note", "заметка", "комментарий", "comment"]);
+  const assigneeI = findCol(table.headers, [
+    "assignee",
+    "ответственный",
+    "owner",
+    "исполнитель",
+  ]);
+  const dueI = findCol(table.headers, [
+    "дедлайн",
+    "due_date",
+    "due",
+    "deadline",
+    "желаемый",
+    "срок",
+  ]);
+  const notesI = findCol(table.headers, [
+    "notes",
+    "note",
+    "заметка",
+    "комментарий",
+    "comment",
+  ]);
 
   if (titleI < 0) {
     // Нет заголовка title — берём первую колонку
@@ -751,19 +885,25 @@ function sheetToTasks(table: SheetTable): TaskRow[] {
     }));
   }
 
-  return table.rows.map((r, i) => ({
-    id: `row-${table.rowNumbers[i]}`,
-    title: r[titleI] || "",
-    status: statusI >= 0 ? r[statusI] : "",
-    priority: priorityI >= 0 ? r[priorityI] : "",
-    assignee: assigneeI >= 0 ? r[assigneeI] || null : null,
-    due_date: dueI >= 0 ? r[dueI] || null : null,
-    notes: notesI >= 0 ? r[notesI] || null : null,
-    sheetRow: table.rowNumbers[i],
-  })).filter((t) => t.title.trim());
+  return table.rows
+    .map((r, i) => ({
+      id: `row-${table.rowNumbers[i]}`,
+      title: r[titleI] || "",
+      status: statusI >= 0 ? r[statusI] : "",
+      priority: priorityI >= 0 ? r[priorityI] : "",
+      assignee: assigneeI >= 0 ? r[assigneeI] || null : null,
+      due_date: dueI >= 0 ? r[dueI] || null : null,
+      notes: notesI >= 0 ? r[notesI] || null : null,
+      sheetRow: table.rowNumbers[i],
+    }))
+    .filter((t) => t.title.trim());
 }
 
-async function loadTasks(): Promise<{ tasks: TaskRow[]; source: "sheets" | "db"; table?: SheetTable }> {
+async function loadTasks(): Promise<{
+  tasks: TaskRow[];
+  source: "sheets" | "db";
+  table?: SheetTable;
+}> {
   if (isGoogleSheetsReady()) {
     const table = await readSheetTable();
     return { tasks: sheetToTasks(table), source: "sheets", table };
@@ -795,12 +935,24 @@ async function patchTask(
     if (patch.status != null) {
       const statusI = findCol(table.headers, ["status", "статус", "state"]);
       const col = statusI >= 0 ? statusI : 1;
-      await updateCell(`${tab}!${colLetter(col)}${task.sheetRow}`, patch.status);
+      await updateCell(
+        `${tab}!${colLetter(col)}${task.sheetRow}`,
+        patch.status,
+      );
     }
     if (patch.notes != null) {
-      let notesI = findCol(table.headers, ["notes", "note", "заметка", "комментарий", "comment"]);
+      let notesI = findCol(table.headers, [
+        "notes",
+        "note",
+        "заметка",
+        "комментарий",
+        "comment",
+      ]);
       if (notesI < 0) notesI = Math.max(table.headers.length - 1, 5);
-      await updateCell(`${tab}!${colLetter(notesI)}${task.sheetRow}`, patch.notes);
+      await updateCell(
+        `${tab}!${colLetter(notesI)}${task.sheetRow}`,
+        patch.notes,
+      );
     }
     return;
   }
@@ -819,7 +971,9 @@ async function patchTask(
 }
 
 function cell(v: string | null | undefined) {
-  const s = String(v || "").replace(/\s+/g, " ").trim();
+  const s = String(v || "")
+    .replace(/\s+/g, " ")
+    .trim();
   if (!s || /^[-—–•·.]+$/.test(s)) return "";
   return s;
 }
@@ -848,7 +1002,9 @@ function groupRank(name: string) {
 }
 
 function formatTaskCard(t: TaskRow, n: number) {
-  const meta = [cell(t.assignee), cell(t.due_date), cell(t.priority)].filter(Boolean);
+  const meta = [cell(t.assignee), cell(t.due_date), cell(t.priority)].filter(
+    Boolean,
+  );
   const title = escapeHtml(cell(t.title) || "Без названия");
   const line = `<b>${n}.</b> ${title}`;
   return meta.length ? `${line}\n${escapeHtml(meta.join(" · "))}` : line;
@@ -867,7 +1023,9 @@ function tasksAsTable(tasks: TaskRow[], source: string) {
     groups.set(key, list);
   }
 
-  const ordered = [...groups.keys()].sort((a, b) => groupRank(a) - groupRank(b) || a.localeCompare(b, "ru"));
+  const ordered = [...groups.keys()].sort(
+    (a, b) => groupRank(a) - groupRank(b) || a.localeCompare(b, "ru"),
+  );
   const lines = [`<b>Задачи</b> · ${tasks.length}`];
   if (source === "sheets" && sheetPublicUrl()) {
     lines.push(`<a href="${sheetPublicUrl()}">Таблица</a>`);
@@ -876,8 +1034,10 @@ function tasksAsTable(tasks: TaskRow[], source: string) {
   let n = 1;
   for (const name of ordered) {
     const list = (groups.get(name) || []).slice().sort((a, b) => {
-      const da = parseDueDate(a.due_date)?.getTime() ?? Number.POSITIVE_INFINITY;
-      const db = parseDueDate(b.due_date)?.getTime() ?? Number.POSITIVE_INFINITY;
+      const da =
+        parseDueDate(a.due_date)?.getTime() ?? Number.POSITIVE_INFINITY;
+      const db =
+        parseDueDate(b.due_date)?.getTime() ?? Number.POSITIVE_INFINITY;
       return da - db;
     });
     lines.push("", `<b>${escapeHtml(name)} · ${list.length}</b>`, "");
@@ -888,16 +1048,23 @@ function tasksAsTable(tasks: TaskRow[], source: string) {
   }
 
   if (tasks.length > limit) lines.push(`… ещё ${tasks.length - limit}`);
-  return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  return lines
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function parseDueDate(raw: string | null): Date | null {
   if (!raw) return null;
-  const m = String(raw).trim().match(/(\d{1,2})[.\/-](\d{1,2})(?:[.\/-](\d{2,4}))?/);
+  const m = String(raw)
+    .trim()
+    .match(/(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2,4}))?/);
   if (!m) return null;
   const dd = Number(m[1]);
   const mm = Number(m[2]);
-  let y = m[3] ? Number(m[3].length === 2 ? `20${m[3]}` : m[3]) : new Date().getFullYear();
+  const y = m[3]
+    ? Number(m[3].length === 2 ? `20${m[3]}` : m[3])
+    : new Date().getFullYear();
   const d = new Date(y, mm - 1, dd);
   return Number.isNaN(d.getTime()) ? null : d;
 }
@@ -928,7 +1095,8 @@ function tasksAnalytics(tasks: TaskRow[]): string {
     byStatus[st] = (byStatus[st] || 0) + 1;
     if (isDoneStatus(st)) done += 1;
 
-    const who = (t.assignee || "Без ответственного").trim() || "Без ответственного";
+    const who =
+      (t.assignee || "Без ответственного").trim() || "Без ответственного";
     byAssignee[who] = (byAssignee[who] || 0) + 1;
 
     const pr = (t.priority || "—").trim() || "—";
@@ -994,11 +1162,21 @@ function filterTasksByQuestion(tasks: TaskRow[], q: string): TaskRow[] {
   let list = tasks;
 
   // фильтр по человеку
-  const people = ["мария", "надежда", "анастасия", "александр", "марии", "надежде", "анастасии"];
+  const people = [
+    "мария",
+    "надежда",
+    "анастасия",
+    "александр",
+    "марии",
+    "надежде",
+    "анастасии",
+  ];
   for (const p of people) {
     if (low.includes(p)) {
       const stem = p.replace(/(ии|ие|е|а|я)$/i, "").slice(0, 5);
-      list = list.filter((t) => (t.assignee || "").toLowerCase().includes(stem));
+      list = list.filter((t) =>
+        (t.assignee || "").toLowerCase().includes(stem),
+      );
       break;
     }
   }
@@ -1010,7 +1188,10 @@ function filterTasksByQuestion(tasks: TaskRow[], q: string): TaskRow[] {
       const due = parseDueDate(t.due_date);
       return due && !isDoneStatus(t.status) && due < now;
     });
-  } else if (/готов|done|выполнен/i.test(q) && !/(не\s*готов|не\s*выполн)/i.test(q)) {
+  } else if (
+    /готов|done|выполнен/i.test(q) &&
+    !/(не\s*готов|не\s*выполн)/i.test(q)
+  ) {
     list = list.filter((t) => isDoneStatus(t.status));
   } else if (!/(все|всё)\s+задач|архив|включая\s+готов/i.test(q)) {
     list = list.filter((t) => !isDoneStatus(t.status));
@@ -1044,13 +1225,17 @@ async function handleKatyaTaskQuery(msg: TgMessage, question: string) {
       // если просили и список — добавим кратко
       if (/(и\s+список|списком)/i.test(question)) {
         const filtered = filterTasksByQuestion(tasks, question);
-        await reply(msg.chat.id, tasksAsTable(filtered, source), msg.message_id);
+        await reply(
+          msg.chat.id,
+          tasksAsTable(filtered, source),
+          msg.message_id,
+        );
       }
       return;
     }
 
     const filtered = filterTasksByQuestion(tasks, question);
-    const head = wantsAnalytics ? tasksAnalytics(tasks) + "\n\n" : "";
+    const head = wantsAnalytics ? `${tasksAnalytics(tasks)}\n\n` : "";
     await reply(
       msg.chat.id,
       head + tasksAsTable(filtered, source),
@@ -1073,7 +1258,14 @@ function escapeHtml(s: string) {
 function tasksCsv(tasks: TaskRow[]) {
   const header = "title,status,priority,assignee,due_date,notes";
   const rows = tasks.map((t) =>
-    [t.title, t.status, t.priority, t.assignee || "", t.due_date || "", t.notes || ""]
+    [
+      t.title,
+      t.status,
+      t.priority,
+      t.assignee || "",
+      t.due_date || "",
+      t.notes || "",
+    ]
       .map((c) => `"${String(c).replace(/"/g, '""')}"`)
       .join(","),
   );
@@ -1082,8 +1274,16 @@ function tasksCsv(tasks: TaskRow[]) {
 
 async function handleTasker(msg: TgMessage, raw: string) {
   const groupId = allowedGroupId();
-  if (groupId != null && msg.chat.id !== groupId && msg.chat.type !== "private") {
-    await reply(msg.chat.id, "Tasker доступен только в рабочей группе или в личке с ботом.", msg.message_id);
+  if (
+    groupId != null &&
+    msg.chat.id !== groupId &&
+    msg.chat.type !== "private"
+  ) {
+    await reply(
+      msg.chat.id,
+      "Tasker доступен только в рабочей группе или в личке с ботом.",
+      msg.message_id,
+    );
     return;
   }
 
@@ -1116,24 +1316,40 @@ async function handleTasker(msg: TgMessage, raw: string) {
   const setMatch = text.match(/^set\s+([A-Za-z]+\d+)\s+(.+)$/i);
   if (setMatch) {
     if (!sheetsOn) {
-      await reply(msg.chat.id, "Google Sheets не настроен. Нужны секреты GOOGLE_SHEETS_ID и GOOGLE_SERVICE_ACCOUNT_JSON.", msg.message_id);
+      await reply(
+        msg.chat.id,
+        "Google Sheets не настроен. Нужны секреты GOOGLE_SHEETS_ID и GOOGLE_SERVICE_ACCOUNT_JSON.",
+        msg.message_id,
+      );
       return;
     }
     const a1 = `${sheetTabFromRange()}!${setMatch[1].toUpperCase()}`;
     await updateCell(a1, setMatch[2].trim());
-    await reply(msg.chat.id, `✏️ ${a1} = <code>${escapeHtml(setMatch[2].trim())}</code>`, msg.message_id);
+    await reply(
+      msg.chat.id,
+      `✏️ ${a1} = <code>${escapeHtml(setMatch[2].trim())}</code>`,
+      msg.message_id,
+    );
     return;
   }
 
   const addMatch = text.match(/^add\s+(.+)$/i);
   if (addMatch) {
     if (!sheetsOn) {
-      await reply(msg.chat.id, "Добавление строк работает через Google Sheets. Подключите таблицу.", msg.message_id);
+      await reply(
+        msg.chat.id,
+        "Добавление строк работает через Google Sheets. Подключите таблицу.",
+        msg.message_id,
+      );
       return;
     }
     const parts = addMatch[1].split("|").map((s) => s.trim());
     await appendRow(parts);
-    await reply(msg.chat.id, `➕ Строка добавлена: <b>${escapeHtml(parts[0] || "")}</b>`, msg.message_id);
+    await reply(
+      msg.chat.id,
+      `➕ Строка добавлена: <b>${escapeHtml(parts[0] || "")}</b>`,
+      msg.message_id,
+    );
     return;
   }
 
@@ -1146,7 +1362,11 @@ async function handleTasker(msg: TgMessage, raw: string) {
 
   if (/^(csv|excel|таблица)$/i.test(text)) {
     const csv = tasksCsv(tasks);
-    await reply(msg.chat.id, `<b>CSV</b>\n<pre>${escapeHtml(csv.slice(0, 3500))}</pre>`, msg.message_id);
+    await reply(
+      msg.chat.id,
+      `<b>CSV</b>\n<pre>${escapeHtml(csv.slice(0, 3500))}</pre>`,
+      msg.message_id,
+    );
     return;
   }
 
@@ -1155,12 +1375,20 @@ async function handleTasker(msg: TgMessage, raw: string) {
     const q = doneMatch[2].trim().toLowerCase();
     const hit = tasks.find((t) => t.title.toLowerCase().includes(q));
     if (!hit) {
-      await reply(msg.chat.id, `Не нашёл «${escapeHtml(doneMatch[2])}».`, msg.message_id);
+      await reply(
+        msg.chat.id,
+        `Не нашёл «${escapeHtml(doneMatch[2])}».`,
+        msg.message_id,
+      );
       return;
     }
     const doneStatus = sheetsOn ? "Готово" : "done";
     await patchTask(hit, { status: doneStatus }, table);
-    await reply(msg.chat.id, `✅ <b>${escapeHtml(hit.title)}</b> → ${doneStatus}`, msg.message_id);
+    await reply(
+      msg.chat.id,
+      `✅ <b>${escapeHtml(hit.title)}</b> → ${doneStatus}`,
+      msg.message_id,
+    );
     return;
   }
 
@@ -1169,12 +1397,20 @@ async function handleTasker(msg: TgMessage, raw: string) {
     const q = todoMatch[2].trim().toLowerCase();
     const hit = tasks.find((t) => t.title.toLowerCase().includes(q));
     if (!hit) {
-      await reply(msg.chat.id, `Не нашёл «${escapeHtml(todoMatch[2])}».`, msg.message_id);
+      await reply(
+        msg.chat.id,
+        `Не нашёл «${escapeHtml(todoMatch[2])}».`,
+        msg.message_id,
+      );
       return;
     }
     const todoStatus = sheetsOn ? "Создана" : "todo";
     await patchTask(hit, { status: todoStatus }, table);
-    await reply(msg.chat.id, `↩️ <b>${escapeHtml(hit.title)}</b> → ${todoStatus}`, msg.message_id);
+    await reply(
+      msg.chat.id,
+      `↩️ <b>${escapeHtml(hit.title)}</b> → ${todoStatus}`,
+      msg.message_id,
+    );
     return;
   }
 
@@ -1184,15 +1420,27 @@ async function handleTasker(msg: TgMessage, raw: string) {
     const note = noteMatch[3].trim();
     const hit = tasks.find((t) => t.title.toLowerCase().includes(q));
     if (!hit) {
-      await reply(msg.chat.id, `Не нашёл «${escapeHtml(noteMatch[2])}».`, msg.message_id);
+      await reply(
+        msg.chat.id,
+        `Не нашёл «${escapeHtml(noteMatch[2])}».`,
+        msg.message_id,
+      );
       return;
     }
     await patchTask(hit, { notes: note }, table);
-    await reply(msg.chat.id, `📝 Заметка для <b>${escapeHtml(hit.title)}</b> сохранена.`, msg.message_id);
+    await reply(
+      msg.chat.id,
+      `📝 Заметка для <b>${escapeHtml(hit.title)}</b> сохранена.`,
+      msg.message_id,
+    );
     return;
   }
 
-  await reply(msg.chat.id, "Не понял команду Tasker. Напишите <code>#tasker help</code>", msg.message_id);
+  await reply(
+    msg.chat.id,
+    "Не понял команду Tasker. Напишите <code>#tasker help</code>",
+    msg.message_id,
+  );
 }
 
 function shouldIgnore(text: string) {
@@ -1284,9 +1532,12 @@ Deno.serve(async (req) => {
       /@(аренда|arenda|бот|bot|катя)/i.test(text);
 
     if (!addressed) {
-      return new Response(JSON.stringify({ ok: true, skipped: "not_addressed" }), {
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ ok: true, skipped: "not_addressed" }),
+        {
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
 
     const question = katya.addressed ? katya.question : text;

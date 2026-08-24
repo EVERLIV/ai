@@ -1,4 +1,10 @@
+import { Camera, Loader2, Plus, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  COMMERCIAL_PROPERTY_TYPES,
+  RESIDENTIAL_PROPERTY_TYPES,
+} from "@/config/propertySegments";
 import { useToast } from "@/hooks/use-toast";
 import {
   useAgencyManagerMutations,
@@ -6,12 +12,6 @@ import {
   useMyAgency,
   useMyAgencyProperties,
 } from "@/hooks/useAgency";
-import {
-  COMMERCIAL_PROPERTY_TYPES,
-  RESIDENTIAL_PROPERTY_TYPES,
-} from "@/config/propertySegments";
-import { Button } from "@/components/ui/button";
-import { Camera, Loader2, Plus, Trash2 } from "lucide-react";
 
 const MANAGER_PROPERTY_TYPES = [
   ...COMMERCIAL_PROPERTY_TYPES,
@@ -23,7 +23,10 @@ const MANAGER_PROPERTY_TYPES = [
 /** Старые URL без /public/ на self-hosted отдают 401/CORS */
 function publicAssetUrl(url: string | null | undefined): string | null {
   if (!url) return null;
-  return url.replace(/\/storage\/v1\/object\/(?!public\/)/, "/storage/v1/object/public/");
+  return url.replace(
+    /\/storage\/v1\/object\/(?!public\/)/,
+    "/storage/v1/object/public/",
+  );
 }
 
 function TypeChips({
@@ -65,7 +68,8 @@ export default function AgencyManagersTab() {
   const agencyId = data?.agency.id;
   const { data: managers = [], isLoading } = useAgencyManagers(agencyId);
   const { data: agencyProperties = [] } = useMyAgencyProperties(agencyId);
-  const { create, update, remove, uploadPhoto } = useAgencyManagerMutations(agencyId);
+  const { create, update, remove, uploadPhoto } =
+    useAgencyManagerMutations(agencyId);
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -75,7 +79,9 @@ export default function AgencyManagersTab() {
 
   const listingCounts = useMemo(() => {
     const map = new Map<string, number>();
-    for (const p of agencyProperties as { listing_manager_id?: string | null }[]) {
+    for (const p of agencyProperties as {
+      listing_manager_id?: string | null;
+    }[]) {
       const mid = p.listing_manager_id;
       if (!mid) continue;
       map.set(mid, (map.get(mid) || 0) + 1);
@@ -139,7 +145,11 @@ export default function AgencyManagersTab() {
   };
 
   if (!agencyId) {
-    return <p className="text-sm text-muted-foreground py-6">Сначала заполните профиль агентства.</p>;
+    return (
+      <p className="text-sm text-muted-foreground py-6">
+        Сначала заполните профиль агентства.
+      </p>
+    );
   }
 
   return (
@@ -147,7 +157,8 @@ export default function AgencyManagersTab() {
       <div>
         <h2 className="text-lg font-semibold">Менеджеры</h2>
         <p className="text-xs text-muted-foreground mt-1">
-          Контактные карточки с фото, телефоном и типами объектов — их можно прикреплять к объявлениям.
+          Контактные карточки с фото, телефоном и типами объектов — их можно
+          прикреплять к объявлениям.
         </p>
       </div>
 
@@ -162,12 +173,22 @@ export default function AgencyManagersTab() {
             className="w-16 h-16 rounded-full border border-border bg-muted overflow-hidden flex items-center justify-center shrink-0"
           >
             {photoUrl ? (
-              <img src={publicAssetUrl(photoUrl) || photoUrl} alt="" className="w-full h-full object-cover" />
+              <img
+                src={publicAssetUrl(photoUrl) || photoUrl}
+                alt=""
+                className="w-full h-full object-cover"
+              />
             ) : (
               <Camera className="w-4 h-4 text-muted-foreground" />
             )}
           </button>
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPhoto} />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={onPhoto}
+          />
           <div className="flex-1 grid sm:grid-cols-2 gap-2">
             <input
               value={fullName}
@@ -184,10 +205,15 @@ export default function AgencyManagersTab() {
           </div>
         </div>
         <div className="space-y-1.5">
-          <div className="text-xs font-medium text-muted-foreground">С какими типами работает</div>
+          <div className="text-xs font-medium text-muted-foreground">
+            С какими типами работает
+          </div>
           <TypeChips selected={propertyTypes} onToggle={toggleType} />
         </div>
-        <Button onClick={onCreate} disabled={create.isPending || uploadPhoto.isPending}>
+        <Button
+          onClick={onCreate}
+          disabled={create.isPending || uploadPhoto.isPending}
+        >
           {(create.isPending || uploadPhoto.isPending) && (
             <Loader2 className="w-4 h-4 animate-spin mr-1" />
           )}
@@ -209,7 +235,11 @@ export default function AgencyManagersTab() {
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full overflow-hidden bg-muted shrink-0">
                     {m.photo_url ? (
-                      <img src={publicAssetUrl(m.photo_url) || m.photo_url} alt="" className="w-full h-full object-cover" />
+                      <img
+                        src={publicAssetUrl(m.photo_url) || m.photo_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-sm font-bold text-muted-foreground">
                         {m.full_name?.[0] || "?"}
@@ -217,14 +247,24 @@ export default function AgencyManagersTab() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{m.full_name}</div>
-                    <div className="text-xs text-muted-foreground">{m.phone}</div>
+                    <div className="text-sm font-medium truncate">
+                      {m.full_name}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {m.phone}
+                    </div>
                     <div className="text-[11px] text-muted-foreground mt-0.5">
                       В управлении: {count}{" "}
-                      {count === 1 ? "объект" : count >= 2 && count <= 4 ? "объекта" : "объектов"}
+                      {count === 1
+                        ? "объект"
+                        : count >= 2 && count <= 4
+                          ? "объекта"
+                          : "объектов"}
                     </div>
                     {!m.is_active && (
-                      <div className="text-[10px] text-amber-600">Неактивен</div>
+                      <div className="text-[10px] text-amber-600">
+                        Неактивен
+                      </div>
                     )}
                   </div>
                   <Button
@@ -232,7 +272,10 @@ export default function AgencyManagersTab() {
                     variant="ghost"
                     onClick={async () => {
                       try {
-                        await update.mutateAsync({ id: m.id, payload: { is_active: !m.is_active } });
+                        await update.mutateAsync({
+                          id: m.id,
+                          payload: { is_active: !m.is_active },
+                        });
                       } catch (err) {
                         toast({
                           title: "Ошибка",

@@ -18,7 +18,10 @@ export function botToken() {
 }
 
 export function siteUrl() {
-  return (Deno.env.get("SITE_URL") || "https://arendacity.com").replace(/\/$/, "");
+  return (Deno.env.get("SITE_URL") || "https://arendacity.com").replace(
+    /\/$/,
+    "",
+  );
 }
 
 export function supabaseUrl() {
@@ -34,10 +37,7 @@ export function internalSecret() {
 }
 
 export function escapeHtml(s: string) {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 export async function tgSend(chatId: number, text: string) {
@@ -61,14 +61,17 @@ export async function tgSend(chatId: number, text: string) {
   return data;
 }
 
-export async function fetchAgencyById(agencyId: string): Promise<AgencyTelegramRow | null> {
+export async function fetchAgencyById(
+  agencyId: string,
+): Promise<AgencyTelegramRow | null> {
   const base = supabaseUrl();
   const key = serviceRoleKey();
   if (!base || !key) return null;
 
   const qs = new URLSearchParams({
     id: `eq.${agencyId}`,
-    select: "id,name,telegram_enabled,telegram_chat_id,telegram_chat_title,telegram_notify_leads,telegram_notify_views,telegram_notify_moderation",
+    select:
+      "id,name,telegram_enabled,telegram_chat_id,telegram_chat_title,telegram_notify_leads,telegram_notify_views,telegram_notify_moderation",
   });
   const res = await fetch(`${base}/rest/v1/agencies?${qs}`, {
     headers: { apikey: key, Authorization: `Bearer ${key}` },
@@ -85,17 +88,23 @@ export async function fetchAgencyByChatId(chatId: number) {
 
   const qs = new URLSearchParams({
     telegram_chat_id: `eq.${chatId}`,
-    select: "id,name,telegram_enabled,telegram_chat_id,telegram_chat_title,telegram_notify_leads,telegram_notify_views,telegram_notify_moderation,telegram_connected_at",
+    select:
+      "id,name,telegram_enabled,telegram_chat_id,telegram_chat_title,telegram_notify_leads,telegram_notify_views,telegram_notify_moderation,telegram_connected_at",
   });
   const res = await fetch(`${base}/rest/v1/agencies?${qs}`, {
     headers: { apikey: key, Authorization: `Bearer ${key}` },
   });
   const rows = await res.json().catch(() => []);
   if (!res.ok || !Array.isArray(rows) || !rows[0]) return null;
-  return rows[0] as AgencyTelegramRow & { telegram_connected_at: string | null };
+  return rows[0] as AgencyTelegramRow & {
+    telegram_connected_at: string | null;
+  };
 }
 
-export async function patchAgency(agencyId: string, body: Record<string, unknown>) {
+export async function patchAgency(
+  agencyId: string,
+  body: Record<string, unknown>,
+) {
   const base = supabaseUrl();
   const key = serviceRoleKey();
   if (!base || !key) throw new Error("Supabase service role не настроен");
@@ -112,9 +121,10 @@ export async function patchAgency(agencyId: string, body: Record<string, unknown
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const msg = typeof data === "object" && data && "message" in data
-      ? String((data as { message: string }).message)
-      : `HTTP ${res.status}`;
+    const msg =
+      typeof data === "object" && data && "message" in data
+        ? String((data as { message: string }).message)
+        : `HTTP ${res.status}`;
     throw new Error(msg);
   }
   return Array.isArray(data) ? data[0] : data;
@@ -138,10 +148,17 @@ export async function fetchPropertyAgencyId(propertyId: string): Promise<{
   });
   const rows = await res.json().catch(() => []);
   if (!res.ok || !Array.isArray(rows) || !rows[0]) return null;
-  return rows[0] as { agency_id: string | null; address: string; public_id: string | null };
+  return rows[0] as {
+    agency_id: string | null;
+    address: string;
+    public_id: string | null;
+  };
 }
 
-export function notifyFlagForType(agency: AgencyTelegramRow, type: NotifyType): boolean {
+export function notifyFlagForType(
+  agency: AgencyTelegramRow,
+  type: NotifyType,
+): boolean {
   if (type === "lead") return agency.telegram_notify_leads;
   return agency.telegram_notify_views;
 }

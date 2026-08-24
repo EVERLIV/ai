@@ -13,7 +13,9 @@ function extrasOf(p: ListingSourceProperty): PropertySidebarExtras {
 export function getPropertyAgencyId(p: ListingSourceProperty): string | null {
   if (typeof p.agency_id === "string" && p.agency_id.trim()) return p.agency_id;
   const fromExtras = extrasOf(p).agency_id;
-  return typeof fromExtras === "string" && fromExtras.trim() ? fromExtras : null;
+  return typeof fromExtras === "string" && fromExtras.trim()
+    ? fromExtras
+    : null;
 }
 
 /** Объект от агентства / риелтора (не частный собственник) */
@@ -29,10 +31,13 @@ export function isOwnerListing(p: ListingSourceProperty): boolean {
 
 export type ListingSellerFilter = "Все" | "owner" | "agency";
 
-export function normalizeListingSeller(value: string | null | undefined): ListingSellerFilter {
+export function normalizeListingSeller(
+  value: string | null | undefined,
+): ListingSellerFilter {
   const v = (value || "").trim().toLowerCase();
   if (v === "owner" || v === "собственник") return "owner";
-  if (v === "agency" || v === "агентство" || v === "realtor" || v === "риелтор") return "agency";
+  if (v === "agency" || v === "агентство" || v === "realtor" || v === "риелтор")
+    return "agency";
   return "Все";
 }
 

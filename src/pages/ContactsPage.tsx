@@ -1,15 +1,27 @@
+import {
+  AlertCircle,
+  Building2,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  Handshake,
+  HardHat,
+  HelpCircle,
+  Mail,
+  MapPin,
+  Megaphone,
+  MessageCircle,
+  Phone,
+  Send,
+} from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
-import {
-  Phone, Mail, MapPin, Clock, Send, ChevronRight, CheckCircle2,
-  Building2, Handshake, Megaphone, HardHat, MessageCircle, AlertCircle, HelpCircle,
-} from "lucide-react";
-import { COMPANY, CONTACTS } from "@/config/company";
-import { submitLead } from "@/lib/submitLead";
 import SeoHead from "@/components/SeoHead";
+import SiteFooter from "@/components/SiteFooter";
+import SiteHeader from "@/components/SiteHeader";
+import { COMPANY, CONTACTS } from "@/config/company";
 import { absoluteUrl } from "@/config/site";
+import { submitLead } from "@/lib/submitLead";
 
 /** Темы обращений: сотрудничество, размещение, застройщики и пр. */
 const inquiryTopics = [
@@ -64,7 +76,13 @@ const OFFICE_MAP_SRC = `https://yandex.ru/map-widget/v1/?${new URLSearchParams({
 }).toString()}`;
 
 export default function ContactsPage() {
-  const [form, setForm] = useState({ name: "", phone: "", email: "", subject: SUBJECTS[0], message: "" });
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    subject: SUBJECTS[0],
+    message: "",
+  });
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +111,9 @@ export default function ContactsPage() {
       });
       setSent(true);
     } catch {
-      setError("Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам.");
+      setError(
+        "Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам.",
+      );
     } finally {
       setLoading(false);
     }
@@ -101,7 +121,9 @@ export default function ContactsPage() {
 
   const pickTopic = (subject: string) => {
     set("subject", subject);
-    document.getElementById("form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .getElementById("form")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const inputClass =
@@ -118,35 +140,40 @@ export default function ContactsPage() {
 
       <div className="sticky top-[56px] md:top-[98px] z-30 mt-[56px] md:mt-[98px] bg-card/90 backdrop-blur-xl shadow-[0_1px_0_0_hsl(var(--border)/0.5)]">
         <div className="container mx-auto px-4 lg:px-8 h-10 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <Link to="/" className="hover:text-foreground transition-colors">Главная</Link>
+          <Link to="/" className="hover:text-foreground transition-colors">
+            Главная
+          </Link>
           <span className="opacity-50">/</span>
           <span className="text-foreground">Контакты</span>
         </div>
       </div>
 
       <main className="flex-1">
-
         <section className="border-b border-border bg-muted/30">
           <div className="container mx-auto px-4 lg:px-8 py-8 lg:py-14">
             <div className="grid lg:grid-cols-[1.1fr_1fr] gap-8 lg:gap-16 items-start">
-
               <div className="min-w-0">
                 <p className="text-primary text-[11px] font-semibold uppercase tracking-widest mb-2.5">
                   Свяжитесь с нами
                 </p>
                 <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.05] text-foreground mb-4 text-balance">
-                  Сотрудничество,<br className="hidden sm:block" /> размещение и партнёрства
+                  Сотрудничество,
+                  <br className="hidden sm:block" /> размещение и партнёрства
                 </h1>
                 <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-lg">
-                  АрендаСити — портал от агентства недвижимости Иркутска и области.
-                  Пишите по объектам, размещению, работе с застройщиками или совместным проектам.
+                  АрендаСити — портал от агентства недвижимости Иркутска и
+                  области. Пишите по объектам, размещению, работе с
+                  застройщиками или совместным проектам.
                 </p>
 
                 <a
                   href={`tel:${CONTACTS.phoneTel}`}
                   className="group mt-7 inline-flex items-baseline gap-3 font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-tight text-foreground hover:text-primary transition-colors tabular-nums"
                 >
-                  <Phone className="w-6 h-6 lg:w-7 lg:h-7 text-primary shrink-0 self-center" strokeWidth={2.4} />
+                  <Phone
+                    className="w-6 h-6 lg:w-7 lg:h-7 text-primary shrink-0 self-center"
+                    strokeWidth={2.4}
+                  />
                   {CONTACTS.phone}
                 </a>
                 <p className="text-xs text-muted-foreground mt-2">
@@ -179,21 +206,33 @@ export default function ContactsPage() {
 
               <dl className="w-full border-y border-border divide-y divide-border lg:border lg:divide-y">
                 <ContactRow icon={Phone} label="Телефон">
-                  <a href={`tel:${CONTACTS.phoneTel}`} className="font-semibold text-foreground hover:text-primary transition-colors tabular-nums">
+                  <a
+                    href={`tel:${CONTACTS.phoneTel}`}
+                    className="font-semibold text-foreground hover:text-primary transition-colors tabular-nums"
+                  >
                     {CONTACTS.phone}
                   </a>
                 </ContactRow>
                 <ContactRow icon={Mail} label="Email">
-                  <a href={`mailto:${CONTACTS.email}`} className="font-semibold text-foreground hover:text-primary transition-colors break-all">
+                  <a
+                    href={`mailto:${CONTACTS.email}`}
+                    className="font-semibold text-foreground hover:text-primary transition-colors break-all"
+                  >
                     {CONTACTS.email}
                   </a>
                 </ContactRow>
                 <ContactRow icon={MapPin} label="Адрес">
-                  <span className="font-semibold text-foreground">{COMPANY.officeAddress}</span>
+                  <span className="font-semibold text-foreground">
+                    {COMPANY.officeAddress}
+                  </span>
                 </ContactRow>
                 <ContactRow icon={Clock} label="Режим работы">
-                  <span className="font-semibold text-foreground">{CONTACTS.hours}</span>
-                  <span className="block text-xs text-muted-foreground mt-0.5">{CONTACTS.hoursWeekend}</span>
+                  <span className="font-semibold text-foreground">
+                    {CONTACTS.hours}
+                  </span>
+                  <span className="block text-xs text-muted-foreground mt-0.5">
+                    {CONTACTS.hoursWeekend}
+                  </span>
                 </ContactRow>
               </dl>
             </div>
@@ -210,30 +249,42 @@ export default function ContactsPage() {
             </p>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 border-t border-l border-border">
-              {inquiryTopics.map(({ icon: Icon, name, desc, subject, href }) => (
-                <div
-                  key={name}
-                  className="border-r border-b border-border p-5 lg:p-6 hover:bg-muted/40 transition-colors flex flex-col"
-                >
-                  <Icon className="w-5 h-5 text-primary mb-3.5" strokeWidth={1.8} />
-                  <h3 className="text-sm font-semibold text-foreground mb-1.5 text-balance">{name}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed text-pretty flex-1">{desc}</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => pickTopic(subject)}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                    >
-                      Написать <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                    {href && (
-                      <Link to={href} className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground">
-                        Разместить онлайн
-                      </Link>
-                    )}
+              {inquiryTopics.map(
+                ({ icon: Icon, name, desc, subject, href }) => (
+                  <div
+                    key={name}
+                    className="border-r border-b border-border p-5 lg:p-6 hover:bg-muted/40 transition-colors flex flex-col"
+                  >
+                    <Icon
+                      className="w-5 h-5 text-primary mb-3.5"
+                      strokeWidth={1.8}
+                    />
+                    <h3 className="text-sm font-semibold text-foreground mb-1.5 text-balance">
+                      {name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed text-pretty flex-1">
+                      {desc}
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => pickTopic(subject)}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                      >
+                        Написать <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                      {href && (
+                        <Link
+                          to={href}
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
+                        >
+                          Разместить онлайн
+                        </Link>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ),
+              )}
             </div>
           </div>
         </section>
@@ -241,9 +292,10 @@ export default function ContactsPage() {
         <section id="form" className="scroll-mt-24">
           <div className="container mx-auto px-4 lg:px-8 py-10 lg:py-14">
             <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
-
               <div className="min-w-0">
-                <h2 className="font-display text-xl lg:text-2xl font-bold text-foreground mb-1.5">Офис</h2>
+                <h2 className="font-display text-xl lg:text-2xl font-bold text-foreground mb-1.5">
+                  Офис
+                </h2>
                 <p className="text-sm text-muted-foreground mb-6">
                   Приезжайте — обсудим размещение, партнёрство или объекты
                 </p>
@@ -265,12 +317,16 @@ export default function ContactsPage() {
                       <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-foreground">{COMPANY.city}</span>
+                          <span className="font-semibold text-foreground">
+                            {COMPANY.city}
+                          </span>
                           <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary font-semibold uppercase tracking-wide">
                             Единственный офис
                           </span>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">{COMPANY.officeAddress}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {COMPANY.officeAddress}
+                        </p>
                       </div>
                     </div>
 
@@ -305,14 +361,23 @@ export default function ContactsPage() {
                 {sent ? (
                   <div className="border border-border bg-muted/30 px-6 py-12 text-center">
                     <CheckCircle2 className="w-10 h-10 text-primary mx-auto mb-4" />
-                    <div className="text-base font-semibold text-foreground mb-2">Заявка отправлена</div>
+                    <div className="text-base font-semibold text-foreground mb-2">
+                      Заявка отправлена
+                    </div>
                     <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto text-pretty">
-                      Свяжемся с вами в рабочее время. Если вопрос срочный — позвоните нам.
+                      Свяжемся с вами в рабочее время. Если вопрос срочный —
+                      позвоните нам.
                     </p>
                     <button
                       onClick={() => {
                         setSent(false);
-                        setForm({ name: "", phone: "", email: "", subject: SUBJECTS[0], message: "" });
+                        setForm({
+                          name: "",
+                          phone: "",
+                          email: "",
+                          subject: SUBJECTS[0],
+                          message: "",
+                        });
                       }}
                       className="text-xs text-primary hover:underline"
                     >
@@ -365,7 +430,9 @@ export default function ContactsPage() {
                           onChange={(e) => set("subject", e.target.value)}
                           className={`${inputClass} pr-9 appearance-none cursor-pointer`}
                         >
-                          {SUBJECTS.map((s) => <option key={s}>{s}</option>)}
+                          {SUBJECTS.map((s) => (
+                            <option key={s}>{s}</option>
+                          ))}
                         </select>
                         <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none rotate-90" />
                       </div>
@@ -400,13 +467,18 @@ export default function ContactsPage() {
                           <span className="w-1.5 h-1.5 bg-primary-foreground animate-bounce [animation-delay:300ms]" />
                         </span>
                       ) : (
-                        <><Send className="w-4 h-4" /> Отправить заявку</>
+                        <>
+                          <Send className="w-4 h-4" /> Отправить заявку
+                        </>
                       )}
                     </button>
 
                     <p className="text-[11px] text-muted-foreground/70 text-center text-pretty">
                       Нажимая кнопку, вы принимаете{" "}
-                      <a href="#" className="hover:text-muted-foreground transition-colors underline underline-offset-2">
+                      <a
+                        href="#"
+                        className="hover:text-muted-foreground transition-colors underline underline-offset-2"
+                      >
                         политику конфиденциальности
                       </a>
                     </p>
@@ -436,7 +508,9 @@ function ContactRow({
     <div className="flex items-start gap-3 px-0 lg:px-5 py-3.5">
       <Icon className="w-4 h-4 text-primary shrink-0 mt-0.5" />
       <div className="min-w-0 flex-1">
-        <dt className="text-[10px] text-muted-foreground uppercase tracking-widest mb-0.5">{label}</dt>
+        <dt className="text-[10px] text-muted-foreground uppercase tracking-widest mb-0.5">
+          {label}
+        </dt>
         <dd className="text-sm leading-snug">{children}</dd>
       </div>
     </div>
@@ -455,7 +529,8 @@ function Field({
   return (
     <label className="block">
       <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">
-        {label}{required && " *"}
+        {label}
+        {required && " *"}
       </span>
       {children}
     </label>

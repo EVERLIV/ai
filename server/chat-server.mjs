@@ -40,7 +40,8 @@ const hits = new Map();
 function rateLimited(ip) {
   const now = Date.now();
   const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
-  const tooFast = recent.length > 0 && now - recent[recent.length - 1] < MIN_INTERVAL_MS;
+  const tooFast =
+    recent.length > 0 && now - recent[recent.length - 1] < MIN_INTERVAL_MS;
   recent.push(now);
   hits.set(ip, recent);
   if (hits.size > 5000) {
@@ -72,7 +73,10 @@ async function loadCatalog() {
   });
 
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/properties?${params}`, {
-    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    },
   });
   if (!resp.ok) throw new Error(`Каталог недоступен: ${resp.status}`);
 
@@ -86,7 +90,9 @@ async function loadCatalog() {
   });
 
   const fmtPrice = (p) =>
-    num(p.price) > 0 ? `${num(p.price).toLocaleString("ru-RU")} ₽/мес` : "по запросу";
+    num(p.price) > 0
+      ? `${num(p.price).toLocaleString("ru-RU")} ₽/мес`
+      : "по запросу";
 
   const text =
     rows
@@ -96,13 +102,16 @@ async function loadCatalog() {
           `${num(p.area)} м²`,
           fmtPrice(p),
         ];
-        if (num(p.price_per_m2) > 0) parts.push(`${num(p.price_per_m2).toLocaleString("ru-RU")} ₽/м²`);
+        if (num(p.price_per_m2) > 0)
+          parts.push(`${num(p.price_per_m2).toLocaleString("ru-RU")} ₽/м²`);
         if (p.class) parts.push(`класс ${p.class}`);
         if (p.condition) parts.push(String(p.condition));
-        if (num(p.floor) > 0) parts.push(`этаж ${p.floor}/${p.total_floors ?? "—"}`);
+        if (num(p.floor) > 0)
+          parts.push(`этаж ${p.floor}/${p.total_floors ?? "—"}`);
         if (p.deposit) parts.push(`депозит ${p.deposit}`);
         if (p.contract_term) parts.push(`срок ${p.contract_term}`);
-        if (Array.isArray(p.features) && p.features.length) parts.push(p.features.join(", "));
+        if (Array.isArray(p.features) && p.features.length)
+          parts.push(p.features.join(", "));
         return `• [${p.public_id ?? "—"}] ${parts.join(" · ")}`;
       })
       .join("\n") || "Сейчас в аренду ничего не опубликовано.";
@@ -117,11 +126,17 @@ async function loadCatalog() {
 
   const summary = [
     `Всего объектов в аренду: ${rows.length}.`,
-    `По типам: ${Object.entries(byType).map(([t, n]) => `${t} — ${n}`).join(", ") || "—"}.`,
+    `По типам: ${
+      Object.entries(byType)
+        .map(([t, n]) => `${t} — ${n}`)
+        .join(", ") || "—"
+    }.`,
     prices.length
       ? `Ставки: от ${Math.min(...prices).toLocaleString("ru-RU")} до ${Math.max(...prices).toLocaleString("ru-RU")} ₽/мес.`
       : "",
-    areas.length ? `Площади: от ${Math.min(...areas)} до ${Math.max(...areas)} м².` : "",
+    areas.length
+      ? `Площади: от ${Math.min(...areas)} до ${Math.max(...areas)} м².`
+      : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -132,7 +147,9 @@ async function loadCatalog() {
 
 // --- Промпт -----------------------------------------------------------------
 function buildSystemPrompt(catalog, userName) {
-  const nameNote = userName ? `\n\nПользователя зовут ${userName}. Обращайся по имени.` : "";
+  const nameNote = userName
+    ? `\n\nПользователя зовут ${userName}. Обращайся по имени.`
+    : "";
   return `Ты — Анастасия, консультант агентства недвижимости АРЕНДА СИТИ.
 Ты общаешься в чате на сайте компании. Помогаешь подобрать помещение в аренду.
 
@@ -193,7 +210,10 @@ const CORS = {
 };
 
 const sendJson = (res, status, body) => {
-  res.writeHead(status, { ...CORS, "Content-Type": "application/json; charset=utf-8" });
+  res.writeHead(status, {
+    ...CORS,
+    "Content-Type": "application/json; charset=utf-8",
+  });
   res.end(JSON.stringify(body));
 };
 
@@ -230,8 +250,12 @@ const server = createServer(async (req, res) => {
     "unknown";
 
   const { limited, tooFast } = rateLimited(ip);
-  if (tooFast) return sendJson(res, 429, { error: "Слишком быстро. Подождите секунду." });
-  if (limited) return sendJson(res, 429, { error: "Слишком много запросов. Попробуйте через минуту." });
+  if (tooFast)
+    return sendJson(res, 429, { error: "Слишком быстро. Подождите секунду." });
+  if (limited)
+    return sendJson(res, 429, {
+      error: "Слишком много запросов. Попробуйте через минуту.",
+    });
 
   let body;
   try {
@@ -245,11 +269,19 @@ const server = createServer(async (req, res) => {
 
   const messages = Array.isArray(body.messages) ? body.messages : [];
   const userMessages = messages.filter((m) => m.role === "user");
-  if (messages.length === 0) return sendJson(res, 400, { error: "Пустой запрос." });
+  if (messages.length === 0)
+    return sendJson(res, 400, { error: "Пустой запрос." });
   if (userMessages.length > MAX_USER_MESSAGES) {
-    return sendJson(res, 400, { error: "Диалог слишком длинный. Позвоните нам." });
+    return sendJson(res, 400, {
+      error: "Диалог слишком длинный. Позвоните нам.",
+    });
   }
-  if (messages.some((m) => typeof m.content !== "string" || m.content.length > MAX_MESSAGE_LENGTH)) {
+  if (
+    messages.some(
+      (m) =>
+        typeof m.content !== "string" || m.content.length > MAX_MESSAGE_LENGTH,
+    )
+  ) {
     return sendJson(res, 400, { error: "Сообщение слишком длинное." });
   }
 
@@ -280,7 +312,10 @@ const server = createServer(async (req, res) => {
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 1024,
-        system: buildSystemPrompt(catalog, typeof body.userName === "string" ? body.userName.slice(0, 60) : ""),
+        system: buildSystemPrompt(
+          catalog,
+          typeof body.userName === "string" ? body.userName.slice(0, 60) : "",
+        ),
         messages: chat,
         stream: true,
       }),
@@ -320,8 +355,11 @@ const server = createServer(async (req, res) => {
         if (!line.startsWith("data: ")) continue;
         try {
           const evt = JSON.parse(line.slice(6));
-          if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
-            res.write(JSON.stringify({ text: evt.delta.text }) + "\n");
+          if (
+            evt.type === "content_block_delta" &&
+            evt.delta?.type === "text_delta"
+          ) {
+            res.write(`${JSON.stringify({ text: evt.delta.text })}\n`);
           } else if (evt.type === "error") {
             console.error("anthropic stream:", evt.error);
           }
@@ -333,7 +371,7 @@ const server = createServer(async (req, res) => {
   } catch (e) {
     console.error("stream:", e.message);
   }
-  res.end(JSON.stringify({ done: true }) + "\n");
+  res.end(`${JSON.stringify({ done: true })}\n`);
 });
 
 server.listen(PORT, "127.0.0.1", () => {

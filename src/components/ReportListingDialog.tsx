@@ -1,11 +1,17 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Flag, Send } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { cloneElement, isValidElement, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,9 +28,14 @@ const REASONS: { value: ReportReason; label: string }[] = [
 interface Props {
   propertyId: string;
   propertyAddress?: string;
+  trigger?: React.ReactNode;
 }
 
-export default function ReportListingDialog({ propertyId, propertyAddress }: Props) {
+export default function ReportListingDialog({
+  propertyId,
+  propertyAddress,
+  trigger,
+}: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -38,9 +49,12 @@ export default function ReportListingDialog({ propertyId, propertyAddress }: Pro
     if (!user) {
       toast({
         title: "Нужна авторизация",
-        description: "Сообщить о проблеме могут только зарегистрированные пользователи.",
+        description:
+          "Сообщить о проблеме могут только зарегистрированные пользователи.",
       });
-      navigate("/auth?redirect=" + encodeURIComponent(window.location.pathname));
+      navigate(
+        `/auth?redirect=${encodeURIComponent(window.location.pathname)}`,
+      );
       return;
     }
     setOpen(true);
@@ -51,23 +65,31 @@ export default function ReportListingDialog({ propertyId, propertyAddress }: Pro
     if (!user) return;
 
     if (reason === "other" && details.trim().length < 5) {
-      toast({ title: "Опишите проблему", description: "Для причины «Другое» нужен текст." });
+      toast({
+        title: "Опишите проблему",
+        description: "Для причины «Другое» нужен текст.",
+      });
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase.from("property_reports" as never).insert({
-        property_id: propertyId,
-        reporter_id: user.id,
-        reason,
-        details: details.trim() || null,
-        contact_phone: contactPhone.trim() || null,
-      } as never);
+      const { error } = await supabase
+        .from("property_reports" as never)
+        .insert({
+          property_id: propertyId,
+          reporter_id: user.id,
+          reason,
+          details: details.trim() || null,
+          contact_phone: contactPhone.trim() || null,
+        } as never);
 
       if (error) throw error;
 
-      toast({ title: "Жалоба отправлена", description: "Мы проверим объявление." });
+      toast({
+        title: "Жалоба отправлена",
+        description: "Мы проверим объявление.",
+      });
       setOpen(false);
       setReason("fraud");
       setDetails("");
@@ -75,7 +97,8 @@ export default function ReportListingDialog({ propertyId, propertyAddress }: Pro
     } catch {
       toast({
         title: "Не удалось отправить",
-        description: "Проверьте, что таблица property_reports создана, и попробуйте снова.",
+        description:
+          "Проверьте, что таблица property_reports создана, и попробуйте снова.",
         variant: "destructive",
       });
     } finally {
@@ -83,16 +106,32 @@ export default function ReportListingDialog({ propertyId, propertyAddress }: Pro
     }
   };
 
+  const defaultTrigger = (
+    <button
+      type="button"
+      onClick={openDialog}
+      className="inline-flex items-center justify-center gap-1 text-[11px] text-muted-foreground hover:text-destructive transition-colors min-w-0"
+    >
+      <Flag className="w-3 h-3 shrink-0" />
+      <span className="truncate">Сообщить о проблеме</span>
+    </button>
+  );
+
+  const renderedTrigger =
+    trigger && isValidElement<{ onClick?: (e: React.MouseEvent) => void }>(
+      trigger,
+    )
+      ? cloneElement(trigger, {
+          onClick: (e: React.MouseEvent) => {
+            trigger.props.onClick?.(e);
+            openDialog();
+          },
+        })
+      : defaultTrigger;
+
   return (
     <>
-      <button
-        type="button"
-        onClick={openDialog}
-        className="inline-flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors"
-      >
-        <Flag className="w-3.5 h-3.5" />
-        Сообщить о проблеме
-      </button>
+      {renderedTrigger}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
@@ -131,7 +170,8 @@ export default function ReportListingDialog({ propertyId, propertyAddress }: Pro
 
             <div>
               <Label className="text-xs mb-1 block">
-                Комментарий {reason === "other" ? "(обязательно)" : "(необязательно)"}
+                Комментарий{" "}
+                {reason === "other" ? "(обязательно)" : "(необязательно)"}
               </Label>
               <Textarea
                 value={details}
@@ -143,7 +183,9 @@ export default function ReportListingDialog({ propertyId, propertyAddress }: Pro
             </div>
 
             <div>
-              <Label className="text-xs mb-1 block">Телефон для связи (необязательно)</Label>
+              <Label className="text-xs mb-1 block">
+                Телефон для связи (необязательно)
+              </Label>
               <Input
                 type="tel"
                 value={contactPhone}

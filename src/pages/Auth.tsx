@@ -1,12 +1,21 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { describeAuthError } from "@/lib/authErrors";
-import { Eye, EyeOff, ArrowRight, ArrowLeft, Building2, ShieldCheck, Heart, FileText } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  Eye,
+  EyeOff,
+  FileText,
+  Heart,
+  ShieldCheck,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import heroImg from "@/assets/hero-commercial.jpg";
-import SeoHead from "@/components/SeoHead";
 import BrandMark from "@/components/BrandMark";
+import SeoHead from "@/components/SeoHead";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { describeAuthError } from "@/lib/authErrors";
 
 const BENEFITS = [
   { icon: Heart, text: "Сохраняйте понравившиеся объекты в избранное" },
@@ -16,7 +25,9 @@ const BENEFITS = [
 
 export default function Auth() {
   const initialTab =
-    new URLSearchParams(window.location.search).get("tab") === "register" ? "register" : "login";
+    new URLSearchParams(window.location.search).get("tab") === "register"
+      ? "register"
+      : "login";
   const [tab, setTab] = useState<"login" | "register">(initialTab);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,7 +39,11 @@ export default function Auth() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
-  const [loginHint, setLoginHint] = useState<{ title: string; description: string; kind: string } | null>(null);
+  const [loginHint, setLoginHint] = useState<{
+    title: string;
+    description: string;
+    kind: string;
+  } | null>(null);
   const [resendBusy, setResendBusy] = useState(false);
   const navigate = useNavigate();
   const { search } = useLocation();
@@ -51,7 +66,11 @@ export default function Auth() {
         title: "Email подтверждён",
         description: "Добро пожаловать в АрендаСити!",
       });
-      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search,
+      );
       navigate(redirectTo);
     }
   }, [navigate, redirectTo, toast]);
@@ -60,12 +79,19 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     setLoginHint(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     setLoading(false);
     if (error) {
       const hint = describeAuthError(error);
       setLoginHint(hint);
-      toast({ title: hint.title, description: hint.description, variant: "destructive" });
+      toast({
+        title: hint.title,
+        description: hint.description,
+        variant: "destructive",
+      });
     } else {
       navigate(redirectTo);
     }
@@ -74,11 +100,18 @@ export default function Auth() {
   const handleResendConfirmation = async () => {
     if (!email.trim()) return;
     setResendBusy(true);
-    const { error } = await supabase.auth.resend({ type: "signup", email: email.trim() });
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: email.trim(),
+    });
     setResendBusy(false);
     if (error) {
       const hint = describeAuthError(error);
-      toast({ title: hint.title, description: hint.description, variant: "destructive" });
+      toast({
+        title: hint.title,
+        description: hint.description,
+        variant: "destructive",
+      });
       return;
     }
     toast({
@@ -99,8 +132,12 @@ export default function Auth() {
             full_name: fullName,
             phone,
             account_type: inviteToken ? "agency" : accountType,
-            agency_name: accountType === "agency" && !inviteToken ? agencyName.trim() : "",
-            agency_staff_count: accountType === "agency" && !inviteToken ? agencyStaffCount.trim() : "",
+            agency_name:
+              accountType === "agency" && !inviteToken ? agencyName.trim() : "",
+            agency_staff_count:
+              accountType === "agency" && !inviteToken
+                ? agencyStaffCount.trim()
+                : "",
             invite_token: inviteToken || "",
           },
           emailRedirectTo: `${window.location.origin}/auth`,
@@ -108,7 +145,9 @@ export default function Auth() {
       });
 
       if (error) {
-        const isTimeout = error.message.includes("timed out") || (error as { status?: number }).status === 504;
+        const isTimeout =
+          error.message.includes("timed out") ||
+          (error as { status?: number }).status === 504;
         toast({
           title: isTimeout ? "Почта не отправилась" : "Ошибка регистрации",
           description: isTimeout
@@ -128,7 +167,10 @@ export default function Auth() {
 
       // Если письмо не требуется (идентiti уже создан) — пробуем войти сразу
       if (data.user && !data.session) {
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
         if (!signInError) {
           navigate(redirectTo);
           return;
@@ -137,7 +179,7 @@ export default function Auth() {
 
       // Иначе — стандартный экран "проверьте почту"
       setRegistered(true);
-    } catch (err: any) {
+    } catch (_err: any) {
       toast({
         title: "Ошибка соединения",
         description: "Не удалось подключиться к серверу. Попробуйте позже.",
@@ -155,12 +197,20 @@ export default function Auth() {
           <div className="w-14 h-14 bg-primary/10 flex items-center justify-center mx-auto mb-4">
             <ShieldCheck className="w-7 h-7 text-primary" />
           </div>
-          <h2 className="font-display text-2xl font-bold text-foreground mb-2">Почти готово!</h2>
+          <h2 className="font-display text-2xl font-bold text-foreground mb-2">
+            Почти готово!
+          </h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Мы отправили письмо на <strong>{email}</strong>. Перейдите по ссылке в письме для подтверждения аккаунта.
+            Мы отправили письмо на <strong>{email}</strong>. Перейдите по ссылке
+            в письме для подтверждения аккаунта.
           </p>
-          <button onClick={() => { setRegistered(false); setTab("login"); }}
-            className="text-sm text-primary hover:underline">
+          <button
+            onClick={() => {
+              setRegistered(false);
+              setTab("login");
+            }}
+            className="text-sm text-primary hover:underline"
+          >
             Войти в аккаунт
           </button>
         </div>
@@ -170,7 +220,11 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <SeoHead title="Вход" description="Вход и регистрация в личном кабинете АрендаСити." noindex />
+      <SeoHead
+        title="Вход"
+        description="Вход и регистрация в личном кабинете АрендаСити."
+        noindex
+      />
       {/* Left: form */}
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-12 max-w-lg mx-auto w-full">
         {/* Logo + back */}
@@ -181,7 +235,10 @@ export default function Auth() {
               АРЕНДА<span className="text-primary">СИТИ</span>
             </span>
           </Link>
-          <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
             <ArrowLeft className="w-3.5 h-3.5" />
             На сайт
           </Link>
@@ -189,12 +246,22 @@ export default function Auth() {
 
         {/* Tabs */}
         <div className="flex gap-6 mb-8">
-          {([["login", "Вход"], ["register", "Регистрация"]] as const).map(([key, label]) => (
+          {(
+            [
+              ["login", "Вход"],
+              ["register", "Регистрация"],
+            ] as const
+          ).map(([key, label]) => (
             <button
               key={key}
-              onClick={() => { setTab(key); setLoginHint(null); }}
+              onClick={() => {
+                setTab(key);
+                setLoginHint(null);
+              }}
               className={`text-sm font-semibold transition-colors outline-none ${
-                tab === key ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                tab === key
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {label}
@@ -204,35 +271,73 @@ export default function Auth() {
 
         {tab === "login" ? (
           <>
-            <h1 className="font-display text-2xl font-bold text-foreground mb-1">Добро пожаловать</h1>
-            <p className="text-sm text-muted-foreground mb-7">Войдите в свой аккаунт АрендаСити</p>
+            <h1 className="font-display text-2xl font-bold text-foreground mb-1">
+              Добро пожаловать
+            </h1>
+            <p className="text-sm text-muted-foreground mb-7">
+              Войдите в свой аккаунт АрендаСити
+            </p>
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Email</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   placeholder="your@email.com"
-                  className="w-full h-11 px-4 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors" />
+                  className="w-full h-11 px-4 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Пароль</label>
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                  Пароль
+                </label>
                 <div className="relative">
-                  <input type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required
+                  <input
+                    type={showPass ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
                     placeholder="••••••••"
-                    className="w-full h-11 px-4 pr-11 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors" />
-                  <button type="button" onClick={() => setShowPass(!showPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    className="w-full h-11 px-4 pr-11 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPass ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
-              <button type="submit" disabled={loading}
-                className="w-full h-11 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
-                {loading ? "Вход..." : <><ArrowRight className="w-4 h-4" /> Войти</>}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-11 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  "Вход..."
+                ) : (
+                  <>
+                    <ArrowRight className="w-4 h-4" /> Войти
+                  </>
+                )}
               </button>
               {loginHint && (
                 <div className="rounded-sm border border-destructive/30 bg-destructive/5 px-3 py-2.5">
-                  <p className="text-sm font-semibold text-destructive">{loginHint.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{loginHint.description}</p>
+                  <p className="text-sm font-semibold text-destructive">
+                    {loginHint.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {loginHint.description}
+                  </p>
                   {loginHint.kind === "unconfirmed" && (
                     <button
                       type="button"
@@ -246,46 +351,60 @@ export default function Auth() {
                 </div>
               )}
               <div className="text-center">
-                <Link to="/reset-password" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                <Link
+                  to="/reset-password"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
                   Забыли пароль?
                 </Link>
               </div>
             </form>
             <p className="text-xs text-muted-foreground mt-6 text-center">
               Нет аккаунта?{" "}
-              <button onClick={() => setTab("register")} className="text-primary hover:underline font-medium">
+              <button
+                onClick={() => setTab("register")}
+                className="text-primary hover:underline font-medium"
+              >
                 Зарегистрироваться
               </button>
             </p>
           </>
         ) : (
           <>
-            <h1 className="font-display text-2xl font-bold text-foreground mb-1">Создать аккаунт</h1>
-            <p className="text-sm text-muted-foreground mb-7">Бесплатно — доступ к избранному и заявкам</p>
+            <h1 className="font-display text-2xl font-bold text-foreground mb-1">
+              Создать аккаунт
+            </h1>
+            <p className="text-sm text-muted-foreground mb-7">
+              Бесплатно — доступ к избранному и заявкам
+            </p>
             <form onSubmit={handleRegister} className="space-y-4">
               {!inviteToken && (
-              <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Вы —</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {([
-                    ["owner", "Собственник"],
-                    ["agency", "Агентство"],
-                  ] as const).map(([key, label]) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setAccountType(key)}
-                      className={`h-10 text-xs font-semibold border transition-colors ${
-                        accountType === key
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:border-primary/50"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                    Вы —
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(
+                      [
+                        ["owner", "Собственник"],
+                        ["agency", "Агентство"],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setAccountType(key)}
+                        className={`h-10 text-xs font-semibold border transition-colors ${
+                          accountType === key
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border text-muted-foreground hover:border-primary/50"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
               )}
               {inviteToken && (
                 <p className="text-xs text-muted-foreground rounded-md border border-border bg-muted/40 px-3 py-2">
@@ -324,47 +443,99 @@ export default function Auth() {
                 </>
               )}
               <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Имя и фамилия</label>
-                <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} required
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                  Имя и фамилия
+                </label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
                   placeholder="Иван Иванов"
-                  className="w-full h-11 px-4 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors" />
+                  className="w-full h-11 px-4 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Email</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   placeholder="your@email.com"
-                  className="w-full h-11 px-4 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors" />
+                  className="w-full h-11 px-4 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Телефон <span className="text-muted-foreground/50">(необязательно)</span></label>
-                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                  Телефон{" "}
+                  <span className="text-muted-foreground/50">
+                    (необязательно)
+                  </span>
+                </label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   placeholder="+7 (999) 000-00-00"
-                  className="w-full h-11 px-4 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors" />
+                  className="w-full h-11 px-4 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Пароль</label>
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                  Пароль
+                </label>
                 <div className="relative">
-                  <input type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required minLength={6}
+                  <input
+                    type={showPass ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
                     placeholder="Минимум 6 символов"
-                    className="w-full h-11 px-4 pr-11 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors" />
-                  <button type="button" onClick={() => setShowPass(!showPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    className="w-full h-11 px-4 pr-11 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPass ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
-              <button type="submit" disabled={loading}
-                className="w-full h-11 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
-                {loading ? "Регистрация..." : <><ArrowRight className="w-4 h-4" /> Создать аккаунт</>}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-11 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  "Регистрация..."
+                ) : (
+                  <>
+                    <ArrowRight className="w-4 h-4" /> Создать аккаунт
+                  </>
+                )}
               </button>
               <p className="text-[11px] text-muted-foreground text-center">
                 Регистрируясь, вы принимаете{" "}
-                <a href="#" className="text-primary hover:underline">условия использования</a>
+                <a href="#" className="text-primary hover:underline">
+                  условия использования
+                </a>
               </p>
             </form>
             <p className="text-xs text-muted-foreground mt-6 text-center">
               Уже есть аккаунт?{" "}
-              <button onClick={() => setTab("login")} className="text-primary hover:underline font-medium">
+              <button
+                onClick={() => setTab("login")}
+                className="text-primary hover:underline font-medium"
+              >
                 Войти
               </button>
             </p>
@@ -374,16 +545,23 @@ export default function Auth() {
 
       {/* Right: photo + benefits */}
       <div className="hidden lg:flex flex-1 relative overflow-hidden">
-        <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <img
+          src={heroImg}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
         <div className="absolute inset-0 bg-foreground/70" />
         <div className="relative flex flex-col justify-end p-12 text-background">
           <div className="mb-8">
             <Building2 className="w-10 h-10 text-primary mb-4" />
             <h2 className="font-display text-3xl font-bold leading-tight mb-3">
-              Личный кабинет<br />АрендаСити
+              Личный кабинет
+              <br />
+              АрендаСити
             </h2>
             <p className="text-background/60 text-sm leading-relaxed max-w-sm">
-              Управляйте избранными объектами, отслеживайте заявки и получайте персональные предложения.
+              Управляйте избранными объектами, отслеживайте заявки и получайте
+              персональные предложения.
             </p>
           </div>
           <div className="space-y-3">

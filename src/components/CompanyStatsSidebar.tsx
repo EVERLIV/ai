@@ -1,7 +1,14 @@
+import {
+  ArrowRight,
+  Award,
+  Phone,
+  ShieldCheck,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Phone, TrendingUp, Users, ShieldCheck, Award } from "lucide-react";
-import { CONTACTS } from "@/config/company";
 import ctaRentOutBg from "@/assets/cta-rent-out.jpg";
+import { CONTACTS } from "@/config/company";
 
 const stats = [
   { icon: TrendingUp, value: "12+", label: "лет на рынке" },
@@ -14,21 +21,28 @@ export default function CompanyStatsSidebar() {
   return (
     <aside className="w-full space-y-5 min-w-0">
       <div className="bg-card border border-border p-5">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-4">АрендаСити в цифрах</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-4">
+          АрендаСити в цифрах
+        </p>
         <div className="grid grid-cols-2 gap-3">
           {stats.map((s) => {
             const Icon = s.icon;
             return (
               <div key={s.label} className="bg-muted/40 p-3 text-center">
                 <Icon className="w-4 h-4 text-primary mx-auto mb-1.5" />
-                <div className="font-display text-xl font-bold text-foreground leading-none">{s.value}</div>
-                <div className="text-[10px] text-muted-foreground mt-1 leading-tight">{s.label}</div>
+                <div className="font-display text-xl font-bold text-foreground leading-none">
+                  {s.value}
+                </div>
+                <div className="text-[10px] text-muted-foreground mt-1 leading-tight">
+                  {s.label}
+                </div>
               </div>
             );
           })}
         </div>
         <p className="text-[11px] text-muted-foreground leading-relaxed mt-4">
-          Работаем в Иркутске, Ангарске и Шелехове. Полный цикл: подбор арендаторов, юридическое сопровождение и управление объектами.
+          Работаем в Иркутске, Ангарске и Шелехове. Полный цикл: подбор
+          арендаторов, юридическое сопровождение и управление объектами.
         </p>
         <Link
           to="/about"
@@ -38,7 +52,10 @@ export default function CompanyStatsSidebar() {
         </Link>
       </div>
 
-      <div className="relative overflow-hidden text-background" style={{ minHeight: 260 }}>
+      <div
+        className="relative overflow-hidden text-background"
+        style={{ minHeight: 260 }}
+      >
         <img
           src={ctaRentOutBg}
           alt=""
@@ -48,11 +65,19 @@ export default function CompanyStatsSidebar() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/75 to-foreground/55" />
 
-        <div className="relative p-5 flex flex-col h-full" style={{ minHeight: 260 }}>
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-primary mb-2">Рекламный блок</p>
-          <h4 className="font-display text-base font-bold text-background mb-1">Сдайте объект с АрендаСити</h4>
+        <div
+          className="relative p-5 flex flex-col h-full"
+          style={{ minHeight: 260 }}
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-primary mb-2">
+            Рекламный блок
+          </p>
+          <h4 className="font-display text-base font-bold text-background mb-1">
+            Сдайте объект с АрендаСити
+          </h4>
           <p className="text-[11px] text-background/75 leading-relaxed mb-4">
-            Профессиональный маркетинг, проверенные арендаторы и юридическая поддержка — без комиссии для собственников.
+            Профессиональный маркетинг, проверенные арендаторы и юридическая
+            поддержка — без комиссии для собственников.
           </p>
           <Link
             to="/list-property?mode=management"
@@ -64,7 +89,9 @@ export default function CompanyStatsSidebar() {
       </div>
 
       <div className="bg-foreground text-background p-5">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-background/50 mb-2">Отклик на вакансию</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-background/50 mb-2">
+          Отклик на вакансию
+        </p>
         <p className="text-sm font-medium leading-snug mb-3">
           Отправьте резюме или позвоните — мы ответим в рабочее время.
         </p>

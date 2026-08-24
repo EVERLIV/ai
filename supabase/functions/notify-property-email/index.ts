@@ -89,11 +89,12 @@ function row(label: string, value: string | number | null | undefined) {
 }
 
 function propertyCard(p: PropertyPayload) {
-  const area = p.area !== null && p.area !== undefined && String(p.area) !== ""
-    ? `${p.area} м²`
-    : "";
+  const area =
+    p.area !== null && p.area !== undefined && String(p.area) !== ""
+      ? `${p.area} м²`
+      : "";
   const requestLabel = p.request_type
-    ? (REQUEST_TYPE_LABELS[p.request_type] || p.request_type)
+    ? REQUEST_TYPE_LABELS[p.request_type] || p.request_type
     : "";
   const desc = (p.description || "").trim();
   const descShort = desc.length > 400 ? `${desc.slice(0, 400)}…` : desc;
@@ -201,7 +202,11 @@ function button(href: string, label: string) {
   </table>`;
 }
 
-function buildEmail(event: "submitted" | "approved", name: string, p: PropertyPayload) {
+function buildEmail(
+  event: "submitted" | "approved",
+  name: string,
+  p: PropertyPayload,
+) {
   const hello = name ? `Здравствуйте, ${escapeHtml(name)}!` : "Здравствуйте!";
   const card = propertyCard(p);
   const cabinet = `${SITE_URL}/account`;
@@ -256,7 +261,7 @@ class SmtpConn {
   }
 
   async writeLine(line: string) {
-    await this.conn.write(encoder.encode(line + "\r\n"));
+    await this.conn.write(encoder.encode(`${line}\r\n`));
   }
 
   async readReply(): Promise<{ code: number; text: string }> {
@@ -299,9 +304,12 @@ class SmtpConn {
   async cmd(line: string, expected?: number | number[]) {
     await this.writeLine(line);
     const reply = await this.readReply();
-    const ok = expected === undefined
-      ? reply.code >= 200 && reply.code < 400
-      : (Array.isArray(expected) ? expected : [expected]).includes(reply.code);
+    const ok =
+      expected === undefined
+        ? reply.code >= 200 && reply.code < 400
+        : (Array.isArray(expected) ? expected : [expected]).includes(
+            reply.code,
+          );
     if (!ok) throw new Error(`SMTP ${line.split(" ")[0]} → ${reply.text}`);
     return reply;
   }
@@ -368,9 +376,10 @@ async function sendSmtp(opts: {
       ".",
     ].join("\r\n");
 
-    await smtp.conn.write(encoder.encode(payload + "\r\n"));
+    await smtp.conn.write(encoder.encode(`${payload}\r\n`));
     const dataReply = await smtp.readReply();
-    if (dataReply.code !== 250) throw new Error(`SMTP DATA → ${dataReply.text}`);
+    if (dataReply.code !== 250)
+      throw new Error(`SMTP DATA → ${dataReply.text}`);
     await smtp.cmd("QUIT", [221, 250]);
   } finally {
     smtp.close();
@@ -378,7 +387,8 @@ async function sendSmtp(opts: {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS")
+    return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
@@ -392,7 +402,12 @@ Deno.serve(async (req) => {
     const to = (body.to || "").trim();
     if (!to) return json({ ok: true, skipped: "no_email" });
 
-    const event = body.event === "approved" ? "approved" : body.event === "submitted" ? "submitted" : null;
+    const event =
+      body.event === "approved"
+        ? "approved"
+        : body.event === "submitted"
+          ? "submitted"
+          : null;
     if (!event) return json({ error: "Неизвестный event" }, 400);
 
     const host = Deno.env.get("SMTP_HOST") || "smtp.timeweb.ru";
@@ -406,7 +421,11 @@ Deno.serve(async (req) => {
       throw new Error("SMTP_USER или SMTP_PASS не заданы");
     }
 
-    const mail = buildEmail(event, (body.name || "").trim(), body.property || {});
+    const mail = buildEmail(
+      event,
+      (body.name || "").trim(),
+      body.property || {},
+    );
     await sendSmtp({
       hostname: host,
       port: Number.isFinite(port) ? port : 587,

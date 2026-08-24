@@ -1,24 +1,25 @@
+import { Building2, Calendar, Clock, Loader2, Phone } from "lucide-react";
 import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
-import SeoHead from "@/components/SeoHead";
-import VerifiedBadge from "@/components/VerifiedBadge";
 import PropertyGridCard from "@/components/PropertyGridCard";
+import SeoHead from "@/components/SeoHead";
+import SiteFooter from "@/components/SiteFooter";
+import SiteHeader from "@/components/SiteHeader";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import {
   useAgencyManagers,
   useAgencyPublic,
   useAgencyPublicProperties,
 } from "@/hooks/useAgency";
 import { isProfileVerified } from "@/hooks/useProfile";
-import { Building2, Clock, Calendar, Loader2, Phone } from "lucide-react";
 import type { DbProperty } from "@/hooks/useProperties";
 
 function pluralObjects(n: number) {
   const mod10 = n % 10;
   const mod100 = n % 100;
   if (mod10 === 1 && mod100 !== 11) return "объект";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "объекта";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14))
+    return "объекта";
   return "объектов";
 }
 
@@ -26,7 +27,8 @@ export default function AgencyPublicPage() {
   const { id } = useParams<{ id: string }>();
   const { data: agency, isLoading, error } = useAgencyPublic(id);
   const { data: managers = [] } = useAgencyManagers(id, true);
-  const { data: rawProperties = [], isLoading: propsLoading } = useAgencyPublicProperties(id);
+  const { data: rawProperties = [], isLoading: propsLoading } =
+    useAgencyPublicProperties(id);
   const properties = rawProperties as unknown as DbProperty[];
 
   const listingCounts = useMemo(() => {
@@ -53,7 +55,10 @@ export default function AgencyPublicPage() {
         <SiteHeader />
         <main className="flex-1 container mx-auto px-4 py-20 text-center">
           <h1 className="text-xl font-semibold">Агентство не найдено</h1>
-          <Link to="/" className="text-primary text-sm mt-4 inline-block hover:underline">
+          <Link
+            to="/"
+            className="text-primary text-sm mt-4 inline-block hover:underline"
+          >
             На главную
           </Link>
         </main>
@@ -68,13 +73,18 @@ export default function AgencyPublicPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <SeoHead
         title={`${agency.name} — агентство недвижимости`}
-        description={agency.about?.slice(0, 160) || `Объекты агентства ${agency.name} на АрендаСити`}
+        description={
+          agency.about?.slice(0, 160) ||
+          `Объекты агентства ${agency.name} на АрендаСити`
+        }
       />
       <SiteHeader />
 
       <div className="sticky top-[56px] md:top-[98px] z-30 mt-[56px] md:mt-[98px] bg-card/90 backdrop-blur-xl border-b border-border/50">
         <div className="container mx-auto px-4 lg:px-8 h-10 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <Link to="/" className="hover:text-foreground">Главная</Link>
+          <Link to="/" className="hover:text-foreground">
+            Главная
+          </Link>
           <span>/</span>
           <span className="text-foreground truncate">{agency.name}</span>
         </div>
@@ -84,7 +94,11 @@ export default function AgencyPublicPage() {
         <section className="flex flex-col sm:flex-row gap-6 items-start">
           <div className="w-24 h-24 rounded-2xl border border-border bg-muted overflow-hidden shrink-0 flex items-center justify-center">
             {agency.logo_url ? (
-              <img src={agency.logo_url} alt="" className="w-full h-full object-cover" />
+              <img
+                src={agency.logo_url}
+                alt=""
+                className="w-full h-full object-cover"
+              />
             ) : (
               <Building2 className="w-8 h-8 text-muted-foreground" />
             )}
@@ -105,7 +119,8 @@ export default function AgencyPublicPage() {
               {agency.opened_at && (
                 <span className="inline-flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5" />
-                  Открыто с {new Date(agency.opened_at).toLocaleDateString("ru-RU")}
+                  Открыто с{" "}
+                  {new Date(agency.opened_at).toLocaleDateString("ru-RU")}
                 </span>
               )}
               {agency.working_hours && (
@@ -133,7 +148,11 @@ export default function AgencyPublicPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-full overflow-hidden bg-muted shrink-0">
                         {m.photo_url ? (
-                          <img src={m.photo_url} alt="" className="w-full h-full object-cover" />
+                          <img
+                            src={m.photo_url}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-sm font-bold text-muted-foreground">
                             {m.full_name?.[0] || "?"}
@@ -141,7 +160,9 @@ export default function AgencyPublicPage() {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-sm font-medium truncate">{m.full_name}</div>
+                        <div className="text-sm font-medium truncate">
+                          {m.full_name}
+                        </div>
                         {m.phone && (
                           <a
                             href={`tel:${m.phone.replace(/\D/g, "")}`}
@@ -183,7 +204,9 @@ export default function AgencyPublicPage() {
               <Loader2 className="w-4 h-4 animate-spin" /> Загрузка объектов…
             </div>
           ) : properties.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6">Пока нет опубликованных объектов.</p>
+            <p className="text-sm text-muted-foreground py-6">
+              Пока нет опубликованных объектов.
+            </p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {properties.map((p) => (

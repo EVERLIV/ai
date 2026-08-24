@@ -19,15 +19,21 @@ const NOTIFY_URL =
  * Сохраняет заявку в crm_leads (админка) и шлёт уведомление в Telegram
  * через Cloud Supabase Edge Function.
  */
-export async function submitLead(input: LeadInput): Promise<{ id: string | null }> {
+export async function submitLead(
+  input: LeadInput,
+): Promise<{ id: string | null }> {
   const name = input.name.trim();
   const phone = input.phone.trim();
   if (name.length < 2) {
     throw new Error("Укажите имя");
   }
-  const phoneOptional = input.source === "ai-chat";
+  const phoneOptional =
+    input.source === "ai-chat" || input.source === "catalog_search_alert";
   if (!phoneOptional && phone.length < 6) {
     throw new Error("Укажите имя и телефон");
+  }
+  if (phoneOptional && phone.length < 6 && !input.email?.includes("@")) {
+    throw new Error("Укажите телефон или email");
   }
 
   const row = {

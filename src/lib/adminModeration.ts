@@ -1,4 +1,7 @@
-import { SUPABASE_URL, SERVICE_ROLE_KEY } from "@/integrations/supabase/adminClient";
+import {
+  SERVICE_ROLE_KEY,
+  SUPABASE_URL,
+} from "@/integrations/supabase/adminClient";
 
 const adminHeaders = {
   apikey: SERVICE_ROLE_KEY,
@@ -43,7 +46,10 @@ export async function fetchModerationQueue() {
   return Array.isArray(data) ? data : [];
 }
 
-export async function adminUpdateProperty(id: string, payload: Record<string, unknown>) {
+export async function adminUpdateProperty(
+  id: string,
+  payload: Record<string, unknown>,
+) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/properties?id=eq.${id}`, {
     method: "PATCH",
     headers: { ...adminHeaders, Prefer: "return=minimal" },
@@ -68,7 +74,8 @@ export async function adminInsertCrmLead(payload: Record<string, unknown>) {
 
   const row = Array.isArray(data) ? data[0] : data;
   const notifyUrl =
-    (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_NOTIFY_LEAD_URL) ||
+    (typeof import.meta !== "undefined" &&
+      (import.meta as any).env?.VITE_NOTIFY_LEAD_URL) ||
     "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/notify-lead";
   try {
     await fetch(notifyUrl, {
@@ -101,7 +108,10 @@ export async function fetchClientProfiles() {
   return Array.isArray(data) ? data : [];
 }
 
-export async function adminUpdateProfile(id: string, payload: Record<string, unknown>) {
+export async function adminUpdateProfile(
+  id: string,
+  payload: Record<string, unknown>,
+) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${id}`, {
     method: "PATCH",
     headers: { ...adminHeaders, Prefer: "return=minimal" },
@@ -113,7 +123,9 @@ export async function adminUpdateProfile(id: string, payload: Record<string, unk
   }
 }
 
-export async function fetchPropertyCountsBySubmitter(): Promise<Record<string, number>> {
+export async function fetchPropertyCountsBySubmitter(): Promise<
+  Record<string, number>
+> {
   const select = encodeURIComponent("submitted_by");
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/properties?select=${select}&submitted_by=not.is.null`,
@@ -143,7 +155,9 @@ export interface OwnerListingCardData {
 }
 
 /** Актуальные данные собственника/агентства для карточки на объекте */
-export async function fetchOwnerListingCard(userId: string): Promise<OwnerListingCardData | null> {
+export async function fetchOwnerListingCard(
+  userId: string,
+): Promise<OwnerListingCardData | null> {
   const profileSelect = encodeURIComponent(
     "full_name,avatar_url,account_type,agency_name,agency_about,agency_staff_count,verification_status",
   );
@@ -166,7 +180,9 @@ export async function fetchOwnerListingCard(userId: string): Promise<OwnerListin
 
   const rawType = String(p.account_type || "owner");
   const account_type =
-    rawType === "agency" || rawType === "realtor" ? (rawType as "agency" | "realtor") : "owner";
+    rawType === "agency" || rawType === "realtor"
+      ? (rawType as "agency" | "realtor")
+      : "owner";
 
   return {
     full_name: String(p.full_name || ""),
@@ -174,13 +190,16 @@ export async function fetchOwnerListingCard(userId: string): Promise<OwnerListin
     account_type,
     agency_name: (p.agency_name as string | null) ?? null,
     agency_about: (p.agency_about as string | null) ?? null,
-    agency_staff_count: typeof p.agency_staff_count === "number" ? p.agency_staff_count : null,
+    agency_staff_count:
+      typeof p.agency_staff_count === "number" ? p.agency_staff_count : null,
     verification_status: String(p.verification_status || "unverified"),
     published_objects_count: publishedCount,
   };
 }
 
-export async function countPublishedBySubmitter(userId: string): Promise<number> {
+export async function countPublishedBySubmitter(
+  userId: string,
+): Promise<number> {
   const select = encodeURIComponent("id");
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/properties?submitted_by=eq.${userId}&moderation_status=eq.published&is_active=eq.true&select=${select}`,

@@ -1,4 +1,4 @@
-import { Brain, BarChart3, Bell, FileText } from "lucide-react";
+import { BarChart3, Bell, Brain, FileText } from "lucide-react";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 const features = [
@@ -29,9 +29,13 @@ export default function FeaturesSection() {
 
   return (
     <section ref={ref} className="py-20">
-      <div className={`container mx-auto px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
-        <p className="text-sm font-medium tracking-widest uppercase text-primary text-center mb-2">Возможности</p>
-        <h2 className="font-display text-3xl font-bold text-foreground text-center mb-12">
+      <div
+        className={`container mx-auto px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}
+      >
+        <p className="text-sm font-medium tracking-widest uppercase text-primary text-center mb-2">
+          Возможности
+        </p>
+        <h2 className="font-display text-3xl font-bold text-foreground text-center tracking-[0.015em] mb-12">
           Умные функции платформы
         </h2>
 
@@ -41,13 +45,20 @@ export default function FeaturesSection() {
             return (
               <div
                 key={f.title}
-                className="bg-card rounded-2xl shadow-card p-6 hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 group"
+                className="bg-card rounded-lg shadow-card p-6 hover:shadow-card-hover transition-shadow duration-300 group"
               >
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                  <Icon className="w-6 h-6 text-primary" />
+                <div className="w-12 h-12 rounded-md bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/15 transition-colors">
+                  <Icon
+                    className="w-6 h-6 text-primary"
+                    strokeWidth={1.75}
+                  />
                 </div>
-                <h3 className="font-display text-lg font-semibold text-foreground mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                <h3 className="font-display text-lg font-semibold text-foreground mb-2">
+                  {f.title}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {f.desc}
+                </p>
               </div>
             );
           })}

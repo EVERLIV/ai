@@ -1,26 +1,41 @@
-import { ArrowRight, MapPin, Building2, Store, Warehouse, TreePine, KeyRound } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  KeyRound,
+  MapPin,
+  Store,
+  TreePine,
+  Warehouse,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useScrollReveal } from "@/hooks/useScrollReveal";
-import { useProperties } from "@/hooks/useProperties";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
-import { getPropertyCover } from "@/lib/propertyImages";
-import { buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
 import PropertyImage from "@/components/PropertyImage";
+import { useProperties } from "@/hooks/useProperties";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { buildCatalogUrl } from "@/lib/catalogLinks";
+import {
+  buildPropertyDisplayTitle,
+  formatPropertyAddressShort,
+} from "@/lib/propertyCard";
+import { getPropertyCover } from "@/lib/propertyImages";
 
 const typeIcons: Record<string, React.ElementType> = {
-  "Офис": Building2,
-  "Торговая": Store,
-  "Склад": Warehouse,
-  "Земля": TreePine,
-  "Производство": Building2,
+  Офис: Building2,
+  Торговая: Store,
+  Склад: Warehouse,
+  Земля: TreePine,
+  Производство: Building2,
 };
 
 export default function RentSection() {
   const { ref, isVisible } = useScrollReveal();
-  const { data: properties = [], isLoading } = useProperties({ segment: "commercial" });
+  const { data: properties = [], isLoading } = useProperties({
+    segment: "commercial",
+  });
   const navigate = useNavigate();
 
-  const rentals = properties.filter((p) => p.deal_type === "Аренда").slice(0, 8);
+  const rentals = properties
+    .filter((p) => p.deal_type === "Аренда")
+    .slice(0, 8);
 
   return (
     <section ref={ref} className="py-16 bg-background">
@@ -50,7 +65,10 @@ export default function RentSection() {
         {isLoading ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-card rounded-xl overflow-hidden animate-pulse">
+              <div
+                key={i}
+                className="bg-card rounded-xl overflow-hidden animate-pulse"
+              >
                 <div className="aspect-[4/3] bg-muted" />
                 <div className="p-4 space-y-2">
                   <div className="h-5 bg-muted rounded w-2/3" />
@@ -75,7 +93,9 @@ export default function RentSection() {
                 >
                   <div className="relative aspect-[4/3] bg-muted overflow-hidden">
                     <PropertyImage
-                      src={p.cover_photo || getPropertyCover(p.cover_photo, p.type)}
+                      src={
+                        p.cover_photo || getPropertyCover(p.cover_photo, p.type)
+                      }
                       alt={p.address}
                       imgClassName="group-hover:scale-105 transition-transform duration-500"
                     />
@@ -87,7 +107,9 @@ export default function RentSection() {
                   <div className="p-3">
                     <div className="font-display text-base font-bold text-foreground">
                       {Number(p.price).toLocaleString("ru-RU")} ₽
-                      <span className="text-[11px] font-normal text-muted-foreground">/мес</span>
+                      <span className="text-[11px] font-normal text-muted-foreground">
+                        /мес
+                      </span>
                     </div>
                     <div className="text-[11px] text-muted-foreground mt-0.5">
                       {p.area} м²
@@ -95,9 +117,13 @@ export default function RentSection() {
                     <div className="flex items-start gap-1 text-[11px] text-muted-foreground mt-2">
                       <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
                       <span className="line-clamp-2">
-                        <span className="block font-medium text-foreground/90">{buildPropertyDisplayTitle(p)}</span>
+                        <span className="block font-medium text-foreground/90">
+                          {buildPropertyDisplayTitle(p)}
+                        </span>
                         {formatPropertyAddressShort(p.address) && (
-                          <span className="block mt-0.5">{formatPropertyAddressShort(p.address)}</span>
+                          <span className="block mt-0.5">
+                            {formatPropertyAddressShort(p.address)}
+                          </span>
                         )}
                       </span>
                     </div>

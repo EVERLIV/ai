@@ -1,11 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Mail, MessageSquare, Phone, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Phone, Mail, MessageSquare, RefreshCw } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 type CrmLead = {
   id: string;
@@ -42,7 +48,12 @@ export default function CrmLeadsTab() {
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const { data: leads = [], isLoading, refetch, isFetching } = useQuery({
+  const {
+    data: leads = [],
+    isLoading,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ["admin-crm-leads"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -58,14 +69,18 @@ export default function CrmLeadsTab() {
 
   const statusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("crm_leads").update({ status }).eq("id", id);
+      const { error } = await supabase
+        .from("crm_leads")
+        .update({ status })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-crm-leads"] });
       toast({ title: "Статус обновлён" });
     },
-    onError: () => toast({ title: "Не удалось обновить статус", variant: "destructive" }),
+    onError: () =>
+      toast({ title: "Не удалось обновить статус", variant: "destructive" }),
   });
 
   const newCount = leads.filter((l) => l.status === "new").length;
@@ -79,14 +94,23 @@ export default function CrmLeadsTab() {
             Все формы → сюда и в Telegram. Новых: {newCount}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-          <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? "animate-spin" : ""}`} />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          disabled={isFetching}
+        >
+          <RefreshCw
+            className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? "animate-spin" : ""}`}
+          />
           Обновить
         </Button>
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">Загрузка…</p>
+        <p className="text-sm text-muted-foreground py-8 text-center">
+          Загрузка…
+        </p>
       ) : leads.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
@@ -96,12 +120,19 @@ export default function CrmLeadsTab() {
       ) : (
         <div className="grid gap-3">
           {leads.map((lead) => (
-            <Card key={lead.id} className={lead.status === "new" ? "border-primary/40" : undefined}>
+            <Card
+              key={lead.id}
+              className={
+                lead.status === "new" ? "border-primary/40" : undefined
+              }
+            >
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="min-w-0 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-sm">{lead.name || "Без имени"}</span>
+                      <span className="font-semibold text-sm">
+                        {lead.name || "Без имени"}
+                      </span>
                       <Badge variant="secondary" className="text-[10px]">
                         {SOURCE_LABELS[lead.source] || lead.source}
                       </Badge>
@@ -111,19 +142,27 @@ export default function CrmLeadsTab() {
                     </div>
                     <p className="text-[11px] text-muted-foreground">
                       {new Date(lead.created_at).toLocaleString("ru-RU")}
-                      {lead.business_category ? ` · ${lead.business_category}` : ""}
+                      {lead.business_category
+                        ? ` · ${lead.business_category}`
+                        : ""}
                     </p>
                   </div>
                   <Select
                     value={lead.status || "new"}
-                    onValueChange={(status) => statusMutation.mutate({ id: lead.id, status })}
+                    onValueChange={(status) =>
+                      statusMutation.mutate({ id: lead.id, status })
+                    }
                   >
                     <SelectTrigger className="h-8 w-[140px] text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {STATUS_OPTIONS.map((s) => (
-                        <SelectItem key={s.value} value={s.value} className="text-xs">
+                        <SelectItem
+                          key={s.value}
+                          value={s.value}
+                          className="text-xs"
+                        >
                           {s.label}
                         </SelectItem>
                       ))}
@@ -133,13 +172,19 @@ export default function CrmLeadsTab() {
 
                 <div className="flex flex-wrap gap-3 text-xs">
                   {lead.phone && (
-                    <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1.5 text-primary hover:underline">
+                    <a
+                      href={`tel:${lead.phone}`}
+                      className="inline-flex items-center gap-1.5 text-primary hover:underline"
+                    >
                       <Phone className="w-3.5 h-3.5" />
                       {lead.phone}
                     </a>
                   )}
                   {lead.email && (
-                    <a href={`mailto:${lead.email}`} className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
+                    <a
+                      href={`mailto:${lead.email}`}
+                      className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+                    >
                       <Mail className="w-3.5 h-3.5" />
                       {lead.email}
                     </a>
@@ -149,7 +194,9 @@ export default function CrmLeadsTab() {
                 {lead.message && (
                   <div className="flex gap-2 text-xs text-foreground/90 bg-muted/40 p-2.5 rounded-md">
                     <MessageSquare className="w-3.5 h-3.5 shrink-0 mt-0.5 text-muted-foreground" />
-                    <p className="whitespace-pre-wrap leading-relaxed">{lead.message}</p>
+                    <p className="whitespace-pre-wrap leading-relaxed">
+                      {lead.message}
+                    </p>
                   </div>
                 )}
               </CardContent>

@@ -1,7 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabasePublic } from "@/integrations/supabase/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabaseAdmin } from "@/integrations/supabase/adminClient";
-import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { supabasePublic } from "@/integrations/supabase/client";
+import type {
+  Tables,
+  TablesInsert,
+  TablesUpdate,
+} from "@/integrations/supabase/types";
 
 export type DbAdPlacement = Tables<"ad_placements">;
 
@@ -12,13 +16,18 @@ export function useAdPlacementsWithProperty() {
     queryFn: async () => {
       const { data, error } = await supabasePublic
         .from("ad_placements")
-        .select("*, property:properties!ad_placements_property_id_fkey(id,address,district,type,cover_photo,photos)")
+        .select(
+          "*, property:properties!ad_placements_property_id_fkey(id,address,district,type,cover_photo,photos)",
+        )
         .eq("is_active", true)
         .order("created_at", { ascending: false })
         .limit(2000);
       if (error) throw error;
       return (data || []) as (DbAdPlacement & {
-        property: Pick<Tables<"properties">, "id" | "address" | "district" | "type" | "cover_photo" | "photos"> | null;
+        property: Pick<
+          Tables<"properties">,
+          "id" | "address" | "district" | "type" | "cover_photo" | "photos"
+        > | null;
       })[];
     },
   });
@@ -34,7 +43,8 @@ export function useAdPlacementsByProperty(propertyId: string | undefined) {
         "ad_placements",
         `select=*&property_id=eq.${propertyId}&order=created_at.desc`,
       );
-      if (error) throw new Error(error.message || "Не удалось загрузить рекламу");
+      if (error)
+        throw new Error(error.message || "Не удалось загрузить рекламу");
       return (data || []) as DbAdPlacement[];
     },
   });
@@ -49,7 +59,8 @@ export function useAllAdPlacements() {
         "ad_placements",
         "select=*,property:properties!ad_placements_property_id_fkey(id,address,district,type)&order=created_at.desc",
       );
-      if (error) throw new Error(error.message || "Не удалось загрузить рекламу");
+      if (error)
+        throw new Error(error.message || "Не удалось загрузить рекламу");
       return data || [];
     },
   });
@@ -58,7 +69,9 @@ export function useAllAdPlacements() {
 export function useUpsertAdPlacement() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: TablesInsert<"ad_placements"> & { id?: string }) => {
+    mutationFn: async (
+      payload: TablesInsert<"ad_placements"> & { id?: string },
+    ) => {
       if (payload.id) {
         const { id, ...rest } = payload;
         const { error } = await supabaseAdmin.db.update(
@@ -66,11 +79,16 @@ export function useUpsertAdPlacement() {
           `id=eq.${id}`,
           rest as TablesUpdate<"ad_placements">,
         );
-        if (error) throw new Error(error.message || "Не удалось сохранить рекламу");
+        if (error)
+          throw new Error(error.message || "Не удалось сохранить рекламу");
         return id;
       }
-      const { data, error } = await supabaseAdmin.db.insert("ad_placements", payload);
-      if (error) throw new Error(error.message || "Не удалось добавить рекламу");
+      const { data, error } = await supabaseAdmin.db.insert(
+        "ad_placements",
+        payload,
+      );
+      if (error)
+        throw new Error(error.message || "Не удалось добавить рекламу");
       return data.id;
     },
     onSuccess: () => {
@@ -85,7 +103,10 @@ export function useDeleteAdPlacement() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabaseAdmin.db.delete("ad_placements", `id=eq.${id}`);
+      const { error } = await supabaseAdmin.db.delete(
+        "ad_placements",
+        `id=eq.${id}`,
+      );
       if (error) throw new Error(error.message || "Не удалось удалить рекламу");
     },
     onSuccess: () => {

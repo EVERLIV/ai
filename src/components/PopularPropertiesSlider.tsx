@@ -1,21 +1,32 @@
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  TrendingUp,
+} from "lucide-react";
 import { useRef } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, ChevronRight, MapPin, ArrowRight, TrendingUp } from "lucide-react";
-import { useProperties } from "@/hooks/useProperties";
 import PropertyImage from "@/components/PropertyImage";
+import { useProperties } from "@/hooks/useProperties";
+import {
+  buildPropertyDisplayTitle,
+  formatPropertyAddressShort,
+} from "@/lib/propertyCard";
 import { getPropertyCover } from "@/lib/propertyImages";
-import { buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
 
 const TYPE_LABELS: Record<string, string> = {
-  "Офис": "Офис",
-  "Торговая": "Торговля",
-  "Склад": "Склад",
-  "Земля": "Земля",
-  "Производство": "Производство",
+  Офис: "Офис",
+  Торговая: "Торговля",
+  Склад: "Склад",
+  Земля: "Земля",
+  Производство: "Производство",
 };
 
 export default function PopularPropertiesSlider() {
-  const { data: properties = [], isLoading } = useProperties({ segment: "commercial" });
+  const { data: properties = [], isLoading } = useProperties({
+    segment: "commercial",
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const items = properties.slice(0, 10);
@@ -29,14 +40,17 @@ export default function PopularPropertiesSlider() {
   return (
     <section className="py-14 bg-background border-b border-border">
       <div className="container mx-auto px-4 lg:px-8">
-
         <div className="flex items-end justify-between mb-8 flex-wrap gap-3">
           <div>
             <p className="text-[11px] font-semibold tracking-widest uppercase text-primary mb-1.5 inline-flex items-center gap-1.5">
               <TrendingUp className="w-3.5 h-3.5" /> Популярное
             </p>
-            <h2 className="font-display text-2xl font-bold text-foreground">Актуальные предложения</h2>
-            <p className="text-sm text-muted-foreground mt-1">Свежие объекты в каталоге</p>
+            <h2 className="font-display text-2xl font-bold text-foreground">
+              Актуальные предложения
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Свежие объекты в каталоге
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center gap-1">
@@ -93,7 +107,9 @@ export default function PopularPropertiesSlider() {
               >
                 <div className="relative aspect-[4/3] bg-muted overflow-hidden">
                   <PropertyImage
-                    src={p.cover_photo || getPropertyCover(p.cover_photo, p.type)}
+                    src={
+                      p.cover_photo || getPropertyCover(p.cover_photo, p.type)
+                    }
                     alt={p.address}
                     imgClassName="group-hover:scale-105 transition-transform duration-500"
                   />
@@ -103,9 +119,13 @@ export default function PopularPropertiesSlider() {
                     </span>
                   </div>
                   {p.deal_type && (
-                    <div className={`absolute top-2 right-2 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
-                      p.deal_type === "Аренда" ? "bg-primary text-primary-foreground" : "bg-foreground text-background"
-                    }`}>
+                    <div
+                      className={`absolute top-2 right-2 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
+                        p.deal_type === "Аренда"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-foreground text-background"
+                      }`}
+                    >
                       {p.deal_type}
                     </div>
                   )}
@@ -127,7 +147,9 @@ export default function PopularPropertiesSlider() {
                   {formatPropertyAddressShort(p.address) && (
                     <div className="flex items-start gap-1 text-[11px] text-muted-foreground">
                       <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
-                      <span className="line-clamp-1">{formatPropertyAddressShort(p.address)}</span>
+                      <span className="line-clamp-1">
+                        {formatPropertyAddressShort(p.address)}
+                      </span>
                     </div>
                   )}
                 </div>

@@ -2,9 +2,9 @@
  * Prebuild: sitemap.xml, feed.xml, robots.txt from Supabase catalog.
  * Env: VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY
  */
-import { writeFileSync, mkdirSync, rmSync } from "fs";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const SITE_URL = "https://arendacity.com";
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -67,7 +67,9 @@ function escapeXml(s) {
 function formatW3CDate(value) {
   if (!value) return new Date().toISOString().slice(0, 10);
   const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? new Date().toISOString().slice(0, 10) : d.toISOString().slice(0, 10);
+  return Number.isNaN(d.getTime())
+    ? new Date().toISOString().slice(0, 10)
+    : d.toISOString().slice(0, 10);
 }
 
 function formatRssDate(value) {
@@ -86,7 +88,10 @@ function formatPriceShort(price, dealType) {
   const suffix = rent ? " ₽/мес" : " ₽";
   if (n >= 1_000_000) {
     const m = n / 1_000_000;
-    const label = m >= 10 ? `${Math.round(m)} млн` : `${m.toFixed(1).replace(".0", "")} млн`;
+    const label =
+      m >= 10
+        ? `${Math.round(m)} млн`
+        : `${m.toFixed(1).replace(".0", "")} млн`;
     return `${label}${suffix}`;
   }
   if (n >= 1_000) {
@@ -115,7 +120,8 @@ function parseAddress(address, district) {
     .split(",")
     .map((p) => p.trim())
     .filter(Boolean);
-  if (parts.length === 0) return { location: (district || "").trim(), street: "" };
+  if (parts.length === 0)
+    return { location: (district || "").trim(), street: "" };
 
   const first = parts[0];
   const rest = parts.slice(1).join(", ");
@@ -151,7 +157,9 @@ function buildPropertySeoDescription(p) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 300);
-  const base = [typeLabel, area, price, district.replace(/^, /, "")].filter(Boolean).join(" · ");
+  const base = [typeLabel, area, price, district.replace(/^, /, "")]
+    .filter(Boolean)
+    .join(" · ");
   return desc ? `${base}. ${desc}` : base;
 }
 
@@ -187,7 +195,9 @@ async function fetchAll(table, select, filters = "") {
 
     if (!res.ok) {
       const body = await res.text();
-      console.warn(`[generate-seo] ${table} fetch failed (${res.status}): ${body.slice(0, 200)}`);
+      console.warn(
+        `[generate-seo] ${table} fetch failed (${res.status}): ${body.slice(0, 200)}`,
+      );
       break;
     }
 
@@ -237,7 +247,12 @@ function writeSitemap(properties, newsPosts) {
   const urls = [];
 
   for (const path of STATIC_PATHS) {
-    urls.push({ loc: absoluteUrl(path), lastmod: today, changefreq: "weekly", priority: path === "/" ? "1.0" : "0.8" });
+    urls.push({
+      loc: absoluteUrl(path),
+      lastmod: today,
+      changefreq: "weekly",
+      priority: path === "/" ? "1.0" : "0.8",
+    });
   }
 
   for (const p of properties) {
@@ -281,7 +296,10 @@ ${body}
 
 function writeFeed(properties, newsPosts) {
   const feedProperties = [...properties]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    )
     .slice(0, 50);
 
   const items = feedProperties.map((p) => {
@@ -290,7 +308,9 @@ function writeFeed(properties, newsPosts) {
     const description = escapeXml(buildPropertySeoDescription(p));
     const pubDate = formatRssDate(p.created_at);
     const enclosure =
-      p.cover_photo && (p.cover_photo.startsWith("http://") || p.cover_photo.startsWith("https://"))
+      p.cover_photo &&
+      (p.cover_photo.startsWith("http://") ||
+        p.cover_photo.startsWith("https://"))
         ? `\n      <enclosure url="${escapeXml(p.cover_photo)}" type="image/jpeg" />`
         : "";
 
@@ -306,7 +326,11 @@ function writeFeed(properties, newsPosts) {
   // Optional news items (latest 10)
   const feedNews = [...newsPosts]
     .filter((n) => n.slug && n.status === "published")
-    .sort((a, b) => new Date(b.published_at || b.created_at).getTime() - new Date(a.published_at || a.created_at).getTime())
+    .sort(
+      (a, b) =>
+        new Date(b.published_at || b.created_at).getTime() -
+        new Date(a.published_at || a.created_at).getTime(),
+    )
     .slice(0, 10);
 
   for (const post of feedNews) {
@@ -333,7 +357,9 @@ ${items.join("\n")}
 </rss>
 `;
   writeFileSync(join(publicDir, "feed.xml"), xml, "utf8");
-  console.log(`✓ public/feed.xml (${feedProperties.length} properties, ${feedNews.length} news)`);
+  console.log(
+    `✓ public/feed.xml (${feedProperties.length} properties, ${feedNews.length} news)`,
+  );
 }
 
 function writePropertyOgPages(properties) {
@@ -350,10 +376,12 @@ function writePropertyOgPages(properties) {
     const description = buildPropertySeoDescription(p);
     const url = absoluteUrl(`/property/${p.id}`);
     const image =
-      p.cover_photo && (p.cover_photo.startsWith("http://") || p.cover_photo.startsWith("https://"))
+      p.cover_photo &&
+      (p.cover_photo.startsWith("http://") ||
+        p.cover_photo.startsWith("https://"))
         ? p.cover_photo
         : absoluteUrl("/og-default.jpg");
-    const cta = "Больше объектов на АрендаСити → " + absoluteUrl("/catalog");
+    const cta = `Больше объектов на АрендаСити → ${absoluteUrl("/catalog")}`;
     const ogDescription = `${description}\n\n${cta}`.slice(0, 300);
 
     const html = `<!DOCTYPE html>
@@ -393,7 +421,9 @@ function writePropertyOgPages(properties) {
 console.log("[generate-seo] Starting…");
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.warn("[generate-seo] VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY not set — static pages only.");
+  console.warn(
+    "[generate-seo] VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY not set — static pages only.",
+  );
 }
 
 const properties = await fetchAll(

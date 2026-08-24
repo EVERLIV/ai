@@ -8,6 +8,8 @@ interface PropertyImageProps {
   imgClassName?: string;
   /** Show a "Photo coming soon" placeholder when src is empty/missing */
   placeholderLabel?: string;
+  /** listing — larger placeholder for catalog row cards */
+  variant?: "default" | "listing";
 }
 
 /**
@@ -21,11 +23,18 @@ export default function PropertyImage({
   className,
   imgClassName,
   placeholderLabel = "Фото скоро появится",
+  variant = "default",
 }: PropertyImageProps) {
   const hasImage = src && src.trim().length > 0;
+  const isListing = variant === "listing";
 
   return (
-    <div className={cn("relative w-full h-full overflow-hidden bg-muted", className)}>
+    <div
+      className={cn(
+        "relative w-full h-full overflow-hidden bg-muted",
+        className,
+      )}
+    >
       {hasImage ? (
         <img
           src={src as string}
@@ -41,14 +50,25 @@ export default function PropertyImage({
         <div
           className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-3"
           style={{
-            background:
-              "linear-gradient(135deg, hsl(35 30% 94%) 0%, hsl(38 45% 90%) 50%, hsl(40 25% 96%) 100%)",
+            background: isListing
+              ? "linear-gradient(145deg, hsl(35 28% 93%) 0%, hsl(38 42% 88%) 45%, hsl(40 22% 95%) 100%)"
+              : "linear-gradient(135deg, hsl(35 30% 94%) 0%, hsl(38 45% 90%) 50%, hsl(40 25% 96%) 100%)",
           }}
         >
-          <div className="w-10 h-10 rounded-full bg-background/70 backdrop-blur flex items-center justify-center text-muted-foreground">
-            <ImageIcon className="w-5 h-5" />
+          <div
+            className={cn(
+              "rounded-full bg-background/70 backdrop-blur flex items-center justify-center text-muted-foreground",
+              isListing ? "w-12 h-12" : "w-10 h-10",
+            )}
+          >
+            <ImageIcon className={isListing ? "w-6 h-6" : "w-5 h-5"} />
           </div>
-          <span className="text-[11px] font-medium tracking-wide text-foreground/70">
+          <span
+            className={cn(
+              "font-medium tracking-wide text-foreground/70",
+              isListing ? "text-xs" : "text-[11px]",
+            )}
+          >
             {placeholderLabel}
           </span>
         </div>

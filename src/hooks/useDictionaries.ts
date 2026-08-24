@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabasePublic } from "@/integrations/supabase/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabaseAdmin } from "@/integrations/supabase/adminClient";
+import { supabasePublic } from "@/integrations/supabase/client";
 
 export interface DictionaryItem {
   id: string;
@@ -13,7 +13,11 @@ export interface DictionaryItem {
   created_at: string;
 }
 
-export const DICTIONARY_CATEGORIES: { key: string; title: string; hasParent: boolean }[] = [
+export const DICTIONARY_CATEGORIES: {
+  key: string;
+  title: string;
+  hasParent: boolean;
+}[] = [
   { key: "property_type", title: "Тип объекта", hasParent: true },
   { key: "property_class", title: "Класс объекта", hasParent: false },
   { key: "deal_type", title: "Тип сделки", hasParent: false },
@@ -34,7 +38,11 @@ export const DICTIONARY_CATEGORIES: { key: string; title: string; hasParent: boo
   { key: "furniture", title: "Мебель", hasParent: false },
   { key: "bathroom", title: "Санузел", hasParent: false },
   { key: "window_view", title: "Вид из окон", hasParent: false },
-  { key: "residential_condition", title: "Состояние (жильё)", hasParent: false },
+  {
+    key: "residential_condition",
+    title: "Состояние (жильё)",
+    hasParent: false,
+  },
   { key: "residential_feature", title: "Особенности (жильё)", hasParent: true },
 ];
 
@@ -81,7 +89,10 @@ export function useDictionaries(category?: string) {
         order: "sort_order.asc",
       });
       if (category) params.set("category", `eq.${category}`);
-      const { data, error } = await supabaseAdmin.db.select("dictionaries", params.toString());
+      const { data, error } = await supabaseAdmin.db.select(
+        "dictionaries",
+        params.toString(),
+      );
       if (error) throw adminError(error, "Не удалось загрузить справочник");
       return (data || []) as DictionaryItem[];
     },
@@ -98,23 +109,36 @@ export function useDictionaries(category?: string) {
       const { error } = await supabaseAdmin.db.insert("dictionaries", item);
       if (error) throw adminError(error, "Не удалось добавить значение");
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dictionaries"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["dictionaries"] }),
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<DictionaryItem> & { id: string }) => {
-      const { error } = await supabaseAdmin.db.update("dictionaries", `id=eq.${id}`, updates);
+    mutationFn: async ({
+      id,
+      ...updates
+    }: Partial<DictionaryItem> & { id: string }) => {
+      const { error } = await supabaseAdmin.db.update(
+        "dictionaries",
+        `id=eq.${id}`,
+        updates,
+      );
       if (error) throw adminError(error, "Не удалось сохранить значение");
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dictionaries"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["dictionaries"] }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabaseAdmin.db.delete("dictionaries", `id=eq.${id}`);
+      const { error } = await supabaseAdmin.db.delete(
+        "dictionaries",
+        `id=eq.${id}`,
+      );
       if (error) throw adminError(error, "Не удалось удалить значение");
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dictionaries"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["dictionaries"] }),
   });
 
   return {

@@ -2,10 +2,11 @@
  * Generates public/og-default.jpg (1200×630) and public/apple-touch-icon.png (180×180).
  * Run once after clone or when branding changes: node scripts/generate-og-images.mjs
  */
+
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import sharp from "sharp";
-import { readFileSync } from "fs";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "..", "public");

@@ -1,8 +1,11 @@
+import type { PropertySegment } from "@/config/propertySegments";
 import type { DbProperty } from "@/hooks/useProperties";
 import { getLandUse, isAnyLand } from "@/lib/propertyLand";
+import {
+  getRoomsLabel,
+  isResidentialProperty,
+} from "@/lib/propertyResidential";
 import { getPrimaryPropertyType, getPropertyTypes } from "@/lib/propertyTypes";
-import { getRoomsLabel, isResidentialProperty } from "@/lib/propertyResidential";
-import type { PropertySegment } from "@/config/propertySegments";
 
 export type PropertyTitleInput = {
   segment?: PropertySegment | null;
@@ -30,7 +33,10 @@ export function getPropertyDistrictLabel(property: PropertyTitleInput): string {
   return "";
 }
 
-function getPropertySubtypeLabel(property: PropertyTitleInput, category: string): string | null {
+function getPropertySubtypeLabel(
+  property: PropertyTitleInput,
+  category: string,
+): string | null {
   const types = getPropertyTypes(property);
   const extraTypes = types.filter((type) => type !== category);
   if (extraTypes.length > 0) return extraTypes.join(", ");
@@ -40,7 +46,8 @@ function getPropertySubtypeLabel(property: PropertyTitleInput, category: string)
   }
 
   const extras = (property.extras || {}) as Record<string, unknown>;
-  const purpose = typeof extras.purpose === "string" ? extras.purpose.trim() : "";
+  const purpose =
+    typeof extras.purpose === "string" ? extras.purpose.trim() : "";
   if (purpose && purpose !== "—") return purpose;
 
   const layout = property.layout?.trim();
@@ -56,12 +63,17 @@ function getPropertySubtypeLabel(property: PropertyTitleInput, category: string)
  * Заголовок объекта для карточек: категория · назначение · площадь · район.
  * Пример: «Земля · Гаражи · 58 м² · Байкальск»
  */
-export function buildPropertyDisplayTitle(property: PropertyTitleInput): string {
+export function buildPropertyDisplayTitle(
+  property: PropertyTitleInput,
+): string {
   const category = getPrimaryPropertyType(property) || "Объект";
   const subtype = isResidentialProperty(property)
     ? getRoomsLabel(property)
     : getPropertySubtypeLabel(property, category);
-  const area = Number(property.area) > 0 ? `${Number(property.area).toLocaleString("ru-RU")} м²` : null;
+  const area =
+    Number(property.area) > 0
+      ? `${Number(property.area).toLocaleString("ru-RU")} м²`
+      : null;
   const district = getPropertyDistrictLabel(property);
 
   return [category, subtype, area, district].filter(Boolean).join(" · ");
@@ -72,10 +84,14 @@ export function formatPropertyAddressShort(address?: string | null): string {
   const value = address?.trim();
   if (!value) return "";
 
-  const parts = value.split(",").map((part) => part.trim()).filter(Boolean);
+  const parts = value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
   if (parts.length <= 2) return value;
 
-  const skip = /^(российская федерация|россия|иркутская область|иркутская обл\.?)/i;
+  const skip =
+    /^(российская федерация|россия|иркутская область|иркутская обл\.?)/i;
   const filtered = parts.filter((part) => !skip.test(part));
   const tail = (filtered.length > 0 ? filtered : parts).slice(-3);
   return tail.join(", ");
@@ -87,7 +103,10 @@ export const LISTING_VIEWS_FLOOR = 400;
 export const AGENCY_OBJECTS_FLOOR = 190;
 
 /** Формат цены: "6 300 000 ₽" / "400 000 ₽/мес" */
-export function formatPropertyPrice(p: { price?: number | null; deal_type?: string | null }): string | null {
+export function formatPropertyPrice(p: {
+  price?: number | null;
+  deal_type?: string | null;
+}): string | null {
   const price = Number(p.price);
   if (!price) return null;
   return `${price.toLocaleString("ru-RU")} ₽${p.deal_type === "Аренда" ? "/мес" : ""}`;
@@ -109,7 +128,8 @@ function pluralizeObjects(count: number): string {
   const mod10 = count % 10;
   const mod100 = count % 100;
   if (mod10 === 1 && mod100 !== 11) return "объект";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "объекта";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20))
+    return "объекта";
   return "объектов";
 }
 

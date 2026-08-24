@@ -4,13 +4,12 @@
  */
 
 import {
+  escapeHtml,
   fetchPropertyAgencyId,
-  internalSecret,
   sendAgencyNotification,
+  serviceRoleKey,
   siteUrl,
   supabaseUrl,
-  serviceRoleKey,
-  escapeHtml,
 } from "../_shared/agencyTelegram.ts";
 
 const corsHeaders = {
@@ -36,7 +35,8 @@ async function incrementView(propertyId: string): Promise<number | null> {
     { headers: { apikey: key, Authorization: `Bearer ${key}` } },
   );
   const rows = await getRes.json().catch(() => []);
-  const current = Array.isArray(rows) && rows[0] ? Number(rows[0].views_count) || 0 : 0;
+  const current =
+    Array.isArray(rows) && rows[0] ? Number(rows[0].views_count) || 0 : 0;
   const next = current + 1;
 
   await fetch(`${base}/rest/v1/properties?id=eq.${propertyId}`, {
@@ -68,11 +68,14 @@ async function incrementView(propertyId: string): Promise<number | null> {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS")
+    return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    const { property_id: propertyId } = await req.json().catch(() => ({})) as { property_id?: string };
+    const { property_id: propertyId } = (await req
+      .json()
+      .catch(() => ({}))) as { property_id?: string };
     if (!propertyId) return json({ error: "property_id required" }, 400);
 
     const prop = await fetchPropertyAgencyId(propertyId);

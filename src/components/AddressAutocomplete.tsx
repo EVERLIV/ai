@@ -1,10 +1,14 @@
+import { CheckCircle2, Loader2, MapPin } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import { Loader2, MapPin, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import { suggestAddresses, geocodeAddress, type GeoHit } from "@/lib/yandexGeocoder";
 import { inferDistrictFromAddress } from "@/lib/irkutskLocations";
+import { cn } from "@/lib/utils";
+import {
+  type GeoHit,
+  geocodeAddress,
+  suggestAddresses,
+} from "@/lib/yandexGeocoder";
 
 export type AddressPick = {
   address: string;
@@ -47,7 +51,8 @@ export default function AddressAutocomplete({
   const [error, setError] = useState<string | null>(null);
   const skipSuggestRef = useRef(false);
 
-  const hasCoords = lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng);
+  const hasCoords =
+    lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng);
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -82,7 +87,9 @@ export default function AddressAutocomplete({
       } catch (e) {
         if (!cancelled) {
           setSuggestions([]);
-          setError(e instanceof Error ? e.message : "Не удалось загрузить подсказки");
+          setError(
+            e instanceof Error ? e.message : "Не удалось загрузить подсказки",
+          );
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -137,7 +144,12 @@ export default function AddressAutocomplete({
           aria-expanded={open}
           aria-controls={listId}
           onChange={(e) => {
-            onChange({ address: e.target.value, lat: null, lng: null, district });
+            onChange({
+              address: e.target.value,
+              lat: null,
+              lng: null,
+              district,
+            });
           }}
           onFocus={() => {
             if (suggestions.length > 0) setOpen(true);
@@ -164,12 +176,13 @@ export default function AddressAutocomplete({
 
       {hasCoords && (
         <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
-          Точка на карте: {lat!.toFixed(5)}, {lng!.toFixed(5)}
+          Точка на карте: {lat?.toFixed(5)}, {lng?.toFixed(5)}
         </p>
       )}
       {!hasCoords && value.trim().length >= 4 && !loading && (
         <p className="text-[11px] text-muted-foreground">
-          Выберите адрес из списка или дождитесь определения координат — иначе объект не появится на карте.
+          Выберите адрес из списка или дождитесь определения координат — иначе
+          объект не появится на карте.
         </p>
       )}
       {error && <p className="text-[11px] text-destructive">{error}</p>}
@@ -177,7 +190,6 @@ export default function AddressAutocomplete({
       {open && suggestions.length > 0 && (
         <ul
           id={listId}
-          role="listbox"
           className="absolute z-50 left-0 right-0 top-full mt-1 max-h-56 overflow-y-auto rounded-md border border-border bg-card shadow-lg"
         >
           {suggestions.map((hit) => (

@@ -25,13 +25,19 @@ const NOTIFY_URL =
   import.meta.env.VITE_NOTIFY_PROPERTY_EMAIL_URL ||
   "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/notify-property-email";
 
-const NOTIFY_SECRET = import.meta.env.VITE_NOTIFY_EMAIL_SECRET as string | undefined;
+const NOTIFY_SECRET = import.meta.env.VITE_NOTIFY_EMAIL_SECRET as
+  | string
+  | undefined;
 
 /** Best-effort: ошибка письма не должна ломать сохранение объекта. */
-export async function notifyPropertyEmail(payload: PropertyEmailPayload): Promise<void> {
+export async function notifyPropertyEmail(
+  payload: PropertyEmailPayload,
+): Promise<void> {
   if (!payload.to?.trim()) return;
 
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
   if (NOTIFY_SECRET) headers["x-notify-secret"] = NOTIFY_SECRET;
 
   try {

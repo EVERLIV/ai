@@ -10,7 +10,10 @@ const ANTHROPIC_TIMEOUT_MS = 25_000;
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json; charset=utf-8",
+    },
   });
 }
 
@@ -78,7 +81,8 @@ interface PropertyLite {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS")
+    return new Response(null, { headers: corsHeaders });
 
   try {
     const { criteria, properties } = (await req.json()) as {
@@ -87,12 +91,14 @@ Deno.serve(async (req) => {
     };
 
     const ANTHROPIC_API_KEY = readAnthropicKey();
-    if (!ANTHROPIC_API_KEY) return json({ error: "ANTHROPIC_API_KEY is not configured" }, 500);
+    if (!ANTHROPIC_API_KEY)
+      return json({ error: "ANTHROPIC_API_KEY is not configured" }, 500);
     if (!ANTHROPIC_API_KEY.startsWith("sk-ant-")) {
       return json({ error: "ANTHROPIC_API_KEY имеет неверный формат" }, 500);
     }
 
-    if (!properties?.length) return json({ picks: [], summary: "Нет объектов для выбора" });
+    if (!properties?.length)
+      return json({ picks: [], summary: "Нет объектов для выбора" });
 
     const shortlist = properties.slice(0, 40);
 
@@ -139,24 +145,47 @@ ${shortlist
     if (!response.ok) {
       const detail = await response.text();
       console.error("Anthropic error:", response.status, detail.slice(0, 400));
-      if (response.status === 429) return json({ error: "Слишком много запросов к ИИ. Попробуйте через минуту." }, 429);
+      if (response.status === 429)
+        return json(
+          { error: "Слишком много запросов к ИИ. Попробуйте через минуту." },
+          429,
+        );
       return json({ error: "Ошибка ИИ-сервиса" }, 502);
     }
 
     const data = await response.json();
-    const text = (data?.content ?? []).find((b: { type: string }) => b.type === "text")?.text ?? "";
+    const text =
+      (data?.content ?? []).find((b: { type: string }) => b.type === "text")
+        ?.text ?? "";
     const parsed = parseJsonObject(text);
     if (!parsed || !Array.isArray(parsed.picks)) {
-      console.error("Anthropic: нет JSON", data?.stop_reason, String(text).slice(0, 200));
-      return json({ summary: "ИИ не вернул структурированный ответ.", picks: [] });
+      console.error(
+        "Anthropic: нет JSON",
+        data?.stop_reason,
+        String(text).slice(0, 200),
+      );
+      return json({
+        summary: "ИИ не вернул структурированный ответ.",
+        picks: [],
+      });
     }
 
     return json(parsed);
   } catch (e) {
     const message = e instanceof Error ? e.message : "Неизвестная ошибка";
     console.error("ai-property-pick error:", e);
-    if (message.includes("abort") || message.includes("Timeout") || message.includes("timed out")) {
-      return json({ error: "ИИ не ответил вовремя. Проверьте исходящий доступ к api.anthropic.com" }, 504);
+    if (
+      message.includes("abort") ||
+      message.includes("Timeout") ||
+      message.includes("timed out")
+    ) {
+      return json(
+        {
+          error:
+            "ИИ не ответил вовремя. Проверьте исходящий доступ к api.anthropic.com",
+        },
+        504,
+      );
     }
     return json({ error: message }, 500);
   }

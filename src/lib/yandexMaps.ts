@@ -13,14 +13,16 @@ export function getYandexMapsApiKey(): string {
 function configureYandexApiKeys(ymaps3: any) {
   const apiKey = getYandexMapsApiKey();
   try {
-    ymaps3.getDefaultConfig?.()?.setApikeys?.({ search: apiKey, suggest: apiKey });
+    ymaps3
+      .getDefaultConfig?.()
+      ?.setApikeys?.({ search: apiKey, suggest: apiKey });
   } catch {
     // ignore config errors — map may still work
   }
 }
 
 async function resolveYmaps3(): Promise<any> {
-  // @ts-ignore
+  // @ts-expect-error
   const ymaps3 = (window as any).ymaps3;
   if (!ymaps3) throw new Error("Yandex Maps not available");
   await ymaps3.ready;
@@ -30,7 +32,7 @@ async function resolveYmaps3(): Promise<any> {
 
 export function loadYandexMaps(): Promise<any> {
   if (typeof window === "undefined") return Promise.reject(new Error("SSR"));
-  // @ts-ignore
+  // @ts-expect-error
   if ((window as any).ymaps3) {
     return resolveYmaps3();
   }
@@ -43,7 +45,9 @@ export function loadYandexMaps(): Promise<any> {
       loadPromise = null;
       reject(err);
     };
-    const existing = document.querySelector<HTMLScriptElement>('script[data-ymaps3="true"]');
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[data-ymaps3="true"]',
+    );
     const onReady = async () => {
       try {
         resolve(await resolveYmaps3());
@@ -54,7 +58,9 @@ export function loadYandexMaps(): Promise<any> {
 
     if (existing) {
       existing.addEventListener("load", onReady);
-      existing.addEventListener("error", () => fail(new Error("Failed to load Yandex Maps")));
+      existing.addEventListener("error", () =>
+        fail(new Error("Failed to load Yandex Maps")),
+      );
       if ((window as any).ymaps3) onReady();
       return;
     }
@@ -68,7 +74,9 @@ export function loadYandexMaps(): Promise<any> {
     script.defer = true;
     script.dataset.ymaps3 = "true";
     script.addEventListener("load", onReady);
-    script.addEventListener("error", () => fail(new Error("Failed to load Yandex Maps")));
+    script.addEventListener("error", () =>
+      fail(new Error("Failed to load Yandex Maps")),
+    );
     document.head.appendChild(script);
   });
 

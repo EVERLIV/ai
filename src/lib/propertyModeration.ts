@@ -1,4 +1,10 @@
-export type ModerationStatus = "draft" | "on_moderation" | "published" | "rejected" | "cancelled" | "archived";
+export type ModerationStatus =
+  | "draft"
+  | "on_moderation"
+  | "published"
+  | "rejected"
+  | "cancelled"
+  | "archived";
 export type RequestType = "free_listing" | "management";
 
 export const MODERATION_STATUS_LABELS: Record<ModerationStatus, string> = {
@@ -10,8 +16,16 @@ export const MODERATION_STATUS_LABELS: Record<ModerationStatus, string> = {
   archived: "В архиве",
 };
 
-export const EDITABLE_STATUSES: ModerationStatus[] = ["draft", "on_moderation", "rejected"];
-export const CANCELLABLE_STATUSES: ModerationStatus[] = ["draft", "on_moderation", "rejected"];
+export const EDITABLE_STATUSES: ModerationStatus[] = [
+  "draft",
+  "on_moderation",
+  "rejected",
+];
+export const CANCELLABLE_STATUSES: ModerationStatus[] = [
+  "draft",
+  "on_moderation",
+  "rejected",
+];
 
 export function canEditProperty(status?: ModerationStatus | null): boolean {
   return !!status && EDITABLE_STATUSES.includes(status);
@@ -54,7 +68,11 @@ export function getOwnerUserId(
   extras?: Record<string, unknown> | null,
   submittedBy?: string | null,
 ): string | null {
-  if (extras && typeof extras.owner_user_id === "string" && extras.owner_user_id) {
+  if (
+    extras &&
+    typeof extras.owner_user_id === "string" &&
+    extras.owner_user_id
+  ) {
     return extras.owner_user_id;
   }
   if (submittedBy) return submittedBy;

@@ -1,19 +1,25 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2, X } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+import { z } from "zod";
 import TasksSidebar from "@/components/tasks/TasksSidebar";
-import { useCreateTask, useStaffMembers, useProjects, type TaskPriority, type TaskStatus } from "@/hooks/useTasks";
+import {
+  type TaskPriority,
+  type TaskStatus,
+  useCreateTask,
+  useProjects,
+  useStaffMembers,
+} from "@/hooks/useTasks";
 
 const schema = z.object({
-  title:       z.string().min(1, "Название обязательно"),
+  title: z.string().min(1, "Название обязательно"),
   description: z.string().optional(),
-  priority:    z.enum(["low", "medium", "high"]),
-  status:      z.enum(["todo", "in_progress", "done"]),
-  due_date:    z.string().optional(),
-  project_id:  z.string().optional(),
+  priority: z.enum(["low", "medium", "high"]),
+  status: z.enum(["todo", "in_progress", "done"]),
+  due_date: z.string().optional(),
+  project_id: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -25,21 +31,25 @@ export default function TaskNewPage() {
   const { data: projects = [] } = useProjects();
   const [assignees, setAssignees] = useState<string[]>([]);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { priority: "medium", status: "todo" },
   });
 
   const onSubmit = async (data: FormData) => {
     await createTask.mutateAsync({
-      title:       data.title,
+      title: data.title,
       description: data.description || undefined,
-      assignee:    assignees[0] || undefined,
+      assignee: assignees[0] || undefined,
       assignees,
-      priority:    data.priority as TaskPriority,
-      status:      data.status as TaskStatus,
-      due_date:    data.due_date || undefined,
-      project_id:  data.project_id || null,
+      priority: data.priority as TaskPriority,
+      status: data.status as TaskStatus,
+      due_date: data.due_date || undefined,
+      project_id: data.project_id || null,
     });
     navigate("/tasks");
   };
@@ -70,7 +80,11 @@ export default function TaskNewPage() {
                 placeholder="Что нужно сделать?"
                 className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               />
-              {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
+              {errors.title && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.title.message}
+                </p>
+              )}
             </div>
 
             {/* Описание */}
@@ -94,10 +108,20 @@ export default function TaskNewPage() {
                 </label>
                 <div className="border border-gray-300 rounded-lg p-2 flex flex-wrap gap-1.5 min-h-[40px]">
                   {assignees.map((name) => (
-                    <span key={name} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full">
+                    <span
+                      key={name}
+                      className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full"
+                    >
                       {name}
-                      <button type="button" onClick={() => setAssignees(assignees.filter(a => a !== name))}
-                        className="hover:text-red-500"><X className="w-3 h-3" /></button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setAssignees(assignees.filter((a) => a !== name))
+                        }
+                        className="hover:text-red-500"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                     </span>
                   ))}
                   <select
@@ -110,9 +134,19 @@ export default function TaskNewPage() {
                     className="h-6 px-1 text-xs border-0 bg-transparent text-gray-400 focus:outline-none focus:text-gray-700 cursor-pointer"
                   >
                     <option value="">+ добавить</option>
-                    {staff.filter(s => !assignees.includes(s.full_name || s.email || "")).map((s) => (
-                      <option key={s.id} value={s.full_name || s.email || s.id}>{s.full_name || s.email}</option>
-                    ))}
+                    {staff
+                      .filter(
+                        (s) =>
+                          !assignees.includes(s.full_name || s.email || ""),
+                      )
+                      .map((s) => (
+                        <option
+                          key={s.id}
+                          value={s.full_name || s.email || s.id}
+                        >
+                          {s.full_name || s.email}
+                        </option>
+                      ))}
                   </select>
                 </div>
               </div>
@@ -163,11 +197,19 @@ export default function TaskNewPage() {
             {/* Проект */}
             {projects.length > 0 && (
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Проект / Доска</label>
-                <select {...register("project_id")}
-                  className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white">
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                  Проект / Доска
+                </label>
+                <select
+                  {...register("project_id")}
+                  className="w-full h-10 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white"
+                >
                   <option value="">— Без проекта —</option>
-                  {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}
@@ -178,7 +220,9 @@ export default function TaskNewPage() {
                 disabled={createTask.isPending}
                 className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors"
               >
-                {createTask.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                {createTask.isPending && (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                )}
                 Создать задачу
               </button>
               <button

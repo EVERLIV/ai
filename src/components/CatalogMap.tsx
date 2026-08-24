@@ -1,19 +1,25 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Eye, List, MapPin, Maximize2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { DbProperty } from "@/hooks/useProperties";
-import { MapPin, Maximize2, X, List, Eye } from "lucide-react";
-import { getPropertyCover } from "@/lib/propertyImages";
 import { buildPropertyDisplayTitle } from "@/lib/propertyCard";
-import { getCoords, hasStreetView, type Coords } from "@/lib/propertyGeo";
-import { loadYandexMaps, IRKUTSK_CENTER_LNGLAT } from "@/lib/yandexMaps";
+import { type Coords, getCoords, hasStreetView } from "@/lib/propertyGeo";
+import { getPropertyCover } from "@/lib/propertyImages";
+import { IRKUTSK_CENTER_LNGLAT, loadYandexMaps } from "@/lib/yandexMaps";
 import StreetViewModal from "./StreetViewModal";
 import YandexMapFallback from "./YandexMapFallback";
 
-export default function CatalogMap({ properties }: { properties: DbProperty[] }) {
+export default function CatalogMap({
+  properties,
+}: {
+  properties: DbProperty[];
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const ymapsRef = useRef<any>(null);
-  const markersRef = useRef<Map<string, { marker: any; el: HTMLElement }>>(new Map());
+  const markersRef = useRef<Map<string, { marker: any; el: HTMLElement }>>(
+    new Map(),
+  );
   const [activeId, setActiveId] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(true);
   const [mapReady, setMapReady] = useState(false);
@@ -29,7 +35,12 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
         if (cancelled || !containerRef.current) return;
         setMapFailed(false);
         ymapsRef.current = ymaps3;
-        const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapControls } = ymaps3;
+        const {
+          YMap,
+          YMapDefaultSchemeLayer,
+          YMapDefaultFeaturesLayer,
+          YMapControls,
+        } = ymaps3;
         const { YMapZoomControl } = ymaps3.controls ?? {};
 
         map = new YMap(containerRef.current, {
@@ -53,10 +64,23 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
     return () => {
       cancelled = true;
       markersRef.current.clear();
-      try { map?.destroy?.(); } catch {}
+      try {
+        map?.destroy?.();
+      } catch {}
       mapRef.current = null;
       ymapsRef.current = null;
     };
+  }, []);
+
+  const focusProperty = useCallback((p: DbProperty) => {
+    const c = getCoords(p);
+    setActiveId(p.id);
+    const map = mapRef.current;
+    if (map && c) {
+      map.update({
+        location: { center: [c.lng, c.lat], zoom: 14, duration: 400 },
+      });
+    }
   }, []);
 
   // Sync markers
@@ -67,7 +91,9 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
     const { YMapMarker } = ymaps3;
 
     markersRef.current.forEach(({ marker }) => {
-      try { map.removeChild(marker); } catch {}
+      try {
+        map.removeChild(marker);
+      } catch {}
     });
     markersRef.current.clear();
 
@@ -79,13 +105,16 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
       points.push(c);
 
       const price = Number(p.price);
-      const priceLabel = price > 0
-        ? (price >= 1000000 ? (price / 1000000).toFixed(1) + " млн ₽" : (price / 1000).toFixed(0) + "к ₽")
-        : p.type;
+      const priceLabel =
+        price > 0
+          ? price >= 1000000
+            ? `${(price / 1000000).toFixed(1)} млн ₽`
+            : `${(price / 1000).toFixed(0)}к ₽`
+          : p.type;
 
       const el = document.createElement("button");
       el.type = "button";
-      el.className = `cm-pin${activeId === p.id ? " is-active" : ""}`;
+      el.className = "cm-pin";
       el.setAttribute("aria-label", buildPropertyDisplayTitle(p));
       el.innerHTML = `
         <span class="cm-pin__label">${priceLabel}</span>
@@ -101,6 +130,10 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
       markersRef.current.set(p.id, { marker, el });
     });
 
+    markersRef.current.forEach(({ el }, id) => {
+      el.classList.toggle("is-active", id === activeId);
+    });
+
     if (points.length >= 2) {
       const lngs = points.map((p) => p.lng);
       const lats = points.map((p) => p.lat);
@@ -111,15 +144,26 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
       try {
         map.update({ location: { bounds, duration: 500 } });
       } catch {
-        map.update({ location: { center: [points[0].lng, points[0].lat], zoom: 12 } });
+        map.update({
+          location: { center: [points[0].lng, points[0].lat], zoom: 12 },
+        });
       }
     } else if (points.length === 1) {
-      map.update({ location: { center: [points[0].lng, points[0].lat], zoom: 14, duration: 500 } });
+      map.update({
+        location: {
+          center: [points[0].lng, points[0].lat],
+          zoom: 14,
+          duration: 500,
+        },
+      });
     } else {
-      map.update({ location: { center: IRKUTSK_CENTER_LNGLAT, zoom: 11, duration: 500 } });
+      map.update({
+        location: { center: IRKUTSK_CENTER_LNGLAT, zoom: 11, duration: 500 },
+      });
     }
+    // activeId читаем только для начальной подсветки; смена — в отдельном эффекте
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [properties, mapReady]);
+  }, [properties, mapReady, focusProperty]);
 
   // Active state toggle
   useEffect(() => {
@@ -129,22 +173,14 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
   }, [activeId]);
 
   useEffect(() => {
-    if (activeId && !properties.find((p) => p.id === activeId)) setActiveId(null);
+    if (activeId && !properties.find((p) => p.id === activeId))
+      setActiveId(null);
   }, [properties, activeId]);
 
   const activeProperty = useMemo(
     () => properties.find((p) => p.id === activeId) || null,
-    [activeId, properties]
+    [activeId, properties],
   );
-
-  const focusProperty = (p: DbProperty) => {
-    const c = getCoords(p);
-    setActiveId(p.id);
-    const map = mapRef.current;
-    if (map && c) {
-      map.update({ location: { center: [c.lng, c.lat], zoom: 14, duration: 400 } });
-    }
-  };
 
   const withCoords = properties.filter(getCoords).length;
   const fallbackPoints = properties
@@ -156,14 +192,22 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
     <div className="relative flex h-[calc(100vh-180px)] min-h-[520px] bg-card overflow-hidden">
       <aside className="hidden lg:flex w-[360px] xl:w-[400px] shrink-0 flex-col border-r border-border overflow-hidden">
         <div className="px-4 py-2.5 border-b border-border text-[11px] text-muted-foreground">
-          <strong className="text-foreground">{properties.length}</strong> объектов · {withCoords} на карте
+          <strong className="text-foreground">{properties.length}</strong>{" "}
+          объектов · {withCoords} на карте
         </div>
         <div className="flex-1 overflow-y-auto divide-y divide-border">
           {properties.map((p) => (
-            <MapListItem key={p.id} p={p} active={activeId === p.id} onClick={() => focusProperty(p)} />
+            <MapListItem
+              key={p.id}
+              p={p}
+              active={activeId === p.id}
+              onClick={() => focusProperty(p)}
+            />
           ))}
           {properties.length === 0 && (
-            <div className="p-6 text-center text-xs text-muted-foreground">Нет объектов</div>
+            <div className="p-6 text-center text-xs text-muted-foreground">
+              Нет объектов
+            </div>
           )}
         </div>
       </aside>
@@ -195,7 +239,9 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
             onClick={() => setListOpen((v) => !v)}
             className="w-full bg-card border-t border-border px-4 py-2 flex items-center justify-between text-xs"
           >
-            <span className="font-medium text-foreground">{properties.length} объектов</span>
+            <span className="font-medium text-foreground">
+              {properties.length} объектов
+            </span>
             <span className="flex items-center gap-1 text-primary font-medium">
               <List className="w-3.5 h-3.5" />
               {listOpen ? "Скрыть" : "Список"}
@@ -233,18 +279,19 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
         </div>
       </div>
 
-      {streetViewFor && (() => {
-        const c = getCoords(streetViewFor);
-        if (!c) return null;
-        return (
-          <StreetViewModal
-            lat={c.lat}
-            lng={c.lng}
-            address={streetViewFor.address}
-            onClose={() => setStreetViewFor(null)}
-          />
-        );
-      })()}
+      {streetViewFor &&
+        (() => {
+          const c = getCoords(streetViewFor);
+          if (!c) return null;
+          return (
+            <StreetViewModal
+              lat={c.lat}
+              lng={c.lng}
+              address={streetViewFor.address}
+              onClose={() => setStreetViewFor(null)}
+            />
+          );
+        })()}
 
       <style>{`
         .cm-pin {
@@ -299,7 +346,15 @@ export default function CatalogMap({ properties }: { properties: DbProperty[] })
   );
 }
 
-function MapListItem({ p, active, onClick }: { p: DbProperty; active: boolean; onClick: () => void }) {
+function MapListItem({
+  p,
+  active,
+  onClick,
+}: {
+  p: DbProperty;
+  active: boolean;
+  onClick: () => void;
+}) {
   const hasCoords = getCoords(p) !== null;
   return (
     <button
@@ -309,7 +364,12 @@ function MapListItem({ p, active, onClick }: { p: DbProperty; active: boolean; o
       }`}
     >
       <div className="w-20 h-20 shrink-0 bg-muted overflow-hidden">
-        <img src={getPropertyCover(p.cover_photo, p.type)} alt={p.address} loading="lazy" className="w-full h-full object-cover" />
+        <img
+          src={getPropertyCover(p.cover_photo, p.type)}
+          alt={p.address}
+          loading="lazy"
+          className="w-full h-full object-cover"
+        />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
@@ -317,11 +377,19 @@ function MapListItem({ p, active, onClick }: { p: DbProperty; active: boolean; o
             {p.deal_type}
           </span>
           <span className="text-[10px] text-muted-foreground">{p.type}</span>
-          {!hasCoords && <span className="text-[9px] text-muted-foreground/70 italic">без координат</span>}
+          {!hasCoords && (
+            <span className="text-[9px] text-muted-foreground/70 italic">
+              без координат
+            </span>
+          )}
         </div>
         <div className="font-display text-sm font-bold text-foreground truncate">
           {Number(p.price).toLocaleString("ru-RU")} ₽
-          {p.deal_type === "Аренда" && <span className="text-[10px] font-normal text-muted-foreground">/мес</span>}
+          {p.deal_type === "Аренда" && (
+            <span className="text-[10px] font-normal text-muted-foreground">
+              /мес
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1 text-[11px] text-muted-foreground truncate">
           <MapPin className="w-3 h-3 shrink-0" />
@@ -336,14 +404,29 @@ function MapListItem({ p, active, onClick }: { p: DbProperty; active: boolean; o
 }
 
 function ActiveCard({
-  p, onClose, onStreetView, compact = false,
-}: { p: DbProperty; onClose: () => void; onStreetView: () => void; compact?: boolean }) {
+  p,
+  onClose,
+  onStreetView,
+  compact = false,
+}: {
+  p: DbProperty;
+  onClose: () => void;
+  onStreetView: () => void;
+  compact?: boolean;
+}) {
   const showStreetView = hasStreetView(p);
   return (
     <div className="bg-card border border-border overflow-hidden">
       <div className="flex">
-        <div className={`${compact ? "w-24 h-24" : "w-28 h-28"} shrink-0 bg-muted overflow-hidden`}>
-          <img src={getPropertyCover(p.cover_photo, p.type)} alt={p.address} loading="lazy" className="w-full h-full object-cover" />
+        <div
+          className={`${compact ? "w-24 h-24" : "w-28 h-28"} shrink-0 bg-muted overflow-hidden`}
+        >
+          <img
+            src={getPropertyCover(p.cover_photo, p.type)}
+            alt={p.address}
+            loading="lazy"
+            className="w-full h-full object-cover"
+          />
         </div>
         <div className="flex-1 min-w-0 p-3">
           <div className="flex items-start justify-between gap-2">
@@ -352,29 +435,46 @@ function ActiveCard({
                 <span className="px-1.5 py-0.5 bg-primary text-primary-foreground text-[9px] font-semibold uppercase tracking-wide">
                   {p.deal_type}
                 </span>
-                <span className="text-[10px] text-muted-foreground">{p.type}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {p.type}
+                </span>
               </div>
               <div className="font-display text-base font-bold text-foreground truncate">
                 {Number(p.price).toLocaleString("ru-RU")} ₽
-                {p.deal_type === "Аренда" && <span className="text-[10px] font-normal text-muted-foreground">/мес</span>}
+                {p.deal_type === "Аренда" && (
+                  <span className="text-[10px] font-normal text-muted-foreground">
+                    /мес
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-1 text-[11px] text-muted-foreground truncate">
                 <MapPin className="w-3 h-3 shrink-0" />
                 <span className="truncate">{buildPropertyDisplayTitle(p)}</span>
               </div>
-              <div className="text-[11px] text-foreground mt-0.5">{p.area} м² · {p.district}</div>
+              <div className="text-[11px] text-foreground mt-0.5">
+                {p.area} м² · {p.district}
+              </div>
             </div>
-            <button onClick={onClose} className="p-1 -mr-1 -mt-1 text-muted-foreground hover:text-foreground">
+            <button
+              onClick={onClose}
+              className="p-1 -mr-1 -mt-1 text-muted-foreground hover:text-foreground"
+            >
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
           <div className="mt-2 flex gap-1.5">
             {showStreetView && (
-              <button onClick={onStreetView} className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-muted text-foreground text-[11px] font-semibold hover:bg-muted/70 transition-colors">
+              <button
+                onClick={onStreetView}
+                className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-muted text-foreground text-[11px] font-semibold hover:bg-muted/70 transition-colors"
+              >
                 <Eye className="w-3 h-3" /> Улица
               </button>
             )}
-            <Link to={`/property/${p.id}`} className="flex-1 inline-flex justify-center px-3 py-1.5 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity">
+            <Link
+              to={`/property/${p.id}`}
+              className="flex-1 inline-flex justify-center px-3 py-1.5 bg-primary text-primary-foreground text-[11px] font-semibold hover:opacity-90 transition-opacity"
+            >
               Карточка
             </Link>
           </div>
@@ -388,7 +488,12 @@ function MobileCard({ p }: { p: DbProperty }) {
   return (
     <>
       <div className="h-28 bg-muted overflow-hidden">
-        <img src={getPropertyCover(p.cover_photo, p.type)} alt={p.address} loading="lazy" className="w-full h-full object-cover" />
+        <img
+          src={getPropertyCover(p.cover_photo, p.type)}
+          alt={p.address}
+          loading="lazy"
+          className="w-full h-full object-cover"
+        />
       </div>
       <div className="p-2.5">
         <div className="flex items-center gap-1.5 mb-0.5">
@@ -400,7 +505,9 @@ function MobileCard({ p }: { p: DbProperty }) {
         <div className="font-display text-sm font-bold text-foreground truncate">
           {Number(p.price).toLocaleString("ru-RU")} ₽
         </div>
-        <div className="text-[10px] text-muted-foreground truncate">{buildPropertyDisplayTitle(p)}</div>
+        <div className="text-[10px] text-muted-foreground truncate">
+          {buildPropertyDisplayTitle(p)}
+        </div>
       </div>
     </>
   );

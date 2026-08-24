@@ -4,7 +4,13 @@ export type Coords = { lat: number; lng: number };
 
 export function parseCoordInput(value: string): number | null {
   const normalized = value.trim().replace(",", ".");
-  if (!normalized || normalized === "-" || normalized === "." || normalized === "-.") return null;
+  if (
+    !normalized ||
+    normalized === "-" ||
+    normalized === "." ||
+    normalized === "-."
+  )
+    return null;
   const n = Number(normalized);
   return Number.isFinite(n) ? n : null;
 }
@@ -15,7 +21,9 @@ export function formatCoord(n: number | null | undefined): string {
 }
 
 /** «52.2869, 104.2807» или «104.2807 52.2869» — пара для вставки в одно поле. */
-export function parseCoordPair(value: string): { lat: number; lng: number } | null {
+export function parseCoordPair(
+  value: string,
+): { lat: number; lng: number } | null {
   const parts = value
     .trim()
     .replace(/;/g, ",")
@@ -32,7 +40,10 @@ export function parseCoordPair(value: string): { lat: number; lng: number } | nu
   return isValidCoordPair(a, b) ? { lat: a, lng: b } : null;
 }
 
-export function isValidCoordPair(lat: number | null, lng: number | null): lat is number {
+export function isValidCoordPair(
+  lat: number | null,
+  lng: number | null,
+): lat is number {
   if (lat === null || lng === null) return false;
   if (Number.isNaN(lat) || Number.isNaN(lng)) return false;
   if (lat === 0 && lng === 0) return false;
@@ -75,6 +86,8 @@ export function hasValidAddress(address: string | null | undefined): boolean {
 /**
  * Street View is shown only when both coords AND address are valid.
  */
-export function hasStreetView(p: Pick<DbProperty, "lat" | "lng" | "address">): boolean {
+export function hasStreetView(
+  p: Pick<DbProperty, "lat" | "lng" | "address">,
+): boolean {
   return getCoords(p) !== null && hasValidAddress(p.address);
 }

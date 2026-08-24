@@ -9,11 +9,15 @@ interface PropertyDescriptionProps {
  * Отрисовывает описание объекта структурированно: заголовки разделов,
  * абзацы, списки преимуществ и пары "метка — значение".
  */
-export default function PropertyDescription({ text }: PropertyDescriptionProps) {
+export default function PropertyDescription({
+  text,
+}: PropertyDescriptionProps) {
   const blocks = useMemo(() => parsePropertyDescription(text), [text]);
 
   if (!blocks.length) {
-    return <p className="text-sm text-muted-foreground">Описание не указано.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">Описание не указано.</p>
+    );
   }
 
   return (
@@ -39,7 +43,10 @@ export default function PropertyDescription({ text }: PropertyDescriptionProps) 
           return (
             <ul key={i} className="space-y-1.5">
               {block.items.map((item, j) => (
-                <li key={j} className="flex gap-2.5 text-sm text-muted-foreground leading-relaxed">
+                <li
+                  key={j}
+                  className="flex gap-2.5 text-sm text-muted-foreground leading-relaxed"
+                >
                   <span aria-hidden className="shrink-0 text-primary mt-0.5">
                     {item.icon && /[✅✔☑✓]/u.test(item.icon) ? item.icon : "•"}
                   </span>
@@ -52,13 +59,21 @@ export default function PropertyDescription({ text }: PropertyDescriptionProps) 
 
         if (block.kind === "facts") {
           return (
-            <dl key={i} className="divide-y divide-border border-y border-border">
+            <dl
+              key={i}
+              className="divide-y divide-border border-y border-border"
+            >
               {block.items.map((item, j) => (
-                <div key={j} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 py-2">
+                <div
+                  key={j}
+                  className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 py-2"
+                >
                   <dt className="text-xs uppercase tracking-wider text-muted-foreground min-w-[120px]">
                     {item.label}
                   </dt>
-                  <dd className="text-sm font-medium text-foreground">{item.value}</dd>
+                  <dd className="text-sm font-medium text-foreground">
+                    {item.value}
+                  </dd>
                 </div>
               ))}
             </dl>

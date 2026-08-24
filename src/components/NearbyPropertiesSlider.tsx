@@ -1,8 +1,11 @@
+import { ChevronLeft, ChevronRight, MapPin, Maximize } from "lucide-react";
 import { useRef } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, ChevronRight, MapPin, Maximize } from "lucide-react";
 import { useProperties } from "@/hooks/useProperties";
-import { buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
+import {
+  buildPropertyDisplayTitle,
+  formatPropertyAddressShort,
+} from "@/lib/propertyCard";
 
 interface Props {
   district: string;
@@ -10,7 +13,11 @@ interface Props {
   type?: string;
 }
 
-export default function NearbyPropertiesSlider({ district, excludeId, type }: Props) {
+export default function NearbyPropertiesSlider({
+  district,
+  excludeId,
+  type,
+}: Props) {
   const { data: all } = useProperties();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +48,10 @@ export default function NearbyPropertiesSlider({ district, excludeId, type }: Pr
 
   const scroll = (dir: "left" | "right") => {
     if (!scrollRef.current) return;
-    scrollRef.current.scrollBy({ left: dir === "left" ? -360 : 360, behavior: "smooth" });
+    scrollRef.current.scrollBy({
+      left: dir === "left" ? -360 : 360,
+      behavior: "smooth",
+    });
   };
 
   return (
@@ -49,10 +59,11 @@ export default function NearbyPropertiesSlider({ district, excludeId, type }: Pr
       <div className="flex items-end justify-between mb-5">
         <div>
           <h2 className="text-xl sm:text-2xl font-display font-bold text-foreground">
-            Другие объекты в районе
+            Похожие объявления
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            {district} · {list.length} {list.length === 1 ? "объект" : "объектов"}
+            {district} · {list.length}{" "}
+            {list.length === 1 ? "объект" : "объектов"}
           </p>
         </div>
         <div className="hidden sm:flex items-center gap-2">
@@ -108,14 +119,18 @@ export default function NearbyPropertiesSlider({ district, excludeId, type }: Pr
               {formatPropertyAddressShort(p.address) && (
                 <div className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
                   <MapPin className="w-3 h-3 shrink-0" />
-                  <span className="truncate">{formatPropertyAddressShort(p.address)}</span>
+                  <span className="truncate">
+                    {formatPropertyAddressShort(p.address)}
+                  </span>
                 </div>
               )}
               <div className="flex items-center justify-between">
                 <span className="font-bold text-base text-foreground">
                   {fmt(p.price)} ₽
                   {p.deal_type !== "Продажа" && (
-                    <span className="text-xs font-normal text-muted-foreground">/мес</span>
+                    <span className="text-xs font-normal text-muted-foreground">
+                      /мес
+                    </span>
                   )}
                 </span>
                 <div className="flex items-center gap-1 text-muted-foreground text-xs">

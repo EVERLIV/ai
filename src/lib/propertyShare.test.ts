@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { SHARE_CTA, buildPropertySharePayload } from "./propertyShare";
+import { buildPropertySharePayload, SHARE_CTA } from "./propertyShare";
 
 describe("buildPropertySharePayload", () => {
   test("builds SEO text with message, url and CTA separately", () => {

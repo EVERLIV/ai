@@ -1,8 +1,15 @@
-import { useEffect, useState } from "react";
 import { Phone, ShieldCheck } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useEffect, useState } from "react";
+import { propertyCtaButtonClass } from "@/components/OwnerMessageDialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabasePublic } from "@/integrations/supabase/client";
 import {
   formatPhoneDisplay,
@@ -12,7 +19,6 @@ import {
   normalizePhoneTel,
 } from "@/lib/listingContact";
 import { isAgencyListing } from "@/lib/listingSource";
-import { propertyCtaButtonClass } from "@/components/OwnerMessageDialog";
 import { cn } from "@/lib/utils";
 
 type PropertyLike = {
@@ -28,11 +34,17 @@ interface Props {
   variant?: "cta" | "bar";
 }
 
-export default function RevealListingPhone({ property, className, variant = "cta" }: Props) {
+export default function RevealListingPhone({
+  property,
+  className,
+  variant = "cta",
+}: Props) {
   const [open, setOpen] = useState(false);
   const [human, setHuman] = useState(false);
   const [revealed, setRevealed] = useState(false);
-  const [phone, setPhone] = useState(() => getListingPhoneFromExtras(property.extras));
+  const [phone, setPhone] = useState(() =>
+    getListingPhoneFromExtras(property.extras),
+  );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -60,7 +72,8 @@ export default function RevealListingPhone({ property, className, variant = "cta
         .eq("id", ownerId)
         .maybeSingle();
       if (cancelled) return;
-      const profilePhone = typeof data?.phone === "string" ? data.phone.trim() : "";
+      const profilePhone =
+        typeof data?.phone === "string" ? data.phone.trim() : "";
       if (profilePhone.replace(/\D/g, "").length >= 10) setPhone(profilePhone);
       setLoading(false);
     })();
@@ -82,19 +95,25 @@ export default function RevealListingPhone({ property, className, variant = "cta
       <>
         <button
           type="button"
-          onClick={() => { setOpen(true); reset(); }}
+          onClick={() => {
+            setOpen(true);
+            reset();
+          }}
           aria-label="Позвонить"
           className={cn(
-            "flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-primary hover:bg-primary/10 active:scale-95 transition-all",
+            "flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-md text-foreground hover:bg-muted active:scale-95 transition-all",
             className,
           )}
         >
-          <Phone className="w-6 h-6" strokeWidth={2.2} />
+          <Phone className="w-6 h-6" strokeWidth={1.75} />
           <span className="text-[10px] font-medium">Звонок</span>
         </button>
         <PhoneRevealDialog
           open={open}
-          onOpenChange={(value) => { setOpen(value); if (!value) reset(); }}
+          onOpenChange={(value) => {
+            setOpen(value);
+            if (!value) reset();
+          }}
           phone={phone}
           tel={tel}
           loading={loading}
@@ -111,15 +130,25 @@ export default function RevealListingPhone({ property, className, variant = "cta
     <>
       <button
         type="button"
-        onClick={() => { setOpen(true); reset(); }}
-        className={cn(propertyCtaButtonClass, "bg-foreground text-background", className)}
+        onClick={() => {
+          setOpen(true);
+          reset();
+        }}
+        className={cn(
+          propertyCtaButtonClass,
+          "bg-foreground text-background",
+          className,
+        )}
       >
         <Phone className="w-4 h-4 shrink-0" />
         Позвонить
       </button>
       <PhoneRevealDialog
         open={open}
-        onOpenChange={(value) => { setOpen(value); if (!value) reset(); }}
+        onOpenChange={(value) => {
+          setOpen(value);
+          if (!value) reset();
+        }}
         phone={phone}
         tel={tel}
         loading={loading}
@@ -162,7 +191,8 @@ function PhoneRevealDialog({
             Номер разместившего
           </DialogTitle>
           <DialogDescription>
-            Номер скрыт от ботов. Подтвердите, что вы не робот, чтобы увидеть полный телефон.
+            Номер скрыт от ботов. Подтвердите, что вы не робот, чтобы увидеть
+            полный телефон.
           </DialogDescription>
         </DialogHeader>
 
@@ -170,7 +200,9 @@ function PhoneRevealDialog({
           {loading ? (
             <p className="text-sm text-muted-foreground">Загрузка номера…</p>
           ) : !phone ? (
-            <p className="text-sm text-muted-foreground">Номер не указан в объявлении.</p>
+            <p className="text-sm text-muted-foreground">
+              Номер не указан в объявлении.
+            </p>
           ) : (
             <>
               <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-center">
@@ -182,7 +214,10 @@ function PhoneRevealDialog({
               {!revealed ? (
                 <div className="space-y-3">
                   <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2 cursor-pointer">
-                    <Checkbox checked={human} onCheckedChange={(v) => setHuman(!!v)} />
+                    <Checkbox
+                      checked={human}
+                      onCheckedChange={(v) => setHuman(!!v)}
+                    />
                     <span className="text-sm">Я не робот</span>
                   </label>
                   <Button

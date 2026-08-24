@@ -1,22 +1,45 @@
+import {
+  ArrowRight,
+  CheckCircle,
+  Landmark,
+  MapPinned,
+  TreePine,
+  UtilityPole,
+} from "lucide-react";
 import { Link } from "react-router-dom";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
-import CategoryPropertySlider from "@/components/CategoryPropertySlider";
+import landImg from "@/assets/property-land.jpg";
 import CategoryContactForm from "@/components/CategoryContactForm";
+import CategoryPropertySlider from "@/components/CategoryPropertySlider";
 import NewsSidebar from "@/components/NewsSidebar";
 import PropertyAIChat from "@/components/PropertyAIChat";
-import landImg from "@/assets/property-land.jpg";
-import { TreePine, MapPinned, Landmark, UtilityPole, CheckCircle, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import SeoHead from "@/components/SeoHead";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import SiteFooter from "@/components/SiteFooter";
+import SiteHeader from "@/components/SiteHeader";
+import { Button } from "@/components/ui/button";
 import { absoluteUrl } from "@/config/site";
+import { buildCatalogUrl } from "@/lib/catalogLinks";
 
 const benefits = [
-  { icon: MapPinned, title: "Локация под задачу", desc: "Подбираем участки под торговлю, склады, базу, производство и девелопмент." },
-  { icon: Landmark, title: "Проверка документов", desc: "Смотрим ВРИ, кадастр, подъездные пути и ограничения до показа." },
-  { icon: UtilityPole, title: "Коммуникации рядом", desc: "Отмечаем участки с электричеством, водой, газом и возможностью подключения." },
-  { icon: TreePine, title: "Коммерческий потенциал", desc: "Оцениваем первую линию, транспортный поток и перспективу застройки." },
+  {
+    icon: MapPinned,
+    title: "Локация под задачу",
+    desc: "Подбираем участки под торговлю, склады, базу, производство и девелопмент.",
+  },
+  {
+    icon: Landmark,
+    title: "Проверка документов",
+    desc: "Смотрим ВРИ, кадастр, подъездные пути и ограничения до показа.",
+  },
+  {
+    icon: UtilityPole,
+    title: "Коммуникации рядом",
+    desc: "Отмечаем участки с электричеством, водой, газом и возможностью подключения.",
+  },
+  {
+    icon: TreePine,
+    title: "Коммерческий потенциал",
+    desc: "Оцениваем первую линию, транспортный поток и перспективу застройки.",
+  },
 ];
 
 const features = [
@@ -40,7 +63,13 @@ export default function LandPage() {
 
       <section className="relative pt-14 md:pt-[98px]">
         <div className="relative h-[500px] sm:h-[560px] overflow-hidden">
-          <img src={landImg} alt="Земельные участки в Иркутске и области" width={1920} height={1080} className="w-full h-full object-cover" />
+          <img
+            src={landImg}
+            alt="Земельные участки в Иркутске и области"
+            width={1920}
+            height={1080}
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/85 via-foreground/55 to-transparent" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
@@ -52,8 +81,10 @@ export default function LandPage() {
                   Земля под бизнес, склад или строительство в Иркутске и области
                 </h1>
                 <p className="text-lg leading-relaxed text-white/80">
-                  Подбираем земельные участки под коммерческое использование, складские базы, автосервисы,
-                  торговые объекты и будущую застройку. Проверяем ВРИ, подъезд, кадастр и инфраструктуру до переговоров.
+                  Подбираем земельные участки под коммерческое использование,
+                  складские базы, автосервисы, торговые объекты и будущую
+                  застройку. Проверяем ВРИ, подъезд, кадастр и инфраструктуру до
+                  переговоров.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <Link to={buildCatalogUrl({ types: "Земля" })}>
@@ -62,7 +93,11 @@ export default function LandPage() {
                     </Button>
                   </Link>
                   <Link to="/list-property?mode=rent&type=Земля">
-                    <Button size="lg" variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+                    >
                       Разместить свою землю за 0 ₽
                     </Button>
                   </Link>
@@ -80,12 +115,19 @@ export default function LandPage() {
           </h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {benefits.map((benefit) => (
-              <div key={benefit.title} className="rounded-xl border border-border bg-card p-6 transition-shadow hover:shadow-md">
+              <div
+                key={benefit.title}
+                className="rounded-xl border border-border bg-card p-6 transition-shadow hover:shadow-md"
+              >
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
                   <benefit.icon className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="mb-2 font-semibold text-foreground">{benefit.title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">{benefit.desc}</p>
+                <h3 className="mb-2 font-semibold text-foreground">
+                  {benefit.title}
+                </h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {benefit.desc}
+                </p>
               </div>
             ))}
           </div>
@@ -98,23 +140,31 @@ export default function LandPage() {
             <div className="min-w-0 flex-1 space-y-10">
               <div className="space-y-6">
                 <h2 className="text-2xl font-display font-bold text-foreground">
-                  Земельные участки в Иркутске и области: где искать площадку под бизнес
+                  Земельные участки в Иркутске и области: где искать площадку
+                  под бизнес
                 </h2>
                 <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
                   <p>
-                    Земля под коммерческую недвижимость в Иркутской области востребована у логистических компаний,
-                    застройщиков, автосервисов, ритейла и производственных площадок. Наибольший спрос приходится на
-                    участки в черте Иркутска, вдоль федеральных трасс, рядом с промышленными зонами Ангарска и выездами на Шелехов.
+                    Земля под коммерческую недвижимость в Иркутской области
+                    востребована у логистических компаний, застройщиков,
+                    автосервисов, ритейла и производственных площадок.
+                    Наибольший спрос приходится на участки в черте Иркутска,
+                    вдоль федеральных трасс, рядом с промышленными зонами
+                    Ангарска и выездами на Шелехов.
                   </p>
                   <p>
-                    При выборе участка важно учитывать не только цену за сотку, но и вид разрешённого использования,
-                    подъезд для грузового транспорта, возможность подключения электричества, воды и канализации.
-                    Ошибка на этом этапе увеличивает сроки запуска объекта и бюджет на подготовку площадки.
+                    При выборе участка важно учитывать не только цену за сотку,
+                    но и вид разрешённого использования, подъезд для грузового
+                    транспорта, возможность подключения электричества, воды и
+                    канализации. Ошибка на этом этапе увеличивает сроки запуска
+                    объекта и бюджет на подготовку площадки.
                   </p>
                   <p>
-                    АрендаСити помогает быстро сравнить земельные участки по целевому сценарию: под торговый павильон,
-                    складскую базу, производственную площадку, автокомплекс или дальнейшую застройку. Мы отсекаем
-                    слабые варианты ещё до показа, чтобы вы не тратили время на неподходящие объекты.
+                    АрендаСити помогает быстро сравнить земельные участки по
+                    целевому сценарию: под торговый павильон, складскую базу,
+                    производственную площадку, автокомплекс или дальнейшую
+                    застройку. Мы отсекаем слабые варианты ещё до показа, чтобы
+                    вы не тратили время на неподходящие объекты.
                   </p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -127,7 +177,10 @@ export default function LandPage() {
                 </div>
               </div>
 
-              <CategoryPropertySlider type="Земля" title="Земельные участки в каталоге" />
+              <CategoryPropertySlider
+                type="Земля"
+                title="Земельные участки в каталоге"
+              />
 
               <section className="rounded-2xl border border-primary/20 bg-primary/5 p-6 sm:p-8">
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -136,8 +189,9 @@ export default function LandPage() {
                       Хотите разместить свой участок бесплатно?
                     </h2>
                     <p className="text-sm leading-relaxed text-muted-foreground">
-                      Разместим землю за 0 ₽, подготовим карточку объекта и поможем получить первые обращения
-                      от арендаторов или покупателей без долгой ручной переписки.
+                      Разместим землю за 0 ₽, подготовим карточку объекта и
+                      поможем получить первые обращения от арендаторов или
+                      покупателей без долгой ручной переписки.
                     </p>
                   </div>
                   <Link to="/list-property?mode=rent&type=Земля">

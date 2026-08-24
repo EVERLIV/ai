@@ -1,10 +1,15 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import {
+  type Agency,
+  type AgencyManager,
+  type AgencyMemberRole,
+  connectAgencyTelegramByChatIdApi,
   createAgencyInviteApi,
   createAgencyManagerApi,
   deleteAgencyInviteApi,
   deleteAgencyManagerApi,
+  disconnectAgencyTelegramApi,
   fetchAgencyByIdApi,
   fetchAgencyInvitesApi,
   fetchAgencyManagersApi,
@@ -18,13 +23,8 @@ import {
   updateAgencyApi,
   updateAgencyManagerApi,
   updateAgencyMemberRoleApi,
-  uploadAgencyAssetApi,
-  connectAgencyTelegramByChatIdApi,
   updateAgencyTelegramSettingsApi,
-  disconnectAgencyTelegramApi,
-  type Agency,
-  type AgencyMemberRole,
-  type AgencyManager,
+  uploadAgencyAssetApi,
 } from "@/lib/agencyApi";
 
 export function useVerifiedAgencies() {
@@ -40,7 +40,7 @@ export function useMyAgency() {
   return useQuery({
     queryKey: ["my-agency", user?.id],
     enabled: !!user,
-    queryFn: () => fetchMyAgencyApi(user!.id),
+    queryFn: () => fetchMyAgencyApi(user?.id),
   });
 }
 
@@ -52,7 +52,10 @@ export function useAgencyPublic(agencyId: string | undefined) {
   });
 }
 
-export function useAgencyManagers(agencyId: string | undefined, activeOnly = false) {
+export function useAgencyManagers(
+  agencyId: string | undefined,
+  activeOnly = false,
+) {
   return useQuery({
     queryKey: ["agency-managers", agencyId, activeOnly],
     enabled: !!agencyId,
@@ -96,11 +99,18 @@ export function useUpdateAgency() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async ({ agencyId, payload }: { agencyId: string; payload: Partial<Agency> }) =>
-      updateAgencyApi(agencyId, payload),
+    mutationFn: async ({
+      agencyId,
+      payload,
+    }: {
+      agencyId: string;
+      payload: Partial<Agency>;
+    }) => updateAgencyApi(agencyId, payload),
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ["my-agency", user?.id] });
-      queryClient.invalidateQueries({ queryKey: ["agency-public", vars.agencyId] });
+      queryClient.invalidateQueries({
+        queryKey: ["agency-public", vars.agencyId],
+      });
     },
   });
 }
@@ -134,8 +144,13 @@ export function useAgencyManagerMutations(agencyId: string | undefined) {
   });
 
   const update = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Partial<AgencyManager> }) =>
-      updateAgencyManagerApi(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: Partial<AgencyManager>;
+    }) => updateAgencyManagerApi(id, payload),
     onSuccess: invalidate,
   });
 
@@ -145,7 +160,8 @@ export function useAgencyManagerMutations(agencyId: string | undefined) {
   });
 
   const uploadPhoto = useMutation({
-    mutationFn: (file: File) => uploadAgencyAssetApi(agencyId!, file, "manager"),
+    mutationFn: (file: File) =>
+      uploadAgencyAssetApi(agencyId!, file, "manager"),
   });
 
   return { create, update, remove, uploadPhoto };
@@ -161,7 +177,7 @@ export function useAgencyTeamMutations(agencyId: string | undefined) {
 
   const invite = useMutation({
     mutationFn: ({ email, role }: { email: string; role: AgencyMemberRole }) =>
-      createAgencyInviteApi(agencyId!, email, role, user!.id),
+      createAgencyInviteApi(agencyId!, email, role, user?.id),
     onSuccess: invalidate,
   });
 
@@ -176,8 +192,13 @@ export function useAgencyTeamMutations(agencyId: string | undefined) {
   });
 
   const setRole = useMutation({
-    mutationFn: ({ userId, role }: { userId: string; role: AgencyMemberRole }) =>
-      updateAgencyMemberRoleApi(agencyId!, userId, role),
+    mutationFn: ({
+      userId,
+      role,
+    }: {
+      userId: string;
+      role: AgencyMemberRole;
+    }) => updateAgencyMemberRoleApi(agencyId!, userId, role),
     onSuccess: invalidate,
   });
 
@@ -189,7 +210,10 @@ export function useUploadAgencyLogo(agencyId: string | undefined) {
   return useMutation({
     mutationFn: async (file: File) => {
       const url = await uploadAgencyAssetApi(agencyId!, file, "logo");
-      await updateAgency.mutateAsync({ agencyId: agencyId!, payload: { logo_url: url } });
+      await updateAgency.mutateAsync({
+        agencyId: agencyId!,
+        payload: { logo_url: url },
+      });
       return url;
     },
   });

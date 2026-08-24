@@ -57,13 +57,13 @@ function normalize(raw: string): string {
  */
 function restoreBreaks(text: string): string {
   if (text.includes("\n")) return text;
-  return text.replace(
-    /\s+(?=\p{Extended_Pictographic}(?:️)?\s*\p{Lu})/gu,
-    "\n",
-  );
+  return text.replace(/\s+(?=\p{Extended_Pictographic}(?:️)?\s*\p{Lu})/gu, "\n");
 }
 
-function splitLeadingEmoji(line: string): { icon: string | null; text: string } {
+function splitLeadingEmoji(line: string): {
+  icon: string | null;
+  text: string;
+} {
   const match = line.match(LEADING_EMOJI_RE);
   if (!match) return { icon: null, text: line };
   return { icon: match[1], text: line.slice(match[0].length).trim() };
@@ -91,7 +91,9 @@ function isHeading(line: string): boolean {
  * Строка с ведущим эмодзи и пояснением через тире — пункт списка
  * ("🏡 Строительства небольшого дома — 5,4 соток, центр города").
  */
-function asEmojiListItem(line: string): { icon: string | null; text: string } | null {
+function asEmojiListItem(
+  line: string,
+): { icon: string | null; text: string } | null {
   const { icon, text } = splitLeadingEmoji(line);
   if (!icon || !text) return null;
   if (!text.includes(" — ")) return null;
@@ -108,7 +110,8 @@ function asEmojiListItem(line: string): { icon: string | null; text: string } | 
  */
 function isFactLine(label: string, value: string): boolean {
   if (!label || !value) return false;
-  if (label.length > MAX_FACT_LABEL_LENGTH || label.includes(" — ")) return false;
+  if (label.length > MAX_FACT_LABEL_LENGTH || label.includes(" — "))
+    return false;
   if (value.length > MAX_FACT_VALUE_LENGTH) return false;
   // Перечисление или законченное предложение — это проза, а не значение.
   if (value.includes(",") || /[.!?;]$/.test(value)) return false;
@@ -122,20 +125,29 @@ function splitInlineBullets(paragraph: string): string[] {
   return parts.length > 1 ? parts : [paragraph];
 }
 
-export function parsePropertyDescription(raw: string | null | undefined): DescriptionBlock[] {
+export function parsePropertyDescription(
+  raw: string | null | undefined,
+): DescriptionBlock[] {
   if (!raw) return [];
   const text = restoreBreaks(normalize(raw));
   if (!text) return [];
 
   const blocks: DescriptionBlock[] = [];
-  const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  const paragraphs = text
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
 
   for (const [index, paragraph] of paragraphs.entries()) {
     // Первая строка-заголовок объявления: эмодзи + название, части через "|".
     if (index === 0 && !paragraph.includes("\n") && paragraph.includes(" | ")) {
       const { icon, text: titleText } = splitLeadingEmoji(paragraph);
       if (icon) {
-        blocks.push({ kind: "heading", text: titleText.split(" | ")[0].trim(), icon });
+        blocks.push({
+          kind: "heading",
+          text: titleText.split(" | ")[0].trim(),
+          icon,
+        });
         const rest = titleText.split(" | ").slice(1).join(" · ").trim();
         if (rest) blocks.push({ kind: "paragraph", text: rest });
         continue;
@@ -179,7 +191,10 @@ export function parsePropertyDescription(raw: string | null | undefined): Descri
       if (bullet) {
         flushParagraph();
         flushFacts();
-        listBuffer.push({ icon: bullet[1], text: line.slice(bullet[0].length).trim() });
+        listBuffer.push({
+          icon: bullet[1],
+          text: line.slice(bullet[0].length).trim(),
+        });
         continue;
       }
 

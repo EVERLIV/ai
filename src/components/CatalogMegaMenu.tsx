@@ -1,6 +1,10 @@
-import { Link } from "react-router-dom";
 import { ChevronDown, LayoutGrid } from "lucide-react";
-import { getCatalogMegaMenu, type MegaMenuConfig, type MegaSection } from "@/lib/catalogMegaMenu";
+import { Link } from "react-router-dom";
+import {
+  getCatalogMegaMenu,
+  type MegaMenuConfig,
+  type MegaSection,
+} from "@/lib/catalogMegaMenu";
 import { cn } from "@/lib/utils";
 
 function MegaSectionBlock({
@@ -16,10 +20,12 @@ function MegaSectionBlock({
 }) {
   return (
     <div className={compact ? "space-y-1.5" : "space-y-1.5"}>
-      <div className={cn(
-        "font-semibold text-foreground whitespace-nowrap",
-        compact ? "text-xs px-2 pt-2" : "text-[11px] leading-tight",
-      )}>
+      <div
+        className={cn(
+          "font-semibold text-foreground whitespace-nowrap",
+          compact ? "text-xs px-2 pt-2" : "text-[11px] leading-tight",
+        )}
+      >
         {section.title}
       </div>
       <ul className={compact ? "space-y-0.5" : "space-y-0.5"}>
@@ -34,7 +40,9 @@ function MegaSectionBlock({
                 }}
                 className={cn(
                   "text-left w-full text-muted-foreground hover:text-primary transition-colors whitespace-nowrap",
-                  compact ? "block px-2 py-1.5 text-xs" : "block py-0.5 text-[11px] leading-snug",
+                  compact
+                    ? "block px-2 py-1.5 text-xs"
+                    : "block py-0.5 text-[11px] leading-snug",
                 )}
               >
                 {link.label}
@@ -45,7 +53,9 @@ function MegaSectionBlock({
                 onClick={onNavigate}
                 className={cn(
                   "text-muted-foreground hover:text-primary transition-colors whitespace-nowrap",
-                  compact ? "block px-2 py-1.5 text-xs" : "block py-0.5 text-[11px] leading-snug",
+                  compact
+                    ? "block px-2 py-1.5 text-xs"
+                    : "block py-0.5 text-[11px] leading-snug",
                 )}
               >
                 {link.label}
@@ -70,7 +80,12 @@ export function CatalogMegaPanel({
   className?: string;
 }) {
   return (
-    <div className={cn("bg-card shadow-[0_16px_48px_-12px_rgba(0,0,0,0.18)] border border-border/60 overflow-x-auto overflow-y-hidden", className)}>
+    <div
+      className={cn(
+        "bg-card shadow-[0_16px_48px_-12px_rgba(0,0,0,0.18)] border border-border/60 overflow-x-auto overflow-y-hidden",
+        className,
+      )}
+    >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-0 min-w-[920px] lg:min-w-0">
         {config.columns.map((column, idx) => (
           <div
@@ -125,7 +140,7 @@ export function CatalogMegaMenuDesktop({
             : "bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground",
         )}
       >
-        <LayoutGrid className="w-3.5 h-3.5" />
+        <LayoutGrid className="w-3.5 h-3.5" strokeWidth={1.75} />
         {config.triggerLabel}
         <ChevronDown className="w-3 h-3 opacity-70 transition-transform duration-300 group-hover/mega:rotate-180" />
       </Link>
@@ -161,15 +176,17 @@ export function CatalogMegaMenuMobile({
       </Link>
 
       <div className="rounded-lg border border-border/60 overflow-hidden divide-y divide-border/50 max-h-[50vh] overflow-y-auto">
-        {config.columns.flatMap((column) => column.sections).map((section) => (
-          <MegaSectionBlock
-            key={section.title}
-            section={section}
-            onNavigate={onNavigate}
-            onOpenWizard={onOpenWizard}
-            compact
-          />
-        ))}
+        {config.columns
+          .flatMap((column) => column.sections)
+          .map((section) => (
+            <MegaSectionBlock
+              key={section.title}
+              section={section}
+              onNavigate={onNavigate}
+              onOpenWizard={onOpenWizard}
+              compact
+            />
+          ))}
         <div className="bg-[#E1F1FF] dark:bg-primary/15">
           <MegaSectionBlock
             section={config.services}

@@ -16,7 +16,8 @@ import {
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-agency-notify-secret",
+  "Access-Control-Allow-Headers":
+    "authorization, apikey, content-type, x-agency-notify-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -47,26 +48,41 @@ function json(body: unknown, status = 200) {
   });
 }
 
-function formatLeadMessage(lead: LeadPayload, property?: { address: string; public_id: string | null; id?: string }) {
+function formatLeadMessage(
+  lead: LeadPayload,
+  property?: { address: string; public_id: string | null; id?: string },
+) {
   const source = SOURCE_LABELS[lead.source || ""] || lead.source || "Заявка";
   const lines = [
     `<b>📩 Новая заявка — ${escapeHtml(source)}</b>`,
     lead.name ? `👤 ${escapeHtml(lead.name)}` : "",
     lead.phone ? `📞 <code>${escapeHtml(lead.phone)}</code>` : "",
     lead.email ? `✉️ ${escapeHtml(lead.email)}` : "",
-    property?.address ? `📍 ${escapeHtml(property.address)}` : lead.business_category
-      ? `📍 ${escapeHtml(lead.business_category)}`
-      : "",
+    property?.address
+      ? `📍 ${escapeHtml(property.address)}`
+      : lead.business_category
+        ? `📍 ${escapeHtml(lead.business_category)}`
+        : "",
   ];
   if (lead.message) lines.push(`\n💬 ${escapeHtml(lead.message)}`);
   if (property?.id) {
-    lines.push(`\n<a href="${siteUrl()}/property/${property.id}">Открыть объект</a>`);
+    lines.push(
+      `\n<a href="${siteUrl()}/property/${property.id}">Открыть объект</a>`,
+    );
   }
   return lines.filter(Boolean).join("\n");
 }
 
-function formatViewMessage(property: { address: string; public_id: string | null; id: string; views_count?: number }) {
-  const views = property.views_count != null ? `\nВсего просмотров: ${property.views_count}` : "";
+function formatViewMessage(property: {
+  address: string;
+  public_id: string | null;
+  id: string;
+  views_count?: number;
+}) {
+  const views =
+    property.views_count != null
+      ? `\nВсего просмотров: ${property.views_count}`
+      : "";
   return `<b>👁 Просмотр объекта</b>\n${escapeHtml(property.address)}${views}\n<a href="${siteUrl()}/property/${property.id}">Открыть</a>`;
 }
 
@@ -77,12 +93,13 @@ function checkSecret(req: Request): boolean {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS")
+    return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
   if (!checkSecret(req)) return json({ error: "Forbidden" }, 403);
 
   try {
-    const body = await req.json().catch(() => ({})) as {
+    const body = (await req.json().catch(() => ({}))) as {
       type?: NotifyType;
       agency_id?: string;
       text?: string;
@@ -100,7 +117,9 @@ Deno.serve(async (req) => {
 
     if (type === "lead" && !text) {
       const lead = (body.payload || {}) as LeadPayload;
-      let property: { address: string; public_id: string | null; id?: string } | undefined;
+      let property:
+        | { address: string; public_id: string | null; id?: string }
+        | undefined;
       if (lead.object_id) {
         const prop = await fetchPropertyAgencyId(lead.object_id);
         if (prop) {
@@ -112,7 +131,11 @@ Deno.serve(async (req) => {
     }
 
     if (type === "view" && !text) {
-      const p = body.payload as { property_id?: string; address?: string; views_count?: number };
+      const p = body.payload as {
+        property_id?: string;
+        address?: string;
+        views_count?: number;
+      };
       if (p?.property_id) {
         text = formatViewMessage({
           id: p.property_id,
@@ -123,7 +146,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (!agencyId) return json({ ok: true, sent: false, reason: "no_agency_id" });
+    if (!agencyId)
+      return json({ ok: true, sent: false, reason: "no_agency_id" });
     if (!text) return json({ error: "Empty message" }, 400);
 
     const result = await sendAgencyNotification(agencyId, type, text);

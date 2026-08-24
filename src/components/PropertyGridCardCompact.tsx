@@ -1,8 +1,12 @@
-import { Link } from "react-router-dom";
 import { Heart } from "lucide-react";
-import type { DbProperty } from "@/hooks/useProperties";
+import { Link } from "react-router-dom";
 import PropertyImage from "@/components/PropertyImage";
-import { formatPropertyPrice, buildPropertyDisplayTitle, formatPropertyAddressShort } from "@/lib/propertyCard";
+import type { DbProperty } from "@/hooks/useProperties";
+import {
+  buildPropertyDisplayTitle,
+  formatPropertyAddressShort,
+  formatPropertyPrice,
+} from "@/lib/propertyCard";
 import { getResidentialRooms } from "@/lib/propertyResidential";
 
 interface Props {
@@ -24,12 +28,21 @@ export default function PropertyGridCardCompact({ property: p }: Props) {
     rooms ? `${rooms}-комн.` : p.type,
     p.area ? `${p.area} м²` : null,
     floor,
-  ].filter(Boolean).join(" · ");
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <Link to={`/property/${p.id}`} className="group flex flex-col bg-card overflow-hidden">
+    <Link
+      to={`/property/${p.id}`}
+      className="group flex flex-col bg-card overflow-hidden"
+    >
       <div className="relative aspect-[4/3] bg-muted overflow-hidden">
-        <PropertyImage src={p.cover_photo} alt={title} imgClassName="object-cover" />
+        <PropertyImage
+          src={p.cover_photo}
+          alt={title}
+          imgClassName="object-cover"
+        />
         <span
           className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center bg-black/30 text-white"
           onClick={(e) => e.preventDefault()}
@@ -43,10 +56,14 @@ export default function PropertyGridCardCompact({ property: p }: Props) {
           {price ?? "Цена по запросу"}
         </p>
         {specLine && (
-          <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">{specLine}</p>
+          <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">
+            {specLine}
+          </p>
         )}
         {address && (
-          <p className="text-[10px] text-muted-foreground/80 line-clamp-2 leading-snug">{address}</p>
+          <p className="text-[10px] text-muted-foreground/80 line-clamp-2 leading-snug">
+            {address}
+          </p>
         )}
       </div>
     </Link>

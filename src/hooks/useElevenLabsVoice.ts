@@ -1,10 +1,11 @@
-import { useCallback, useState } from "react";
 import { useConversation } from "@elevenlabs/react";
+import { useCallback, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 /** ID агента из ElevenLabs (уже настроен). Можно переопределить через VITE_ELEVENLABS_AGENT_ID */
 export const ELEVENLABS_AGENT_ID =
-  import.meta.env.VITE_ELEVENLABS_AGENT_ID || "agent_7301kmyt4jxxf8etgj0av5x43qb4";
+  import.meta.env.VITE_ELEVENLABS_AGENT_ID ||
+  "agent_7301kmyt4jxxf8etgj0av5x43qb4";
 
 /** Cloud Edge — как ai-chat / notify-lead (не self-hosted api.arendacity.com) */
 const ELEVENLABS_TOKEN_URL =
@@ -17,7 +18,10 @@ type VoiceMsg = { role: "user" | "assistant"; content: string };
 export function stripVoiceStageDirections(text: string): string {
   return text
     .replace(/\[[^\]]{1,48}\]/g, (tag) => (/\d/.test(tag) ? tag : ""))
-    .replace(/\((?:laughs|laughing|sighs|sighing|whispers|pauses|clears throat)\)/gi, "")
+    .replace(
+      /\((?:laughs|laughing|sighs|sighing|whispers|pauses|clears throat)\)/gi,
+      "",
+    )
     .replace(/https?:\/\/\S+/gi, "")
     .replace(/[ \t]{2,}/g, " ")
     .replace(/\n{3,}/g, "\n\n")
@@ -39,7 +43,9 @@ type TokenResponse = {
   result?: string;
 };
 
-async function callElevenlabsFn(body: Record<string, unknown>): Promise<TokenResponse> {
+async function callElevenlabsFn(
+  body: Record<string, unknown>,
+): Promise<TokenResponse> {
   const resp = await fetch(ELEVENLABS_TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -83,20 +89,26 @@ export function useElevenLabsVoice() {
         const text = stripVoiceStageDirections(
           m.agent_response_event?.agent_response || m.message || "",
         );
-        if (text) setTranscripts((prev) => [...prev, { role: "assistant", content: text }]);
+        if (text)
+          setTranscripts((prev) => [
+            ...prev,
+            { role: "assistant", content: text },
+          ]);
         return;
       }
       if (m.type === "user_transcript") {
         const text = stripVoiceStageDirections(
           m.user_transcription_event?.user_transcript || m.message || "",
         );
-        if (text) setTranscripts((prev) => [...prev, { role: "user", content: text }]);
+        if (text)
+          setTranscripts((prev) => [...prev, { role: "user", content: text }]);
         return;
       }
       if (typeof m.message === "string" && m.message.trim()) {
         const text = stripVoiceStageDirections(m.message);
         if (!text) return;
-        const role = m.source === "user" || m.role === "user" ? "user" : "assistant";
+        const role =
+          m.source === "user" || m.role === "user" ? "user" : "assistant";
         setTranscripts((prev) => [...prev, { role, content: text }]);
       }
     },
@@ -104,7 +116,10 @@ export function useElevenLabsVoice() {
       console.error("ElevenLabs error:", error);
       toast({
         title: "Ошибка голосового агента",
-        description: typeof error === "string" ? error : "Не удалось подключиться. Попробуйте позже.",
+        description:
+          typeof error === "string"
+            ? error
+            : "Не удалось подключиться. Попробуйте позже.",
         variant: "destructive",
       });
       setIsConnecting(false);
@@ -155,7 +170,9 @@ export function useElevenLabsVoice() {
         });
 
         if (!data?.token) {
-          throw new Error(data?.error || "Не удалось получить токен ElevenLabs");
+          throw new Error(
+            data?.error || "Не удалось получить токен ElevenLabs",
+          );
         }
 
         await conversation.startSession({

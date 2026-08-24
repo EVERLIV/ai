@@ -1,12 +1,12 @@
+import { ArrowRight, Eye, List, Map as MapIcon, MapPin, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useScrollReveal } from "@/hooks/useScrollReveal";
-import { useProperties, type DbProperty } from "@/hooks/useProperties";
-import { List, Map as MapIcon, MapPin, ArrowRight, Eye, X } from "lucide-react";
 import { Link } from "react-router-dom";
-import { getPropertyCover } from "@/lib/propertyImages";
+import { type DbProperty, useProperties } from "@/hooks/useProperties";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { buildPropertyDisplayTitle } from "@/lib/propertyCard";
-import { getCoords, hasStreetView, type Coords } from "@/lib/propertyGeo";
-import { loadYandexMaps, IRKUTSK_CENTER_LNGLAT } from "@/lib/yandexMaps";
+import { type Coords, getCoords, hasStreetView } from "@/lib/propertyGeo";
+import { getPropertyCover } from "@/lib/propertyImages";
+import { IRKUTSK_CENTER_LNGLAT, loadYandexMaps } from "@/lib/yandexMaps";
 import StreetViewModal from "./StreetViewModal";
 import YandexMapFallback from "./YandexMapFallback";
 
@@ -20,18 +20,26 @@ export default function MapSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const ymapsRef = useRef<any>(null);
-  const markersRef = useRef<Map<string, { marker: any; el: HTMLElement }>>(new Map());
+  const markersRef = useRef<Map<string, { marker: any; el: HTMLElement }>>(
+    new Map(),
+  );
   const [mapReady, setMapReady] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
 
   const { data: properties = [] } = useProperties();
 
   const filtered = useMemo(
-    () => (activeDistrict === "Все" ? properties : properties.filter((p) => p.district === activeDistrict)),
-    [properties, activeDistrict]
+    () =>
+      activeDistrict === "Все"
+        ? properties
+        : properties.filter((p) => p.district === activeDistrict),
+    [properties, activeDistrict],
   );
 
-  const withCoords = useMemo(() => filtered.filter((p) => getCoords(p) !== null), [filtered]);
+  const withCoords = useMemo(
+    () => filtered.filter((p) => getCoords(p) !== null),
+    [filtered],
+  );
 
   const districts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -43,7 +51,7 @@ export default function MapSection() {
 
   const activeProperty = useMemo(
     () => filtered.find((p) => p.id === activeId) || null,
-    [filtered, activeId]
+    [filtered, activeId],
   );
 
   // ---- Init Yandex Map ----
@@ -57,7 +65,12 @@ export default function MapSection() {
         if (cancelled || !containerRef.current) return;
         setMapFailed(false);
         ymapsRef.current = ymaps3;
-        const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapControls } = ymaps3;
+        const {
+          YMap,
+          YMapDefaultSchemeLayer,
+          YMapDefaultFeaturesLayer,
+          YMapControls,
+        } = ymaps3;
         const { YMapZoomControl } = ymaps3.controls ?? {};
 
         map = new YMap(containerRef.current, {
@@ -81,7 +94,9 @@ export default function MapSection() {
     return () => {
       cancelled = true;
       markersRef.current.clear();
-      try { map?.destroy?.(); } catch {}
+      try {
+        map?.destroy?.();
+      } catch {}
       mapRef.current = null;
       ymapsRef.current = null;
       setMapReady(false);
@@ -96,7 +111,9 @@ export default function MapSection() {
     const { YMapMarker } = ymaps3;
 
     markersRef.current.forEach(({ marker }) => {
-      try { map.removeChild(marker); } catch {}
+      try {
+        map.removeChild(marker);
+      } catch {}
     });
     markersRef.current.clear();
 
@@ -109,9 +126,12 @@ export default function MapSection() {
       const el = document.createElement("button");
       el.type = "button";
       const price = Number(p.price);
-      const priceLabel = price > 0
-        ? (price >= 1000000 ? (price / 1000000).toFixed(1) + " млн ₽" : (price / 1000).toFixed(0) + "к ₽")
-        : p.type;
+      const priceLabel =
+        price > 0
+          ? price >= 1000000
+            ? `${(price / 1000000).toFixed(1)} млн ₽`
+            : `${(price / 1000).toFixed(0)}к ₽`
+          : p.type;
       el.className = `ms-pin${activeId === p.id ? " is-active" : ""}`;
       el.setAttribute("aria-label", buildPropertyDisplayTitle(p));
       el.innerHTML = `
@@ -121,7 +141,9 @@ export default function MapSection() {
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         setActiveId(p.id);
-        map.update({ location: { center: [c.lng, c.lat], zoom: 14, duration: 400 } });
+        map.update({
+          location: { center: [c.lng, c.lat], zoom: 14, duration: 400 },
+        });
       });
 
       const marker = new YMapMarker({ coordinates: [c.lng, c.lat] }, el);
@@ -139,15 +161,25 @@ export default function MapSection() {
       try {
         map.update({ location: { bounds, duration: 500 } });
       } catch {
-        map.update({ location: { center: [points[0].lng, points[0].lat], zoom: 12 } });
+        map.update({
+          location: { center: [points[0].lng, points[0].lat], zoom: 12 },
+        });
       }
     } else if (points.length === 1) {
-      map.update({ location: { center: [points[0].lng, points[0].lat], zoom: 14, duration: 500 } });
+      map.update({
+        location: {
+          center: [points[0].lng, points[0].lat],
+          zoom: 14,
+          duration: 500,
+        },
+      });
     } else {
-      map.update({ location: { center: IRKUTSK_CENTER_LNGLAT, zoom: 11, duration: 500 } });
+      map.update({
+        location: { center: IRKUTSK_CENTER_LNGLAT, zoom: 11, duration: 500 },
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [withCoords, mapReady]);
+  }, [withCoords, mapReady, activeId]);
 
   useEffect(() => {
     markersRef.current.forEach(({ el }, id) => {
@@ -160,16 +192,23 @@ export default function MapSection() {
   }, [filtered, activeId]);
 
   const fallbackPoints = useMemo(
-    () => withCoords.map((p) => {
-      const c = getCoords(p)!;
-      return [c.lng, c.lat] as [number, number];
-    }),
-    [withCoords]
+    () =>
+      withCoords.map((p) => {
+        const c = getCoords(p)!;
+        return [c.lng, c.lat] as [number, number];
+      }),
+    [withCoords],
   );
 
   return (
-    <section ref={ref} id="map" className="py-10 sm:py-16 bg-surface-warm scroll-mt-20">
-      <div className={`container mx-auto px-3 sm:px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}>
+    <section
+      ref={ref}
+      id="map"
+      className="py-10 sm:py-16 bg-surface-warm scroll-mt-20"
+    >
+      <div
+        className={`container mx-auto px-3 sm:px-4 lg:px-8 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}
+      >
         <div className="flex items-end justify-between mb-5 sm:mb-8 flex-wrap gap-3">
           <div className="min-w-0">
             <p className="text-[10px] sm:text-xs font-medium tracking-widest uppercase text-primary mb-1.5 sm:mb-2">
@@ -179,14 +218,17 @@ export default function MapSection() {
               Объекты на карте Иркутска и области
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              {withCoords.length} объектов на карте · {filtered.length} всего{activeDistrict !== "Все" ? ` в районе «${activeDistrict}»` : ""}
+              {withCoords.length} объектов на карте · {filtered.length} всего
+              {activeDistrict !== "Все" ? ` в районе «${activeDistrict}»` : ""}
             </p>
           </div>
           <div className="flex bg-card overflow-hidden border border-border rounded-lg shrink-0">
             <button
               onClick={() => setView("map")}
               className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
-                view === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                view === "map"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <MapIcon className="w-4 h-4" /> Карта
@@ -194,7 +236,9 @@ export default function MapSection() {
             <button
               onClick={() => setView("list")}
               className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
-                view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                view === "list"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <List className="w-4 h-4" /> Список
@@ -206,7 +250,10 @@ export default function MapSection() {
           <div className="flex-1 relative bg-muted min-h-[360px] lg:min-h-0">
             {view === "map" ? (
               <>
-                <div ref={containerRef} className="absolute inset-0 map-canvas-muted" />
+                <div
+                  ref={containerRef}
+                  className="absolute inset-0 map-canvas-muted"
+                />
 
                 {mapFailed && (
                   <YandexMapFallback
@@ -236,12 +283,18 @@ export default function MapSection() {
                     className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors border border-border"
                   >
                     <div className="w-16 h-16 rounded-md overflow-hidden bg-muted shrink-0">
-                      <img src={getPropertyCover(p.cover_photo, p.type)} alt={p.address} className="w-full h-full object-cover" />
+                      <img
+                        src={getPropertyCover(p.cover_photo, p.type)}
+                        alt={p.address}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-foreground truncate">
                         {Number(p.price).toLocaleString("ru-RU")} ₽
-                        <span className="ml-2 text-xs font-normal text-muted-foreground">{p.area} м² · {p.type}</span>
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                          {p.area} м² · {p.type}
+                        </span>
                       </div>
                       <div className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
                         <MapPin className="w-3 h-3 shrink-0" />
@@ -256,10 +309,15 @@ export default function MapSection() {
 
           <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border bg-card lg:max-h-[520px] lg:overflow-y-auto">
             <div className="flex items-center justify-between px-3 sm:px-4 pt-3 sm:pt-4 pb-2">
-              <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">По районам</p>
+              <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                По районам
+              </p>
               {activeDistrict !== "Все" && (
                 <button
-                  onClick={() => { setActiveDistrict("Все"); setActiveId(null); }}
+                  onClick={() => {
+                    setActiveDistrict("Все");
+                    setActiveId(null);
+                  }}
                   className="text-[10px] text-primary hover:underline"
                 >
                   Сбросить
@@ -270,16 +328,25 @@ export default function MapSection() {
             <div className="flex lg:flex-col gap-1.5 px-3 sm:px-4 pb-3 sm:pb-4 overflow-x-auto lg:overflow-x-visible">
               <button
                 type="button"
-                onClick={() => { setActiveDistrict("Все"); setActiveId(null); }}
+                onClick={() => {
+                  setActiveDistrict("Все");
+                  setActiveId(null);
+                }}
                 className={`shrink-0 lg:w-full flex items-center gap-2 lg:justify-between px-3 py-2 lg:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap transition-colors ${
-                  activeDistrict === "Все" ? "bg-primary text-primary-foreground" : "bg-muted/40 text-foreground hover:bg-muted"
+                  activeDistrict === "Все"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/40 text-foreground hover:bg-muted"
                 }`}
               >
                 <span className="flex items-center gap-2">
-                  <MapPin className={`w-3.5 h-3.5 ${activeDistrict === "Все" ? "text-primary-foreground" : "text-primary"}`} />
+                  <MapPin
+                    className={`w-3.5 h-3.5 ${activeDistrict === "Все" ? "text-primary-foreground" : "text-primary"}`}
+                  />
                   Все районы
                 </span>
-                <span className="text-[11px] font-medium opacity-80">{properties.length}</span>
+                <span className="text-[11px] font-medium opacity-80">
+                  {properties.length}
+                </span>
               </button>
 
               {districts.length === 0 ? (
@@ -291,16 +358,25 @@ export default function MapSection() {
                     <button
                       key={name}
                       type="button"
-                      onClick={() => { setActiveDistrict(name); setActiveId(null); }}
+                      onClick={() => {
+                        setActiveDistrict(name);
+                        setActiveId(null);
+                      }}
                       className={`shrink-0 lg:w-full flex items-center gap-2 lg:justify-between px-3 py-2 lg:py-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap transition-colors ${
-                        active ? "bg-primary text-primary-foreground" : "bg-muted/40 text-foreground hover:bg-muted"
+                        active
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/40 text-foreground hover:bg-muted"
                       }`}
                     >
                       <span className="flex items-center gap-2">
-                        <MapPin className={`w-3.5 h-3.5 ${active ? "text-primary-foreground" : "text-primary"}`} />
+                        <MapPin
+                          className={`w-3.5 h-3.5 ${active ? "text-primary-foreground" : "text-primary"}`}
+                        />
                         {name}
                       </span>
-                      <span className="text-[11px] font-medium opacity-80">{count}</span>
+                      <span className="text-[11px] font-medium opacity-80">
+                        {count}
+                      </span>
                     </button>
                   );
                 })
@@ -319,18 +395,19 @@ export default function MapSection() {
         </div>
       </div>
 
-      {streetViewFor && (() => {
-        const c = getCoords(streetViewFor);
-        if (!c) return null;
-        return (
-          <StreetViewModal
-            lat={c.lat}
-            lng={c.lng}
-            address={streetViewFor.address}
-            onClose={() => setStreetViewFor(null)}
-          />
-        );
-      })()}
+      {streetViewFor &&
+        (() => {
+          const c = getCoords(streetViewFor);
+          if (!c) return null;
+          return (
+            <StreetViewModal
+              lat={c.lat}
+              lng={c.lng}
+              address={streetViewFor.address}
+              onClose={() => setStreetViewFor(null)}
+            />
+          );
+        })()}
 
       <style>{`
         .ms-pin {
@@ -376,13 +453,23 @@ export default function MapSection() {
 }
 
 function PropertyCard({
-  p, onClose, onStreetView,
-}: { p: DbProperty; onClose: () => void; onStreetView: () => void }) {
+  p,
+  onClose,
+  onStreetView,
+}: {
+  p: DbProperty;
+  onClose: () => void;
+  onStreetView: () => void;
+}) {
   const showStreetView = hasStreetView(p);
   return (
     <div className="bg-card rounded-xl shadow-card-hover overflow-hidden border border-border">
       <div className="relative h-32 bg-muted">
-        <img src={getPropertyCover(p.cover_photo, p.type)} alt={p.address} className="w-full h-full object-cover" />
+        <img
+          src={getPropertyCover(p.cover_photo, p.type)}
+          alt={p.address}
+          className="w-full h-full object-cover"
+        />
         <button
           onClick={onClose}
           className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/90 backdrop-blur text-foreground flex items-center justify-center hover:bg-background transition-colors"
@@ -406,9 +493,15 @@ function PropertyCard({
         <div className="flex items-baseline justify-between gap-2 mb-1">
           <span className="font-display text-lg font-bold text-foreground">
             {Number(p.price).toLocaleString("ru-RU")} ₽
-            {p.deal_type === "Аренда" && <span className="text-xs font-normal text-muted-foreground">/мес</span>}
+            {p.deal_type === "Аренда" && (
+              <span className="text-xs font-normal text-muted-foreground">
+                /мес
+              </span>
+            )}
           </span>
-          <span className="text-xs text-muted-foreground shrink-0">{p.area} м²</span>
+          <span className="text-xs text-muted-foreground shrink-0">
+            {p.area} м²
+          </span>
         </div>
         <div className="flex items-start gap-1 text-xs text-muted-foreground mb-3">
           <MapPin className="w-3 h-3 shrink-0 mt-0.5" />

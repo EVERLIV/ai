@@ -1,17 +1,17 @@
-import { Link } from "react-router-dom";
 import { Building2, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import { getListingAgentDisplay } from "@/lib/propertySidebar";
-import { formatAgentObjectsLabel } from "@/lib/propertyCard";
-import { useActivePropertiesCount } from "@/hooks/useProperties";
-import { cn } from "@/lib/utils";
 import { DEFAULT_AGENT } from "@/config/defaultAgent";
+import { useActivePropertiesCount } from "@/hooks/useProperties";
+import { formatAgentObjectsLabel } from "@/lib/propertyCard";
+import { getListingAgentDisplay } from "@/lib/propertySidebar";
+import { cn } from "@/lib/utils";
 
 interface Props {
   extras?: Record<string, unknown> | null;
   district?: string | null;
-  /** Доп. элемент справа (например, кадастровый номер) */
+  /** Доп. элемент справа (район уже через district) */
   trailing?: React.ReactNode;
   className?: string;
   compact?: boolean;
@@ -37,30 +37,38 @@ export default function ListingAgentFooter({
     objectsCount: 0,
   };
 
-  const isAgencyListing = (agent.isAgency || agent.isRealtor) && !extrasRecord?.owner_user_id;
+  const isAgencyListing =
+    (agent.isAgency || agent.isRealtor) && !extrasRecord?.owner_user_id;
   const objectsCount = isAgencyListing
     ? Math.max(agent.objectsCount, catalogCount ?? 0)
     : agent.objectsCount;
 
   const avatar = agent.avatarUrl || consultantAvatar;
-  const objectsLabel = formatAgentObjectsLabel(objectsCount, { isAgency: isAgencyListing });
+  const objectsLabel = formatAgentObjectsLabel(objectsCount, {
+    isAgency: isAgencyListing,
+  });
   const agencyHref = agent.agencyId ? `/agentstvo/${agent.agencyId}` : null;
 
   const nameBlock = (
     <>
       <div className="flex items-center gap-1 min-w-0">
-        {(agent.isAgency || agent.isRealtor) && agent.primaryLabel !== agent.secondaryLabel && (
-          <Building2 className="w-3 h-3 text-primary shrink-0" />
-        )}
+        {(agent.isAgency || agent.isRealtor) &&
+          agent.primaryLabel !== agent.secondaryLabel && (
+            <Building2 className="w-3 h-3 text-primary shrink-0" />
+          )}
         <span
           className={cn(
             "text-xs font-semibold truncate leading-tight",
-            agencyHref ? "text-primary group-hover/agent:underline" : "text-foreground",
+            agencyHref
+              ? "text-primary group-hover/agent:underline"
+              : "text-foreground",
           )}
         >
           {agent.primaryLabel}
         </span>
-        {agent.isVerified && <VerifiedBadge size="sm" showLabel={false} className="shrink-0" />}
+        {agent.isVerified && (
+          <VerifiedBadge size="sm" showLabel={false} className="shrink-0" />
+        )}
       </div>
       <p className="text-[10px] text-muted-foreground truncate mt-0.5">
         {agent.secondaryLabel}
@@ -76,7 +84,9 @@ export default function ListingAgentFooter({
 
   return (
     <div className={cn("mt-auto pt-3", className)}>
-      <div className={cn("flex items-center gap-2.5", compact ? "py-1" : "py-1.5")}>
+      <div
+        className={cn("flex items-center gap-2.5", compact ? "py-1" : "py-1.5")}
+      >
         {agencyHref ? (
           <Link
             to={agencyHref}

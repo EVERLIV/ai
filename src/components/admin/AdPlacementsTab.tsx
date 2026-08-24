@@ -1,16 +1,38 @@
+import { Megaphone, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useAllAdPlacements, useDeleteAdPlacement } from "@/hooks/useAdPlacements";
-import {
-  AD_TYPES, AD_TYPE_MAP, TRAFFIC_LABELS, AVAILABILITY_LABELS, AVAILABILITY_BADGE,
-  type AdTypeKey, type TrafficKey, type AvailabilityKey,
-} from "@/lib/adTypes";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Trash2, Megaphone } from "lucide-react";
+import {
+  useAllAdPlacements,
+  useDeleteAdPlacement,
+} from "@/hooks/useAdPlacements";
+import {
+  AD_TYPE_MAP,
+  AD_TYPES,
+  type AdTypeKey,
+  AVAILABILITY_BADGE,
+  AVAILABILITY_LABELS,
+  type AvailabilityKey,
+  TRAFFIC_LABELS,
+  type TrafficKey,
+} from "@/lib/adTypes";
 
 export default function AdPlacementsTab() {
   const { data = [], isLoading } = useAllAdPlacements();
@@ -25,9 +47,10 @@ export default function AdPlacementsTab() {
     let list = data as any[];
     if (q) {
       const s = q.toLowerCase();
-      list = list.filter((p) =>
-        (p.property?.address || "").toLowerCase().includes(s) ||
-        (p.property?.district || "").toLowerCase().includes(s)
+      list = list.filter(
+        (p) =>
+          (p.property?.address || "").toLowerCase().includes(s) ||
+          (p.property?.district || "").toLowerCase().includes(s),
       );
     }
     if (type !== "all") list = list.filter((p) => p.ad_type === type);
@@ -41,12 +64,21 @@ export default function AdPlacementsTab() {
       await del.mutateAsync(id);
       toast({ title: "Удалено" });
     } catch (e: any) {
-      toast({ title: "Ошибка", description: e.message, variant: "destructive" });
+      toast({
+        title: "Ошибка",
+        description: e.message,
+        variant: "destructive",
+      });
     }
   };
 
-  const totalRevenue = filtered.reduce((s, p: any) => s + Number(p.monthly_price || 0), 0);
-  const availableCount = (data as any[]).filter((p) => p.availability === "available").length;
+  const totalRevenue = filtered.reduce(
+    (s, p: any) => s + Number(p.monthly_price || 0),
+    0,
+  );
+  const availableCount = (data as any[]).filter(
+    (p) => p.availability === "available",
+  ).length;
 
   return (
     <div className="space-y-4">
@@ -60,14 +92,20 @@ export default function AdPlacementsTab() {
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
-            <div className="text-2xl font-bold text-emerald-600">{availableCount}</div>
+            <div className="text-2xl font-bold text-emerald-600">
+              {availableCount}
+            </div>
             <div className="text-xs text-muted-foreground">Свободно</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
-            <div className="text-2xl font-bold">{totalRevenue.toLocaleString("ru-RU")} ₽</div>
-            <div className="text-xs text-muted-foreground">Потенциал в фильтре /мес</div>
+            <div className="text-2xl font-bold">
+              {totalRevenue.toLocaleString("ru-RU")} ₽
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Потенциал в фильтре /мес
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -90,16 +128,22 @@ export default function AdPlacementsTab() {
           />
         </div>
         <Select value={type} onValueChange={(v) => setType(v as any)}>
-          <SelectTrigger className="h-9 w-[180px] text-xs"><SelectValue placeholder="Тип" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[180px] text-xs">
+            <SelectValue placeholder="Тип" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Все типы</SelectItem>
             {AD_TYPES.map((t) => (
-              <SelectItem key={t.key} value={t.key}>{t.short}</SelectItem>
+              <SelectItem key={t.key} value={t.key}>
+                {t.short}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={avail} onValueChange={(v) => setAvail(v as any)}>
-          <SelectTrigger className="h-9 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[140px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Все статусы</SelectItem>
             <SelectItem value="available">Свободно</SelectItem>
@@ -127,34 +171,69 @@ export default function AdPlacementsTab() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={9} className="text-center text-xs text-muted-foreground py-6">Загрузка...</TableCell></TableRow>
+              <TableRow>
+                <TableCell
+                  colSpan={9}
+                  className="text-center text-xs text-muted-foreground py-6"
+                >
+                  Загрузка...
+                </TableCell>
+              </TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={9} className="text-center text-xs text-muted-foreground py-6">
-                <Megaphone className="w-6 h-6 mx-auto mb-2 opacity-40" />
-                Ничего не найдено
-              </TableCell></TableRow>
+              <TableRow>
+                <TableCell
+                  colSpan={9}
+                  className="text-center text-xs text-muted-foreground py-6"
+                >
+                  <Megaphone className="w-6 h-6 mx-auto mb-2 opacity-40" />
+                  Ничего не найдено
+                </TableCell>
+              </TableRow>
             ) : (
               filtered.map((row: any) => {
                 const meta = AD_TYPE_MAP[row.ad_type as AdTypeKey];
                 const Icon = meta?.icon || Megaphone;
                 return (
                   <TableRow key={row.id}>
-                    <TableCell><Icon className="w-3.5 h-3.5 text-muted-foreground" /></TableCell>
-                    <TableCell className="text-xs font-medium">{meta?.short}</TableCell>
-                    <TableCell className="text-xs max-w-[260px] truncate">{row.property?.address || "—"}</TableCell>
-                    <TableCell className="text-xs">{row.property?.district || "—"}</TableCell>
-                    <TableCell className="text-xs">{row.width_m}×{row.height_m} м</TableCell>
-                    <TableCell className="text-xs">{TRAFFIC_LABELS[row.traffic as TrafficKey]}</TableCell>
                     <TableCell>
-                      <span className={`px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${AVAILABILITY_BADGE[row.availability as AvailabilityKey]}`}>
-                        {AVAILABILITY_LABELS[row.availability as AvailabilityKey]}
+                      <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                    </TableCell>
+                    <TableCell className="text-xs font-medium">
+                      {meta?.short}
+                    </TableCell>
+                    <TableCell className="text-xs max-w-[260px] truncate">
+                      {row.property?.address || "—"}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {row.property?.district || "—"}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {row.width_m}×{row.height_m} м
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {TRAFFIC_LABELS[row.traffic as TrafficKey]}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${AVAILABILITY_BADGE[row.availability as AvailabilityKey]}`}
+                      >
+                        {
+                          AVAILABILITY_LABELS[
+                            row.availability as AvailabilityKey
+                          ]
+                        }
                       </span>
                     </TableCell>
                     <TableCell className="text-xs font-semibold text-right">
                       {Number(row.monthly_price).toLocaleString("ru-RU")} ₽
                     </TableCell>
                     <TableCell>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => remove(row.id)}>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={() => remove(row.id)}
+                      >
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </TableCell>
@@ -166,7 +245,9 @@ export default function AdPlacementsTab() {
         </Table>
       </div>
       <p className="text-[11px] text-muted-foreground">
-        Подсказка: чтобы добавить или отредактировать позицию — откройте карточку объекта во вкладке «Объекты»; внутри редактирования есть блок «Рекламные размещения».
+        Подсказка: чтобы добавить или отредактировать позицию — откройте
+        карточку объекта во вкладке «Объекты»; внутри редактирования есть блок
+        «Рекламные размещения».
       </p>
     </div>
   );
