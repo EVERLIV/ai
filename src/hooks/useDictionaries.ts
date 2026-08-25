@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
+import type { PropertySegment } from "@/config/propertySegments";
 import { supabaseAdmin } from "@/integrations/supabase/adminClient";
 import { supabasePublic } from "@/integrations/supabase/client";
+import { propertyTypesForSegment } from "@/lib/dictionaryPropertyTypes";
 
 export interface DictionaryItem {
   id: string;
@@ -71,10 +74,19 @@ export function useAllDictionaryValues() {
 
   const all = query.data ?? [];
 
-  const byCategory = (cat: string): string[] =>
-    all.filter((i) => i.category === cat).map((i) => i.value);
+  const byCategory = useCallback(
+    (cat: string): string[] =>
+      all.filter((i) => i.category === cat).map((i) => i.value),
+    [all],
+  );
 
-  return { all, byCategory, isLoading: query.isLoading };
+  const propertyTypes = useCallback(
+    (segment: PropertySegment): string[] =>
+      propertyTypesForSegment(all, segment),
+    [all],
+  );
+
+  return { all, byCategory, propertyTypes, isLoading: query.isLoading };
 }
 
 /** Админка «Справочники» — через service_role, user JWT Kong отклоняет. */

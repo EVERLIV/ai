@@ -1,7 +1,7 @@
-import logoAc from "@/assets/logo-ac.png";
+import logoMark from "@/assets/logo-ac-mark.svg";
 import { cn } from "@/lib/utils";
 
-/** Марка: логотип AC — сохраняем пропорции (не квадрат), без обводки */
+/** Марка: геометрический знак AC — крупнее слова «АРЕНДАСИТИ» */
 export default function BrandMark({
   className,
   variant = "default",
@@ -12,17 +12,17 @@ export default function BrandMark({
 }) {
   return (
     <img
-      src={logoAc}
+      src={logoMark}
       alt=""
-      width={422}
-      height={288}
+      width={100}
+      height={100}
       aria-hidden
       draggable={false}
       decoding="async"
       className={cn(
         "shrink-0 select-none object-contain object-left",
-        /* чуть ниже высоты слова «АРЕНДАСИТИ» (~14–16px) */
-        "h-3.5 w-auto max-w-none",
+        /* было h-3.5 (~14px) — теперь заметно крупнее слова */
+        "h-7 w-7 max-w-none",
         className,
       )}
       data-variant={variant}

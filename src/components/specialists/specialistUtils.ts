@@ -52,3 +52,21 @@ export function pluralAgencies(n: number) {
     return "агентства";
   return "агентств";
 }
+
+export function pluralProjects(n: number) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "проект";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14))
+    return "проекта";
+  return "проектов";
+}
+
+export function pluralApartments(n: number) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "квартира";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14))
+    return "квартиры";
+  return "квартир";
+}

@@ -1,57 +1,36 @@
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { DISTRICTS, LOCATION_GROUPS } from "@/lib/irkutskLocations";
+import LocationHierarchyPicker, {
+  type LocationHierarchyChange,
+} from "@/components/LocationHierarchyPicker";
 
 type Props = {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (value: string, meta?: LocationHierarchyChange) => void;
   label?: string;
   className?: string;
+  applyCentroid?: boolean;
+  hasCoords?: boolean;
 };
 
+/**
+ * Обёртка над ступенчатым пикером (город → район/село).
+ * onChange(leaf) для простой подстановки district; meta — extras.location + centroid.
+ */
 export default function LocationDistrictSelect({
   value,
   onChange,
   label = "Город / район",
   className,
+  applyCentroid = true,
+  hasCoords = false,
 }: Props) {
-  const known = DISTRICTS.includes(value);
-  const current = value || "Кировский";
-
   return (
-    <div className={className}>
-      {label && <Label className="text-xs mb-1 block">{label}</Label>}
-      <Select value={current} onValueChange={onChange}>
-        <SelectTrigger className="h-9 text-sm bg-background">
-          <SelectValue placeholder="Выберите локацию" />
-        </SelectTrigger>
-        <SelectContent className="max-h-72">
-          {!known && current && (
-            <SelectGroup>
-              <SelectLabel>Текущее значение</SelectLabel>
-              <SelectItem value={current}>{current}</SelectItem>
-            </SelectGroup>
-          )}
-          {LOCATION_GROUPS.map((group) => (
-            <SelectGroup key={group.label}>
-              <SelectLabel>{group.label}</SelectLabel>
-              {group.items.map((item) => (
-                <SelectItem key={`${group.label}-${item}`} value={item}>
-                  {item}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <LocationHierarchyPicker
+      value={value}
+      label={label}
+      className={className}
+      applyCentroid={applyCentroid}
+      hasCoords={hasCoords}
+      onChange={(next) => onChange(next.district, next)}
+    />
   );
 }

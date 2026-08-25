@@ -36,6 +36,8 @@ import {
   fetchAgencyManagersApi,
   fetchMembershipApi,
 } from "@/lib/agencyApi";
+import { fetchMyDeveloperApi } from "@/lib/developerApi";
+import { buildDeveloperListingExtras } from "@/lib/developerListing";
 import { notifyPropertyEmail } from "@/lib/notifyPropertyEmail";
 import {
   REQUEST_TYPE_LABELS,
@@ -70,7 +72,7 @@ type QueueItem = {
     email: string | null;
     phone: string | null;
     avatar_url: string | null;
-    account_type?: "owner" | "realtor" | "agency";
+    account_type?: "owner" | "realtor" | "agency" | "developer";
     agency_name?: string | null;
     agency_about?: string | null;
     agency_staff_count?: number | null;
@@ -123,9 +125,22 @@ export default function ModerationQueue() {
         !!agency ||
         submitter?.account_type === "agency" ||
         submitter?.account_type === "realtor";
-      const isVerified = agency
-        ? agency.verification_status === "verified"
-        : submitter?.verification_status === "verified";
+
+      let developer: Awaited<ReturnType<typeof fetchMyDeveloperApi>> = null;
+      if (submitter?.account_type === "developer" && submitter.id) {
+        try {
+          developer = await fetchMyDeveloperApi(submitter.id);
+        } catch {
+          developer = null;
+        }
+      }
+      const isDeveloper = !!developer;
+
+      const isVerified = isDeveloper
+        ? developer?.verification_status === "verified"
+        : agency
+          ? agency.verification_status === "verified"
+          : submitter?.verification_status === "verified";
 
       const listingManagerId = (item as { listing_manager_id?: string | null })
         .listing_manager_id;
@@ -146,21 +161,40 @@ export default function ModerationQueue() {
         if (isFreeListing) objectsCount += 1;
       }
 
+      const prevExtras =
+        item.extras && typeof item.extras === "object" && !Array.isArray(item.extras)
+          ? (item.extras as Record<string, unknown>)
+          : {};
+
+      const agentExtras = isDeveloper && developer
+        ? buildDeveloperListingExtras(developer, {
+            ownerUserId: submitter?.id,
+            objectsCount,
+          })
+        : {
+            agent_name:
+              manager?.full_name || submitter?.full_name || "Собственник",
+            agent_company: isAgency
+              ? agency?.name || submitter?.agency_name || "Агентство"
+              : "Собственник",
+            agent_verified: isVerified,
+            agent_avatar_url:
+              manager?.photo_url ||
+              agency?.logo_url ||
+              submitter?.avatar_url ||
+              "",
+            agent_account_type: isAgency ? "agency" : "owner",
+            agent_objects_count: objectsCount,
+            agent_agency_about: agency?.about || submitter?.agency_about || "",
+            agent_phone: manager?.phone || submitter?.phone || "",
+            agency_id: agencyId || "",
+            listing_manager_id: listingManagerId || "",
+            owner_user_id: submitter?.id || "",
+          };
+
       const extras = {
-        agent_name: manager?.full_name || submitter?.full_name || "Собственник",
-        agent_company: isAgency
-          ? agency?.name || submitter?.agency_name || "Агентство"
-          : "Собственник",
-        agent_verified: isVerified,
-        agent_avatar_url:
-          manager?.photo_url || agency?.logo_url || submitter?.avatar_url || "",
-        agent_account_type: isAgency ? "agency" : "owner",
-        agent_objects_count: objectsCount,
-        agent_agency_about: agency?.about || submitter?.agency_about || "",
-        agent_phone: manager?.phone || submitter?.phone || "",
-        agency_id: agencyId || "",
-        listing_manager_id: listingManagerId || "",
-        owner_user_id: submitter?.id || "",
+        ...prevExtras,
+        ...agentExtras,
       };
 
       await adminUpdateProperty(item.id, {
@@ -173,6 +207,9 @@ export default function ModerationQueue() {
         extras,
         client_id: submitter?.id || null,
         ...(agencyId ? { agency_id: agencyId } : {}),
+        ...(isDeveloper && developer
+          ? { developer_id: developer.id }
+          : {}),
       });
 
       if (item.request_type === "management") {

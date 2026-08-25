@@ -21,12 +21,11 @@ import { Link } from "react-router-dom";
 import LocationPickerModal from "@/components/LocationPickerModal";
 import PropertyImage from "@/components/PropertyImage";
 import {
-  COMMERCIAL_PROPERTY_TYPES,
   type PropertySegment,
   RESIDENTIAL_MARKET_TYPES,
-  RESIDENTIAL_PROPERTY_TYPES,
 } from "@/config/propertySegments";
 import { useToast } from "@/hooks/use-toast";
+import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 import type { DbProperty } from "@/hooks/useProperties";
 import { type AIResponse, invokePropertyPick } from "@/lib/aiPropertyPick";
 import { buildCatalogUrl } from "@/lib/catalogLinks";
@@ -146,6 +145,7 @@ export default function AIPropertyWizard({
   segment?: PropertySegment;
 }) {
   const { toast } = useToast();
+  const { propertyTypes } = useAllDictionaryValues();
   const [step, setStep] = useState(0);
   const [catalog, setCatalog] = useState<SmartPickCatalog>(segment);
   const [deal, setDeal] = useState("Любое");
@@ -190,18 +190,28 @@ export default function AIPropertyWizard({
       ? ["Любое", ...DEAL_TYPES]
       : catalog === "residential"
         ? ["Любое", ...RESIDENTIAL_DEAL_TYPES]
-        : ["Любое", "Аренда", "Продажа", "Посуточно"];
+        : catalog === "land"
+          ? ["Любое", "Аренда", "Продажа"]
+          : ["Любое", "Аренда", "Продажа", "Посуточно"];
 
   const typeGroups = useMemo(() => {
     const groups: { title: string; items: readonly string[] }[] = [];
-    if (catalog !== "commercial") {
-      groups.push({ title: "Жилая", items: RESIDENTIAL_PROPERTY_TYPES });
+    if (catalog === "residential" || catalog === "all") {
+      groups.push({ title: "Жилая", items: propertyTypes("residential") });
     }
-    if (catalog !== "residential") {
-      groups.push({ title: "Коммерческая", items: COMMERCIAL_PROPERTY_TYPES });
+    if (catalog === "commercial" || catalog === "all") {
+      groups.push({ title: "Коммерческая", items: propertyTypes("commercial") });
+    }
+    if (catalog === "land" || catalog === "all") {
+      groups.push({ title: "Земля", items: propertyTypes("land") });
+    }
+    if (groups.length === 0) {
+      groups.push({ title: "Жилая", items: propertyTypes("residential") });
+      groups.push({ title: "Коммерческая", items: propertyTypes("commercial") });
+      groups.push({ title: "Земля", items: propertyTypes("land") });
     }
     return groups;
-  }, [catalog]);
+  }, [catalog, propertyTypes]);
 
   const ranked = useMemo(
     () => rankSmartPicks(properties, criteria, 40),
@@ -477,9 +487,10 @@ export default function AIPropertyWizard({
           <div className="grid grid-cols-1 gap-2">
             {(
               [
-                ["all", "Вся база", "Жильё и коммерция, все агентства"],
-                ["residential", "Жилая", "Квартиры, дома, участки"],
+                ["all", "Вся база", "Жильё, коммерция и земля"],
+                ["residential", "Жилая", "Квартиры, дома, комнаты"],
                 ["commercial", "Коммерческая", "Офисы, торговля, склады"],
+                ["land", "Земля", "Участки: ИЖС, жилая, коммерческая"],
               ] as const
             ).map(([value, label, hint]) => (
               <button

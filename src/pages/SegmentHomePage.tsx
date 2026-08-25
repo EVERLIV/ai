@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, Home } from "lucide-react";
+import { ArrowRight, Building2, Home, Map } from "lucide-react";
 import { Link } from "react-router-dom";
 import BrandMark from "@/components/BrandMark";
 import SeoHead from "@/components/SeoHead";
@@ -9,12 +9,13 @@ import { absoluteUrl, SITE } from "@/config/site";
 export default function SegmentHomePage() {
   const commercial = SEGMENT_CHOOSER.commercial;
   const residential = SEGMENT_CHOOSER.residential;
+  const land = SEGMENT_CHOOSER.land;
 
   return (
     <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
       <SeoHead
-        title={`${SITE.name} — выберите раздел: коммерческая или жилая недвижимость`}
-        description="Аренда и продажа коммерческой и жилой недвижимости в Иркутске и области. Выберите раздел: офисы, склады, торговля или квартиры, дома и комнаты."
+        title={`${SITE.name} — коммерческая, жилая недвижимость и земля`}
+        description="Аренда и продажа коммерческой и жилой недвижимости, а также земельных участков в Иркутске и области."
         url={absoluteUrl("/")}
       />
 
@@ -29,7 +30,7 @@ export default function SegmentHomePage() {
       <header className="relative z-10 border-b border-border/50 bg-card/70 backdrop-blur-md">
         <div className="container mx-auto px-4 lg:px-8 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
-            <BrandMark className="h-3.5 w-auto shrink-0" />
+            <BrandMark className="h-7 w-7 shrink-0" />
             <div className="leading-none min-w-0">
               <div className="font-sans text-[16px] font-bold tracking-tight text-foreground">
                 АРЕНДА<span className="text-primary">СИТИ</span>
@@ -49,7 +50,7 @@ export default function SegmentHomePage() {
       </header>
 
       <main className="relative z-10 flex-1 container mx-auto px-4 lg:px-8 py-10 sm:py-14 lg:py-16">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight text-center">
             АрендаСити
           </h1>
@@ -58,7 +59,7 @@ export default function SegmentHomePage() {
             можно в любой момент в шапке сайта.
           </p>
 
-          <div className="mt-8 sm:mt-10 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+          <div className="mt-8 sm:mt-10 grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
             <SegmentCard
               icon={Building2}
               title={commercial.title}
@@ -74,6 +75,14 @@ export default function SegmentHomePage() {
               href={residential.href}
               categories={[...residential.categories]}
               cta="Перейти в жилую"
+            />
+            <SegmentCard
+              icon={Map}
+              title={land.title}
+              subtitle={land.subtitle}
+              href={land.href}
+              categories={[...land.categories]}
+              cta="Перейти к земле"
             />
           </div>
         </div>

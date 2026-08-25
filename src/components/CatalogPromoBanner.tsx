@@ -23,6 +23,7 @@ export function getCatalogPromos(
   segment: PropertySegment = "commercial",
 ): CatalogPromoItem[] {
   const isResidential = segment === "residential";
+  const isLand = segment === "land";
   const listFree = listPropertyPath(segment, "rent");
   const listManage = listPropertyPath(segment, "management");
 
@@ -31,12 +32,16 @@ export function getCatalogPromos(
     href: listFree,
     image: residentialBannerFree,
     badge: "Бесплатно",
-    title: isResidential
-      ? "Разместите жильё за 0 ₽"
-      : "Разместите объект за 0 ₽",
-    subtitle: isResidential
-      ? "Квартира, дом, комната или участок — в каталоге без оплаты"
-      : "Офис, склад, торговля или земля — объявление в каталоге бесплатно",
+    title: isLand
+      ? "Разместите участок за 0 ₽"
+      : isResidential
+        ? "Разместите жильё за 0 ₽"
+        : "Разместите объект за 0 ₽",
+    subtitle: isLand
+      ? "Земля и участки — объявление в каталоге бесплатно"
+      : isResidential
+        ? "Квартира, дом или комната — в каталоге без оплаты"
+        : "Офис, склад или торговля — объявление в каталоге бесплатно",
     cta: "Разместить",
     footer: "АрендаСити · для собственников",
   };
@@ -143,7 +148,7 @@ export default function CatalogPromoBanner({
   );
 
   const shellClass = cn(
-    "group relative flex flex-col h-full min-h-[320px] rounded-lg overflow-hidden",
+    "group relative flex flex-col h-full min-h-[220px] sm:min-h-[280px] lg:min-h-[320px] rounded-xl overflow-hidden shadow-[var(--shadow-card)]",
     className,
   );
 

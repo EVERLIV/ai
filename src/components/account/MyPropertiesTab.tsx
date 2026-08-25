@@ -40,6 +40,8 @@ import { Input } from "@/components/ui/input";
 import type { PropertySegment } from "@/config/propertySegments";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyAgency } from "@/hooks/useAgency";
+import { useMyDeveloper } from "@/hooks/useDeveloper";
 import { type MyProperty, useMyProperties } from "@/hooks/useMyProperties";
 import { formatPropertyAddressShort } from "@/lib/propertyCard";
 import {
@@ -310,8 +312,14 @@ export default function MyPropertiesTab({
   const navigate = useNavigate();
   const location = useLocation();
   const { data: properties = [], isLoading } = useMyProperties();
+  const { data: agency } = useMyAgency();
+  const { data: developer } = useMyDeveloper();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const listingScope = {
+    agencyId: agency?.id,
+    developerId: developer?.id,
+  };
 
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editProperty, setEditProperty] = useState<MyProperty | null>(null);
@@ -387,10 +395,16 @@ export default function MyPropertiesTab({
   const archiveMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!user) throw new Error("Не авторизован");
-      await updateMyPropertyApi(user.id, id, {
-        moderation_status: "cancelled",
-        is_active: false,
-      });
+      await updateMyPropertyApi(
+        user.id,
+        id,
+        {
+          moderation_status: "archived",
+          is_active: false,
+        },
+        listingScope.agencyId,
+        listingScope.developerId,
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-properties"] });
@@ -410,7 +424,12 @@ export default function MyPropertiesTab({
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!user) throw new Error("Не авторизован");
-      await deleteMyPropertyApi(user.id, id);
+      await deleteMyPropertyApi(
+        user.id,
+        id,
+        listingScope.agencyId,
+        listingScope.developerId,
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-properties"] });
@@ -430,10 +449,16 @@ export default function MyPropertiesTab({
   const cancelMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!user) throw new Error("Не авторизован");
-      await updateMyPropertyApi(user.id, id, {
-        moderation_status: "cancelled",
-        is_active: false,
-      });
+      await updateMyPropertyApi(
+        user.id,
+        id,
+        {
+          moderation_status: "cancelled",
+          is_active: false,
+        },
+        listingScope.agencyId,
+        listingScope.developerId,
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-properties"] });

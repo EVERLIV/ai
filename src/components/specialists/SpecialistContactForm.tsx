@@ -2,17 +2,15 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { submitLead } from "@/lib/submitLead";
 import { cn } from "@/lib/utils";
-import {
-  SPECIALIST_INTENTS,
-  type SpecialistIntent,
-} from "./specialistUtils";
+import { SPECIALIST_INTENTS } from "./specialistUtils";
 
 type Props = {
   title?: string;
-  source: "realtor_contact" | "agency_contact";
-  /** Для CRM: имя специалиста / агентства */
+  source: "realtor_contact" | "agency_contact" | "developer_contact";
+  /** Для CRM: имя специалиста / агентства / застройщика */
   targetLabel: string;
   className?: string;
+  intents?: readonly string[];
 };
 
 export default function SpecialistContactForm({
@@ -20,8 +18,10 @@ export default function SpecialistContactForm({
   source,
   targetLabel,
   className,
+  intents,
 }: Props) {
-  const [intent, setIntent] = useState<SpecialistIntent | null>(null);
+  const intentOptions = intents ?? SPECIALIST_INTENTS;
+  const [intent, setIntent] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [comment, setComment] = useState("");
@@ -100,7 +100,7 @@ export default function SpecialistContactForm({
           Что нужно сделать?
         </p>
         <div className="flex flex-wrap gap-1.5">
-          {SPECIALIST_INTENTS.map((item) => {
+          {intentOptions.map((item) => {
             const active = intent === item;
             return (
               <button

@@ -20,10 +20,10 @@ const tabs = [
     match: (p: string) =>
       p.startsWith("/catalog") ||
       p.startsWith("/zhilaya/catalog") ||
+      p.startsWith("/zemlya") ||
       p.startsWith("/offices") ||
       p.startsWith("/retail") ||
       p.startsWith("/warehouses") ||
-      p.startsWith("/land") ||
       p.startsWith("/zhilaya/kvartiry"),
   },
   {

@@ -5,6 +5,7 @@ import {
   ChevronRight,
   FileText,
   Heart,
+  Home,
   Landmark,
   LogOut,
   MapPin,
@@ -19,6 +20,10 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import AgencyManagersTab from "@/components/account/AgencyManagersTab";
 import AgencyTeamTab from "@/components/account/AgencyTeamTab";
 import AgencyTelegramTab from "@/components/account/AgencyTelegramTab";
+import MyDeveloperDocumentsTab, {
+  MyDeveloperWebhooksTab,
+} from "@/components/account/MyDeveloperDocumentsTab";
+import MyDeveloperProjectsTab from "@/components/account/MyDeveloperProjectsTab";
 import MyLeadsTab from "@/components/account/MyLeadsTab";
 import MyPropertiesTab from "@/components/account/MyPropertiesTab";
 import MyReviewsTab from "@/components/account/MyReviewsTab";
@@ -30,6 +35,7 @@ import SiteHeader from "@/components/SiteHeader";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useMyAgency } from "@/hooks/useAgency";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyDeveloper } from "@/hooks/useDeveloper";
 import { formatLeadBadge, useNewLeadsCount } from "@/hooks/useMyLeads";
 import {
   ACCOUNT_TYPE_LABELS,
@@ -37,6 +43,7 @@ import {
   useProfile,
 } from "@/hooks/useProfile";
 import { useProperties } from "@/hooks/useProperties";
+import { parsePropertySegment } from "@/config/propertySegments";
 
 const OWNER_TABS = [
   { key: "favorites", label: "Избранное", icon: Heart },
@@ -54,13 +61,25 @@ const AGENCY_EXTRA_TABS = [
   { key: "telegram", label: "Telegram", icon: MessageCircle },
 ] as const;
 
+const DEVELOPER_TABS = [
+  { key: "properties", label: "Мои объекты", icon: Home },
+  { key: "projects", label: "Проекты", icon: Building2 },
+  { key: "requests", label: "Заявки", icon: FileText },
+  { key: "stats", label: "Статистика", icon: BarChart3 },
+  { key: "documents", label: "Документы", icon: FileText },
+  { key: "webhooks", label: "Webhooks", icon: MessageCircle },
+  { key: "profile", label: "Компания", icon: Landmark },
+] as const;
+
 type Tab =
   | (typeof OWNER_TABS)[number]["key"]
-  | (typeof AGENCY_EXTRA_TABS)[number]["key"];
+  | (typeof AGENCY_EXTRA_TABS)[number]["key"]
+  | (typeof DEVELOPER_TABS)[number]["key"];
 
 const VALID_TABS = new Set<string>([
   ...OWNER_TABS.map((t) => t.key),
   ...AGENCY_EXTRA_TABS.map((t) => t.key),
+  ...DEVELOPER_TABS.map((t) => t.key),
 ]);
 
 export default function AccountPage() {
@@ -71,36 +90,38 @@ export default function AccountPage() {
   const { data: properties = [] } = useProperties();
   const { data: profile } = useProfile();
   const { data: myAgency } = useMyAgency();
+  const { data: myDeveloper } = useMyDeveloper();
   const { data: newLeadsCount = 0 } = useNewLeadsCount();
   const isAgencyAccount =
     profile?.account_type === "agency" || !!myAgency;
+  const isDeveloperAccount =
+    profile?.account_type === "developer" || !!myDeveloper;
   const isRealtorAccount = profile?.account_type === "realtor";
   const isSeeker = profile?.account_type === "seeker";
   const realtorReviewTab = AGENCY_EXTRA_TABS.filter((t) => t.key === "reviews");
-  const tabs = isAgencyAccount
-    ? [
-        ...OWNER_TABS.slice(0, 4),
-        ...AGENCY_EXTRA_TABS,
-        {
-          key: "profile" as const,
-          label: "Профиль",
-          icon: Landmark,
-        },
-      ]
-    : isRealtorAccount
+  const tabs = isDeveloperAccount
+    ? [...DEVELOPER_TABS]
+    : isAgencyAccount
       ? [
           ...OWNER_TABS.slice(0, 4),
-          ...realtorReviewTab,
-          OWNER_TABS[4],
+          ...AGENCY_EXTRA_TABS,
+          {
+            key: "profile" as const,
+            label: "Профиль",
+            icon: Landmark,
+          },
         ]
-      : isSeeker
-        ? OWNER_TABS.filter((t) => t.key !== "properties" && t.key !== "stats")
-        : [...OWNER_TABS];
+      : isRealtorAccount
+        ? [
+            ...OWNER_TABS.slice(0, 4),
+            ...realtorReviewTab,
+            OWNER_TABS[4],
+          ]
+        : isSeeker
+          ? OWNER_TABS.filter((t) => t.key !== "properties" && t.key !== "stats")
+          : [...OWNER_TABS];
   const searchParams = new URLSearchParams(location.search);
-  const requestedSegment =
-    searchParams.get("segment") === "residential"
-      ? "residential"
-      : "commercial";
+  const requestedSegment = parsePropertySegment(searchParams.get("segment"));
   const requestTypeParam = searchParams.get("request_type");
   const initialRequestType =
     requestTypeParam === "free_listing" || requestTypeParam === "management"
@@ -110,14 +131,15 @@ export default function AccountPage() {
   useEffect(() => {
     const hash = location.hash.replace("#", "");
     // Старый якорь #agency → единый профиль
-    if (hash === "agency") {
+    if (hash === "agency" || hash === "developer") {
       setTab("profile");
       window.history.replaceState(null, "", `/account#profile`);
       return;
     }
     if (VALID_TABS.has(hash)) setTab(hash as Tab);
     else if (initialRequestType) setTab("properties");
-  }, [location.hash, initialRequestType]);
+    else if (isDeveloperAccount && !hash) setTab("properties");
+  }, [location.hash, initialRequestType, isDeveloperAccount]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -155,6 +177,7 @@ export default function AccountPage() {
   const fullName = user.user_metadata?.full_name || "";
   const email = user.email || "";
   const displayName =
+    (isDeveloperAccount && (myDeveloper?.name || "").trim()) ||
     (isAgencyAccount &&
       (myAgency?.agency.name || profile?.agency_name || "").trim()) ||
     fullName ||
@@ -208,9 +231,21 @@ export default function AccountPage() {
             <div className="bg-card overflow-hidden divide-y divide-border">
               {/* Profile */}
               <div className="flex items-center gap-3 p-4">
-                <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold shrink-0">
-                  {initials}
-                </div>
+                {myDeveloper?.logo_url || myAgency?.agency.logo_url ? (
+                  <img
+                    src={
+                      (myDeveloper?.logo_url ||
+                        myAgency?.agency.logo_url ||
+                        "") as string
+                    }
+                    alt=""
+                    className="w-10 h-10 rounded-md object-cover shrink-0 bg-muted"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold shrink-0">
+                    {initials}
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   {displayName && (
                     <div className="text-sm font-semibold text-foreground truncate">
@@ -231,7 +266,8 @@ export default function AccountPage() {
                     {ACCOUNT_TYPE_LABELS[profile?.account_type || "owner"]}
                   </span>
                   {isProfileVerified(
-                    myAgency?.agency.verification_status ||
+                    myDeveloper?.verification_status ||
+                      myAgency?.agency.verification_status ||
                       profile?.verification_status,
                   ) && <VerifiedBadge showLabel={false} />}
                 </div>
@@ -357,10 +393,18 @@ export default function AccountPage() {
 
             {tab === "properties" && (
               <MyPropertiesTab
-                defaultSegment={requestedSegment}
+                defaultSegment={
+                  isDeveloperAccount ? "residential" : requestedSegment
+                }
                 initialRequestType={initialRequestType}
               />
             )}
+
+            {tab === "projects" && <MyDeveloperProjectsTab />}
+
+            {tab === "documents" && <MyDeveloperDocumentsTab />}
+
+            {tab === "webhooks" && <MyDeveloperWebhooksTab />}
 
             {tab === "requests" && <MyLeadsTab />}
 

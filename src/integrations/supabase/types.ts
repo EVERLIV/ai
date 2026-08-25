@@ -512,6 +512,9 @@ export type Database = {
           manager_id: string | null;
           agency_id: string | null;
           listing_manager_id: string | null;
+          developer_id: string | null;
+          developer_project_id: string | null;
+          developer_unit_type_id: string | null;
           moderated_at: string | null;
           moderated_by: string | null;
           moderation_status: Database["public"]["Enums"]["property_moderation_status"];
@@ -558,6 +561,9 @@ export type Database = {
           manager_id?: string | null;
           agency_id?: string | null;
           listing_manager_id?: string | null;
+          developer_id?: string | null;
+          developer_project_id?: string | null;
+          developer_unit_type_id?: string | null;
           moderated_at?: string | null;
           moderated_by?: string | null;
           moderation_status?: Database["public"]["Enums"]["property_moderation_status"];
@@ -604,6 +610,9 @@ export type Database = {
           manager_id?: string | null;
           agency_id?: string | null;
           listing_manager_id?: string | null;
+          developer_id?: string | null;
+          developer_project_id?: string | null;
+          developer_unit_type_id?: string | null;
           moderated_at?: string | null;
           moderated_by?: string | null;
           moderation_status?: Database["public"]["Enums"]["property_moderation_status"];
@@ -754,7 +763,12 @@ export type Database = {
         | "digital_screen"
         | "flag_pole";
       app_role: "admin" | "manager" | "client";
-      profile_account_type: "seeker" | "owner" | "realtor" | "agency";
+      profile_account_type:
+        | "seeker"
+        | "owner"
+        | "realtor"
+        | "agency"
+        | "developer";
       property_moderation_status:
         | "draft"
         | "on_moderation"
@@ -762,7 +776,7 @@ export type Database = {
         | "rejected"
         | "cancelled";
       property_request_type: "free_listing" | "management";
-      property_segment: "commercial" | "residential";
+      property_segment: "commercial" | "residential" | "land";
       verification_status: "unverified" | "pending" | "verified" | "rejected";
     };
     CompositeTypes: {
@@ -910,7 +924,13 @@ export const Constants = {
         "flag_pole",
       ],
       app_role: ["admin", "manager", "client"],
-      profile_account_type: ["seeker", "owner", "realtor", "agency"],
+      profile_account_type: [
+        "seeker",
+        "owner",
+        "realtor",
+        "agency",
+        "developer",
+      ],
       property_moderation_status: [
         "draft",
         "on_moderation",
@@ -919,7 +939,7 @@ export const Constants = {
         "cancelled",
       ],
       property_request_type: ["free_listing", "management"],
-      property_segment: ["commercial", "residential"],
+      property_segment: ["commercial", "residential", "land"],
       verification_status: ["unverified", "pending", "verified", "rejected"],
     },
   },

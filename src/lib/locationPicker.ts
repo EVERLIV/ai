@@ -1,10 +1,11 @@
 import type { DictionaryItem } from "@/hooks/useDictionaries";
 import {
-  IRKUTSK_CITY_DISTRICTS,
-  IRKUTSK_MICRODISTRICTS,
-  IRKUTSK_OBLAST_CITIES,
-  IRKUTSK_OBLAST_DISTRICTS,
-} from "@/lib/irkutskLocations";
+  getChildren,
+  getCityNodes,
+  getIrkutskDistrictNames,
+  getIrkutskMicrodistrictNames,
+  IRKUTSK_REGION_ID,
+} from "@/lib/locations";
 
 export const IRKUTSK_REGION_LABEL = "Иркутская область";
 
@@ -18,21 +19,19 @@ function mergeDistricts(a: string[], b: string[]): string[] {
   return Array.from(new Set([...a, ...b].map((s) => s.trim()).filter(Boolean)));
 }
 
-/** Статический каркас локаций области (fallback + дополнение к БД). */
+/** Статический каркас из иерархической библиотеки (Китой под Ангарском). */
 export function buildStaticLocationTree(): LocationCityNode[] {
   const map = new Map<string, string[]>();
 
-  map.set(
-    "Иркутск",
-    mergeDistricts([...IRKUTSK_CITY_DISTRICTS], [...IRKUTSK_MICRODISTRICTS]),
-  );
-
-  for (const city of IRKUTSK_OBLAST_CITIES) {
-    if (!map.has(city)) map.set(city, []);
+  for (const city of getCityNodes()) {
+    const kids = getChildren(city.id).map((c) => c.name);
+    map.set(city.name, kids);
   }
 
-  for (const district of IRKUTSK_OBLAST_DISTRICTS) {
-    if (!map.has(district)) map.set(district, []);
+  for (const rayon of getChildren(IRKUTSK_REGION_ID).filter(
+    (n) => n.kind === "district" && n.id.startsWith("rayon:"),
+  )) {
+    if (!map.has(rayon.name)) map.set(rayon.name, []);
   }
 
   return Array.from(map.entries())
@@ -42,19 +41,23 @@ export function buildStaticLocationTree(): LocationCityNode[] {
 
 /**
  * Дерево городов → районы из справочника `district` (parent = город)
- * + статические локации области.
+ * + статические локации области
+ * + доп. значения с объявлений.
  */
 export function buildLocationTree(
   dictItems: DictionaryItem[] = [],
+  extraLocations: string[] = [],
 ): LocationCityNode[] {
   const map = new Map<string, string[]>();
+  const irkutskDistricts = new Set(getIrkutskDistrictNames());
+  const irkutskMicros = new Set(getIrkutskMicrodistrictNames());
 
   for (const node of buildStaticLocationTree()) {
     map.set(node.city, [...node.districts]);
   }
 
   for (const item of dictItems) {
-    if (item.category !== "district" || !item.is_active) continue;
+    if (item.category !== "district" || item.is_active === false) continue;
     const value = item.value?.trim();
     if (!value) continue;
     const parent = item.parent?.trim() || null;
@@ -68,12 +71,59 @@ export function buildLocationTree(
     map.set(parent, mergeDistricts(existing, [value]));
   }
 
+  const known = new Set<string>();
+  for (const [city, districts] of map) {
+    known.add(city);
+    for (const d of districts) known.add(d);
+  }
+
+  for (const raw of extraLocations) {
+    const value = raw?.trim();
+    if (!value || known.has(value)) continue;
+
+    let nested = false;
+    for (const districts of map.values()) {
+      if (districts.includes(value)) {
+        nested = true;
+        break;
+      }
+    }
+    if (nested) continue;
+
+    if (irkutskDistricts.has(value) || irkutskMicros.has(value)) {
+      map.set("Иркутск", mergeDistricts(map.get("Иркутск") || [], [value]));
+      known.add(value);
+      continue;
+    }
+
+    map.set(value, []);
+    known.add(value);
+  }
+
   return Array.from(map.entries())
     .map(([city, districts]) => ({
       city,
       districts: [...districts].sort((a, b) => a.localeCompare(b, "ru")),
     }))
     .sort((a, b) => a.city.localeCompare(b.city, "ru"));
+}
+
+/** Плоский список всех локаций для выпадающего фильтра каталога */
+export function flattenLocationOptions(
+  dictItems: DictionaryItem[] = [],
+  extraLocations: string[] = [],
+): string[] {
+  const tree = buildLocationTree(dictItems, extraLocations);
+  const out = new Set<string>();
+  for (const node of tree) {
+    out.add(node.city);
+    for (const d of node.districts) out.add(d);
+  }
+  for (const raw of extraLocations) {
+    const v = raw?.trim();
+    if (v) out.add(v);
+  }
+  return Array.from(out).sort((a, b) => a.localeCompare(b, "ru"));
 }
 
 export type LetterGroup = {

@@ -65,6 +65,15 @@ describe("propertyMatchesLocation", () => {
       ),
     ).toBe(false);
   });
+
+  it("Angarsk filter includes Kitoy listings", () => {
+    expect(
+      propertyMatchesLocation(
+        { district: "Китой", address: "Ангарск, Китой" },
+        "Ангарск",
+      ),
+    ).toBe(true);
+  });
 });
 
 describe("smartPick", () => {

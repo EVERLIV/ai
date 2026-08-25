@@ -1,22 +1,17 @@
-import { Map, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronRight, Map, Search } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
 import DealTypeSheet, {
   type DealChoice,
   dealChoiceLabel,
 } from "@/components/mobile/DealTypeSheet";
-
 import FilterPickerField from "@/components/mobile/FilterPickerField";
-
 import PropertyTypeOverlay, {
   propertyTypeAccusative,
 } from "@/components/mobile/PropertyTypeOverlay";
-
 import RoomsSheet, { roomsDisplayLabel } from "@/components/mobile/RoomsSheet";
 import type { PropertySegment } from "@/config/propertySegments";
 import { buildCatalogUrl } from "@/lib/catalogLinks";
-
 import { cn } from "@/lib/utils";
 
 const ROOM_FILTER_TYPES = new Set([
@@ -26,25 +21,19 @@ const ROOM_FILTER_TYPES = new Set([
   "Доля",
 ]);
 
+const fieldClass =
+  "w-full h-9 px-3 bg-card border border-border/60 rounded-md text-xs text-foreground placeholder:text-muted-foreground";
+
 export default function MobileHomeSearch() {
   const navigate = useNavigate();
-
   const [segment, setSegment] = useState<PropertySegment>("residential");
-
   const [deal, setDeal] = useState<DealChoice>("Аренда");
-
   const [dealSheetOpen, setDealSheetOpen] = useState(false);
-
   const [typeOverlayOpen, setTypeOverlayOpen] = useState(false);
-
   const [roomsSheetOpen, setRoomsSheetOpen] = useState(false);
-
   const [propertyType, setPropertyType] = useState<string>("Квартира");
-
   const [rooms, setRooms] = useState("");
-
   const [priceMax, setPriceMax] = useState("");
-
   const [location, setLocation] = useState("Иркутск");
 
   const showRooms =
@@ -52,56 +41,42 @@ export default function MobileHomeSearch() {
 
   const switchSegment = (next: PropertySegment) => {
     setSegment(next);
-
     if (next === "residential") {
       setPropertyType("Квартира");
-
       setRooms("");
-
       if (deal === "Продажа") setDeal("Аренда");
     } else {
       setPropertyType("Офис");
-
       setRooms("");
-
       if (deal === "Посуточно") setDeal("Аренда");
     }
   };
 
   const handleTypeChange = (next: string) => {
     setPropertyType(next);
-
     if (!ROOM_FILTER_TYPES.has(next)) setRooms("");
   };
 
   const catalogBase = buildCatalogUrl({
     segment,
-
     deal,
-
     types: propertyType,
-
     rooms:
       showRooms && rooms && rooms !== "Свободная планировка"
         ? rooms
         : undefined,
-
     q: location.trim() !== "Иркутск" ? location.trim() : undefined,
   });
 
   const handleSearch = () => {
     const params = new URLSearchParams(catalogBase.split("?")[1] || "");
-
     if (priceMax) params.set("priceMax", priceMax.replace(/\s/g, ""));
-
     const path = catalogBase.split("?")[0];
-
     navigate(params.toString() ? `${path}?${params.toString()}` : path);
   };
 
   const handleMap = () => {
     const el = document.getElementById("map");
-
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     else
       navigate(
@@ -127,10 +102,10 @@ export default function MobileHomeSearch() {
           </button>
           <Link
             to={catalogBase}
-            className="inline-flex items-center gap-1 text-xs font-medium text-primary whitespace-nowrap"
+            className="inline-flex items-center gap-0.5 text-xs font-medium text-primary whitespace-nowrap"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            Все фильтры
+            Перейти в каталог
+            <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
@@ -142,7 +117,6 @@ export default function MobileHomeSearch() {
               onClick={() => switchSegment(s)}
               className={cn(
                 "flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors",
-
                 segment === s
                   ? "bg-card text-foreground shadow-sm"
                   : "text-muted-foreground",
@@ -161,6 +135,7 @@ export default function MobileHomeSearch() {
               : propertyType
           }
           onClick={() => setTypeOverlayOpen(true)}
+          className="h-9 rounded-md text-xs"
         />
 
         <div
@@ -175,6 +150,7 @@ export default function MobileHomeSearch() {
               value={rooms ? roomsDisplayLabel(rooms) : ""}
               placeholder="Кол-во комнат"
               onClick={() => setRoomsSheetOpen(true)}
+              className="h-9 rounded-md text-xs"
             />
           )}
           <div className="relative">
@@ -186,22 +162,22 @@ export default function MobileHomeSearch() {
               onChange={(e) =>
                 setPriceMax(e.target.value.replace(/[^\d\s]/g, ""))
               }
-              className="w-full h-11 px-3 pr-8 bg-card border border-border/60 text-sm text-foreground placeholder:text-muted-foreground"
+              className={cn(fieldClass, "pr-8")}
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
               ₽
             </span>
           </div>
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <input
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="Город или район"
-            className="w-full h-11 pl-9 pr-3 bg-card border border-border/60 text-sm text-foreground placeholder:text-muted-foreground"
+            className={cn(fieldClass, "pl-9")}
           />
         </div>
 
@@ -209,15 +185,15 @@ export default function MobileHomeSearch() {
           <button
             type="button"
             onClick={handleMap}
-            className="h-11 flex items-center justify-center gap-1.5 bg-card border border-border/60 text-sm font-semibold text-primary"
+            className="h-9 flex items-center justify-center gap-1.5 rounded-md bg-card border border-border/60 text-xs font-semibold text-primary"
           >
-            <Map className="w-4 h-4" />
+            <Map className="w-3.5 h-3.5" />
             На карте
           </button>
           <button
             type="button"
             onClick={handleSearch}
-            className="h-11 flex items-center justify-center bg-primary text-primary-foreground text-sm font-semibold"
+            className="h-9 flex items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-semibold"
           >
             Найти
           </button>

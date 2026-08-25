@@ -1,11 +1,11 @@
 import { Navigate } from "react-router-dom";
 import { buildCatalogUrl } from "@/lib/catalogLinks";
 
-/** Раздел участков — жилой каталог с фильтром «Участок» (включая коммерческую землю). */
+/** Раздел участков → каталог земли */
 export default function PlotsPage() {
   return (
     <Navigate
-      to={buildCatalogUrl({ segment: "residential", types: "Участок" })}
+      to={buildCatalogUrl({ segment: "land", types: "Участок" })}
       replace
     />
   );

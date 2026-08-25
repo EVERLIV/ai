@@ -29,6 +29,8 @@ const FOOTER_COLUMNS: FooterLink[][] = [
   [
     { label: "Риелторы", href: "/rieltory" },
     { label: "Агентства", href: "/rieltory?tab=agentstva" },
+    { label: "Застройщики", href: "/zastroyshchiki" },
+    { label: "Застройщикам", href: "/zastroyshchikam" },
     { label: "Помощь", href: "/contacts" },
   ],
   [
@@ -177,7 +179,7 @@ export default function SiteFooter() {
             className="flex items-center gap-2 shrink-0"
             aria-label={COMPANY.brand}
           >
-            <BrandMark className="h-3.5 w-auto" />
+            <BrandMark className="h-7 w-7" />
             <span className="font-display text-[15px] font-bold tracking-tight text-foreground">
               АРЕНДА<span className="text-primary">СИТИ</span>
             </span>

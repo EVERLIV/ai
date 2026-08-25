@@ -43,12 +43,18 @@ import RecommendationsPage from "./pages/RecommendationsPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import RetailPage from "./pages/RetailPage.tsx";
 import SpecialistsCatalog from "./pages/SpecialistsCatalog.tsx";
+import DevelopersCatalog from "./pages/DevelopersCatalog.tsx";
+import DeveloperPublicPage from "./pages/DeveloperPublicPage.tsx";
+import DeveloperProjectPage from "./pages/DeveloperProjectPage.tsx";
+import DevelopersLandingPage from "./pages/DevelopersLandingPage.tsx";
 import ApartmentsPage from "./pages/residential/ApartmentsPage.tsx";
 import HousesPage from "./pages/residential/HousesPage.tsx";
 import PlotsPage from "./pages/residential/PlotsPage.tsx";
 import ResidentialCatalog from "./pages/residential/ResidentialCatalog.tsx";
 import ResidentialHomePage from "./pages/residential/ResidentialHomePage.tsx";
 import RoomsPage from "./pages/residential/RoomsPage.tsx";
+import LandCatalog from "./pages/land/LandCatalog.tsx";
+import LandHomePage from "./pages/land/LandHomePage.tsx";
 import VacanciesPage from "./pages/VacanciesPage.tsx";
 import WarehousesPage from "./pages/WarehousesPage.tsx";
 
@@ -91,6 +97,22 @@ const App = () => {
                     <Route path="/account" element={<AccountPage />} />
                     <Route path="/rieltory" element={<SpecialistsCatalog />} />
                     <Route
+                      path="/zastroyshchiki"
+                      element={<DevelopersCatalog />}
+                    />
+                    <Route
+                      path="/zastroyshchik/:id"
+                      element={<DeveloperPublicPage />}
+                    />
+                    <Route
+                      path="/proekt/:id"
+                      element={<DeveloperProjectPage />}
+                    />
+                    <Route
+                      path="/zastroyshchikam"
+                      element={<DevelopersLandingPage />}
+                    />
+                    <Route
                       path="/rieltor/:id"
                       element={<RealtorPublicPage />}
                     />
@@ -129,6 +151,12 @@ const App = () => {
                     <Route
                       path="/zhilaya/list-property"
                       element={<ListProperty segment="residential" />}
+                    />
+                    <Route path="/zemlya" element={<LandHomePage />} />
+                    <Route path="/zemlya/catalog" element={<LandCatalog />} />
+                    <Route
+                      path="/zemlya/list-property"
+                      element={<ListProperty segment="land" />}
                     />
                     {/* Таск-менеджер — lazy, не влияет на основной бандл */}
                     <Route

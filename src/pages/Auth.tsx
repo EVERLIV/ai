@@ -34,10 +34,21 @@ export default function Auth() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [accountType, setAccountType] = useState<
-    "seeker" | "owner" | "agency" | "realtor"
-  >("seeker");
+    "seeker" | "owner" | "agency" | "realtor" | "developer"
+  >(() => {
+    const t = new URLSearchParams(window.location.search).get("type");
+    if (t === "developer") return "developer";
+    if (t === "agency") return "agency";
+    if (t === "owner") return "owner";
+    if (t === "realtor") return "realtor";
+    return "seeker";
+  });
   const [agencyName, setAgencyName] = useState("");
   const [agencyStaffCount, setAgencyStaffCount] = useState("");
+  const [developerName, setDeveloperName] = useState("");
+  const [developerSubtype, setDeveloperSubtype] = useState<
+    "apartment_developer" | "frame_house_builder"
+  >("apartment_developer");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
@@ -140,6 +151,14 @@ export default function Auth() {
               accountType === "agency" && !inviteToken
                 ? agencyStaffCount.trim()
                 : "",
+            developer_name:
+              accountType === "developer" && !inviteToken
+                ? developerName.trim()
+                : "",
+            developer_subtype:
+              accountType === "developer" && !inviteToken
+                ? developerSubtype
+                : "",
             invite_token: inviteToken || "",
           },
           emailRedirectTo: `${window.location.origin}/auth`,
@@ -232,7 +251,7 @@ export default function Auth() {
         {/* Logo + back */}
         <div className="flex items-center justify-between mb-10">
           <Link to="/" className="flex items-center gap-2">
-            <BrandMark className="h-4 w-auto" />
+            <BrandMark className="h-8 w-8" />
             <span className="font-display text-lg font-bold text-foreground">
               АРЕНДА<span className="text-primary">СИТИ</span>
             </span>
@@ -393,7 +412,8 @@ export default function Auth() {
                           | "seeker"
                           | "owner"
                           | "agency"
-                          | "realtor",
+                          | "realtor"
+                          | "developer",
                       )
                     }
                     className="w-full h-11 px-3 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary"
@@ -402,6 +422,7 @@ export default function Auth() {
                     <option value="owner">Хочу сдать (собственник)</option>
                     <option value="agency">Агентство</option>
                     <option value="realtor">Риелтор</option>
+                    <option value="developer">Застройщик</option>
                   </select>
                 </div>
               )}
@@ -438,6 +459,47 @@ export default function Auth() {
                       placeholder="5"
                       className="w-full h-11 px-4 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
                     />
+                  </div>
+                </>
+              )}
+              {accountType === "developer" && !inviteToken && (
+                <>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                      Название компании *
+                    </label>
+                    <input
+                      type="text"
+                      value={developerName}
+                      onChange={(e) => setDeveloperName(e.target.value)}
+                      required
+                      placeholder="ООО «СтройИнвест»"
+                      className="w-full h-11 px-4 bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                      Тип застройщика *
+                    </label>
+                    <select
+                      value={developerSubtype}
+                      onChange={(e) =>
+                        setDeveloperSubtype(
+                          e.target.value as
+                            | "apartment_developer"
+                            | "frame_house_builder",
+                        )
+                      }
+                      required
+                      className="w-full h-11 px-3 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary"
+                    >
+                      <option value="apartment_developer">
+                        Многоквартирные дома / ЖК
+                      </option>
+                      <option value="frame_house_builder">
+                        Деревянные и каркасные дома
+                      </option>
+                    </select>
                   </div>
                 </>
               )}

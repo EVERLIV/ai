@@ -9,6 +9,7 @@ import {
   CheckSquare,
   Edit,
   Eye,
+  Globe,
   Home,
   ImageIcon,
   Inbox,
@@ -39,6 +40,8 @@ import ModerationQueue from "@/components/admin/ModerationQueue";
 import AgencyReviewsModeration from "@/components/admin/AgencyReviewsModeration";
 import PropertyUnitsManager from "@/components/admin/PropertyUnitsManager";
 import VerificationUsersTab from "@/components/admin/VerificationUsersTab";
+import DevelopersAdminTab from "@/components/admin/DevelopersAdminTab";
+import WoodenHouseConfigFields from "@/components/admin/WoodenHouseConfigFields";
 import LocationDistrictSelect from "@/components/LocationDistrictSelect";
 import NewsAdminPanel from "@/components/NewsAdminPanel";
 import SeoHead from "@/components/SeoHead";
@@ -79,9 +82,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  COMMERCIAL_PROPERTY_TYPES,
   type PropertySegment,
-  RESIDENTIAL_PROPERTY_TYPES,
 } from "@/config/propertySegments";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -116,12 +117,12 @@ import {
   LAYOUTS as FALLBACK_LAYOUTS,
   PARKING_OPTIONS as FALLBACK_PARKING,
   PURPOSE_OPTIONS as FALLBACK_PURPOSE,
-  PROPERTY_TYPES as FALLBACK_TYPES,
   UTILITIES_OPTIONS as FALLBACK_UTILITIES,
   VAT_OPTIONS as FALLBACK_VAT,
   FEATURES_LIST,
   FLOORS,
   INDEXATION_OPTIONS,
+  BUILDING_TYPES,
   PEDESTRIAN_TRAFFIC_LEVELS,
   SUBLEASE_OPTIONS,
   TOTAL_FLOORS_OPTIONS,
@@ -139,11 +140,35 @@ import {
   syncPropertyTypesPayload,
   togglePropertyType,
 } from "@/lib/propertyTypes";
+import { syncLocationExtras } from "@/lib/propertyFormMapper";
+import { isHouseLike } from "@/lib/propertyTypeFamilies";
+import {
+  getResidentialBuildingType,
+  getWoodConfigId,
+  getWoodFinish,
+  getWoodFloors,
+  getWoodFoundation,
+  getWoodRoof,
+  getWoodWall,
+} from "@/lib/propertyResidential";
+import {
+  getWoodenHouseConfigByBuildingType,
+  houseBuildingTypeOptions,
+  isWoodenBuildingType,
+} from "@/lib/woodenHouses";
 import { geocodeAddress, reverseGeocode } from "@/lib/yandexGeocoder";
 
 // Address autocomplete via Yandex Geocoder (AddressAutocomplete)
 
-interface PropertyExtras extends PropertySidebarExtras {}
+interface PropertyExtras extends PropertySidebarExtras {
+  building_type?: string;
+  wood_config?: string;
+  wood_wall?: string;
+  wood_floors?: string;
+  wood_foundation?: string;
+  wood_roof?: string;
+  wood_finish?: string;
+}
 
 interface PropertyForm {
   segment: PropertySegment;
@@ -225,15 +250,94 @@ const emptyForm: PropertyForm = {
 const propertyFormSection = "border border-border rounded-lg p-3";
 const sidebarSubBlock = "rounded-md p-2.5";
 
+type AdminSection = "objects" | "site";
+
+type AdminNavItem = {
+  value: string;
+  label: string;
+  icon: typeof Home;
+};
+
+type AdminNavGroup = {
+  title: string;
+  items: AdminNavItem[];
+};
+
+function buildAdminNav(isAdmin: boolean): {
+  objects: AdminNavGroup[];
+  site: AdminNavGroup[];
+} {
+  return {
+    objects: [
+      {
+        title: "Каталог",
+        items: [
+          { value: "properties", label: "Объекты", icon: Home },
+          { value: "moderation", label: "Модерация", icon: Shield },
+        ],
+      },
+      {
+        title: "CRM",
+        items: [
+          {
+            value: "clients",
+            label: "Собственники и агентства",
+            icon: UserCircle,
+          },
+          { value: "leads", label: "Заявки", icon: Inbox },
+          ...(isAdmin
+            ? [{ value: "tasks", label: "Задачи", icon: CheckSquare }]
+            : []),
+        ],
+      },
+    ],
+    site: [
+      {
+        title: "Контент и реклама",
+        items: [
+          { value: "news", label: "Новости", icon: Newspaper },
+          { value: "ads", label: "Реклама", icon: Megaphone },
+        ],
+      },
+      {
+        title: "Система",
+        items: [
+          { value: "users", label: "Пользователи", icon: Users },
+          { value: "dictionaries", label: "Справочники", icon: Settings2 },
+        ],
+      },
+    ],
+  };
+}
+
+function sectionForTab(
+  tab: string,
+  nav: ReturnType<typeof buildAdminNav>,
+): AdminSection {
+  const inObjects = nav.objects.some((g) =>
+    g.items.some((i) => i.value === tab),
+  );
+  return inObjects ? "objects" : "site";
+}
+
+function firstTabInSection(
+  section: AdminSection,
+  nav: ReturnType<typeof buildAdminNav>,
+): string {
+  const groups = section === "objects" ? nav.objects : nav.site;
+  return groups[0]?.items[0]?.value ?? "properties";
+}
+
 export default function Dashboard() {
   const { user, loading, signOut, hasRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { byCategory } = useAllDictionaryValues();
+  const { byCategory, propertyTypes } = useAllDictionaryValues();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [adminTab, setAdminTab] = useState("properties");
+  const [adminSection, setAdminSection] = useState<AdminSection>("objects");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<PropertyForm>(emptyForm);
@@ -248,23 +352,7 @@ export default function Dashboard() {
   const [lngText, setLngText] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const allPropertyTypes = byCategory("property_type");
-  const TYPES =
-    form.segment === "residential"
-      ? allPropertyTypes.filter((item) =>
-          (RESIDENTIAL_PROPERTY_TYPES as readonly string[]).includes(item),
-        ).length > 0
-        ? allPropertyTypes.filter((item) =>
-            (RESIDENTIAL_PROPERTY_TYPES as readonly string[]).includes(item),
-          )
-        : [...RESIDENTIAL_PROPERTY_TYPES]
-      : allPropertyTypes.filter((item) =>
-            (COMMERCIAL_PROPERTY_TYPES as readonly string[]).includes(item),
-          ).length > 0
-        ? allPropertyTypes.filter((item) =>
-            (COMMERCIAL_PROPERTY_TYPES as readonly string[]).includes(item),
-          )
-        : [...FALLBACK_TYPES];
+  const TYPES = propertyTypes(form.segment);
   const _CLASSES =
     byCategory("property_class").length > 0
       ? byCategory("property_class")
@@ -496,6 +584,11 @@ export default function Dashboard() {
           formData.extras as Record<string, unknown>,
           formData.segment,
         );
+      const { district: leafDistrict, location: locationExtras } =
+        syncLocationExtras(
+          formData.district,
+          formData.extras as Record<string, unknown>,
+        );
       const isLand = isLandProperty(primaryType);
       const isSale = isSaleDeal(formData.deal_type);
       // Create property first to get ID, then upload photos
@@ -510,7 +603,7 @@ export default function Dashboard() {
         address: formData.address,
         lat: parseCoordInput(latText) ?? formData.lat,
         lng: parseCoordInput(lngText) ?? formData.lng,
-        district: formData.district,
+        district: leafDistrict,
         floor: isLand ? LAND_BUILDING_FIELD_DEFAULTS.floor : formData.floor,
         total_floors: isLand
           ? LAND_BUILDING_FIELD_DEFAULTS.total_floors
@@ -530,7 +623,10 @@ export default function Dashboard() {
         client_id: formData.client_id || null,
         is_active: formData.is_active,
         extras: sanitizeSidebarExtras(
-          typesExtras as PropertyExtras,
+          {
+            ...(typesExtras as PropertyExtras),
+            ...(locationExtras ? { location: locationExtras } : {}),
+          },
           primaryType,
           formData.deal_type,
         ),
@@ -890,10 +986,41 @@ export default function Dashboard() {
     type: form.types[0],
     extras: { property_types: form.types },
   });
+  const isHouseForm = isHouseLike(form.types);
+  const houseBuildingTypes = houseBuildingTypeOptions(
+    byCategory("building_type").length > 0
+      ? byCategory("building_type")
+      : BUILDING_TYPES,
+  );
   const sidebarVis = getSidebarVisibility(
     form.types[0] || "Офис",
     form.deal_type,
   );
+
+  const isAdminUser = hasRole("admin");
+  const adminNav = useMemo(
+    () => buildAdminNav(isAdminUser),
+    [isAdminUser],
+  );
+  const sectionNav =
+    adminSection === "objects" ? adminNav.objects : adminNav.site;
+
+  const selectAdminTab = (value: string) => {
+    setAdminTab(value);
+    setAdminSection(sectionForTab(value, adminNav));
+  };
+
+  const selectAdminSection = (section: AdminSection) => {
+    setAdminSection(section);
+    const allowed = new Set(
+      (section === "objects" ? adminNav.objects : adminNav.site).flatMap((g) =>
+        g.items.map((i) => i.value),
+      ),
+    );
+    if (!allowed.has(adminTab)) {
+      setAdminTab(firstTabInSection(section, adminNav));
+    }
+  };
 
   if (loading) {
     return (
@@ -933,12 +1060,19 @@ export default function Dashboard() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <Building2 className="w-5 h-5 text-primary shrink-0" />
-            <span
-              className="font-semibold text-base truncate"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              Панель управления
-            </span>
+            <div className="min-w-0">
+              <span
+                className="font-semibold text-base truncate block leading-tight"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                {adminSection === "objects"
+                  ? "Объекты"
+                  : "Администрирование сайта"}
+              </span>
+              <span className="text-[10px] text-muted-foreground hidden sm:block truncate">
+                Панель управления
+              </span>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden md:block">
@@ -960,51 +1094,41 @@ export default function Dashboard() {
 
       <Tabs
         value={adminTab}
-        onValueChange={setAdminTab}
+        onValueChange={selectAdminTab}
         className="flex-1 flex flex-col lg:flex-row min-h-0"
       >
         {/* Desktop sidebar */}
         <aside className="hidden lg:flex w-60 shrink-0 flex-col border-r border-border bg-card sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
+          <div className="p-3 pb-0">
+            <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+              <button
+                type="button"
+                onClick={() => selectAdminSection("objects")}
+                className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-semibold transition-colors ${
+                  adminSection === "objects"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Home className="w-3.5 h-3.5" />
+                Объекты
+              </button>
+              <button
+                type="button"
+                onClick={() => selectAdminSection("site")}
+                className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-semibold transition-colors ${
+                  adminSection === "site"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                Сайт
+              </button>
+            </div>
+          </div>
           <nav className="p-3 space-y-4">
-            {[
-              {
-                title: "Контент",
-                items: [
-                  { value: "properties", label: "Объекты", icon: Home },
-                  { value: "moderation", label: "Модерация", icon: Shield },
-                  { value: "news", label: "Новости", icon: Newspaper },
-                ],
-              },
-              {
-                title: "Клиенты",
-                items: [
-                  {
-                    value: "clients",
-                    label: "Собственники и агентства",
-                    icon: UserCircle,
-                  },
-                  { value: "leads", label: "Заявки", icon: Inbox },
-                ],
-              },
-              {
-                title: "Реклама",
-                items: [{ value: "ads", label: "Размещения", icon: Megaphone }],
-              },
-              {
-                title: "Система",
-                items: [
-                  { value: "users", label: "Пользователи", icon: Users },
-                  {
-                    value: "dictionaries",
-                    label: "Справочники",
-                    icon: Settings2,
-                  },
-                  ...(hasRole("admin")
-                    ? [{ value: "tasks", label: "Задачи", icon: CheckSquare }]
-                    : []),
-                ],
-              },
-            ].map((group) => (
+            {sectionNav.map((group) => (
               <div key={group.title}>
                 <div className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {group.title}
@@ -1017,7 +1141,7 @@ export default function Dashboard() {
                       <button
                         key={t.value}
                         type="button"
-                        onClick={() => setAdminTab(t.value)}
+                        onClick={() => selectAdminTab(t.value)}
                         className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors ${
                           active
                             ? "bg-primary text-primary-foreground font-medium"
@@ -1041,53 +1165,71 @@ export default function Dashboard() {
             <SheetHeader className="px-4 py-3 border-b">
               <SheetTitle className="text-base">Разделы</SheetTitle>
             </SheetHeader>
+            <div className="p-3 pb-0">
+              <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+                <button
+                  type="button"
+                  onClick={() => selectAdminSection("objects")}
+                  className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-semibold ${
+                    adminSection === "objects"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  <Home className="w-3.5 h-3.5" />
+                  Объекты
+                </button>
+                <button
+                  type="button"
+                  onClick={() => selectAdminSection("site")}
+                  className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-semibold ${
+                    adminSection === "site"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  Сайт
+                </button>
+              </div>
+            </div>
             <nav className="p-3 space-y-4">
-              {[
-                { value: "properties", label: "Объекты", icon: Home },
-                { value: "moderation", label: "Модерация", icon: Shield },
-                { value: "news", label: "Новости", icon: Newspaper },
-                {
-                  value: "clients",
-                  label: "Собственники и агентства",
-                  icon: UserCircle,
-                },
-                { value: "leads", label: "Заявки", icon: Inbox },
-                { value: "ads", label: "Реклама", icon: Megaphone },
-                { value: "users", label: "Пользователи", icon: Users },
-                {
-                  value: "dictionaries",
-                  label: "Справочники",
-                  icon: Settings2,
-                },
-                ...(hasRole("admin")
-                  ? [{ value: "tasks", label: "Задачи", icon: CheckSquare }]
-                  : []),
-              ].map((t) => {
-                const Icon = t.icon;
-                return (
-                  <button
-                    key={t.value}
-                    type="button"
-                    onClick={() => {
-                      setAdminTab(t.value);
-                      setMobileNavOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2.5 text-sm ${
-                      adminTab === t.value
-                        ? "bg-primary text-primary-foreground"
-                        : "hover:bg-muted"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {t.label}
-                  </button>
-                );
-              })}
+              {sectionNav.map((group) => (
+                <div key={group.title}>
+                  <div className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {group.title}
+                  </div>
+                  <div className="space-y-0.5">
+                    {group.items.map((t) => {
+                      const Icon = t.icon;
+                      return (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() => {
+                            selectAdminTab(t.value);
+                            setMobileNavOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2.5 text-sm ${
+                            adminTab === t.value
+                              ? "bg-primary text-primary-foreground"
+                              : "hover:bg-muted"
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
+                          {t.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </nav>
           </SheetContent>
         </Sheet>
 
         <main className="flex-1 min-w-0 px-4 sm:px-6 py-6 space-y-6 overflow-x-hidden">
+          {adminSection === "objects" && (
           <div className="grid grid-cols-4 gap-2 sm:gap-4">
             {[
               {
@@ -1134,6 +1276,7 @@ export default function Dashboard() {
               </Card>
             ))}
           </div>
+          )}
 
           {/* Keep TabsList visually hidden for a11y / radix — navigation via sidebar */}
           <TabsList className="sr-only">
@@ -1211,11 +1354,12 @@ export default function Dashboard() {
                       <div className="space-y-2">
                         <div>
                           <Label className="text-xs mb-1 block">Сегмент</Label>
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-3 gap-2">
                             {(
                               [
                                 { value: "commercial", label: "Коммерческая" },
                                 { value: "residential", label: "Жилая" },
+                                { value: "land", label: "Земля" },
                               ] as const
                             ).map((item) => (
                               <button
@@ -1228,7 +1372,9 @@ export default function Dashboard() {
                                     types: [
                                       item.value === "residential"
                                         ? "Квартира"
-                                        : "Офис",
+                                        : item.value === "land"
+                                          ? "Земля"
+                                          : "Офис",
                                     ],
                                   }))
                                 }
@@ -1370,9 +1516,28 @@ export default function Dashboard() {
                       <div
                         className={`grid gap-2 ${isLandForm ? "grid-cols-1" : "grid-cols-3"}`}
                       >
-                        <LocationDistrictSelect
+                      <LocationDistrictSelect
                           value={form.district}
-                          onChange={(v) => updateField("district", v)}
+                          hasCoords={form.lat != null && form.lng != null}
+                          onChange={(v, meta) => {
+                            setForm((prev) => ({
+                              ...prev,
+                              district: v,
+                              ...(meta?.lat != null && meta?.lng != null
+                                ? { lat: meta.lat, lng: meta.lng }
+                                : {}),
+                              extras: {
+                                ...prev.extras,
+                                ...(meta?.location
+                                  ? { location: meta.location }
+                                  : {}),
+                              },
+                            }));
+                            if (meta?.lat != null && meta?.lng != null) {
+                              setLatText(formatCoord(meta.lat));
+                              setLngText(formatCoord(meta.lng));
+                            }
+                          }}
                         />
                         {!isLandForm && (
                           <>
@@ -1699,6 +1864,111 @@ export default function Dashboard() {
                               </>
                             )}
                           </div>
+                          {isHouseForm && (
+                            <div className="space-y-3 pt-1">
+                              <div>
+                                <Label className="text-xs mb-1 block">
+                                  Тип дома
+                                </Label>
+                                <Select
+                                  value={
+                                    form.extras.building_type || "none"
+                                  }
+                                  onValueChange={(v) => {
+                                    const next = v === "none" ? "" : v;
+                                    const cfg =
+                                      getWoodenHouseConfigByBuildingType(
+                                        next,
+                                      );
+                                    if (cfg) {
+                                      const fillDescription =
+                                        !form.description.trim();
+                                      setForm((prev) => ({
+                                        ...prev,
+                                        description: fillDescription
+                                          ? `${cfg.listingHint}\n\n${cfg.description}`
+                                          : prev.description,
+                                        extras: {
+                                          ...prev.extras,
+                                          wood_config: cfg.id,
+                                          building_type: cfg.buildingType,
+                                          wood_wall: cfg.defaults?.wall || "",
+                                          wood_floors:
+                                            cfg.defaults?.floors || "",
+                                          wood_foundation:
+                                            cfg.defaults?.foundation || "",
+                                          wood_roof: cfg.defaults?.roof || "",
+                                          wood_finish:
+                                            cfg.defaults?.finish || "",
+                                        },
+                                      }));
+                                      return;
+                                    }
+                                    updateField("extras", {
+                                      ...form.extras,
+                                      building_type: next,
+                                      wood_config: isWoodenBuildingType(next)
+                                        ? form.extras.wood_config
+                                        : "",
+                                    });
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue placeholder="Кирпич, каркас, брус…" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">—</SelectItem>
+                                    {houseBuildingTypes.map((type) => (
+                                      <SelectItem key={type} value={type}>
+                                        {type}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <WoodenHouseConfigFields
+                                compact
+                                value={{
+                                  wood_config: getWoodConfigId({
+                                    extras: form.extras,
+                                  }),
+                                  building_type: getResidentialBuildingType({
+                                    extras: form.extras,
+                                  }),
+                                  wood_wall: getWoodWall({
+                                    extras: form.extras,
+                                  }),
+                                  wood_floors: getWoodFloors({
+                                    extras: form.extras,
+                                  }),
+                                  wood_foundation: getWoodFoundation({
+                                    extras: form.extras,
+                                  }),
+                                  wood_roof: getWoodRoof({
+                                    extras: form.extras,
+                                  }),
+                                  wood_finish: getWoodFinish({
+                                    extras: form.extras,
+                                  }),
+                                  description: form.description,
+                                }}
+                                onChange={(patch) => {
+                                  const { description, ...extraPatch } =
+                                    patch;
+                                  setForm((prev) => ({
+                                    ...prev,
+                                    ...(description !== undefined
+                                      ? { description }
+                                      : {}),
+                                    extras: {
+                                      ...prev.extras,
+                                      ...extraPatch,
+                                    },
+                                  }));
+                                }}
+                              />
+                            </div>
+                          )}
                         </>
                       )}
                       {isLandForm && !isSale && (
@@ -2440,6 +2710,36 @@ export default function Dashboard() {
                           </p>
                         </>
                       )}
+                      <div className="space-y-2 pt-2 border-t border-border/50">
+                        <Label className="text-[11px]">VK Video (ссылки через запятую)</Label>
+                        <Input
+                          className="h-8 text-xs"
+                          placeholder="https://vk.com/video-…_…"
+                          value={(form.extras.video_urls || []).join(", ")}
+                          onChange={(e) => {
+                            const parts = e.target.value
+                              .split(",")
+                              .map((s) => s.trim())
+                              .filter(Boolean);
+                            updateField("extras", {
+                              ...form.extras,
+                              video_urls: parts,
+                            });
+                          }}
+                        />
+                        <Label className="text-[11px]">URL планировки / плана дома</Label>
+                        <Input
+                          className="h-8 text-xs"
+                          placeholder="https://…"
+                          value={form.extras.plan_image_url || ""}
+                          onChange={(e) =>
+                            updateField("extras", {
+                              ...form.extras,
+                              plan_image_url: e.target.value.trim(),
+                            })
+                          }
+                        />
+                      </div>
                     </fieldset>
 
                     {/* Section: Помещения внутри объекта */}
@@ -2997,6 +3297,10 @@ export default function Dashboard() {
 
           <TabsContent value="verification" className="space-y-4">
             <VerificationUsersTab />
+            <div className="pt-6 border-t border-border">
+              <h3 className="text-sm font-semibold mb-3">Застройщики</h3>
+              <DevelopersAdminTab />
+            </div>
           </TabsContent>
 
           {/* Ads Tab */}

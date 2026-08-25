@@ -33,38 +33,48 @@ export default function ListingAgentFooter({
     isVerified: DEFAULT_AGENT.isVerified,
     isRealtor: false,
     isAgency: false,
+    isDeveloper: false,
     agencyId: DEFAULT_AGENT.agencyId,
+    developerId: null,
     managerId: DEFAULT_AGENT.managerId,
     objectsCount: 0,
   };
 
   const isAgencyListing =
-    (agent.isAgency || agent.isRealtor) && !extrasRecord?.owner_user_id;
+    (agent.isAgency || agent.isRealtor) &&
+    !agent.isDeveloper &&
+    !extrasRecord?.owner_user_id;
   const objectsCount = isAgencyListing
     ? Math.max(agent.objectsCount, catalogCount ?? 0)
     : agent.objectsCount;
 
   const avatar = agent.avatarUrl || consultantAvatar;
-  const objectsLabel = formatAgentObjectsLabel(objectsCount, {
-    isAgency: isAgencyListing,
-  });
+  const objectsLabel = agent.isDeveloper
+    ? null
+    : formatAgentObjectsLabel(objectsCount, {
+        isAgency: isAgencyListing,
+      });
   const agencyHref = agent.agencyId ? `/agentstvo/${agent.agencyId}` : null;
   const managerHref = agent.managerId ? `/rieltor/${agent.managerId}` : null;
+  const developerHref = agent.developerId
+    ? `/zastroyshchik/${agent.developerId}`
+    : null;
+  const profileHref = developerHref || managerHref || agencyHref;
 
   const nameBlock = (
     <>
       <div className="flex items-center gap-1 min-w-0">
-        {(agent.isAgency || agent.isRealtor) &&
+        {(agent.isAgency || agent.isRealtor || agent.isDeveloper) &&
           agent.primaryLabel !== agent.secondaryLabel && (
             <Building2 className="w-3 h-3 text-primary shrink-0" />
           )}
-        {managerHref || agencyHref ? (
+        {profileHref ? (
           <Link
-            to={managerHref || agencyHref!}
+            to={profileHref}
             onClick={(e) => e.stopPropagation()}
             className={cn(
               "text-xs font-semibold truncate leading-tight hover:underline",
-              agencyHref ? "text-primary" : "text-foreground",
+              agencyHref || developerHref ? "text-primary" : "text-foreground",
             )}
           >
             {agent.primaryLabel}
@@ -73,7 +83,7 @@ export default function ListingAgentFooter({
           <span
             className={cn(
               "text-xs font-semibold truncate leading-tight",
-              agencyHref
+              agencyHref || developerHref
                 ? "text-primary group-hover/agent:underline"
                 : "text-foreground",
             )}
@@ -102,9 +112,9 @@ export default function ListingAgentFooter({
       <div
         className={cn("flex items-center gap-2.5", compact ? "py-1" : "py-1.5")}
       >
-        {agencyHref ? (
+        {profileHref ? (
           <Link
-            to={agencyHref}
+            to={profileHref}
             onClick={(e) => e.stopPropagation()}
             className="group/agent flex items-center gap-2.5 min-w-0 flex-1"
           >

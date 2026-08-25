@@ -1,10 +1,6 @@
 import { Camera, Loader2, Plus, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  COMMERCIAL_PROPERTY_TYPES,
-  RESIDENTIAL_PROPERTY_TYPES,
-} from "@/config/propertySegments";
 import { useToast } from "@/hooks/use-toast";
 import {
   useAgencyManagerMutations,
@@ -12,13 +8,7 @@ import {
   useMyAgency,
   useMyAgencyProperties,
 } from "@/hooks/useAgency";
-
-const MANAGER_PROPERTY_TYPES = [
-  ...COMMERCIAL_PROPERTY_TYPES,
-  ...RESIDENTIAL_PROPERTY_TYPES.filter(
-    (t) => !(COMMERCIAL_PROPERTY_TYPES as readonly string[]).includes(t),
-  ),
-] as string[];
+import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 
 /** Старые URL без /public/ на self-hosted отдают 401/CORS */
 function publicAssetUrl(url: string | null | undefined): string | null {
@@ -30,17 +20,19 @@ function publicAssetUrl(url: string | null | undefined): string | null {
 }
 
 function TypeChips({
+  types,
   selected,
   onToggle,
   disabled,
 }: {
+  types: string[];
   selected: string[];
   onToggle: (type: string) => void;
   disabled?: boolean;
 }) {
   return (
     <div className="flex flex-wrap gap-1.5">
-      {MANAGER_PROPERTY_TYPES.map((type) => {
+      {types.map((type) => {
         const on = selected.includes(type);
         return (
           <button
@@ -70,6 +62,17 @@ export default function AgencyManagersTab() {
   const { data: agencyProperties = [] } = useMyAgencyProperties(agencyId);
   const { create, update, remove, uploadPhoto } =
     useAgencyManagerMutations(agencyId);
+  const { propertyTypes: typesFromDict } = useAllDictionaryValues();
+  const typeOptions = useMemo(() => {
+    const commercial = typesFromDict("commercial");
+    const residential = typesFromDict("residential");
+    const land = typesFromDict("land");
+    return [
+      ...commercial,
+      ...residential.filter((t) => !commercial.includes(t)),
+      ...land.filter((t) => !commercial.includes(t) && !residential.includes(t)),
+    ];
+  }, [typesFromDict]);
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -208,7 +211,11 @@ export default function AgencyManagersTab() {
           <div className="text-xs font-medium text-muted-foreground">
             С какими типами работает
           </div>
-          <TypeChips selected={propertyTypes} onToggle={toggleType} />
+          <TypeChips
+            types={typeOptions}
+            selected={propertyTypes}
+            onToggle={toggleType}
+          />
         </div>
         <Button
           onClick={onCreate}
@@ -307,6 +314,7 @@ export default function AgencyManagersTab() {
                   </button>
                 </div>
                 <TypeChips
+                  types={typeOptions}
                   selected={types}
                   disabled={update.isPending}
                   onToggle={async (type) => {

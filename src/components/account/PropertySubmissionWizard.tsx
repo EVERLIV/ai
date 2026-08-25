@@ -32,6 +32,7 @@ import {
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
+import WoodenHouseConfigFields from "@/components/admin/WoodenHouseConfigFields";
 import LocationDistrictSelect from "@/components/LocationDistrictSelect";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -52,15 +53,18 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  COMMERCIAL_PROPERTY_TYPES,
-  isResidentialSegment,
+  defaultTypeForSegment,
+  isLandSegment,
+  LAND_DEAL_TYPES,
   type PropertySegment,
-  RESIDENTIAL_PROPERTY_TYPES,
 } from "@/config/propertySegments";
 import { useToast } from "@/hooks/use-toast";
 import { useAgencyManagers, useMyAgency } from "@/hooks/useAgency";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyDeveloper } from "@/hooks/useDeveloper";
+import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 import type { MyProperty } from "@/hooks/useMyProperties";
+import { buildDeveloperListingExtras } from "@/lib/developerListing";
 import { notifyPropertyEmail } from "@/lib/notifyPropertyEmail";
 import { isDailyDeal, isLongTermRent, isSaleDeal } from "@/lib/propertyDeal";
 import {
@@ -111,6 +115,11 @@ import {
   isHouseLike,
   isParkingLike,
 } from "@/lib/propertyTypeFamilies";
+import {
+  getWoodenHouseConfigByBuildingType,
+  houseBuildingTypeOptions,
+  isWoodenBuildingType,
+} from "@/lib/woodenHouses";
 import { togglePropertyType } from "@/lib/propertyTypes";
 import {
   insertMyPropertyApi,
@@ -118,6 +127,8 @@ import {
   uploadMyPropertyPhotoApi,
 } from "@/lib/userPropertyApi";
 import { cn } from "@/lib/utils";
+import { buildMediaExtrasPatch, planTabLabel } from "@/lib/propertyMedia";
+import { isValidVkVideoUrl } from "@/lib/vkVideo";
 import { geocodeAddress } from "@/lib/yandexGeocoder";
 
 function dealDefaults(
@@ -211,6 +222,14 @@ const emptyForm: PropertyFormState = {
   pets_allowed: false,
   children_allowed: false,
   listing_manager_id: "",
+  wood_config: "",
+  wood_wall: "",
+  wood_floors: "",
+  wood_foundation: "",
+  wood_roof: "",
+  wood_finish: "",
+  video_urls: [],
+  plan_image_url: "",
 };
 
 const STEPS = [
@@ -298,9 +317,13 @@ export default function PropertySubmissionWizard({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const planInputRef = useRef<HTMLInputElement>(null);
   const { data: myAgency } = useMyAgency();
   const agencyId = myAgency?.agency.id;
   const { data: agencyManagers = [] } = useAgencyManagers(agencyId, true);
+  const { data: myDeveloper } = useMyDeveloper();
+  const developerId = myDeveloper?.id;
+  const { propertyTypes } = useAllDictionaryValues();
 
   const [step, setStep] = useState<StepKey>("basic");
   const [editId, setEditId] = useState<string | null>(null);
@@ -309,6 +332,9 @@ export default function PropertySubmissionWizard({
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
+  const [planFile, setPlanFile] = useState<File | null>(null);
+  const [planPreview, setPlanPreview] = useState("");
+  const [videoUrlDraft, setVideoUrlDraft] = useState("");
   const [uploading, setUploading] = useState(false);
   const [locationGeocoding, setLocationGeocoding] = useState(false);
   const wasRejected = editProperty?.moderation_status === "rejected";
@@ -326,19 +352,29 @@ export default function PropertySubmissionWizard({
         ? photos.indexOf(editProperty.cover_photo)
         : 0;
       setCoverIndex(coverIdx >= 0 ? coverIdx : 0);
+      setPlanFile(null);
+      const media = (editProperty.extras || {}) as Record<string, unknown>;
+      setPlanPreview(
+        typeof media.plan_image_url === "string" ? media.plan_image_url : "",
+      );
+      setVideoUrlDraft("");
       setStep("basic");
     } else {
       setEditId(null);
       setForm({
         ...emptyForm,
         segment,
-        types: [isResidentialSegment(segment) ? "Квартира" : "Офис"],
+        types: [defaultTypeForSegment(segment)],
         request_type: initialRequestType || "free_listing",
+        ...(segment === "land" ? { land_use: "ИЖС" } : {}),
       });
       setExistingPhotos([]);
       setPhotoPreviews([]);
       setPhotoFiles([]);
       setCoverIndex(0);
+      setPlanFile(null);
+      setPlanPreview("");
+      setVideoUrlDraft("");
       setStep("basic");
     }
   }, [open, editProperty, segment, initialRequestType]);
@@ -347,19 +383,21 @@ export default function PropertySubmissionWizard({
   const isDaily = isDailyDeal(form.deal_type);
   const isLongRent = isLongTermRent(form.deal_type);
   const isResidential = form.segment === "residential";
-  const dealTypeOptions = isResidential ? RESIDENTIAL_DEAL_TYPES : DEAL_TYPES;
   const typesSource = {
     type: form.types[0],
     extras: { property_types: form.types },
   };
-  const isLand = isAnyLand(typesSource);
+  const isLand = form.segment === "land" || isAnyLand(typesSource);
+  const dealTypeOptions = isResidential
+    ? RESIDENTIAL_DEAL_TYPES
+    : isLandSegment(form.segment)
+      ? LAND_DEAL_TYPES
+      : DEAL_TYPES;
   const dwelling = isDwellingLike(typesSource);
   const flatLike = isFlatLike(typesSource);
   const houseLike = isHouseLike(typesSource);
   const parkingLike = isParkingLike(typesSource);
-  const typeOptions = isResidential
-    ? RESIDENTIAL_PROPERTY_TYPES
-    : COMMERCIAL_PROPERTY_TYPES;
+  const typeOptions = propertyTypes(form.segment);
   const conditionOptions = isResidential ? RESIDENTIAL_CONDITIONS : CONDITIONS;
   const featureGroups = getFeatureGroupsFor(form.segment, form.types);
   const depositOptions = isDaily ? DAILY_DEPOSIT_OPTIONS : DEPOSIT_OPTIONS;
@@ -378,7 +416,7 @@ export default function PropertySubmissionWizard({
     setForm({
       ...emptyForm,
       segment,
-      types: [isResidentialSegment(segment) ? "Квартира" : "Офис"],
+      types: [defaultTypeForSegment(segment)],
       ...dealDefaults("Аренда"),
     });
     setPhotoFiles([]);
@@ -539,9 +577,12 @@ export default function PropertySubmissionWizard({
       const selectedManager = agencyManagers.find(
         (m) => m.id === form.listing_manager_id,
       );
+      let extras = {
+        ...((payload.extras as Record<string, unknown>) || {}),
+      };
       if (selectedManager || agencyId) {
-        const extras = {
-          ...((payload.extras as Record<string, unknown>) || {}),
+        extras = {
+          ...extras,
           ...(selectedManager
             ? {
                 agent_name: selectedManager.full_name,
@@ -558,14 +599,36 @@ export default function PropertySubmissionWizard({
               }
             : {}),
         };
-        (payload as { extras: Record<string, unknown> }).extras = extras;
       }
+      if (myDeveloper && !agencyId) {
+        extras = {
+          ...extras,
+          ...buildDeveloperListingExtras(myDeveloper, {
+            ownerUserId: user.id,
+          }),
+        };
+      }
+      (payload as { extras: Record<string, unknown> }).extras = extras;
 
       let propertyId = editId;
       let publicId = editProperty?.public_id || null;
 
       if (editId) {
         const { urls, cover } = await uploadPhotos(editId);
+        let planUrl = formWithCoords.plan_image_url;
+        if (planFile) {
+          planUrl = await uploadMyPropertyPhotoApi(
+            editId,
+            await compressImage(planFile),
+          );
+        }
+        extras = {
+          ...extras,
+          ...buildMediaExtrasPatch({
+            videoUrls: formWithCoords.video_urls,
+            planImageUrl: planUrl || null,
+          }),
+        };
         await updateMyPropertyApi(
           user.id,
           editId,
@@ -574,29 +637,51 @@ export default function PropertySubmissionWizard({
             photos: urls,
             cover_photo: cover || null,
             photos_count: urls.length,
+            extras,
             ...(agencyId ? { agency_id: agencyId } : {}),
+            ...(developerId && !agencyId ? { developer_id: developerId } : {}),
           },
           agencyId,
+          developerId && !agencyId ? developerId : null,
         );
       } else {
-        const data = await insertMyPropertyApi(user.id, payload, agencyId);
+        const data = await insertMyPropertyApi(
+          user.id,
+          payload,
+          agencyId,
+          developerId && !agencyId ? developerId : null,
+        );
 
         propertyId = data.id;
         publicId = data.public_id;
 
-        if (photoFiles.length > 0 || existingPhotos.length > 0) {
-          const { urls, cover } = await uploadPhotos(data.id);
-          await updateMyPropertyApi(
-            user.id,
+        const { urls, cover } = await uploadPhotos(data.id);
+        let planUrl = formWithCoords.plan_image_url;
+        if (planFile) {
+          planUrl = await uploadMyPropertyPhotoApi(
             data.id,
-            {
-              photos: urls,
-              cover_photo: cover,
-              photos_count: urls.length,
-            },
-            agencyId,
+            await compressImage(planFile),
           );
         }
+        const nextExtras = {
+          ...extras,
+          ...buildMediaExtrasPatch({
+            videoUrls: formWithCoords.video_urls,
+            planImageUrl: planUrl || null,
+          }),
+        };
+        await updateMyPropertyApi(
+          user.id,
+          data.id,
+          {
+            photos: urls,
+            cover_photo: cover || null,
+            photos_count: urls.length,
+            extras: nextExtras,
+          },
+          agencyId,
+          developerId && !agencyId ? developerId : null,
+        );
       }
 
       const shouldNotify = !editId || wasRejected;
@@ -815,11 +900,12 @@ export default function PropertySubmissionWizard({
               >
                 <div>
                   <Label className="text-xs mb-1 block">Сегмент</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {(
                       [
                         { value: "commercial", label: "Коммерческая" },
                         { value: "residential", label: "Жилая" },
+                        { value: "land", label: "Земля" },
                       ] as const
                     ).map((item) => (
                       <button
@@ -828,7 +914,7 @@ export default function PropertySubmissionWizard({
                         onClick={() => {
                           const nextSegment = item.value;
                           const nextTypes = [
-                            nextSegment === "residential" ? "Квартира" : "Офис",
+                            defaultTypeForSegment(nextSegment),
                           ];
                           setForm((prev) => {
                             const allowed = new Set(
@@ -841,12 +927,22 @@ export default function PropertySubmissionWizard({
                               ...prev,
                               segment: nextSegment,
                               types: nextTypes,
-                              class: nextSegment === "residential" ? "-" : "B",
-                              condition: "Хороший ремонт",
+                              class:
+                                nextSegment === "residential" ||
+                                nextSegment === "land"
+                                  ? "-"
+                                  : "B",
+                              condition:
+                                nextSegment === "land"
+                                  ? "-"
+                                  : "Хороший ремонт",
                               layout:
-                                nextSegment === "residential"
+                                nextSegment === "residential" ||
+                                nextSegment === "land"
                                   ? "-"
                                   : "Open-space",
+                              land_use:
+                                nextSegment === "land" ? "ИЖС" : prev.land_use,
                               features: prev.features.filter((f) =>
                                 allowed.has(f),
                               ),
@@ -1088,16 +1184,45 @@ export default function PropertySubmissionWizard({
                         <Label className="text-xs mb-1 block">Тип дома</Label>
                         <Select
                           value={form.building_type || "none"}
-                          onValueChange={(v) =>
-                            update("building_type", v === "none" ? "" : v)
-                          }
+                          onValueChange={(v) => {
+                            const next = v === "none" ? "" : v;
+                            const cfg =
+                              getWoodenHouseConfigByBuildingType(next);
+                            if (cfg) {
+                              const fillDescription = !form.description.trim();
+                              setForm((prev) => ({
+                                ...prev,
+                                wood_config: cfg.id,
+                                building_type: cfg.buildingType,
+                                wood_wall: cfg.defaults?.wall || "",
+                                wood_floors: cfg.defaults?.floors || "",
+                                wood_foundation: cfg.defaults?.foundation || "",
+                                wood_roof: cfg.defaults?.roof || "",
+                                wood_finish: cfg.defaults?.finish || "",
+                                description: fillDescription
+                                  ? `${cfg.listingHint}\n\n${cfg.description}`
+                                  : prev.description,
+                              }));
+                              return;
+                            }
+                            setForm((prev) => ({
+                              ...prev,
+                              building_type: next,
+                              wood_config: isWoodenBuildingType(next)
+                                ? prev.wood_config
+                                : "",
+                            }));
+                          }}
                         >
                           <SelectTrigger className="h-9 text-sm bg-background">
                             <SelectValue placeholder="Выберите" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">—</SelectItem>
-                            {BUILDING_TYPES.map((type) => (
+                            {(houseLike
+                              ? houseBuildingTypeOptions(BUILDING_TYPES)
+                              : BUILDING_TYPES
+                            ).map((type) => (
                               <SelectItem key={type} value={type}>
                                 {type}
                               </SelectItem>
@@ -1106,6 +1231,24 @@ export default function PropertySubmissionWizard({
                         </Select>
                       </div>
                     </div>
+                    {houseLike && (
+                      <WoodenHouseConfigFields
+                        compact
+                        value={{
+                          wood_config: form.wood_config,
+                          building_type: form.building_type,
+                          wood_wall: form.wood_wall,
+                          wood_floors: form.wood_floors,
+                          wood_foundation: form.wood_foundation,
+                          wood_roof: form.wood_roof,
+                          wood_finish: form.wood_finish,
+                          description: form.description,
+                        }}
+                        onChange={(patch) =>
+                          setForm((prev) => ({ ...prev, ...patch }))
+                        }
+                      />
+                    )}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label className="text-xs mb-1 block">
@@ -2136,7 +2279,16 @@ export default function PropertySubmissionWizard({
               />
               <LocationDistrictSelect
                 value={form.district}
-                onChange={(v) => update("district", v)}
+                hasCoords={form.lat != null && form.lng != null}
+                onChange={(v, meta) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    district: v,
+                    ...(meta?.lat != null && meta?.lng != null
+                      ? { lat: meta.lat, lng: meta.lng }
+                      : {}),
+                  }));
+                }}
               />
             </WizardSection>
           )}
@@ -2144,8 +2296,8 @@ export default function PropertySubmissionWizard({
           {step === "media" && (
             <WizardSection
               icon={ImageIcon}
-              title="Фотографии"
-              hint="Загрузите фото помещения, фасада и планировки. ★ — обложка."
+              title="Медиа"
+              hint="Фото, ссылка VK Video и планировка (для новостроек и домов)."
             >
               <input
                 ref={fileInputRef}
@@ -2154,6 +2306,22 @@ export default function PropertySubmissionWizard({
                 multiple
                 className="hidden"
                 onChange={handlePhotoSelect}
+              />
+              <input
+                ref={planInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setPlanFile(file);
+                  const reader = new FileReader();
+                  reader.onload = (ev) =>
+                    setPlanPreview(String(ev.target?.result || ""));
+                  reader.readAsDataURL(file);
+                  e.target.value = "";
+                }}
               />
               <Button
                 type="button"
@@ -2193,6 +2361,107 @@ export default function PropertySubmissionWizard({
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+
+              <div className="space-y-2 pt-3 border-t border-border/50">
+                <Label className="text-xs">Видео VK (ссылка)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={videoUrlDraft}
+                    onChange={(e) => setVideoUrlDraft(e.target.value)}
+                    placeholder="https://vk.com/video-…_…"
+                    className="h-9 text-sm"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => {
+                      const url = videoUrlDraft.trim();
+                      if (!url) return;
+                      if (!isValidVkVideoUrl(url)) {
+                        toast({
+                          title: "Неверная ссылка VK Video",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      setForm((prev) => ({
+                        ...prev,
+                        video_urls: [...prev.video_urls, url],
+                      }));
+                      setVideoUrlDraft("");
+                    }}
+                  >
+                    Добавить
+                  </Button>
+                </div>
+                {form.video_urls.length > 0 && (
+                  <ul className="space-y-1">
+                    {form.video_urls.map((url) => (
+                      <li
+                        key={url}
+                        className="flex items-center gap-2 text-[11px] text-muted-foreground"
+                      >
+                        <span className="truncate flex-1">{url}</span>
+                        <button
+                          type="button"
+                          className="text-destructive"
+                          onClick={() =>
+                            setForm((prev) => ({
+                              ...prev,
+                              video_urls: prev.video_urls.filter(
+                                (u) => u !== url,
+                              ),
+                            }))
+                          }
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {(houseLike ||
+                form.types.includes("Новостройка") ||
+                form.types.includes("Квартира") ||
+                !!myDeveloper) && (
+                <div className="space-y-2 pt-3 border-t border-border/50">
+                  <Label className="text-xs">{planTabLabel(form)}</Label>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => planInputRef.current?.click()}
+                    >
+                      <Upload className="w-4 h-4 mr-1" /> Загрузить план
+                    </Button>
+                    {(planPreview || form.plan_image_url) && (
+                      <button
+                        type="button"
+                        className="text-xs text-destructive"
+                        onClick={() => {
+                          setPlanFile(null);
+                          setPlanPreview("");
+                          setForm((prev) => ({ ...prev, plan_image_url: "" }));
+                        }}
+                      >
+                        Удалить
+                      </button>
+                    )}
+                  </div>
+                  {(planPreview || form.plan_image_url) && (
+                    <img
+                      src={planPreview || form.plan_image_url}
+                      alt=""
+                      className="max-h-40 rounded-md border border-border object-contain bg-muted"
+                    />
+                  )}
                 </div>
               )}
             </WizardSection>

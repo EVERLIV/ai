@@ -22,14 +22,14 @@ export default function ListingCategoryBadges({
       )}
     >
       {type && (
-        <span className="px-1.5 py-0.5 bg-background/90 text-[10px] font-medium text-foreground">
+        <span className="px-1.5 py-0.5 rounded-md bg-background/90 text-[10px] font-medium text-foreground">
           {type}
         </span>
       )}
       {dealType && (
         <span
           className={cn(
-            "px-1.5 py-0.5 text-[10px] font-medium",
+            "px-1.5 py-0.5 rounded-md text-[10px] font-medium",
             dealType === "Продажа"
               ? "bg-foreground text-background"
               : "bg-primary text-primary-foreground",

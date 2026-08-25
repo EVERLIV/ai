@@ -25,7 +25,7 @@ export default function FilterPickerField({
       onClick={onClick}
       aria-label={label}
       className={cn(
-        "w-full h-11 px-3 flex items-center justify-between gap-2 bg-card border border-border/60 text-sm text-left transition-colors hover:border-primary/30 active:bg-muted/30",
+        "w-full h-11 px-3 flex items-center justify-between gap-2 bg-card border border-border/60 rounded-md text-sm text-left transition-colors hover:border-primary/30 active:bg-muted/30",
         !value && "text-muted-foreground",
         className,
       )}

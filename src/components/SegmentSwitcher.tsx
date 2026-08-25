@@ -1,7 +1,10 @@
-import { Building2, Check, ChevronDown, Home } from "lucide-react";
+import { Building2, Check, ChevronDown, Home, Map } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { SEGMENT_ROUTES } from "@/config/propertySegments";
+import {
+  type PropertySegment,
+  SEGMENT_ROUTES,
+} from "@/config/propertySegments";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -13,7 +16,7 @@ const SEGMENTS = [
   {
     id: "commercial" as const,
     label: "Коммерческая",
-    hint: "Офисы, торговля, склады, земля",
+    hint: "Офисы, торговля, склады",
     href: SEGMENT_ROUTES.commercial.home,
     Icon: Building2,
   },
@@ -24,12 +27,26 @@ const SEGMENTS = [
     href: SEGMENT_ROUTES.residential.home,
     Icon: Home,
   },
+  {
+    id: "land" as const,
+    label: "Земля",
+    hint: "Участки: ИЖС, жилая, коммерция",
+    href: SEGMENT_ROUTES.land.home,
+    Icon: Map,
+  },
 ];
+
+function segmentFromPath(pathname: string): PropertySegment {
+  if (pathname.startsWith("/zhilaya")) return "residential";
+  if (pathname.startsWith("/zemlya") || pathname.startsWith("/land"))
+    return "land";
+  return "commercial";
+}
 
 export default function SegmentSwitcher({ className, onNavigate }: Props) {
   const { pathname } = useLocation();
-  const isResidential = pathname.startsWith("/zhilaya");
-  const current = isResidential ? SEGMENTS[1] : SEGMENTS[0];
+  const currentId = segmentFromPath(pathname);
+  const current = SEGMENTS.find((s) => s.id === currentId) ?? SEGMENTS[0];
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +70,7 @@ export default function SegmentSwitcher({ className, onNavigate }: Props) {
 
   useEffect(() => {
     setOpen(false);
-  }, []);
+  }, [pathname]);
 
   return (
     <div ref={rootRef} className={cn("relative shrink-0", className)}>
@@ -101,8 +118,7 @@ export default function SegmentSwitcher({ className, onNavigate }: Props) {
           </div>
           <div className="px-1.5 pb-1.5 space-y-0.5">
             {SEGMENTS.map(({ id, label, hint, href, Icon }) => {
-              const active =
-                id === "residential" ? isResidential : !isResidential;
+              const active = id === currentId;
               return (
                 <Link
                   key={id}

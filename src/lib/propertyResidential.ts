@@ -26,6 +26,13 @@ export const RESIDENTIAL_EXTRAS_KEYS = {
   livingArea: "living_area",
 
   kitchenArea: "kitchen_area",
+
+  woodConfig: "wood_config",
+  woodWall: "wood_wall",
+  woodFloors: "wood_floors",
+  woodFoundation: "wood_foundation",
+  woodRoof: "wood_roof",
+  woodFinish: "wood_finish",
 } as const;
 
 type PropertyLike = {
@@ -90,4 +97,36 @@ export function getResidentialWindowView(property: PropertyLike): string {
   const value = property.extras?.[RESIDENTIAL_EXTRAS_KEYS.windowView];
 
   return typeof value === "string" ? value.trim() : "";
+}
+
+function extraStr(
+  property: PropertyLike,
+  key: string,
+): string {
+  const value = property.extras?.[key];
+  return typeof value === "string" ? value.trim() : "";
+}
+
+export function getWoodConfigId(property: PropertyLike): string {
+  return extraStr(property, RESIDENTIAL_EXTRAS_KEYS.woodConfig);
+}
+
+export function getWoodWall(property: PropertyLike): string {
+  return extraStr(property, RESIDENTIAL_EXTRAS_KEYS.woodWall);
+}
+
+export function getWoodFloors(property: PropertyLike): string {
+  return extraStr(property, RESIDENTIAL_EXTRAS_KEYS.woodFloors);
+}
+
+export function getWoodFoundation(property: PropertyLike): string {
+  return extraStr(property, RESIDENTIAL_EXTRAS_KEYS.woodFoundation);
+}
+
+export function getWoodRoof(property: PropertyLike): string {
+  return extraStr(property, RESIDENTIAL_EXTRAS_KEYS.woodRoof);
+}
+
+export function getWoodFinish(property: PropertyLike): string {
+  return extraStr(property, RESIDENTIAL_EXTRAS_KEYS.woodFinish);
 }

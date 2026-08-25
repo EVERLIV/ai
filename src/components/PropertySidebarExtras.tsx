@@ -1,24 +1,36 @@
-import {
-  Building2,
-} from "lucide-react";
+import { Building2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import { SpecRow, SpecSectionTitle } from "@/components/PropertySpecList";
+import {
+  pluralApartments,
+  pluralProjects,
+} from "@/components/specialists/specialistUtils";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { DEFAULT_AGENT } from "@/config/defaultAgent";
+import {
+  useDeveloperPublic,
+  useDeveloperPublicProjects,
+  useDeveloperPublicProperties,
+} from "@/hooks/useDeveloper";
 import { useOwnerListingCard } from "@/hooks/useOwnerListingCard";
 import { ACCOUNT_TYPE_LABELS } from "@/hooks/useProfile";
 import { useActivePropertiesCount } from "@/hooks/useProperties";
-import { isAgencyListing } from "@/lib/listingSource";
+import {
+  getPropertyDeveloperId,
+  isAgencyListing,
+  isDeveloperListing,
+} from "@/lib/listingSource";
 import {
   AGENCY_OBJECTS_FLOOR,
   formatAgentObjectsLabel,
 } from "@/lib/propertyCard";
 import { resolveSidebarDisplay } from "@/lib/propertySidebar";
-import { Link } from "react-router-dom";
 
 interface Props {
   property: {
     agency_id?: string | null;
+    developer_id?: string | null;
     listing_manager_id?: string | null;
     type?: string | null;
     deal_type?: string | null;
@@ -29,15 +41,35 @@ interface Props {
     submitted_by?: string | null;
     extras?: Record<string, unknown> | null;
   };
+  /** Скрыть блок агентства/агента (например, в галерее — без дубля) */
+  hideAgent?: boolean;
 }
 
-export default function PropertySidebarExtras({ property }: Props) {
+export default function PropertySidebarExtras({
+  property,
+  hideAgent = false,
+}: Props) {
   const d = resolveSidebarDisplay(property);
   const { vis } = d;
   const agencyListing = isAgencyListing(property);
+  const developerListing = isDeveloperListing(property);
+  const developerId =
+    getPropertyDeveloperId(property) || d.developer_id || null;
+  const { data: liveDeveloper } = useDeveloperPublic(
+    developerListing ? developerId || undefined : undefined,
+  );
+  const { data: developerProjects = [] } = useDeveloperPublicProjects(
+    developerListing ? developerId || undefined : undefined,
+  );
+  const { data: developerProperties = [] } = useDeveloperPublicProperties(
+    developerListing ? developerId || undefined : undefined,
+  );
+  const developerProjectsCount = developerProjects.length;
+  const developerApartmentsCount = developerProperties.length;
+
   const ownerUserId = d.owner_user_id || property.submitted_by || "";
   const { data: liveOwner } = useOwnerListingCard(
-    agencyListing ? null : ownerUserId || null,
+    agencyListing || developerListing ? null : ownerUserId || null,
   );
 
   const extrasAgentName = d.agent_name !== "—" ? d.agent_name : "";
@@ -46,46 +78,86 @@ export default function PropertySidebarExtras({ property }: Props) {
       ? d.agent_company
       : "";
 
-  const agentName = agencyListing
-    ? extrasAgentName
-    : liveOwner?.full_name || extrasAgentName;
-  const agentAvatar = agencyListing
-    ? d.agent_avatar_url || consultantAvatar
-    : liveOwner?.avatar_url || d.agent_avatar_url || consultantAvatar;
-  const accountType = agencyListing
-    ? d.agent_account_type
-    : liveOwner?.account_type || d.agent_account_type;
-  const isRealtor =
-    accountType === "realtor" || accountType === "agency" || agencyListing;
-  const agencyName = agencyListing
-    ? extrasAgencyName
-    : liveOwner?.agency_name || extrasAgencyName;
-  const agencyAbout = agencyListing
-    ? d.agent_agency_about
-    : liveOwner?.agency_about || d.agent_agency_about;
-  const objectsCount = agencyListing
-    ? d.agent_objects_count
-    : (liveOwner?.published_objects_count ?? d.agent_objects_count);
-  const isVerified = agencyListing
-    ? d.agent_verified
-    : liveOwner
-      ? liveOwner.verification_status === "verified"
-      : d.agent_verified;
-  const staffCount = agencyListing ? undefined : liveOwner?.agency_staff_count;
+  const developerName =
+    liveDeveloper?.name?.trim() ||
+    extrasAgencyName ||
+    extrasAgentName ||
+    "";
+  const developerAvatar =
+    liveDeveloper?.logo_url?.trim() ||
+    d.agent_avatar_url ||
+    "";
+  const developerAbout =
+    liveDeveloper?.about?.trim() || d.agent_agency_about || "";
+  const developerVerified = liveDeveloper
+    ? liveDeveloper.verification_status === "verified"
+    : d.agent_verified;
 
-  const hasOwnerData = agencyListing
-    ? !!(extrasAgentName || extrasAgencyName)
-    : !!ownerUserId && !!(agentName || liveOwner?.full_name);
+  const agentName = developerListing
+    ? developerName
+    : agencyListing
+      ? extrasAgentName
+      : liveOwner?.full_name || extrasAgentName;
+  const agentAvatar = developerListing
+    ? developerAvatar
+    : agencyListing
+      ? d.agent_avatar_url || consultantAvatar
+      : liveOwner?.avatar_url || d.agent_avatar_url || consultantAvatar;
+  const accountType = developerListing
+    ? "developer"
+    : agencyListing
+      ? d.agent_account_type
+      : liveOwner?.account_type || d.agent_account_type;
+  const isRealtor =
+    !developerListing &&
+    (accountType === "realtor" ||
+      accountType === "agency" ||
+      agencyListing);
+  const agencyName = developerListing
+    ? developerName
+    : agencyListing
+      ? extrasAgencyName
+      : liveOwner?.agency_name || extrasAgencyName;
+  const agencyAbout = developerListing
+    ? developerAbout
+    : agencyListing
+      ? d.agent_agency_about
+      : liveOwner?.agency_about || d.agent_agency_about;
+  const objectsCount = developerListing
+    ? d.agent_objects_count
+    : agencyListing
+      ? d.agent_objects_count
+      : (liveOwner?.published_objects_count ?? d.agent_objects_count);
+  const isVerified = developerListing
+    ? developerVerified
+    : agencyListing
+      ? d.agent_verified
+      : liveOwner
+        ? liveOwner.verification_status === "verified"
+        : d.agent_verified;
+  const staffCount =
+    agencyListing || developerListing
+      ? undefined
+      : liveOwner?.agency_staff_count;
+
+  const hasOwnerData = developerListing
+    ? !!(developerName || developerId)
+    : agencyListing
+      ? !!(extrasAgentName || extrasAgencyName)
+      : !!ownerUserId && !!(agentName || liveOwner?.full_name);
 
   const { data: catalogCount } = useActivePropertiesCount();
 
-  const showAgent = true;
+  const showAgent = !hideAgent;
   const displayAgentName = hasOwnerData ? agentName : DEFAULT_AGENT.name;
-  const displayAgentAvatar = hasOwnerData ? agentAvatar : DEFAULT_AGENT.avatar;
+  const displayAgentAvatar = hasOwnerData
+    ? agentAvatar || (developerListing ? "" : consultantAvatar)
+    : DEFAULT_AGENT.avatar;
   const displayIsVerified = hasOwnerData
     ? isVerified
     : DEFAULT_AGENT.isVerified;
   const displayIsRealtor = hasOwnerData ? isRealtor : true;
+  const displayIsDeveloper = hasOwnerData && developerListing;
   const displayAgencyName = hasOwnerData
     ? agencyName
     : DEFAULT_AGENT.agencyName;
@@ -93,7 +165,8 @@ export default function PropertySidebarExtras({ property }: Props) {
     ? objectsCount
     : Math.max(catalogCount ?? 0, AGENCY_OBJECTS_FLOOR);
   const displayObjectsLabel = formatAgentObjectsLabel(displayObjectsCount, {
-    isAgency: !hasOwnerData || isRealtor,
+    // Мок 190+ только для агентства без данных / риелторов — не для застройщиков
+    isAgency: !hasOwnerData || (isRealtor && !displayIsDeveloper),
   });
   const displayAgencyAbout = hasOwnerData ? agencyAbout : DEFAULT_AGENT.about;
   const displayAccountType = hasOwnerData
@@ -110,6 +183,10 @@ export default function PropertySidebarExtras({ property }: Props) {
     property.listing_manager_id ||
     (!hasOwnerData ? DEFAULT_AGENT.managerId : "") ||
     "";
+  const developerHref =
+    displayIsDeveloper && developerId
+      ? `/zastroyshchik/${developerId}`
+      : null;
   const agencyHref = agencyId ? `/agentstvo/${agencyId}` : null;
   const managerHref = managerId ? `/rieltor/${managerId}` : null;
   const displayRating =
@@ -124,6 +201,12 @@ export default function PropertySidebarExtras({ property }: Props) {
       : !hasOwnerData
         ? DEFAULT_AGENT.responseMinutes
         : 0;
+
+  const sectionTitle = displayIsDeveloper
+    ? "Застройщик"
+    : displayIsRealtor
+      ? "Агентство / агент"
+      : "Продавец";
 
   const conditionRows: { label: string; value: string }[] = [];
   if (vis.entrance && d.entrance_group !== "—")
@@ -227,18 +310,29 @@ export default function PropertySidebarExtras({ property }: Props) {
 
       {showAgent && (
         <div className="rounded-lg border border-border/70 bg-card p-4 shadow-sm">
-          <SpecSectionTitle className="mb-3">
-            {displayIsRealtor ? "Агентство / агент" : "Продавец"}
-          </SpecSectionTitle>
+          <SpecSectionTitle className="mb-3">{sectionTitle}</SpecSectionTitle>
           <div className="flex items-start gap-3">
-            <img
-              src={displayAgentAvatar}
-              alt={displayAgentName}
-              className="w-12 h-12 rounded-md object-cover shrink-0 bg-muted"
-            />
+            {displayAgentAvatar ? (
+              <img
+                src={displayAgentAvatar}
+                alt={displayAgentName}
+                className="w-12 h-12 rounded-md object-cover shrink-0 bg-muted"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0 text-sm font-bold">
+                {(displayAgentName || "З").charAt(0).toUpperCase()}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
-                {managerHref ? (
+                {developerHref ? (
+                  <Link
+                    to={developerHref}
+                    className="text-sm font-semibold text-foreground leading-snug hover:underline"
+                  >
+                    {displayAgentName}
+                  </Link>
+                ) : managerHref ? (
                   <Link
                     to={managerHref}
                     className="text-sm font-semibold text-foreground leading-snug hover:underline"
@@ -256,10 +350,12 @@ export default function PropertySidebarExtras({ property }: Props) {
               </div>
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 {hasOwnerData
-                  ? ACCOUNT_TYPE_LABELS[displayAccountType]
+                  ? ACCOUNT_TYPE_LABELS[
+                      displayAccountType as keyof typeof ACCOUNT_TYPE_LABELS
+                    ] || ACCOUNT_TYPE_LABELS.owner
                   : DEFAULT_AGENT.position}
               </p>
-              {displayIsRealtor && displayAgencyName && (
+              {!displayIsDeveloper && displayIsRealtor && displayAgencyName && (
                 agencyHref ? (
                   <Link
                     to={agencyHref}
@@ -279,8 +375,21 @@ export default function PropertySidebarExtras({ property }: Props) {
           </div>
 
           <div className="mt-3 space-y-0 border-t border-border/40 pt-1">
-            {displayObjectsLabel && (
-              <SpecRow label="В каталоге" value={displayObjectsLabel} />
+            {displayIsDeveloper ? (
+              <>
+                <SpecRow
+                  label="Проекты"
+                  value={`${developerProjectsCount} ${pluralProjects(developerProjectsCount)}`}
+                />
+                <SpecRow
+                  label="Квартиры"
+                  value={`${developerApartmentsCount} ${pluralApartments(developerApartmentsCount)}`}
+                />
+              </>
+            ) : (
+              displayObjectsLabel && (
+                <SpecRow label="В каталоге" value={displayObjectsLabel} />
+              )
             )}
             {displayRating > 0 && (
               <SpecRow

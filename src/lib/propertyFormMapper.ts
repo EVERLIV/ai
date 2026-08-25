@@ -4,6 +4,13 @@ import { isDailyDeal, isLongTermRent, isSaleDeal } from "@/lib/propertyDeal";
 import type { RequestType } from "@/lib/propertyModeration";
 import { RESIDENTIAL_EXTRAS_KEYS } from "@/lib/propertyResidential";
 import {
+  findLocationByName,
+  leafDistrictName,
+  LOCATION_EXTRAS_KEY,
+  toPropertyLocationExtras,
+  type PropertyLocationExtras,
+} from "@/lib/locations";
+import {
   isAnyLand,
   isDwellingLike,
   isFlatLike,
@@ -11,11 +18,52 @@ import {
   isParkingLike,
 } from "@/lib/propertyTypeFamilies";
 import {
+  buildMediaExtrasPatch,
+  readPropertyMediaExtras,
+} from "@/lib/propertyMedia";
+import {
   getPropertySegment,
   getPropertyTypes,
   normalizePropertyTypes,
   syncPropertyTypesPayload,
 } from "@/lib/propertyTypes";
+
+function readLocationExtras(
+  extras: Record<string, unknown>,
+): PropertyLocationExtras | null {
+  const raw = extras[LOCATION_EXTRAS_KEY];
+  if (!raw || typeof raw !== "object") return null;
+  const loc = raw as Partial<PropertyLocationExtras>;
+  if (!loc.city || !Array.isArray(loc.path)) return null;
+  return {
+    region: String(loc.region || "Иркутская область"),
+    city: String(loc.city),
+    locality: loc.locality != null ? String(loc.locality) : null,
+    kind: (loc.kind as PropertyLocationExtras["kind"]) || "city",
+    path: loc.path.map(String),
+    locationId: loc.locationId ? String(loc.locationId) : undefined,
+  };
+}
+
+/** Синхронизация district (лист) ↔ extras.location */
+export function syncLocationExtras(
+  district: string,
+  existingExtras: Record<string, unknown> = {},
+): {
+  district: string;
+  location: PropertyLocationExtras | null;
+} {
+  const fromExtras = readLocationExtras(existingExtras);
+  const leaf = findLocationByName(district);
+  if (leaf) {
+    const location = toPropertyLocationExtras(leaf);
+    return { district: leafDistrictName(location), location };
+  }
+  if (fromExtras && leafDistrictName(fromExtras) === district.trim()) {
+    return { district: district.trim(), location: fromExtras };
+  }
+  return { district: district.trim(), location: null };
+}
 
 export interface PropertyFormState {
   segment: PropertySegment;
@@ -67,6 +115,16 @@ export interface PropertyFormState {
   pets_allowed: boolean;
   children_allowed: boolean;
   listing_manager_id: string;
+  wood_config: string;
+  wood_wall: string;
+  wood_floors: string;
+  wood_foundation: string;
+  wood_roof: string;
+  wood_finish: string;
+  /** Ссылки VK Video */
+  video_urls: string[];
+  /** Планировка / план дома */
+  plan_image_url: string;
 }
 
 export function propertyToFormState(property: MyProperty): PropertyFormState {
@@ -87,7 +145,12 @@ export function propertyToFormState(property: MyProperty): PropertyFormState {
     price: Number(property.price) || 0,
     description: property.description || "",
     address: property.address || "",
-    district: property.district || "Кировский",
+    district:
+      (() => {
+        const loc = readLocationExtras(e);
+        if (loc) return leafDistrictName(loc);
+        return property.district || "Кировский";
+      })(),
     lat:
       property.lat != null && Number.isFinite(Number(property.lat))
         ? Number(property.lat)
@@ -144,6 +207,14 @@ export function propertyToFormState(property: MyProperty): PropertyFormState {
     pets_allowed: Boolean(e[RESIDENTIAL_EXTRAS_KEYS.petsAllowed]),
     children_allowed: Boolean(e[RESIDENTIAL_EXTRAS_KEYS.childrenAllowed]),
     listing_manager_id: property.listing_manager_id || "",
+    wood_config: String(e[RESIDENTIAL_EXTRAS_KEYS.woodConfig] || ""),
+    wood_wall: String(e[RESIDENTIAL_EXTRAS_KEYS.woodWall] || ""),
+    wood_floors: String(e[RESIDENTIAL_EXTRAS_KEYS.woodFloors] || ""),
+    wood_foundation: String(e[RESIDENTIAL_EXTRAS_KEYS.woodFoundation] || ""),
+    wood_roof: String(e[RESIDENTIAL_EXTRAS_KEYS.woodRoof] || ""),
+    wood_finish: String(e[RESIDENTIAL_EXTRAS_KEYS.woodFinish] || ""),
+    video_urls: readPropertyMediaExtras(e).videoUrls,
+    plan_image_url: readPropertyMediaExtras(e).planImageUrl || "",
   };
 }
 
@@ -256,6 +327,22 @@ export function buildPropertyPayload(
                 dwelling && form.kitchen_area
                   ? Number(form.kitchen_area)
                   : undefined,
+              ...(isHouseLike(form.types)
+                ? {
+                    [RESIDENTIAL_EXTRAS_KEYS.woodConfig]:
+                      form.wood_config || undefined,
+                    [RESIDENTIAL_EXTRAS_KEYS.woodWall]:
+                      form.wood_wall || undefined,
+                    [RESIDENTIAL_EXTRAS_KEYS.woodFloors]:
+                      form.wood_floors || undefined,
+                    [RESIDENTIAL_EXTRAS_KEYS.woodFoundation]:
+                      form.wood_foundation || undefined,
+                    [RESIDENTIAL_EXTRAS_KEYS.woodRoof]:
+                      form.wood_roof || undefined,
+                    [RESIDENTIAL_EXTRAS_KEYS.woodFinish]:
+                      form.wood_finish || undefined,
+                  }
+                : {}),
             }
           : {}),
         [RESIDENTIAL_EXTRAS_KEYS.market]: isSale
@@ -270,6 +357,14 @@ export function buildPropertyPayload(
       }
     : {};
 
+  const { district: leafDistrict, location: locationExtras } =
+    syncLocationExtras(form.district);
+
+  const mediaExtras = buildMediaExtrasPatch({
+    videoUrls: form.video_urls,
+    planImageUrl: form.plan_image_url,
+  });
+
   const types = normalizePropertyTypes(form.types);
   const { type: primaryType, extras: typesExtras } = syncPropertyTypesPayload(
     types,
@@ -278,6 +373,10 @@ export function buildPropertyPayload(
       ...rentExtras,
       ...commonExtras,
       ...residentialExtras,
+      ...mediaExtras,
+      ...(locationExtras
+        ? { [LOCATION_EXTRAS_KEY]: locationExtras }
+        : {}),
     },
     form.segment,
   );
@@ -290,7 +389,7 @@ export function buildPropertyPayload(
     price: form.price,
     price_per_m2: form.area > 0 ? Math.round(form.price / form.area) : 0,
     address: form.address.trim(),
-    district: form.district,
+    district: leafDistrict,
     lat: form.lat,
     lng: form.lng,
     floor: land ? "-" : form.floor,

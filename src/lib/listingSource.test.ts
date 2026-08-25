@@ -40,6 +40,18 @@ describe("listingSource", () => {
     expect(listingMatchesSellerFilter(agency, "Все", "other")).toBe(false);
   });
 
+  it("detects developer listings and excludes them from agency", () => {
+    const listing = {
+      developer_id: "d1",
+      extras: { agent_account_type: "developer" as const },
+    };
+    expect(isAgencyListing(listing)).toBe(false);
+    expect(isOwnerListing(listing)).toBe(false);
+    expect(listingMatchesSellerFilter(listing, "developer", null)).toBe(true);
+    expect(listingMatchesSellerFilter(listing, "agency", null)).toBe(false);
+    expect(normalizeListingSeller("застройщик")).toBe("developer");
+  });
+
   it("normalizes seller param", () => {
     expect(normalizeListingSeller("собственник")).toBe("owner");
     expect(normalizeListingSeller("agency")).toBe("agency");

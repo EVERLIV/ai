@@ -19,9 +19,10 @@ const stats = [
 const TYPES = [
   { label: "Офис", emoji: "🏢" },
   { label: "Торговая", emoji: "🏪" },
+  { label: "Павильон", emoji: "🛖" },
   { label: "Склад", emoji: "🏭" },
-  { label: "Земля", emoji: "🌿" },
   { label: "Производство", emoji: "⚙️" },
+  { label: "ПСН", emoji: "🏬" },
 ];
 
 export default function HeroSection() {
@@ -214,10 +215,10 @@ export default function HeroSection() {
                 <button
                   type="button"
                   onClick={() => setLocationOpen(true)}
-                  className="hidden sm:inline-flex items-center shrink-0 px-3 text-xs font-semibold text-primary hover:text-primary/80 transition-colors whitespace-nowrap max-w-[9rem] truncate"
-                  title="Выбрать город или район"
+                  className="hidden sm:inline-flex items-center min-w-0 max-w-[7.5rem] md:max-w-[10rem] lg:max-w-[12rem] shrink px-3 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                  title={district || "Выбрать город или район"}
                 >
-                  {district || "Регион"}
+                  <span className="truncate">{district || "Регион"}</span>
                 </button>
                 <span className="hidden sm:block w-px h-5 bg-border shrink-0" />
 

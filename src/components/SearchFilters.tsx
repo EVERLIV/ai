@@ -29,12 +29,23 @@ export const defaultFilters: PropertyFilters = {
   agencyId: "",
 };
 
-const tabs = ["Все", "Офис", "Торговая", "Склад", "ПСН", "Земля"];
+const tabs = [
+  "Все",
+  "Офис",
+  "Торговая",
+  "Павильон",
+  "Склад",
+  "Производство",
+  "ПСН",
+  "Общепит",
+  "Автосервис",
+];
 const classes = ["Все", "A", "B", "C"];
 const sellerOptions: { value: ListingSellerFilter; label: string }[] = [
   { value: "Все", label: "Все" },
   { value: "owner", label: "Собственник" },
   { value: "agency", label: "Агентство" },
+  { value: "developer", label: "От застройщика" },
 ];
 
 interface Props {
@@ -356,6 +367,12 @@ export default function SearchFilters({ filters, onChange }: Props) {
             )}
             {!f.agencyId && f.seller === "agency" && (
               <Chip label="Агентство" onRemove={() => set({ seller: "Все" })} />
+            )}
+            {!f.agencyId && f.seller === "developer" && (
+              <Chip
+                label="От застройщика"
+                onRemove={() => set({ seller: "Все" })}
+              />
             )}
             <button
               onClick={reset}

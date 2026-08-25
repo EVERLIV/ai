@@ -23,6 +23,12 @@ export type MegaMenuConfig = {
   match?: (pathname: string, search: string) => boolean;
 };
 
+export type MainNavMegaMenuOptions = {
+  isLoggedIn?: boolean;
+  /** Типы из справочника property_type (commercial) — меню строится по ним */
+  commercialTypes?: string[];
+};
+
 function r(params: Parameters<typeof buildCatalogUrl>[0]) {
   return buildCatalogUrl({ segment: "residential", ...params });
 }
@@ -40,11 +46,64 @@ function marketIs(search: string, market: string) {
   return m.includes(market);
 }
 
+/** Подпись в меню для типа из справочника */
+export function commercialTypeMenuLabel(type: string): string {
+  const map: Record<string, string> = {
+    Офис: "Офисы",
+    Торговая: "Торговые площади",
+    Склад: "Склады",
+    Производство: "Производство",
+    Павильон: "Павильоны",
+    ПСН: "ПСН",
+    Общепит: "Общепит",
+    Автосервис: "Автосервис",
+    "Свободного назначения": "Свободного назначения",
+  };
+  return map[type] || type;
+}
+
+/** Лендинг или фильтр каталога для коммерческого типа */
+export function commercialTypeHref(
+  type: string,
+  deal?: "Аренда" | "Продажа",
+): string {
+  if (!deal) {
+    if (type === "Офис") return "/offices";
+    if (type === "Торговая") return "/retail";
+    if (type === "Склад") return "/warehouses";
+  }
+  return c({ types: type, ...(deal ? { deal } : {}) });
+}
+
+function commercialDealLinks(
+  types: string[],
+  deal: "Аренда" | "Продажа",
+): MegaLink[] {
+  const links = types.map((type) => ({
+    label: commercialTypeMenuLabel(type),
+    href: commercialTypeHref(type, deal),
+  }));
+  links.push({ label: "Весь каталог", href: c({ deal }) });
+  return links;
+}
+
 /** Верхнее меню в стиле агрегатора: Аренда / Продажа / Новостройки… */
-export function getMainNavMegaMenus(isLoggedIn = false): MegaMenuConfig[] {
+export function getMainNavMegaMenus(
+  options: MainNavMegaMenuOptions | boolean = {},
+): MegaMenuConfig[] {
+  const opts: MainNavMegaMenuOptions =
+    typeof options === "boolean" ? { isLoggedIn: options } : options;
+  const isLoggedIn = !!opts.isLoggedIn;
+  const commercialTypes = (
+    opts.commercialTypes?.length
+      ? opts.commercialTypes
+      : ["Офис", "Торговая", "Склад", "Производство", "Павильон", "ПСН"]
+  ).filter((t) => t !== "Земля" && t !== "Участок");
+
   const listRent = placementCtaPath("residential", "rent", isLoggedIn);
   const listSale = placementCtaPath("residential", "sale", isLoggedIn);
   const listCommercial = placementCtaPath("commercial", "rent", isLoggedIn);
+  const listLand = placementCtaPath("land", "rent", isLoggedIn);
 
   return [
     {
@@ -146,27 +205,15 @@ export function getMainNavMegaMenus(isLoggedIn = false): MegaMenuConfig[] {
         {
           sections: [
             {
-              title: "Купить жильё",
+              title: "Купить",
               links: [
                 {
                   label: "Квартиры",
                   href: r({ types: "Квартира", deal: "Продажа" }),
                 },
                 {
-                  label: "Вторичка",
-                  href: r({
-                    types: "Квартира",
-                    market: "Вторичка",
-                    deal: "Продажа",
-                  }),
-                },
-                {
                   label: "Комнаты",
                   href: r({ types: "Комната", deal: "Продажа" }),
-                },
-                {
-                  label: "Апартаменты",
-                  href: r({ types: "Апартаменты", deal: "Продажа" }),
                 },
                 {
                   label: "Дома и коттеджи",
@@ -176,6 +223,10 @@ export function getMainNavMegaMenus(isLoggedIn = false): MegaMenuConfig[] {
                   }),
                 },
                 {
+                  label: "Апартаменты",
+                  href: r({ types: "Апартаменты", deal: "Продажа" }),
+                },
+                {
                   label: "Таунхаусы",
                   href: r({ types: "Таунхаус", deal: "Продажа" }),
                 },
@@ -183,7 +234,17 @@ export function getMainNavMegaMenus(isLoggedIn = false): MegaMenuConfig[] {
             },
             {
               title: "Продать",
-              links: [{ label: "Продать жильё", href: listSale }],
+              links: [
+                { label: "Продать жильё", href: listSale },
+                {
+                  label: "Передать в управление",
+                  href: placementCtaPath(
+                    "residential",
+                    "management",
+                    isLoggedIn,
+                  ),
+                },
+              ],
             },
           ],
         },
@@ -193,16 +254,16 @@ export function getMainNavMegaMenus(isLoggedIn = false): MegaMenuConfig[] {
               title: "Полезное",
               links: [
                 { label: "Умный подбор", href: "#ai-wizard" },
-                { label: "Каталог риелторов", href: "/rieltory" },
-                { label: "Новости", href: "/news" },
+                { label: "Риелторы", href: "/rieltory" },
+                { label: "Весь каталог", href: r({ deal: "Продажа" }) },
               ],
             },
           ],
         },
       ],
       promo: {
-        title: "Продайте объект за 0 ₽",
-        text: "Объявление в каталоге бесплатно — без скрытых комиссий площадки",
+        title: "Продайте за 0 ₽",
+        text: "Разместите объявление — покупатели найдут вас сами",
         cta: "Разместить",
         href: listSale,
       },
@@ -210,11 +271,7 @@ export function getMainNavMegaMenus(isLoggedIn = false): MegaMenuConfig[] {
     {
       id: "newbuilds",
       triggerLabel: "Новостройки",
-      catalogHref: r({
-        types: "Квартира",
-        market: "Новостройка",
-        deal: "Продажа",
-      }),
+      catalogHref: r({ market: "Новостройка" }),
       match: (pathname, search) =>
         pathname.startsWith("/zhilaya") && marketIs(search, "Новостройка"),
       columns: [
@@ -224,11 +281,14 @@ export function getMainNavMegaMenus(isLoggedIn = false): MegaMenuConfig[] {
               title: "Новостройки",
               links: [
                 {
-                  label: "Квартиры в новостройках",
+                  label: "Все новостройки",
+                  href: r({ market: "Новостройка" }),
+                },
+                {
+                  label: "Квартиры",
                   href: r({
                     types: "Квартира",
                     market: "Новостройка",
-                    deal: "Продажа",
                   }),
                 },
                 {
@@ -236,13 +296,9 @@ export function getMainNavMegaMenus(isLoggedIn = false): MegaMenuConfig[] {
                   href: r({
                     types: "Апартаменты",
                     market: "Новостройка",
-                    deal: "Продажа",
                   }),
                 },
-                {
-                  label: "Все новостройки",
-                  href: r({ market: "Новостройка", deal: "Продажа" }),
-                },
+                { label: "Застройщики", href: "/zastroyshchiki" },
               ],
             },
           ],
@@ -252,9 +308,8 @@ export function getMainNavMegaMenus(isLoggedIn = false): MegaMenuConfig[] {
             {
               title: "Сервисы",
               links: [
-                { label: "Умный подбор", href: "#ai-wizard" },
+                { label: "Подбор новостройки", href: "#ai-wizard" },
                 { label: "Риелторы", href: "/rieltory" },
-                { label: "Разместить за 0 ₽", href: listSale },
               ],
             },
           ],
@@ -269,18 +324,19 @@ export function getMainNavMegaMenus(isLoggedIn = false): MegaMenuConfig[] {
     },
     {
       id: "houses",
-      triggerLabel: "Дома и участки",
-      catalogHref: r({ types: ["Дом", "Участок"] }),
+      triggerLabel: "Дома",
+      catalogHref: r({ types: ["Дом", "Коттедж", "Дача"] }),
       match: (pathname, search) => {
-        if (pathname.startsWith("/zhilaya/uchastki")) return true;
-        if (pathname.startsWith("/land")) return true;
+        if (pathname.startsWith("/zemlya") || pathname.startsWith("/land"))
+          return false;
+        if (pathname.startsWith("/zhilaya/uchastki")) return false;
         const types = new URLSearchParams(search).get("types") || "";
         return (
           pathname.startsWith("/zhilaya") &&
           (types.includes("Дом") ||
-            types.includes("Участок") ||
             types.includes("Коттедж") ||
-            types.includes("Дача"))
+            types.includes("Дача") ||
+            types.includes("Таунхаус"))
         );
       },
       columns: [
@@ -309,13 +365,6 @@ export function getMainNavMegaMenus(isLoggedIn = false): MegaMenuConfig[] {
                 },
               ],
             },
-            {
-              title: "Участки",
-              links: [
-                { label: "Участки (жильё)", href: "/zhilaya/uchastki" },
-                { label: "Земля коммерческая", href: "/land" },
-              ],
-            },
           ],
         },
         {
@@ -323,15 +372,19 @@ export function getMainNavMegaMenus(isLoggedIn = false): MegaMenuConfig[] {
             {
               title: "Сервисы",
               links: [
-                { label: "Разместить участок", href: listRent },
+                { label: "Разместить дом", href: listRent },
                 { label: "Риелторы", href: "/rieltory" },
+                {
+                  label: "Каталог земли",
+                  href: buildCatalogUrl({ segment: "land" }),
+                },
               ],
             },
           ],
         },
       ],
       promo: {
-        title: "Участок или дом?",
+        title: "Ищете дом?",
         text: "Разместите объявление бесплатно или найдите специалиста",
         cta: "Разместить",
         href: listRent,
@@ -345,41 +398,17 @@ export function getMainNavMegaMenus(isLoggedIn = false): MegaMenuConfig[] {
         pathname === "/catalog" ||
         pathname.startsWith("/offices") ||
         pathname.startsWith("/retail") ||
-        pathname.startsWith("/warehouses") ||
-        (pathname.startsWith("/land") && !pathname.startsWith("/zhilaya")),
+        pathname.startsWith("/warehouses"),
       columns: [
         {
           sections: [
             {
               title: "Снять",
-              links: [
-                { label: "Офисы", href: "/offices" },
-                { label: "Торговые площади", href: "/retail" },
-                { label: "Склады", href: "/warehouses" },
-                {
-                  label: "Производство",
-                  href: c({ types: "Производство", deal: "Аренда" }),
-                },
-                { label: "Весь каталог", href: c({ deal: "Аренда" }) },
-              ],
+              links: commercialDealLinks(commercialTypes, "Аренда"),
             },
             {
               title: "Купить",
-              links: [
-                {
-                  label: "Офисы",
-                  href: c({ types: "Офис", deal: "Продажа" }),
-                },
-                {
-                  label: "Торговая",
-                  href: c({ types: "Торговая", deal: "Продажа" }),
-                },
-                {
-                  label: "Склады",
-                  href: c({ types: "Склад", deal: "Продажа" }),
-                },
-                { label: "Земля", href: "/land" },
-              ],
+              links: commercialDealLinks(commercialTypes, "Продажа"),
             },
           ],
         },
@@ -398,9 +427,95 @@ export function getMainNavMegaMenus(isLoggedIn = false): MegaMenuConfig[] {
       ],
       promo: {
         title: "Сдайте коммерцию за 0 ₽",
-        text: "Офис, склад или торговое помещение — объявление бесплатно",
+        text: "Офис, склад, павильон или производство — объявление бесплатно",
         cta: "Разместить",
         href: listCommercial,
+      },
+    },
+    {
+      id: "land",
+      triggerLabel: "Земля",
+      catalogHref: SEGMENT_ROUTES.land.catalog,
+      match: (pathname) =>
+        pathname.startsWith("/zemlya") || pathname.startsWith("/land"),
+      columns: [
+        {
+          sections: [
+            {
+              title: "Каталог",
+              links: [
+                {
+                  label: "Все участки",
+                  href: buildCatalogUrl({ segment: "land" }),
+                },
+                {
+                  label: "ИЖС",
+                  href: buildCatalogUrl({
+                    segment: "land",
+                    landUse: "ИЖС",
+                  }),
+                },
+                {
+                  label: "Жилая",
+                  href: buildCatalogUrl({
+                    segment: "land",
+                    landUse: "Жилая",
+                  }),
+                },
+                {
+                  label: "Коммерческая",
+                  href: buildCatalogUrl({
+                    segment: "land",
+                    landUse: "Коммерческая",
+                  }),
+                },
+                {
+                  label: "Сельхоз",
+                  href: buildCatalogUrl({
+                    segment: "land",
+                    landUse: "Сельскохозяйственная",
+                  }),
+                },
+              ],
+            },
+            {
+              title: "Тип",
+              links: [
+                {
+                  label: "Земля",
+                  href: buildCatalogUrl({ segment: "land", types: "Земля" }),
+                },
+                {
+                  label: "Участок",
+                  href: buildCatalogUrl({
+                    segment: "land",
+                    types: "Участок",
+                  }),
+                },
+              ],
+            },
+          ],
+        },
+        {
+          sections: [
+            {
+              title: "Сервисы",
+              links: [
+                {
+                  label: "Разместить участок",
+                  href: listLand,
+                },
+                { label: "Риелторы", href: "/rieltory" },
+              ],
+            },
+          ],
+        },
+      ],
+      promo: {
+        title: "Разместите участок за 0 ₽",
+        text: "ИЖС, жилая или коммерческая земля — объявление бесплатно",
+        cta: "Разместить",
+        href: listLand,
       },
     },
   ];
@@ -410,7 +525,7 @@ export function getMainNavMegaMenus(isLoggedIn = false): MegaMenuConfig[] {
 export function getCatalogMegaMenu(isLoggedIn = false): MegaMenuConfig & {
   services: MegaSection;
 } {
-  const menus = getMainNavMegaMenus(isLoggedIn);
+  const menus = getMainNavMegaMenus({ isLoggedIn });
   const commercial = menus.find((m) => m.id === "commercial")!;
   return {
     ...commercial,

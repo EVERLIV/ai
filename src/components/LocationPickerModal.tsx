@@ -13,6 +13,10 @@ import {
   groupLocationsByLetter,
   IRKUTSK_REGION_LABEL,
 } from "@/lib/locationPicker";
+import {
+  findLocationByName,
+  toPropertyLocationExtras,
+} from "@/lib/locations";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -23,7 +27,22 @@ type Props = {
   onSelect: (location: string) => void;
   /** Поверх другого модала (например, Умный подбор z-9999) */
   elevated?: boolean;
+  /** Районы с объявлений (дополнение к справочнику) */
+  extraLocations?: string[];
 };
+
+function selectionBreadcrumb(selected: string): string[] {
+  if (!selected) return [];
+  const node = findLocationByName(selected);
+  if (!node) return [selected];
+  const extras = toPropertyLocationExtras(node);
+  const parts = [extras.city];
+  if (extras.locality) parts.push(extras.locality);
+  else if (extras.city !== selected && node.kind !== "city") {
+    parts.push(selected);
+  }
+  return parts.length ? parts : [selected];
+}
 
 export default function LocationPickerModal({
   open,
@@ -31,18 +50,23 @@ export default function LocationPickerModal({
   value = "",
   onSelect,
   elevated = false,
+  extraLocations = [],
 }: Props) {
   const { all } = useAllDictionaryValues();
   const [query, setQuery] = useState("");
   const [draft, setDraft] = useState(value);
 
-  const tree = useMemo(() => buildLocationTree(all), [all]);
+  const tree = useMemo(
+    () => buildLocationTree(all, extraLocations),
+    [all, extraLocations],
+  );
   const groups = useMemo(
     () => groupLocationsByLetter(tree, query),
     [tree, query],
   );
 
   const selected = draft && draft !== "Все" ? draft : "";
+  const crumbs = selectionBreadcrumb(selected);
 
   const handleOpenChange = (next: boolean) => {
     if (next) {
@@ -76,10 +100,10 @@ export default function LocationPickerModal({
       >
         <DialogHeader className="px-4 pt-4 pb-3 border-b border-border shrink-0 space-y-3 text-left">
           <DialogTitle className="text-base font-semibold pr-8">
-            Регион и город
+            Город и район
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Выберите город или район Иркутской области
+            Выберите город, затем район или село Иркутской области
           </DialogDescription>
 
           <div className="relative">
@@ -88,7 +112,7 @@ export default function LocationPickerModal({
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Введите город или район"
+              placeholder="Город, район или село"
               className="w-full h-10 pl-9 pr-3 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
               autoFocus
             />
@@ -100,22 +124,31 @@ export default function LocationPickerModal({
             <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
               {IRKUTSK_REGION_LABEL}
             </span>
-            {selected && (
-              <>
+            {crumbs.map((part, i) => (
+              <span key={`${part}-${i}`} className="contents">
                 <span className="text-muted-foreground/50">›</span>
-                <span className="inline-flex items-center gap-1 h-7 pl-2.5 pr-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
-                  {selected}
-                  <button
-                    type="button"
-                    aria-label="Сбросить локацию"
-                    onClick={clear}
-                    className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-primary/15"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 h-7 pl-2.5 pr-1 rounded-full text-xs font-semibold",
+                    i === crumbs.length - 1
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-foreground",
+                  )}
+                >
+                  {part}
+                  {i === crumbs.length - 1 && (
+                    <button
+                      type="button"
+                      aria-label="Сбросить локацию"
+                      onClick={clear}
+                      className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-primary/15"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
                 </span>
-              </>
-            )}
+              </span>
+            ))}
           </div>
         </DialogHeader>
 
@@ -134,6 +167,7 @@ export default function LocationPickerModal({
                   <ul className="space-y-0.5">
                     {group.cities.map((node) => {
                       const citySelected = selected === node.city;
+                      const childSelected = node.districts.includes(selected);
                       return (
                         <li key={node.city}>
                           <button
@@ -143,10 +177,17 @@ export default function LocationPickerModal({
                               "text-left text-sm py-0.5 transition-colors w-full",
                               citySelected
                                 ? "text-primary font-semibold"
-                                : "text-foreground hover:text-primary",
+                                : childSelected
+                                  ? "text-foreground font-medium"
+                                  : "text-foreground hover:text-primary",
                             )}
                           >
                             {node.city}
+                            {node.districts.length > 0 && (
+                              <span className="text-muted-foreground font-normal text-[11px] ml-1">
+                                +{node.districts.length}
+                              </span>
+                            )}
                           </button>
                           {node.districts.length > 0 && (
                             <ul className="pl-3 border-l border-border/70 ml-1 mt-0.5 mb-1.5 space-y-0.5">
@@ -187,7 +228,9 @@ export default function LocationPickerModal({
             onClick={confirm}
             className="w-full h-7 rounded bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
           >
-            Показать объекты
+            {selected
+              ? `Показать: ${crumbs.join(" → ")}`
+              : "Показать все объекты области"}
           </button>
         </div>
       </DialogContent>

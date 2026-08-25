@@ -139,7 +139,7 @@ export default function OwnerSection() {
                     <option value="Офис">Офис</option>
                     <option value="Торговая площадь">Торговая площадь</option>
                     <option value="Склад">Склад</option>
-                    <option value="Земля">Земля</option>
+                    <option value="Производство">Производство</option>
                   </select>
                   <textarea
                     name="message"

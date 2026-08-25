@@ -28,6 +28,70 @@ import {
   useDictionaries,
 } from "@/hooks/useDictionaries";
 
+const PROPERTY_TYPE_PARENTS = [
+  { value: "commercial", label: "Коммерческая" },
+  { value: "residential", label: "Жилая" },
+  { value: "land", label: "Земля" },
+] as const;
+
+function isPropertyTypeCategory(key: string) {
+  return key === "property_type";
+}
+
+function propertyTypeParentLabel(parent: string | null | undefined): string {
+  const key = (parent || "").trim().toLowerCase();
+  if (key === "residential") return "Жилая";
+  if (key === "land" || key === "земля") return "Земля";
+  if (key === "commercial" || !key) return "Коммерческая";
+  return parent || "—";
+}
+
+function normalizePropertyTypeParent(raw: string): string {
+  const key = raw.trim().toLowerCase();
+  if (key === "residential" || key === "жилая") return "residential";
+  if (key === "land" || key === "земля") return "land";
+  return "commercial";
+}
+
+function ParentField({
+  categoryKey,
+  value,
+  onChange,
+  className,
+}: {
+  categoryKey: string;
+  value: string;
+  onChange: (v: string) => void;
+  className?: string;
+}) {
+  if (isPropertyTypeCategory(categoryKey)) {
+    return (
+      <select
+        className={
+          className ||
+          "h-8 text-xs w-36 rounded-md border border-input bg-background px-2"
+        }
+        value={normalizePropertyTypeParent(value)}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {PROPERTY_TYPE_PARENTS.map((p) => (
+          <option key={p.value} value={p.value}>
+            {p.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+  return (
+    <Input
+      className={className || "h-8 text-xs w-32"}
+      placeholder="Город / группа"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  );
+}
+
 export default function DictionariesTab() {
   const [activeCategory, setActiveCategory] = useState(
     DICTIONARY_CATEGORIES[0].key,
@@ -40,7 +104,9 @@ export default function DictionariesTab() {
   const { toast } = useToast();
 
   const [newValue, setNewValue] = useState("");
-  const [newParent, setNewParent] = useState("");
+  const [newParent, setNewParent] = useState(
+    isPropertyTypeCategory(DICTIONARY_CATEGORIES[0].key) ? "commercial" : "",
+  );
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [editParent, setEditParent] = useState("");
@@ -52,16 +118,22 @@ export default function DictionariesTab() {
     const trimmed = newValue.trim();
     if (!trimmed) return;
     try {
+      let parent: string | undefined;
+      if (categoryMeta.hasParent) {
+        parent = isPropertyTypeCategory(activeCategory)
+          ? normalizePropertyTypeParent(newParent)
+          : newParent.trim() || undefined;
+      }
       await add({
         category: activeCategory,
         value: trimmed,
-        parent: categoryMeta.hasParent
-          ? newParent.trim() || undefined
-          : undefined,
+        parent,
         sort_order: maxOrder + 1,
       });
       setNewValue("");
-      setNewParent("");
+      setNewParent(
+        isPropertyTypeCategory(activeCategory) ? "commercial" : "",
+      );
       toast({ title: "Добавлено" });
     } catch (err: unknown) {
       toast({
@@ -76,12 +148,16 @@ export default function DictionariesTab() {
     const trimmed = editValue.trim();
     if (!trimmed) return;
     try {
+      let parent: string | null = item.parent;
+      if (categoryMeta.hasParent) {
+        parent = isPropertyTypeCategory(activeCategory)
+          ? normalizePropertyTypeParent(editParent)
+          : editParent.trim() || null;
+      }
       await update({
         id: item.id,
         value: trimmed,
-        parent: categoryMeta.hasParent
-          ? editParent.trim() || null
-          : item.parent,
+        parent,
       });
       setEditingId(null);
       toast({ title: "Обновлено" });
@@ -119,7 +195,11 @@ export default function DictionariesTab() {
   const startEdit = (item: DictionaryItem) => {
     setEditingId(item.id);
     setEditValue(item.value);
-    setEditParent(item.parent || "");
+    setEditParent(
+      isPropertyTypeCategory(activeCategory)
+        ? normalizePropertyTypeParent(item.parent || "")
+        : item.parent || "",
+    );
   };
 
   const parentGroups = categoryMeta.hasParent
@@ -140,7 +220,9 @@ export default function DictionariesTab() {
               setActiveCategory(cat.key);
               setEditingId(null);
               setNewValue("");
-              setNewParent("");
+              setNewParent(
+                isPropertyTypeCategory(cat.key) ? "commercial" : "",
+              );
             }}
             className={`rounded-full border px-3 py-1 text-xs transition-colors ${
               activeCategory === cat.key
@@ -162,12 +244,10 @@ export default function DictionariesTab() {
         <CardContent className="p-0">
           <div className="flex items-center gap-2 px-4 py-2 border-b bg-muted/30">
             {categoryMeta.hasParent && (
-              <Input
-                className="h-8 text-xs w-32"
-                placeholder="Город / группа"
+              <ParentField
+                categoryKey={activeCategory}
                 value={newParent}
-                onChange={(e) => setNewParent(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                onChange={setNewParent}
               />
             )}
             <Input
@@ -201,7 +281,11 @@ export default function DictionariesTab() {
                 <TableRow>
                   <TableHead className="w-10">#</TableHead>
                   {categoryMeta.hasParent && (
-                    <TableHead className="w-32">Группа</TableHead>
+                    <TableHead className="w-36">
+                      {isPropertyTypeCategory(activeCategory)
+                        ? "Сегмент"
+                        : "Группа"}
+                    </TableHead>
                   )}
                   <TableHead>Значение</TableHead>
                   <TableHead className="w-20">Статус</TableHead>
@@ -224,14 +308,17 @@ export default function DictionariesTab() {
                     {categoryMeta.hasParent && (
                       <TableCell className="text-xs">
                         {editingId === item.id ? (
-                          <Input
-                            className="h-7 text-xs w-28"
+                          <ParentField
+                            categoryKey={activeCategory}
                             value={editParent}
-                            onChange={(e) => setEditParent(e.target.value)}
+                            onChange={setEditParent}
+                            className="h-7 text-xs w-32 rounded-md border border-input bg-background px-2"
                           />
                         ) : (
                           <Badge variant="outline" className="text-[10px]">
-                            {item.parent || "—"}
+                            {isPropertyTypeCategory(activeCategory)
+                              ? propertyTypeParentLabel(item.parent)
+                              : item.parent || "—"}
                           </Badge>
                         )}
                       </TableCell>
@@ -334,16 +421,11 @@ function sortByParent(
   items: DictionaryItem[],
   groups: string[],
 ): DictionaryItem[] {
-  const grouped = new Map<string, DictionaryItem[]>();
-  for (const item of items) {
-    const key = item.parent || "";
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key)?.push(item);
-  }
   const result: DictionaryItem[] = [];
-  for (const group of groups) {
-    result.push(...(grouped.get(group) || []));
+  const noParent = items.filter((i) => !i.parent);
+  result.push(...noParent);
+  for (const g of groups) {
+    result.push(...items.filter((i) => i.parent === g));
   }
-  result.push(...(grouped.get("") || []));
   return result;
 }

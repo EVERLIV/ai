@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { type DbProperty, useProperties } from "@/hooks/useProperties";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { matchLocationFilter } from "@/lib/locations";
 import { buildPropertyDisplayTitle } from "@/lib/propertyCard";
 import { type Coords, getCoords, hasStreetView } from "@/lib/propertyGeo";
 import { getPropertyCover } from "@/lib/propertyImages";
@@ -32,7 +33,9 @@ export default function MapSection() {
     () =>
       activeDistrict === "Все"
         ? properties
-        : properties.filter((p) => p.district === activeDistrict),
+        : properties.filter((p) =>
+            matchLocationFilter(p.district, activeDistrict),
+          ),
     [properties, activeDistrict],
   );
 

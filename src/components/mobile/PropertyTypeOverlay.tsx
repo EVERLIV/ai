@@ -1,11 +1,8 @@
 import { Check } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MobileFullScreenPicker from "@/components/mobile/MobileFullScreenPicker";
-import {
-  COMMERCIAL_PROPERTY_TYPES,
-  type PropertySegment,
-  RESIDENTIAL_PROPERTY_TYPES,
-} from "@/config/propertySegments";
+import type { PropertySegment } from "@/config/propertySegments";
+import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 import { cn } from "@/lib/utils";
 
 type Category = { title: string; items: readonly string[] };
@@ -16,8 +13,8 @@ const RESIDENTIAL_CATEGORIES: Category[] = [
     items: ["Квартира", "Комната", "Апартаменты", "Доля"],
   },
   {
-    title: "Дома и участки",
-    items: ["Дом", "Дача", "Коттедж", "Таунхаус", "Участок"],
+    title: "Дома",
+    items: ["Дом", "Дача", "Коттедж", "Таунхаус"],
   },
   {
     title: "Гаражи",
@@ -27,17 +24,14 @@ const RESIDENTIAL_CATEGORIES: Category[] = [
 
 const COMMERCIAL_CATEGORIES: Category[] = [
   { title: "Офисы", items: ["Офис"] },
-  { title: "Торговля", items: ["Торговая"] },
-  { title: "Склад и производство", items: ["Склад", "Производство"] },
-  { title: "Земля", items: ["Земля"] },
+  { title: "Торговля", items: ["Торговая", "Павильон", "Общепит"] },
+  { title: "Склад и производство", items: ["Склад", "Производство", "Автосервис"] },
+  { title: "Свободного назначения", items: ["ПСН"] },
 ];
 
-/** Все типы сегмента — для fallback, если тип не в категориях */
-function allTypes(segment: PropertySegment): string[] {
-  return segment === "residential"
-    ? [...RESIDENTIAL_PROPERTY_TYPES]
-    : [...COMMERCIAL_PROPERTY_TYPES];
-}
+const LAND_CATEGORIES: Category[] = [
+  { title: "Участки", items: ["Земля", "Участок"] },
+];
 
 export function propertyTypeAccusative(type: string): string {
   const map: Record<string, string> = {
@@ -65,15 +59,24 @@ export default function PropertyTypeOverlay({
   onChange,
 }: Props) {
   const [draft, setDraft] = useState(value);
+  const { propertyTypes } = useAllDictionaryValues();
+  const segmentTypes = useMemo(
+    () => propertyTypes(segment),
+    [propertyTypes, segment],
+  );
 
   useEffect(() => {
     if (open) setDraft(value);
   }, [open, value]);
 
   const categories =
-    segment === "residential" ? RESIDENTIAL_CATEGORIES : COMMERCIAL_CATEGORIES;
+    segment === "residential"
+      ? RESIDENTIAL_CATEGORIES
+      : segment === "land"
+        ? LAND_CATEGORIES
+        : COMMERCIAL_CATEGORIES;
   const known = new Set(categories.flatMap((c) => c.items));
-  const extras = allTypes(segment).filter((t) => !known.has(t));
+  const extras = segmentTypes.filter((t) => !known.has(t));
   const displayCategories = extras.length
     ? [...categories, { title: "Прочее", items: extras }]
     : categories;

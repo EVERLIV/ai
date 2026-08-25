@@ -79,7 +79,7 @@ export default function ResetPassword() {
         {/* Logo */}
         <div className="flex items-center justify-between mb-10">
           <Link to="/" className="flex items-center gap-2">
-            <BrandMark className="h-4 w-auto" />
+            <BrandMark className="h-8 w-8" />
             <span className="font-display text-lg font-bold text-foreground">
               АРЕНДА<span className="text-primary">СИТИ</span>
             </span>

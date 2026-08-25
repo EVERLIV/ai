@@ -19,17 +19,17 @@ export const CATALOG_SORT_OPTIONS: {
   label: string;
   value: CatalogSortKey;
 }[] = [
-  { label: "По релевантности (Quality Match)", value: "default" },
-  { label: "По цене (сначала дешевле)", value: "price_asc" },
-  { label: "По цене (сначала дороже)", value: "price_desc" },
-  { label: "По цене за м² (сначала дешевле)", value: "price_m2_asc" },
-  { label: "По цене за м² (сначала дороже)", value: "price_m2_desc" },
-  { label: "По общей площади", value: "area_desc" },
-  { label: "По площади (сначала меньше)", value: "area_asc" },
-  { label: "По времени до метро", value: "metro_asc" },
+  { label: "По релевантности", value: "default" },
+  { label: "Сначала дешевле", value: "price_asc" },
+  { label: "Сначала дороже", value: "price_desc" },
+  { label: "Дешевле за м²", value: "price_m2_asc" },
+  { label: "Дороже за м²", value: "price_m2_desc" },
+  { label: "Больше площадь", value: "area_desc" },
+  { label: "Меньше площадь", value: "area_asc" },
+  { label: "Ближе к метро", value: "metro_asc" },
   { label: "По улице", value: "street_asc" },
-  { label: "По дате (сначала новые)", value: "date_desc" },
-  { label: "По дате (сначала старые)", value: "date_asc" },
+  { label: "Сначала новые", value: "date_desc" },
+  { label: "Сначала старые", value: "date_asc" },
 ];
 
 /** Обратная совместимость со старыми URL `sort=date`. */

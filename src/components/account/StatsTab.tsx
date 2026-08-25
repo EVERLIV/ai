@@ -28,6 +28,8 @@ import {
 } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyAgency } from "@/hooks/useAgency";
+import { useMyDeveloper } from "@/hooks/useDeveloper";
+import DeveloperStatsPanel from "@/components/account/DeveloperStatsPanel";
 import {
   fetchEventsForPropertyIdsApi,
   fetchLeadsForPropertyIdsApi,
@@ -267,6 +269,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function StatsTab() {
   const { data, isLoading } = useAnalytics();
+  const { data: myDeveloper } = useMyDeveloper();
   const [period, setPeriod] = useState<Period>("30d");
   const [propertyQuery, setPropertyQuery] = useState("");
 
@@ -365,6 +368,17 @@ export default function StatsTab() {
       })
       .slice(0, 30);
   }, [analytics, propertyQuery]);
+
+  if (myDeveloper) {
+    return (
+      <div>
+        <h2 className="font-display text-xl font-bold text-foreground mb-5">
+          Статистика
+        </h2>
+        <DeveloperStatsPanel />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

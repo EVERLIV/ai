@@ -1,11 +1,12 @@
 import {
   COMMERCIAL_PROPERTY_TYPES,
+  LAND_PROPERTY_TYPES,
   type PropertySegment,
   RESIDENTIAL_PROPERTY_TYPES,
 } from "@/config/propertySegments";
 import {
   expandLandFilterTypes,
-  isCommercialLand,
+  isAnyLand,
   LAND_PROPERTY_TYPE,
   RESIDENTIAL_LAND_TYPE,
 } from "@/lib/propertyTypeFamilies";
@@ -60,8 +61,10 @@ export function formatPropertyTypesLabel(types: string[]): string {
 }
 
 export function getPropertySegment(property: PropertyLike): PropertySegment {
-  if (property.segment === "residential" || property.type === "Новостройка")
+  if (property.segment === "land" || isAnyLand(property)) return "land";
+  if (property.segment === "residential" || property.type === "Новостройка") {
     return "residential";
+  }
   return "commercial";
 }
 
@@ -79,29 +82,19 @@ export function propertyMatchesTypes(
   return wanted.some((t) => types.includes(t));
 }
 
-/**
- * Жилой каталог: обычное жильё + вся коммерческая «Земля»
- * (показывается в разделе «Участок»).
- */
 export function propertyMatchesSegment(
   property: PropertyLike,
   segment: PropertySegment,
 ): boolean {
-  if (segment === "residential") {
-    return (
-      getPropertySegment(property) === "residential" ||
-      isCommercialLand(property)
-    );
-  }
   return getPropertySegment(property) === segment;
 }
 
 export function getSegmentPropertyTypes(
   segment: PropertySegment,
 ): readonly string[] {
-  return segment === "residential"
-    ? RESIDENTIAL_PROPERTY_TYPES
-    : COMMERCIAL_PROPERTY_TYPES;
+  if (segment === "residential") return RESIDENTIAL_PROPERTY_TYPES;
+  if (segment === "land") return LAND_PROPERTY_TYPES;
+  return COMMERCIAL_PROPERTY_TYPES;
 }
 
 export function syncPropertyTypesPayload(
@@ -111,7 +104,12 @@ export function syncPropertyTypesPayload(
 ): { type: string; extras: Record<string, unknown> } {
   const normalized = normalizePropertyTypes(types);
   const primaryType =
-    normalized[0] || (segment === "residential" ? "Квартира" : "Офис");
+    normalized[0] ||
+    (segment === "residential"
+      ? "Квартира"
+      : segment === "land"
+        ? "Земля"
+        : "Офис");
   return {
     type: primaryType,
     extras: {

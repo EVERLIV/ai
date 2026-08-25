@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, MapPin, Maximize } from "lucide-react";
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { useProperties } from "@/hooks/useProperties";
+import { matchLocationFilter } from "@/lib/locations";
 import {
   buildPropertyDisplayTitle,
   formatPropertyAddressShort,
@@ -24,7 +25,7 @@ export default function NearbyPropertiesSlider({
   const items = (all ?? []).filter(
     (p) =>
       p.id !== excludeId &&
-      p.district === district &&
+      matchLocationFilter(p.district, district) &&
       (type ? p.type === type : true),
   );
 
@@ -34,7 +35,7 @@ export default function NearbyPropertiesSlider({
       ? (all ?? []).filter(
           (p) =>
             p.id !== excludeId &&
-            p.district !== district &&
+            !matchLocationFilter(p.district, district) &&
             (type ? p.type === type : true),
         )
       : [];

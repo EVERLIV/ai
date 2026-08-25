@@ -1,4 +1,5 @@
 import type { PropertySegment } from "@/config/propertySegments";
+import { SEGMENT_ROUTES } from "@/config/propertySegments";
 import type { RequestType } from "@/lib/propertyModeration";
 
 export type ListPropertyMode = "rent" | "management";
@@ -7,8 +8,7 @@ export function listPropertyPath(
   segment: PropertySegment,
   mode?: ListPropertyMode,
 ): string {
-  const base =
-    segment === "residential" ? "/zhilaya/list-property" : "/list-property";
+  const base = SEGMENT_ROUTES[segment].listProperty;
   return mode ? `${base}?mode=${mode}` : base;
 }
 
@@ -21,7 +21,7 @@ export function accountPropertiesPath(
   requestType: RequestType,
 ): string {
   const params = new URLSearchParams();
-  if (segment === "residential") params.set("segment", "residential");
+  if (segment !== "commercial") params.set("segment", segment);
   params.set("request_type", requestType);
   return `/account?${params.toString()}#properties`;
 }

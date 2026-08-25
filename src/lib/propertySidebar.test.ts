@@ -29,9 +29,11 @@ describe("getListingAgentDisplay", () => {
       secondaryLabel: "Анастасия Романова",
       isRealtor: true,
       isAgency: true,
+      isDeveloper: false,
       isVerified: true,
       managerId: null,
       agencyId: null,
+      developerId: null,
     });
   });
 
@@ -46,6 +48,7 @@ describe("getListingAgentDisplay", () => {
     expect(agent).toMatchObject({
       agencyId: "a0000000-0000-4000-8000-000000000001",
       managerId: "a0000000-0000-4000-8000-000000000002",
+      isDeveloper: false,
     });
   });
 
@@ -65,6 +68,28 @@ describe("getListingAgentDisplay", () => {
       primaryLabel: "Иван Петров",
       isRealtor: false,
       isAgency: false,
+      isDeveloper: false,
+    });
+  });
+
+  test("shows developer company brand, not personal owner", () => {
+    const agent = getListingAgentDisplay({
+      agent_name: "БайкалСтройИнвест",
+      agent_company: "БайкалСтройИнвест",
+      agent_account_type: "developer",
+      developer_id: "d0000000-0000-4000-8000-000000000001",
+      agent_avatar_url: "https://example.com/logo.png",
+      agent_verified: true,
+    });
+    expect(agent).toMatchObject({
+      primaryLabel: "БайкалСтройИнвест",
+      secondaryLabel: "Застройщик",
+      isDeveloper: true,
+      isAgency: false,
+      isRealtor: false,
+      developerId: "d0000000-0000-4000-8000-000000000001",
+      avatarUrl: "https://example.com/logo.png",
+      isVerified: true,
     });
   });
 });

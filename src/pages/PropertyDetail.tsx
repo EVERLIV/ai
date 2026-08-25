@@ -39,6 +39,7 @@ import PropertyJsonLd from "@/components/PropertyJsonLd";
 import PropertyMap from "@/components/PropertyMap";
 import PropertyShareButton from "@/components/PropertyShareButton";
 import PropertySidebarExtras from "@/components/PropertySidebarExtras";
+import PropertyMediaGallery from "@/components/property/PropertyMediaGallery";
 import { useCompareProperties } from "@/hooks/useCompareProperties";
 import { SpecGrid, SpecQuickStats, SpecRow } from "@/components/PropertySpecList";
 import PropertyStickyNav from "@/components/PropertyStickyNav";
@@ -70,6 +71,10 @@ import {
   formatListingViews,
   formatPropertyAddressShort,
 } from "@/lib/propertyCard";
+import {
+  planTabLabel,
+  readPropertyMediaExtras,
+} from "@/lib/propertyMedia";
 import { isSaleDeal } from "@/lib/propertyDeal";
 import { getDefaultPropertyImage } from "@/lib/propertyImages";
 import {
@@ -79,6 +84,18 @@ import {
   LAND_TYPE_LABEL,
 } from "@/lib/propertyLand";
 import { getOwnerUserId, isOwnerListing } from "@/lib/propertyModeration";
+import {
+  getResidentialBuildingType,
+  getResidentialRooms,
+  getWoodConfigId,
+  getWoodFinish,
+  getWoodFloors,
+  getWoodFoundation,
+  getWoodRoof,
+  getWoodWall,
+} from "@/lib/propertyResidential";
+import { isHouseLike } from "@/lib/propertyTypeFamilies";
+import { getWoodenHouseConfig } from "@/lib/woodenHouses";
 import { resolveSidebarDisplay } from "@/lib/propertySidebar";
 import {
   buildPropertyShareOgDescription,
@@ -108,6 +125,10 @@ export default function PropertyDetail() {
   const [activePhoto, setActivePhoto] = useState(0);
   const [showPKK, setShowPKK] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryTab, setGalleryTab] = useState<"plan" | "video" | "photos">(
+    "photos",
+  );
   const viewTrackedRef = useRef(false);
 
   useEffect(() => {
@@ -231,8 +252,19 @@ export default function PropertyDetail() {
   const _Icon = typeIcons[primaryType] || Building2;
   const photos = property.photos || [];
   const photosCount = photos.length || 1;
+  const mediaExtras = readPropertyMediaExtras(
+    (property.extras || {}) as Record<string, unknown>,
+  );
+  const hasPlanChip =
+    !!mediaExtras.planImageUrl || !!property.developer_unit_type_id;
+  const hasVideoChip = mediaExtras.videoUrls.length > 0;
+  const openGallery = (tab: "plan" | "video" | "photos" = "photos") => {
+    setGalleryTab(tab);
+    setGalleryOpen(true);
+  };
 
   const isLand = isAnyLand(property);
+  const isHouse = isHouseLike(property);
   const isSale = isSaleDeal(property.deal_type);
   const isResidential = isResidentialSegment(property.segment);
   const hasAiConsultant =
@@ -269,6 +301,17 @@ export default function PropertyDetail() {
       ];
 
   const cadastral = getLandCadastral(landExtras);
+  const buildingType = getResidentialBuildingType(property);
+  const roomsLabel = getResidentialRooms(property);
+  const woodConfig = getWoodenHouseConfig(getWoodConfigId(property));
+  const houseSpecs = [
+    { label: "Конфигурация", value: woodConfig?.label || "—" },
+    { label: "Стены", value: getWoodWall(property) || "—" },
+    { label: "Этажность", value: getWoodFloors(property) || "—" },
+    { label: "Фундамент", value: getWoodFoundation(property) || "—" },
+    { label: "Кровля", value: getWoodRoof(property) || "—" },
+    { label: "Готовность", value: getWoodFinish(property) || "—" },
+  ];
 
   const quickStats = isLand
     ? [
@@ -285,11 +328,16 @@ export default function PropertyDetail() {
         { icon: Ruler, label: "Общая площадь", value: `${property.area} м²` },
         {
           icon: Layers,
-          label: "Этаж",
+          label: isHouse ? "Этажей" : "Этаж",
           value:
             property.floor && property.floor !== "-"
               ? `${property.floor} из ${property.total_floors || "—"}`
               : "—",
+        },
+        {
+          icon: Building2,
+          label: "Тип дома",
+          value: buildingType || "—",
         },
         {
           icon: Building2,
@@ -338,12 +386,14 @@ export default function PropertyDetail() {
     : [
         { label: "Площадь", value: `${property.area} м²` },
         {
-          label: "Этаж",
+          label: isHouse ? "Этажей" : "Этаж",
           value:
             property.floor && property.floor !== "-"
               ? `${property.floor} из ${property.total_floors || "—"}`
               : "—",
         },
+        { label: "Комнат", value: roomsLabel || "—" },
+        { label: "Тип дома", value: buildingType || "—" },
         {
           label: "Высота потолков",
           value:
@@ -698,7 +748,18 @@ export default function PropertyDetail() {
           <div className="flex-1 min-w-0">
             {/* Gallery */}
             <div id="photos" className="mb-8 scroll-mt-14">
-              <div className="relative bg-muted aspect-[16/10] lg:aspect-[3/2] overflow-hidden rounded-lg">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => openGallery("photos")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openGallery("photos");
+                  }
+                }}
+                className="relative bg-muted aspect-[16/10] lg:aspect-[3/2] overflow-hidden rounded-lg cursor-zoom-in group/gallery"
+              >
                 <img
                   src={
                     photos.length > 0
@@ -708,7 +769,6 @@ export default function PropertyDetail() {
                   alt={property.address}
                   className="w-full h-full object-cover object-top"
                 />
-                {/* Лёгкая тень снизу — счётчик читается, верх фото не затемняется */}
                 <div
                   className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-foreground/25 to-transparent"
                   aria-hidden
@@ -717,20 +777,22 @@ export default function PropertyDetail() {
                   <>
                     <button
                       type="button"
-                      onClick={() =>
-                        setActivePhoto(Math.max(0, activePhoto - 1))
-                      }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActivePhoto(Math.max(0, activePhoto - 1));
+                      }}
                       className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-background/90 backdrop-blur flex items-center justify-center text-foreground shadow-card hover:bg-background transition-colors"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setActivePhoto(
                           Math.min(photosCount - 1, activePhoto + 1),
-                        )
-                      }
+                        );
+                      }}
                       className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-background/90 backdrop-blur flex items-center justify-center text-foreground shadow-card hover:bg-background transition-colors"
                     >
                       <ChevronRight className="w-5 h-5" />
@@ -750,14 +812,49 @@ export default function PropertyDetail() {
                 <span className="absolute bottom-4 right-4 z-[1] px-3.5 py-2 rounded-md bg-foreground/85 text-background text-sm font-medium tabular-nums tracking-wide backdrop-blur-sm">
                   {activePhoto + 1} / {photosCount}
                 </span>
+                <span className="absolute bottom-4 left-4 z-[1] px-3 py-1.5 rounded-md bg-background/90 text-foreground text-xs font-medium opacity-0 group-hover/gallery:opacity-100 transition-opacity pointer-events-none">
+                  Открыть галерею
+                </span>
               </div>
+
+              <div className="flex flex-wrap gap-2 mt-3">
+                <button
+                  type="button"
+                  onClick={() => openGallery("photos")}
+                  className="h-8 px-3 rounded-md border border-border text-xs font-medium hover:border-foreground/30"
+                >
+                  {photos.length || 1} фото
+                </button>
+                {hasVideoChip && (
+                  <button
+                    type="button"
+                    onClick={() => openGallery("video")}
+                    className="h-8 px-3 rounded-md border border-border text-xs font-medium hover:border-foreground/30"
+                  >
+                    Видео
+                  </button>
+                )}
+                {hasPlanChip && (
+                  <button
+                    type="button"
+                    onClick={() => openGallery("plan")}
+                    className="h-8 px-3 rounded-md border border-border text-xs font-medium hover:border-foreground/30"
+                  >
+                    {planTabLabel(property)}
+                  </button>
+                )}
+              </div>
+
               {photos.length > 1 && (
                 <div className="flex gap-2.5 mt-3 overflow-x-auto scrollbar-none">
                   {photos.slice(0, 8).map((url, i) => (
                     <button
                       key={url}
                       type="button"
-                      onClick={() => setActivePhoto(i)}
+                      onClick={() => {
+                        setActivePhoto(i);
+                        openGallery("photos");
+                      }}
                       className={`shrink-0 w-24 h-16 lg:w-28 lg:h-20 rounded-md overflow-hidden border-2 transition-colors ${
                         activePhoto === i
                           ? "border-foreground"
@@ -821,6 +918,15 @@ export default function PropertyDetail() {
               </h2>
               <SpecGrid items={detailSpecs} />
             </section>
+
+            {isHouse && houseSpecs.some((s) => s.value && s.value !== "—") && (
+              <section className="mb-10">
+                <h2 className="font-display text-lg font-semibold text-foreground mb-3">
+                  О доме
+                </h2>
+                <SpecGrid items={houseSpecs} />
+              </section>
+            )}
 
             {(property.features || []).length > 0 && (
               <section className="mb-10">
@@ -902,6 +1008,13 @@ export default function PropertyDetail() {
           onClose={() => setShowPKK(false)}
         />
       )}
+      <PropertyMediaGallery
+        open={galleryOpen}
+        onOpenChange={setGalleryOpen}
+        property={property}
+        initialTab={galleryTab}
+        initialPhotoIndex={activePhoto}
+      />
     </div>
   );
 }

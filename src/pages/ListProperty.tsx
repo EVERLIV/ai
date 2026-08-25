@@ -18,24 +18,26 @@ export default function ListProperty({
   const { search } = useLocation();
   const mode = new URLSearchParams(search).get("mode");
   const isResidential = segment === "residential";
-  const segmentHome = isResidential
-    ? SEGMENT_ROUTES.residential.home
-    : SEGMENT_ROUTES.commercial.home;
+  const isLand = segment === "land";
+  const segmentHome = SEGMENT_ROUTES[segment].home;
 
   const modeLabel =
     mode === "rent"
-      ? isResidential
-        ? "Сдать бесплатно"
-        : "Сдать бесплатно"
+      ? "Сдать бесплатно"
       : mode === "management"
         ? "Передать в управление"
         : "Выберите способ";
 
   const basePath = listPropertyPath(segment);
+  const placeLabel = isLand
+    ? "Разместить участок"
+    : isResidential
+      ? "Разместить жильё"
+      : "Разместить объект";
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <SiteHeader />
+      <SiteHeader contextSegment={segment} />
 
       <div className="mt-[56px] lg:mt-[104px] border-b border-border/40">
         <div className="container mx-auto px-3 lg:px-8 h-10 lg:h-11 flex items-center gap-3">
@@ -58,7 +60,7 @@ export default function ListProperty({
               to={basePath}
               className="hover:text-foreground transition-colors shrink-0"
             >
-              {isResidential ? "Разместить жильё" : "Разместить объект"}
+              {placeLabel}
             </Link>
             <span className="shrink-0 opacity-50">/</span>
             <span className="text-foreground truncate min-w-0">

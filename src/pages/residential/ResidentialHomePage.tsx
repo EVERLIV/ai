@@ -56,8 +56,8 @@ const categories = [
   },
   {
     title: "Участки",
-    href: "/zhilaya/uchastki",
-    body: "Жилые участки и вся коммерческая земля региона.",
+    href: "/zemlya/catalog",
+    body: "Земля и участки — отдельный раздел каталога.",
     type: "Участок",
     image: landImg,
     imageAlt: "Земельный участок",

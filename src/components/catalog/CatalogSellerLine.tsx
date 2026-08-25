@@ -66,10 +66,14 @@ export default function CatalogSellerLine({ extras, className }: Props) {
   }
 
   const objectsLabel = formatAgentObjectsLabel(agent.objectsCount, {
-    isAgency: agent.isAgency || agent.isRealtor,
+    isAgency: (agent.isAgency || agent.isRealtor) && !agent.isDeveloper,
   });
   const agencyHref = agent.agencyId ? `/agentstvo/${agent.agencyId}` : null;
   const managerHref = agent.managerId ? `/rieltor/${agent.managerId}` : null;
+  const developerHref = agent.developerId
+    ? `/zastroyshchik/${agent.developerId}`
+    : null;
+  const primaryHref = developerHref || agencyHref;
 
   return (
     <div
@@ -86,18 +90,18 @@ export default function CatalogSellerLine({ extras, className }: Props) {
         />
       ) : (
         <span className="w-6 h-6 rounded bg-muted flex items-center justify-center shrink-0">
-          {(agent.isAgency || agent.isRealtor) && (
+          {(agent.isAgency || agent.isRealtor || agent.isDeveloper) && (
             <Building2 className="w-3 h-3 text-muted-foreground" />
           )}
-          {!agent.isAgency && !agent.isRealtor && (
+          {!agent.isAgency && !agent.isRealtor && !agent.isDeveloper && (
             <User className="w-3 h-3 text-muted-foreground" />
           )}
         </span>
       )}
       <span className="min-w-0 flex-1 truncate">
-        {agencyHref ? (
+        {primaryHref ? (
           <InlineNav
-            to={agencyHref}
+            to={primaryHref}
             className={cn(
               "font-medium text-foreground hover:underline",
               "group-hover/seller:underline",
@@ -128,7 +132,7 @@ export default function CatalogSellerLine({ extras, className }: Props) {
               )}
             </>
           )}
-        {objectsLabel && (
+        {objectsLabel && !agent.isDeveloper && (
           <>
             <span className="mx-1 opacity-40">·</span>
             <span className="text-muted-foreground">{objectsLabel}</span>

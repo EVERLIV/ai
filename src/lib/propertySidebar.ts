@@ -26,7 +26,8 @@ export type PropertySidebarExtras = {
   agent_response_min?: number;
   agent_verified?: boolean;
   agent_avatar_url?: string;
-  agent_account_type?: "owner" | "realtor" | "agency";
+  agent_account_type?: "owner" | "realtor" | "agency" | "developer";
+  developer_id?: string;
   agent_agency_about?: string;
   agent_phone?: string;
   agency_id?: string;
@@ -35,6 +36,17 @@ export type PropertySidebarExtras = {
   cadastral_number?: string;
   land_use?: string;
   property_types?: string[];
+  /** Иерархия локации (область → город → locality) */
+  location?: {
+    region: string;
+    city: string;
+    locality: string | null;
+    kind: string;
+    path: string[];
+    locationId?: string;
+  };
+  video_urls?: string[];
+  plan_image_url?: string;
 };
 
 export type ListingAgentDisplay = {
@@ -44,20 +56,48 @@ export type ListingAgentDisplay = {
   isVerified: boolean;
   isRealtor: boolean;
   isAgency: boolean;
+  isDeveloper: boolean;
   agencyId: string | null;
+  developerId: string | null;
   managerId: string | null;
   objectsCount: number;
 };
 
-/** Данные собственника/агентства для карточки в каталоге (из extras объекта) */
+/** Данные собственника/агентства/застройщика для карточки в каталоге (из extras объекта) */
 export function getListingAgentDisplay(
   extras?: PropertySidebarExtras | Record<string, unknown> | null,
 ): ListingAgentDisplay | null {
   const e = (extras || {}) as PropertySidebarExtras;
   const name = e.agent_name?.trim() || "";
   const company = e.agent_company?.trim() || "";
-  const hasAgent = !!(name || e.owner_user_id || e.agency_id);
+  const developerId = e.developer_id?.trim() || null;
+  const isDeveloper =
+    e.agent_account_type === "developer" || !!developerId;
+  const hasAgent = !!(
+    name ||
+    company ||
+    e.owner_user_id ||
+    e.agency_id ||
+    developerId
+  );
   if (!hasAgent) return null;
+
+  if (isDeveloper) {
+    const brand = company || name || ACCOUNT_TYPE_LABELS.developer;
+    return {
+      primaryLabel: brand,
+      secondaryLabel: ACCOUNT_TYPE_LABELS.developer,
+      avatarUrl: e.agent_avatar_url?.trim() || null,
+      isVerified: !!e.agent_verified,
+      isRealtor: false,
+      isAgency: false,
+      isDeveloper: true,
+      agencyId: null,
+      developerId,
+      managerId: null,
+      objectsCount: e.agent_objects_count ?? 0,
+    };
+  }
 
   const isAgency =
     e.agent_account_type === "agency" ||
@@ -95,7 +135,9 @@ export function getListingAgentDisplay(
     isVerified: !!e.agent_verified,
     isRealtor,
     isAgency,
+    isDeveloper: false,
     agencyId: e.agency_id?.trim() || null,
+    developerId: null,
     managerId: e.listing_manager_id?.trim() || null,
     objectsCount: e.agent_objects_count ?? 0,
   };
@@ -195,11 +237,15 @@ export function resolveSidebarDisplay(property: {
     agent_verified: !!e.agent_verified,
     agent_avatar_url: e.agent_avatar_url || "",
     agent_account_type:
-      e.agent_account_type === "agency" || e.agent_account_type === "realtor"
+      e.agent_account_type === "agency" ||
+      e.agent_account_type === "realtor" ||
+      e.agent_account_type === "developer"
         ? e.agent_account_type
         : "owner",
     agent_agency_about: e.agent_agency_about?.trim() || "",
     agency_id: typeof e.agency_id === "string" ? e.agency_id : "",
+    developer_id:
+      typeof e.developer_id === "string" ? e.developer_id : "",
     listing_manager_id:
       typeof e.listing_manager_id === "string" ? e.listing_manager_id : "",
     owner_user_id: typeof e.owner_user_id === "string" ? e.owner_user_id : "",
@@ -207,7 +253,8 @@ export function resolveSidebarDisplay(property: {
       e.agent_name?.trim() ||
       e.agent_company?.trim() ||
       e.owner_user_id ||
-      e.agency_id
+      e.agency_id ||
+      e.developer_id
     ),
   };
 }

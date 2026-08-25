@@ -28,10 +28,20 @@ function parseError(data: unknown, res: Response): Error {
 export async function fetchMyPropertiesApi(
   userId: string,
   agencyId?: string | null,
+  developerId?: string | null,
 ) {
   if (agencyId) {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/properties?or=(submitted_by.eq.${userId},agency_id.eq.${agencyId})&select=*&order=created_at.desc`,
+      { headers },
+    );
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw parseError(data, res);
+    return Array.isArray(data) ? data : [];
+  }
+  if (developerId) {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/properties?or=(submitted_by.eq.${userId},developer_id.eq.${developerId})&select=*&order=created_at.desc`,
       { headers },
     );
     const data = await res.json().catch(() => ({}));
@@ -51,12 +61,14 @@ export async function insertMyPropertyApi(
   userId: string,
   payload: Record<string, unknown>,
   agencyId?: string | null,
+  developerId?: string | null,
 ) {
   const body = {
     ...payload,
     submitted_by: userId,
     client_id: userId,
     ...(agencyId ? { agency_id: agencyId } : {}),
+    ...(developerId ? { developer_id: developerId } : {}),
   };
   const res = await fetch(`${SUPABASE_URL}/rest/v1/properties`, {
     method: "POST",
@@ -75,10 +87,13 @@ export async function updateMyPropertyApi(
   propertyId: string,
   payload: Record<string, unknown>,
   agencyId?: string | null,
+  developerId?: string | null,
 ) {
   const filter = agencyId
     ? `id=eq.${propertyId}&or=(submitted_by.eq.${userId},agency_id.eq.${agencyId})`
-    : `id=eq.${propertyId}&submitted_by=eq.${userId}`;
+    : developerId
+      ? `id=eq.${propertyId}&or=(submitted_by.eq.${userId},developer_id.eq.${developerId})`
+      : `id=eq.${propertyId}&submitted_by=eq.${userId}`;
   const res = await fetch(`${SUPABASE_URL}/rest/v1/properties?${filter}`, {
     method: "PATCH",
     headers: { ...headers, Prefer: "return=minimal" },
@@ -90,11 +105,21 @@ export async function updateMyPropertyApi(
   }
 }
 
-export async function deleteMyPropertyApi(userId: string, propertyId: string) {
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/properties?id=eq.${propertyId}&submitted_by=eq.${userId}`,
-    { method: "DELETE", headers },
-  );
+export async function deleteMyPropertyApi(
+  userId: string,
+  propertyId: string,
+  agencyId?: string | null,
+  developerId?: string | null,
+) {
+  const filter = agencyId
+    ? `id=eq.${propertyId}&or=(submitted_by.eq.${userId},agency_id.eq.${agencyId})`
+    : developerId
+      ? `id=eq.${propertyId}&or=(submitted_by.eq.${userId},developer_id.eq.${developerId})`
+      : `id=eq.${propertyId}&submitted_by=eq.${userId}`;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/properties?${filter}`, {
+    method: "DELETE",
+    headers,
+  });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw parseError(data, res);

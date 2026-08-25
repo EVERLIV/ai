@@ -30,6 +30,10 @@ npm run preview
 npm test
 ```
 
+## Застройщики
+
+Схема, RLS и порядок apply SQL: [docs/DEVELOPERS.md](docs/DEVELOPERS.md). Signup: `account_type=developer` + `developer_subtype` (`apartment_developer` \| `frame_house_builder`).
+
 ## Timeweb App Platform
 
 Do not use the **Frontend / React** app type. Timeweb's generated image runs `apt-get install curl` from `deb.debian.org`, which their builders often cannot reach.

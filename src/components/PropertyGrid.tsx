@@ -9,6 +9,7 @@ import type { PropertyFilters } from "@/components/SearchFilters";
 import { useProperties } from "@/hooks/useProperties";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { listingMatchesSellerFilter } from "@/lib/listingSource";
+import { matchLocationFilter } from "@/lib/locations";
 import { rankByQualityMatch } from "@/lib/recommendationEngine";
 
 export default function PropertyGrid({
@@ -35,7 +36,10 @@ export default function PropertyGrid({
           const price = Number(p.price) || 0;
           if (price > 0 && (price < filters.priceMin || price > filters.priceMax))
             return false;
-          if (filters.district !== "Все" && p.district !== filters.district)
+          if (
+            filters.district !== "Все" &&
+            !matchLocationFilter(p.district, filters.district)
+          )
             return false;
           if (filters.cls !== "Все" && p.class !== filters.cls) return false;
           if (

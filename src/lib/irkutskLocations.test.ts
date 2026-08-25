@@ -16,6 +16,10 @@ describe("inferDistrictFromAddress", () => {
     );
   });
 
+  it("detects Kitoy under Angarsk", () => {
+    expect(inferDistrictFromAddress("Ангарск, Китой, ул. 1")).toBe("Китой");
+  });
+
   it("detects microdistrict", () => {
     expect(inferDistrictFromAddress("Иркутск, мкр. Солнечный")).toBe(
       "Солнечный",

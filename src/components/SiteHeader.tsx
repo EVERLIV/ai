@@ -26,6 +26,7 @@ import MobileMenuDrawer from "@/components/mobile/MobileMenuDrawer";
 import { type PropertySegment } from "@/config/propertySegments";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompareProperties } from "@/hooks/useCompareProperties";
+import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 import { formatLeadBadge, useNewLeadsCount } from "@/hooks/useMyLeads";
 import { getMainNavMegaMenus } from "@/lib/catalogMegaMenu";
 import { placementCtaPath } from "@/lib/listPropertyLinks";
@@ -124,16 +125,34 @@ export default function SiteHeader({
   const { pathname, search } = useLocation();
 
   const wizardSegment: PropertySegment =
-    contextSegment === "residential" || pathname.startsWith("/zhilaya")
-      ? "residential"
-      : "commercial";
+    contextSegment === "residential" ||
+    contextSegment === "land" ||
+    contextSegment === "commercial"
+      ? contextSegment
+      : pathname.startsWith("/zhilaya")
+        ? "residential"
+        : pathname.startsWith("/zemlya") || pathname.startsWith("/land")
+          ? "land"
+          : "commercial";
 
   const { user, signOut, hasRole } = useAuth();
   const { count: compareCount } = useCompareProperties();
   const { data: newLeadsCount = 0 } = useNewLeadsCount();
+  const { propertyTypes } = useAllDictionaryValues();
+  const commercialTypes = useMemo(
+    () => propertyTypes("commercial"),
+    [propertyTypes],
+  );
   const navigate = useNavigate();
   const placeHref = placementCtaPath(wizardSegment, "rent", !!user);
-  const megaMenus = useMemo(() => getMainNavMegaMenus(!!user), [user]);
+  const megaMenus = useMemo(
+    () =>
+      getMainNavMegaMenus({
+        isLoggedIn: !!user,
+        commercialTypes,
+      }),
+    [user, commercialTypes],
+  );
   const authOr = (hash: string) => (user ? `/account#${hash}` : "/auth");
   const compareHref = user ? "/compare" : "/auth?redirect=%2Fcompare";
 
@@ -177,6 +196,11 @@ export default function SiteHeader({
     pathname.startsWith("/rieltory") ||
     pathname.startsWith("/rieltor") ||
     pathname.startsWith("/agentstvo");
+  const isDevelopersActive =
+    pathname.startsWith("/zastroyshchiki") ||
+    pathname.startsWith("/zastroyshchik") ||
+    pathname.startsWith("/proekt") ||
+    pathname.startsWith("/zastroyshchikam");
 
   return (
     <header
@@ -212,7 +236,7 @@ export default function SiteHeader({
             to="/"
             className="group flex items-center gap-2 shrink-0 min-w-0"
           >
-            <BrandMark className="hidden lg:block h-3.5 w-auto transition-transform duration-300 group-hover:scale-105" />
+            <BrandMark className="hidden lg:block h-7 w-7" />
             <span className="flex flex-col leading-none min-w-0">
               <span className="font-display text-[14px] sm:text-[15px] font-bold tracking-tight text-foreground">
                 АРЕНДА<span className="text-primary">СИТИ</span>
@@ -472,6 +496,24 @@ export default function SiteHeader({
               )}
             />
             Риелторы
+          </Link>
+
+          <Link
+            to="/zastroyshchiki"
+            className={cn(
+              "relative flex items-center px-2.5 py-1.5 text-sm font-medium transition-colors",
+              isDevelopersActive
+                ? "text-primary"
+                : "text-foreground/75 hover:text-foreground",
+            )}
+          >
+            <span
+              className={cn(
+                "pointer-events-none absolute bottom-0 left-3 right-3 h-0.5 bg-primary",
+                isDevelopersActive ? "opacity-100" : "opacity-0",
+              )}
+            />
+            Застройщики
           </Link>
 
           <div className="relative group/nav">

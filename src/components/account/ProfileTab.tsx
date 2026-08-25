@@ -30,6 +30,16 @@ import {
   VERIFICATION_LABELS,
 } from "@/hooks/useProfile";
 import { ensureAgencyForUserApi } from "@/lib/agencyApi";
+import {
+  useMyDeveloper,
+  useRequestDeveloperVerification,
+  useUpdateDeveloper,
+  useUploadDeveloperLogo,
+} from "@/hooks/useDeveloper";
+import {
+  DEVELOPER_SUBTYPE_LABELS,
+  type DeveloperSubtype,
+} from "@/lib/developerTypes";
 
 const inputClass =
   "w-full h-7 px-3 rounded bg-background border border-border text-sm text-foreground focus:outline-none focus:border-primary transition-colors";
@@ -38,6 +48,7 @@ const inputClass =
  * Единый профиль:
  * — собственник / риелтор / ищущий: личные данные
  * — агентство: название агентства + ответственный + публичные данные агентства
+ * — застройщик: компания + subtype + верификация
  */
 export default function ProfileTab() {
   const { toast } = useToast();
@@ -48,16 +59,28 @@ export default function ProfileTab() {
   const requestOwnerVerification = useRequestVerification();
 
   const isAgencyAccount = profile?.account_type === "agency";
+  const isDeveloperAccount = profile?.account_type === "developer";
   const { data: agencyData, isLoading: agencyLoading, refetch } = useMyAgency();
+  const { data: developer, isLoading: developerLoading } = useMyDeveloper();
   const updateAgency = useUpdateAgency();
+  const updateDeveloper = useUpdateDeveloper();
   const requestAgencyVerification = useRequestAgencyVerification();
+  const requestDeveloperVerification = useRequestDeveloperVerification();
   const agency = agencyData?.agency;
   const uploadLogo = useUploadAgencyLogo(agency?.id);
+  const uploadDeveloperLogo = useUploadDeveloperLogo(developer?.id);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [aboutSelf, setAboutSelf] = useState("");
+  const [devName, setDevName] = useState("");
+  const [devAbout, setDevAbout] = useState("");
+  const [devCity, setDevCity] = useState("");
+  const [devPhone, setDevPhone] = useState("");
+  const [devWebsite, setDevWebsite] = useState("");
+  const [devSubtype, setDevSubtype] =
+    useState<DeveloperSubtype>("apartment_developer");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
 
@@ -93,6 +116,16 @@ export default function ProfileTab() {
     setWorkingHours(agency.working_hours || "");
     setAiConsultantEnabled(!!agency.ai_consultant_enabled);
   }, [agency]);
+
+  useEffect(() => {
+    if (!developer) return;
+    setDevName(developer.name || "");
+    setDevAbout(developer.about || "");
+    setDevCity(developer.city || "");
+    setDevPhone(developer.phone || "");
+    setDevWebsite(developer.website || "");
+    setDevSubtype(developer.subtype);
+  }, [developer]);
 
   useEffect(() => {
     if (!user || !isAgencyAccount || agencyLoading || agencyData || ensuring)
@@ -182,6 +215,25 @@ export default function ProfileTab() {
         description: err instanceof Error ? err.message : "",
         variant: "destructive",
       });
+    } finally {
+      e.target.value = "";
+    }
+  };
+
+  const onDeveloperLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !developer) return;
+    try {
+      await uploadDeveloperLogo.mutateAsync(file);
+      toast({ title: "Логотип обновлён" });
+    } catch (err) {
+      toast({
+        title: "Не удалось загрузить логотип",
+        description: err instanceof Error ? err.message : "",
+        variant: "destructive",
+      });
+    } finally {
+      e.target.value = "";
     }
   };
 
@@ -283,13 +335,228 @@ export default function ProfileTab() {
   };
 
   const saving =
-    updateProfile.isPending || updateAgency.isPending || avatarUploading;
+    updateProfile.isPending ||
+    updateAgency.isPending ||
+    updateDeveloper.isPending ||
+    uploadDeveloperLogo.isPending ||
+    avatarUploading;
 
-  if (profileLoading || (isAgencyAccount && (agencyLoading || ensuring))) {
+  if (
+    profileLoading ||
+    (isAgencyAccount && (agencyLoading || ensuring)) ||
+    (isDeveloperAccount && developerLoading)
+  ) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="w-5 h-5 animate-spin mr-2" />
         Загрузка...
+      </div>
+    );
+  }
+
+  if (isDeveloperAccount && !developer) {
+    return (
+      <p className="text-sm text-muted-foreground py-6">
+        Профиль застройщика не найден. Обратитесь в поддержку.
+      </p>
+    );
+  }
+
+  if (isDeveloperAccount && developer) {
+    const verified = isProfileVerified(developer.verification_status);
+    const status = developer.verification_status;
+    return (
+      <div className="space-y-6 max-w-xl">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-xl font-bold text-foreground">
+              Профиль застройщика
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Публичные данные компании
+            </p>
+          </div>
+          <Link
+            to={`/zastroyshchik/${developer.id}`}
+            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          >
+            Открыть страницу <ExternalLink className="w-3 h-3" />
+          </Link>
+        </div>
+
+        <div className="bg-card border border-border/60 rounded-lg p-5 space-y-4">
+          <div className="flex items-start gap-4">
+            <button
+              type="button"
+              onClick={() => logoRef.current?.click()}
+              className="relative w-20 h-20 rounded-xl border border-border overflow-hidden bg-muted flex items-center justify-center shrink-0"
+            >
+              {developer.logo_url ? (
+                <img
+                  src={developer.logo_url}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Camera className="w-5 h-5 text-muted-foreground" />
+              )}
+              {uploadDeveloperLogo.isPending && (
+                <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                </div>
+              )}
+            </button>
+            <input
+              ref={logoRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={onDeveloperLogo}
+            />
+            <div className="space-y-2 min-w-0">
+              <p className="text-xs text-muted-foreground">Логотип компании</p>
+              <div className="flex flex-wrap items-center gap-2">
+                {verified ? (
+                  <VerifiedBadge />
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    {VERIFICATION_LABELS[status]}
+                  </span>
+                )}
+              </div>
+              {(status === "unverified" || status === "rejected") && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={requestDeveloperVerification.isPending}
+                  onClick={async () => {
+                    await requestDeveloperVerification.mutateAsync(developer.id);
+                    toast({ title: "Заявка на верификацию отправлена" });
+                  }}
+                >
+                  Запросить верификацию
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">
+              Название
+            </label>
+            <input
+              className={inputClass}
+              value={devName}
+              onChange={(e) => setDevName(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">
+              Тип
+            </label>
+            <select
+              className={inputClass}
+              value={devSubtype}
+              onChange={(e) =>
+                setDevSubtype(e.target.value as DeveloperSubtype)
+              }
+            >
+              {(
+                Object.keys(DEVELOPER_SUBTYPE_LABELS) as DeveloperSubtype[]
+              ).map((k) => (
+                <option key={k} value={k}>
+                  {DEVELOPER_SUBTYPE_LABELS[k]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">
+              О компании
+            </label>
+            <Textarea
+              value={devAbout}
+              onChange={(e) => setDevAbout(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">
+                Город
+              </label>
+              <input
+                className={inputClass}
+                value={devCity}
+                onChange={(e) => setDevCity(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">
+                Телефон
+              </label>
+              <input
+                className={inputClass}
+                value={devPhone}
+                onChange={(e) => setDevPhone(e.target.value)}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">
+              Сайт
+            </label>
+            <input
+              className={inputClass}
+              value={devWebsite}
+              onChange={(e) => setDevWebsite(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">
+              Ответственный (ФИО)
+            </label>
+            <input
+              className={inputClass}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
+          </div>
+          <Button
+            type="button"
+            disabled={saving}
+            onClick={async () => {
+              try {
+                await updateDeveloper.mutateAsync({
+                  developerId: developer.id,
+                  patch: {
+                    name: devName.trim(),
+                    about: devAbout.trim(),
+                    city: devCity.trim(),
+                    phone: devPhone.trim(),
+                    website: devWebsite.trim() || null,
+                    subtype: devSubtype,
+                  },
+                });
+                await updateProfile.mutateAsync({
+                  full_name: fullName.trim(),
+                  phone: phone.trim() || null,
+                });
+                toast({ title: "Сохранено" });
+              } catch (err) {
+                toast({
+                  title: "Ошибка",
+                  description:
+                    err instanceof Error ? err.message : "Не удалось сохранить",
+                  variant: "destructive",
+                });
+              }
+            }}
+          >
+            Сохранить
+          </Button>
+        </div>
       </div>
     );
   }

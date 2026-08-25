@@ -61,8 +61,14 @@ INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('property_type', 'Офис', 1),
   ('property_type', 'Торговая', 2),
   ('property_type', 'Склад', 3),
-  ('property_type', 'Земля', 4),
   ('property_type', 'Производство', 5)
+ON CONFLICT (category, value) DO NOTHING;
+
+INSERT INTO dictionaries (category, value, parent, sort_order) VALUES
+  ('property_type', 'Павильон', 'commercial', 6),
+  ('property_type', 'ПСН', 'commercial', 7),
+  ('property_type', 'Общепит', 'commercial', 8),
+  ('property_type', 'Автосервис', 'commercial', 9)
 ON CONFLICT (category, value) DO NOTHING;
 
 INSERT INTO dictionaries (category, value, parent, sort_order) VALUES
@@ -73,10 +79,14 @@ INSERT INTO dictionaries (category, value, parent, sort_order) VALUES
   ('property_type', 'Апартаменты', 'residential', 15),
   ('property_type', 'Дача', 'residential', 16),
   ('property_type', 'Коттедж', 'residential', 17),
-  ('property_type', 'Участок', 'residential', 18),
   ('property_type', 'Гараж', 'residential', 19),
   ('property_type', 'Машиноместо', 'residential', 20),
   ('property_type', 'Доля', 'residential', 21)
+ON CONFLICT (category, value) DO NOTHING;
+
+INSERT INTO dictionaries (category, value, parent, sort_order) VALUES
+  ('property_type', 'Земля', 'land', 40),
+  ('property_type', 'Участок', 'land', 41)
 ON CONFLICT (category, value) DO NOTHING;
 
 -- Классы объектов
@@ -114,7 +124,23 @@ INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('building_type', 'Монолит', 3),
   ('building_type', 'Деревянный', 4),
   ('building_type', 'Блочный', 5),
-  ('building_type', 'Монолит-кирпич', 6)
+  ('building_type', 'Монолит-кирпич', 6),
+  ('building_type', 'Каркасный', 7),
+  ('building_type', 'Каркасно-щитовой', 8),
+  ('building_type', 'Каркас с кирпичом', 9),
+  ('building_type', 'Клееный брус', 10),
+  ('building_type', 'Профилированный брус', 11),
+  ('building_type', 'Брус', 12),
+  ('building_type', 'Двойной брус', 13),
+  ('building_type', 'Брус с утеплением', 14),
+  ('building_type', 'Оцилиндрованное бревно', 15),
+  ('building_type', 'Рубленое бревно', 16),
+  ('building_type', 'Лафет', 17),
+  ('building_type', 'СИП-панели', 18),
+  ('building_type', 'Фахверк', 19),
+  ('building_type', 'CLT', 20),
+  ('building_type', 'Баня (дерево)', 21),
+  ('building_type', 'Дачный деревянный', 22)
 ON CONFLICT (category, value) DO NOTHING;
 
 INSERT INTO dictionaries (category, value, sort_order) VALUES

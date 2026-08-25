@@ -14,8 +14,10 @@ import {
   Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useMemo } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { CONTACTS } from "@/config/company";
+import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 import { getMainNavMegaMenus } from "@/lib/catalogMegaMenu";
 import { cn } from "@/lib/utils";
 
@@ -78,7 +80,19 @@ export default function MobileMenuDrawer({
   onOpenWizard,
 }: Props) {
   const close = () => onOpenChange(false);
-  const megaMenus = getMainNavMegaMenus();
+  const { propertyTypes } = useAllDictionaryValues();
+  const commercialTypes = useMemo(
+    () => propertyTypes("commercial"),
+    [propertyTypes],
+  );
+  const megaMenus = useMemo(
+    () =>
+      getMainNavMegaMenus({
+        isLoggedIn,
+        commercialTypes,
+      }),
+    [isLoggedIn, commercialTypes],
+  );
 
   const secondaryItems: MenuItem[] = [
     { label: "Риелторы", href: "/rieltory", icon: Users },

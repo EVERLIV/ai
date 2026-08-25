@@ -214,6 +214,31 @@ export function buildCompareRows(properties: DbProperty[]): CompareRow[] {
       extrasKey: RESIDENTIAL_EXTRAS_KEYS.buildingType,
     },
     {
+      key: "wood_wall",
+      label: "Стены",
+      extrasKey: RESIDENTIAL_EXTRAS_KEYS.woodWall,
+    },
+    {
+      key: "wood_floors",
+      label: "Этажность",
+      extrasKey: RESIDENTIAL_EXTRAS_KEYS.woodFloors,
+    },
+    {
+      key: "wood_foundation",
+      label: "Фундамент",
+      extrasKey: RESIDENTIAL_EXTRAS_KEYS.woodFoundation,
+    },
+    {
+      key: "wood_roof",
+      label: "Кровля",
+      extrasKey: RESIDENTIAL_EXTRAS_KEYS.woodRoof,
+    },
+    {
+      key: "wood_finish",
+      label: "Готовность",
+      extrasKey: RESIDENTIAL_EXTRAS_KEYS.woodFinish,
+    },
+    {
       key: "year",
       label: "Год постройки",
       extrasKey: RESIDENTIAL_EXTRAS_KEYS.yearBuilt,

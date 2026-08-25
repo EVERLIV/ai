@@ -14,10 +14,11 @@ type CatalogLinkParams = {
   market?: string | string[];
   buildingType?: string | string[];
   furniture?: string | string[];
+  landUse?: string | string[];
   district?: string;
   deal?: "Аренда" | "Продажа" | "Посуточно" | "rent" | "sale" | "Все";
   q?: string;
-  seller?: ListingSellerFilter | "owner" | "agency";
+  seller?: ListingSellerFilter | "owner" | "agency" | "developer";
   agency?: string;
 };
 
@@ -46,7 +47,9 @@ export function buildCatalogUrl(params: CatalogLinkParams = {}): string {
   const basePath =
     params.segment === "residential"
       ? SEGMENT_ROUTES.residential.catalog
-      : SEGMENT_ROUTES.commercial.catalog;
+      : params.segment === "land"
+        ? SEGMENT_ROUTES.land.catalog
+        : SEGMENT_ROUTES.commercial.catalog;
 
   if (params.types) {
     const types = (Array.isArray(params.types) ? params.types : [params.types])
@@ -91,6 +94,15 @@ export function buildCatalogUrl(params: CatalogLinkParams = {}): string {
     if (furniture.length > 0) search.set("furniture", furniture.join(","));
   }
 
+  if (params.landUse) {
+    const landUse = (
+      Array.isArray(params.landUse) ? params.landUse : [params.landUse]
+    )
+      .map((value) => value.trim())
+      .filter(Boolean);
+    if (landUse.length > 0) search.set("land_use", landUse.join(","));
+  }
+
   if (params.district?.trim()) search.set("district", params.district.trim());
 
   const deal = normalizeCatalogDeal(params.deal);
@@ -110,7 +122,7 @@ export const footerSectionLinks = [
   { label: "Офисы", href: buildCatalogUrl({ types: "Офис" }) },
   { label: "Торговые площади", href: buildCatalogUrl({ types: "Торговая" }) },
   { label: "Склады", href: buildCatalogUrl({ types: "Склад" }) },
-  { label: "Земельные участки", href: buildCatalogUrl({ types: "Земля" }) },
+  { label: "Земельные участки", href: buildCatalogUrl({ segment: "land" }) },
   { label: "Производство", href: buildCatalogUrl({ types: "Производство" }) },
 ];
 
@@ -147,7 +159,7 @@ export const footerResidentialLinks = [
     label: "Апартаменты",
     href: buildCatalogUrl({ segment: "residential", types: "Апартаменты" }),
   },
-  { label: "Участки", href: "/zhilaya/uchastki" },
+  { label: "Участки", href: buildCatalogUrl({ segment: "land" }) },
   {
     label: "Новостройки",
     href: buildCatalogUrl({ segment: "residential", market: "Новостройка" }),
@@ -187,6 +199,7 @@ export function readCatalogFiltersFromSearchParams(
     ceilingMin: Number(searchParams.get("ceil") || 0),
     parkingOnly: searchParams.get("parking") === "1",
     selectedLayouts: parseCsvParam(searchParams, "layouts"),
+    selectedLandUses: parseCsvParam(searchParams, "land_use"),
     seller: normalizeListingSeller(searchParams.get("seller")),
     agencyId: searchParams.get("agency") || "",
   };
@@ -225,6 +238,9 @@ export function serializeCatalogSearchParams(
   if (filters.parkingOnly) p.set("parking", "1");
   if (filters.selectedLayouts.length > 0) {
     p.set("layouts", filters.selectedLayouts.join(","));
+  }
+  if (filters.selectedLandUses.length > 0) {
+    p.set("land_use", filters.selectedLandUses.join(","));
   }
   if (filters.selectedRooms.length > 0) {
     p.set("rooms", filters.selectedRooms.join(","));
