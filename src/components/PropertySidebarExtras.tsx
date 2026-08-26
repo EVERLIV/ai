@@ -90,10 +90,7 @@ export default function PropertySidebarExtras({
     extrasAgencyName ||
     extrasAgentName ||
     "";
-  const developerAvatar =
-    liveDeveloper?.logo_url?.trim() ||
-    d.agent_avatar_url ||
-    "";
+  const developerAvatar = liveDeveloper?.logo_url?.trim() || "";
   const developerAbout =
     liveDeveloper?.about?.trim() || d.agent_agency_about || "";
   const developerVerified = liveDeveloper

@@ -82,7 +82,7 @@ export default function CatalogSellerLine({ extras, className }: Props) {
         className,
       )}
     >
-      {agent.avatarUrl ? (
+      {agent.avatarUrl && !agent.isDeveloper ? (
         <img
           src={agent.avatarUrl}
           alt=""

@@ -117,7 +117,8 @@ export function getCardDeveloperLabel(property: PropertyLike): {
     return {
       name: name || "Застройщик",
       href: developerId ? `/zastroyshchik/${developerId}` : null,
-      avatarUrl: agent?.avatarUrl || null,
+      // Не берём agent_avatar_url из extras — там часто фото объекта, не логотип
+      avatarUrl: null,
     };
   }
   return null;

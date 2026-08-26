@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Building2 } from "lucide-react";
 import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import type { DbProperty } from "@/hooks/useProperties";
@@ -48,12 +49,23 @@ function pickDeveloper(
   projectDev: Developer | null,
 ): { name: string; href: string | null; avatarUrl: string | null } | null {
   const fromExtras = getCardDeveloperLabel(property);
-  if (fromExtras) return fromExtras;
+  // Логотип только из профиля застройщика — в extras часто лежит фото объекта
+  const logo = projectDev?.logo_url?.trim() || null;
+  if (fromExtras) {
+    return {
+      ...fromExtras,
+      name: fromExtras.name || projectDev?.name?.trim() || "Застройщик",
+      href:
+        fromExtras.href ||
+        (projectDev?.id ? `/zastroyshchik/${projectDev.id}` : null),
+      avatarUrl: logo,
+    };
+  }
   if (!projectDev?.name?.trim()) return null;
   return {
     name: projectDev.name.trim(),
     href: projectDev.id ? `/zastroyshchik/${projectDev.id}` : null,
-    avatarUrl: projectDev.logo_url?.trim() || null,
+    avatarUrl: logo,
   };
 }
 
@@ -116,7 +128,9 @@ export default function NewbuildCardMeta({
             className="w-8 h-8 rounded-md object-cover bg-muted shrink-0"
           />
         ) : (
-          <div className="w-8 h-8 rounded-md bg-muted shrink-0" />
+          <div className="w-8 h-8 rounded-md bg-muted shrink-0 flex items-center justify-center">
+            <Building2 className="w-4 h-4 text-muted-foreground" />
+          </div>
         )}
         <div className="min-w-0">
           <div className="text-[9px] uppercase tracking-wide text-muted-foreground">
@@ -203,13 +217,6 @@ export default function NewbuildCardMeta({
         ))}
       {developerShow && (
         <div className="flex items-center gap-1.5 min-w-0">
-          {developerShow.avatarUrl ? (
-            <img
-              src={developerShow.avatarUrl}
-              alt=""
-              className="w-5 h-5 rounded object-cover bg-muted shrink-0"
-            />
-          ) : null}
           <span className="text-[11px] text-muted-foreground truncate">
             <span className="text-muted-foreground/80">Застройщик · </span>
             {developerShow.href ? (
