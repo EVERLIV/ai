@@ -362,10 +362,10 @@ export default function PropertyAIChat({
       </div>
       )}
 
-      {/* Backdrop мобайл */}
+      {/* Backdrop мобайл — выше SiteHeader (z-50) и PropertyStickyNav (z-55) */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/30 z-40 md:hidden"
+          className="fixed inset-0 bg-black/30 z-[70] md:hidden"
           onClick={() => setOpen(false)}
         />
       )}
@@ -373,7 +373,7 @@ export default function PropertyAIChat({
       {/* ── PANEL ── */}
       <div
         className={`
-        fixed z-50 flex flex-col overflow-hidden
+        fixed z-[70] flex flex-col overflow-hidden
         inset-x-0 bottom-0 h-[100dvh]
         md:inset-x-auto md:right-0 md:top-1/2 md:-translate-y-1/2 md:bottom-auto
         md:w-[370px] md:h-[min(600px,88vh)]

@@ -1,8 +1,9 @@
 import { Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import CatalogCountChip from "@/components/specialists/CatalogCountChip";
-import VerifiedBadge from "@/components/VerifiedBadge";
+import { RatingBadge } from "@/components/specialists/SpecialistReviews";
 import { pluralProjects } from "@/components/specialists/specialistUtils";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import {
   DEVELOPER_SUBTYPE_LABELS,
   type Developer,
@@ -56,6 +57,10 @@ export default function DeveloperListCard({
               {DEVELOPER_SUBTYPE_LABELS[developer.subtype]}
               {developer.city ? ` · ${developer.city}` : ""}
             </p>
+            <RatingBadge
+              avgRating={developer.avg_rating}
+              reviewsCount={developer.reviews_count}
+            />
           </div>
 
           {developer.about && (

@@ -14,6 +14,7 @@ type FooterLink = { label: string; href: string; external?: boolean };
 const FOOTER_COLUMNS: FooterLink[][] = [
   [
     { label: "Справочный центр", href: "/help" },
+    { label: "Документация", href: "/docs" },
     { label: "Тарифы и цены", href: "/list-property" },
     { label: "Карьера в АрендаСити", href: "/vacancies" },
   ],

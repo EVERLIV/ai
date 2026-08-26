@@ -1,4 +1,5 @@
 import {
+  BookMarked,
   BookOpen,
   FileText,
   HelpCircle,
@@ -17,6 +18,12 @@ import {
 } from "@/lib/recommendationEngine";
 
 const articles = [
+  {
+    href: "/docs",
+    icon: BookMarked,
+    title: "Документация портала",
+    desc: `Полный справочник ${COMPANY.brand}: разделы, роли, размещение и редактирование объектов, кабинет и форма «я нашёл баг».`,
+  },
   {
     href: "/recommendations",
     icon: Sparkles,
@@ -70,8 +77,8 @@ export default function HelpCenterPage() {
           Справочный центр
         </h1>
         <p className="text-sm text-muted-foreground mb-8">
-          Документы и ответы о работе каталога, персональных данных и показе
-          объявлений.
+          Документация по разделам и ролям, юридические документы и ответы о
+          работе каталога.
         </p>
 
         <ul className="space-y-3">

@@ -50,6 +50,9 @@ export default function MobileBottomNav() {
   const placeHref = placementCtaPath("commercial", "rent", !!user);
   const profileHref = user ? "/account#profile" : "/auth";
 
+  // На карточке объекта — своя нижняя панель (звонок / поделиться / печать)
+  if (pathname.startsWith("/property/")) return null;
+
   return (
     <nav
       className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card pb-safe"

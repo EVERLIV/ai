@@ -13,6 +13,7 @@ import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import SpecialistContactForm from "@/components/specialists/SpecialistContactForm";
+import { RatingBadge } from "@/components/specialists/SpecialistReviews";
 import { pluralObjects } from "@/components/specialists/specialistUtils";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import {
@@ -163,6 +164,14 @@ export default function DeveloperPublicPage() {
                   {DEVELOPER_SUBTYPE_LABELS[developer.subtype]}
                   {developer.city ? ` · ${developer.city}` : ""}
                 </p>
+                {developer.avg_rating ? (
+                  <RatingBadge
+                    avgRating={developer.avg_rating}
+                    reviewsCount={developer.reviews_count}
+                    href="#reviews"
+                    className="text-sm"
+                  />
+                ) : null}
                 {verified && (
                   <p className="text-xs text-primary">
                     Документы застройщика проверены
@@ -257,6 +266,30 @@ export default function DeveloperPublicPage() {
                     <PropertyGridCard key={p.id} property={p} />
                   ))}
                 </div>
+              )}
+            </section>
+
+            <section
+              id="reviews"
+              className="scroll-mt-24 space-y-3 rounded-xl border border-border/60 bg-card p-4 sm:p-5"
+            >
+              <h2 className="text-lg font-semibold">Отзывы</h2>
+              {developer.avg_rating ? (
+                <RatingBadge
+                  avgRating={developer.avg_rating}
+                  reviewsCount={developer.reviews_count}
+                  className="text-sm"
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Пока нет опубликованных отзывов о застройщике.
+                </p>
+              )}
+              {Number(developer.reviews_count || 0) > 0 && (
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Средняя оценка по отзывам покупателей. Подробные отзывы
+                  появятся здесь по мере модерации.
+                </p>
               )}
             </section>
 

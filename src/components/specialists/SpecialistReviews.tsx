@@ -30,8 +30,9 @@ function Stars({
   size?: "sm" | "md";
 }) {
   const icon = size === "md" ? "w-5 h-5" : "w-3.5 h-3.5";
+  const filled = Math.round(Number(value) || 0);
   return (
-    <span className="inline-flex items-center gap-0.5">
+    <span className="inline-flex items-center gap-0.5" aria-hidden={!onChange}>
       {[1, 2, 3, 4, 5].map((n) => (
         <button
           key={n}
@@ -47,15 +48,38 @@ function Stars({
           <Star
             className={cn(
               icon,
-              n <= value
-                ? "fill-emerald-500 text-emerald-500"
-                : "text-muted-foreground/40",
+              n <= filled
+                ? "fill-amber-400 text-amber-400"
+                : "text-muted-foreground/35",
             )}
           />
         </button>
       ))}
     </span>
   );
+}
+
+/** Золотые звёзды рейтинга (без интерактива). */
+export function RatingStars({
+  value,
+  size = "sm",
+  className,
+}: {
+  value: number;
+  size?: "sm" | "md";
+  className?: string;
+}) {
+  return (
+    <span className={className}>
+      <Stars value={value} size={size} />
+    </span>
+  );
+}
+
+export function reviewsWord(count: number): string {
+  if (count === 1) return "отзыв";
+  if (count >= 2 && count <= 4) return "отзыва";
+  return "отзывов";
 }
 
 function ReviewItem({ review }: { review: AgencyReview }) {
@@ -157,22 +181,17 @@ export default function SpecialistReviews({
   };
 
   return (
-    <section className={cn("space-y-4", className)}>
+    <section id="reviews" className={cn("space-y-4 scroll-mt-24", className)}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">{title}</h2>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-muted-foreground">
             {displayAvg > 0 ? (
               <span className="inline-flex items-center gap-1.5 text-foreground font-medium">
-                <Stars value={Math.round(displayAvg)} />
+                <Stars value={displayAvg} />
                 {formatAvgRating(displayAvg)}
                 <span className="font-normal text-muted-foreground">
-                  · {displayCount}{" "}
-                  {displayCount === 1
-                    ? "отзыв"
-                    : displayCount >= 2 && displayCount <= 4
-                      ? "отзыва"
-                      : "отзывов"}
+                  · {displayCount} {reviewsWord(displayCount)}
                 </span>
               </span>
             ) : (
@@ -268,28 +287,53 @@ export default function SpecialistReviews({
   );
 }
 
-/** Компактный бейдж рейтинга для list-карточек */
+/** Компактный бейдж рейтинга: золотые звёзды + число + отзывы (ссылка опционально). */
 export function RatingBadge({
   avgRating,
   reviewsCount,
+  href,
   className,
 }: {
   avgRating?: number | null;
   reviewsCount?: number | null;
+  /** Куда вести по клику на отзывы (например /agentstvo/…#reviews) */
+  href?: string | null;
   className?: string;
 }) {
   const n = Number(avgRating || 0);
-  if (!n || !reviewsCount) return null;
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 text-[11px] text-emerald-700 tabular-nums",
-        className,
+  const count = Number(reviewsCount || 0);
+  if (!n) return null;
+
+  const inner = (
+    <>
+      <RatingStars value={n} />
+      <span className="font-medium tabular-nums text-foreground">
+        {formatAvgRating(n)}
+      </span>
+      {count > 0 && (
+        <span className="text-muted-foreground">
+          {count} {reviewsWord(count)}
+        </span>
       )}
-    >
-      <Star className="w-3 h-3 fill-emerald-500 text-emerald-500" />
-      {formatAvgRating(n)}
-      <span className="text-muted-foreground">({reviewsCount})</span>
-    </span>
+    </>
   );
+
+  const baseClass = cn(
+    "inline-flex items-center gap-1.5 text-[11px] sm:text-xs tabular-nums",
+    className,
+  );
+
+  if (href) {
+    return (
+      <Link
+        to={href}
+        className={cn(baseClass, "hover:opacity-90 transition-opacity")}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {inner}
+      </Link>
+    );
+  }
+
+  return <span className={baseClass}>{inner}</span>;
 }

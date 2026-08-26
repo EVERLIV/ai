@@ -4,19 +4,19 @@ import {
   Loader2,
   MapPin,
   Phone,
-  Star,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import SpecialistContactForm from "@/components/specialists/SpecialistContactForm";
-import SpecialistReviews from "@/components/specialists/SpecialistReviews";
+import SpecialistReviews, {
+  RatingBadge,
+} from "@/components/specialists/SpecialistReviews";
 import { pluralObjects } from "@/components/specialists/specialistUtils";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useManagerPublic } from "@/hooks/useAgency";
 import { isProfileVerified } from "@/hooks/useProfile";
-import { formatAvgRating } from "@/lib/agencyApi";
 import { buildCatalogUrl } from "@/lib/catalogLinks";
 import { cn } from "@/lib/utils";
 
@@ -134,22 +134,13 @@ export default function RealtorPublicPage() {
                   </p>
                 )}
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                  {manager.avg_rating && manager.reviews_count ? (
-                    <span className="inline-flex items-center gap-1.5 text-sm text-foreground">
-                      <Star className="w-4 h-4 fill-emerald-500 text-emerald-500" />
-                      <span className="font-medium tabular-nums">
-                        {formatAvgRating(manager.avg_rating)}
-                      </span>
-                      <span className="text-muted-foreground">
-                        · {manager.reviews_count}{" "}
-                        {manager.reviews_count === 1
-                          ? "отзыв"
-                          : manager.reviews_count >= 2 &&
-                              manager.reviews_count <= 4
-                            ? "отзыва"
-                            : "отзывов"}
-                      </span>
-                    </span>
+                  {manager.avg_rating ? (
+                    <RatingBadge
+                      avgRating={manager.avg_rating}
+                      reviewsCount={manager.reviews_count}
+                      href="#reviews"
+                      className="text-sm"
+                    />
                   ) : null}
                   <Link
                     to={`/agentstvo/${manager.agency.id}`}

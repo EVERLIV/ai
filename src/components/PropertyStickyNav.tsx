@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import PropertyShareButton from "@/components/PropertyShareButton";
 import type { PropertyShareInput } from "@/lib/propertyShare";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +21,7 @@ const NAV_H = 48;
 export default function PropertyStickyNav({
   sections,
   title,
-  property,
+  property: _property,
   onPinnedChange,
   className,
 }: Props) {
@@ -135,11 +134,10 @@ export default function PropertyStickyNav({
               })}
             </nav>
 
-            <div className="hidden sm:flex items-center gap-2.5 shrink-0 max-w-[42%]">
-              <span className="text-xs text-muted-foreground truncate">
+            <div className="hidden sm:block shrink-0 max-w-[42%]">
+              <span className="text-xs text-muted-foreground truncate block">
                 {title}
               </span>
-              <PropertyShareButton property={property} />
             </div>
           </div>
         </div>

@@ -28,6 +28,7 @@ import Auth from "./pages/Auth.tsx";
 import Catalog from "./pages/Catalog.tsx";
 import ContactsPage from "./pages/ContactsPage.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
+import DocsHandbookPage from "./pages/DocsHandbookPage.tsx";
 import HelpCenterPage from "./pages/HelpCenterPage.tsx";
 import Index from "./pages/Index.tsx";
 import LandPage from "./pages/LandPage.tsx";
@@ -132,6 +133,7 @@ const App = () => {
                       element={<LegalDocPage kind="terms" />}
                     />
                     <Route path="/help" element={<HelpCenterPage />} />
+                    <Route path="/docs" element={<DocsHandbookPage />} />
                     <Route
                       path="/recommendations"
                       element={<RecommendationsPage />}

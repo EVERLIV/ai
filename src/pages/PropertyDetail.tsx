@@ -100,6 +100,7 @@ import {
 import { isHouseLike } from "@/lib/propertyTypeFamilies";
 import { getWoodenHouseConfig } from "@/lib/woodenHouses";
 import { resolveSidebarDisplay } from "@/lib/propertySidebar";
+import { buildYandexMapsUrl } from "@/lib/yandexMapsLink";
 import {
   buildPropertyShareOgDescription,
   buildPropertySharePayload,
@@ -417,6 +418,11 @@ export default function PropertyDetail() {
   const displayTitle = seoTitle;
   const addressShort = formatPropertyAddressShort(property.address);
   const listingActivity = formatListingActivityDates(property);
+  const yandexMapsUrl = buildYandexMapsUrl({
+    address: property.address,
+    lat: (property as { lat?: number | null }).lat,
+    lng: (property as { lng?: number | null }).lng,
+  });
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -639,8 +645,8 @@ export default function PropertyDetail() {
         </div>
       </div>
 
-      {/* Mobile bottom action bar */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_24px_-12px_hsl(0_0%_0%/0.15)]">
+      {/* Mobile bottom action bar — поверх глобальной навигации на /property */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-[45] bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_24px_-12px_hsl(0_0%_0%/0.15)]">
         <div className="grid grid-cols-6 px-1.5 py-2 gap-0.5 max-w-lg mx-auto">
           <RevealListingPhone property={property} variant="bar" />
           {isResidential ? (
@@ -727,12 +733,23 @@ export default function PropertyDetail() {
         <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground leading-tight tracking-[0.015em] mb-1.5">
           {displayTitle}
         </h1>
-        {addressShort && (
-          <p className="mb-5 lg:mb-7 text-sm text-muted-foreground flex items-start gap-1.5">
-            <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-muted-foreground" />
-            <span>{addressShort}</span>
-          </p>
-        )}
+        {addressShort &&
+          (yandexMapsUrl ? (
+            <a
+              href={yandexMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mb-5 lg:mb-7 text-sm text-muted-foreground flex items-start gap-1.5 hover:text-primary transition-colors group/addr"
+            >
+              <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-muted-foreground group-hover/addr:text-primary" />
+              <span>{addressShort}</span>
+            </a>
+          ) : (
+            <p className="mb-5 lg:mb-7 text-sm text-muted-foreground flex items-start gap-1.5">
+              <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-muted-foreground" />
+              <span>{addressShort}</span>
+            </p>
+          ))}
 
         <PropertyStickyNav
           sections={[
@@ -969,8 +986,23 @@ export default function PropertyDetail() {
               />
               <div className="flex flex-wrap gap-4 mt-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />{" "}
-                  {property.address} · {property.district}
+                  <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+                  {yandexMapsUrl ? (
+                    <a
+                      href={yandexMapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-primary transition-colors"
+                    >
+                      {property.address}
+                      {property.district ? ` · ${property.district}` : ""}
+                    </a>
+                  ) : (
+                    <span>
+                      {property.address}
+                      {property.district ? ` · ${property.district}` : ""}
+                    </span>
+                  )}
                 </div>
               </div>
             </section>

@@ -5,7 +5,6 @@ import {
   Clock,
   Loader2,
   Phone,
-  Star,
   Users,
 } from "lucide-react";
 import { useMemo } from "react";
@@ -14,7 +13,9 @@ import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import SpecialistContactForm from "@/components/specialists/SpecialistContactForm";
-import SpecialistReviews from "@/components/specialists/SpecialistReviews";
+import SpecialistReviews, {
+  RatingBadge,
+} from "@/components/specialists/SpecialistReviews";
 import { pluralObjects } from "@/components/specialists/specialistUtils";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import {
@@ -23,7 +24,6 @@ import {
   useAgencyPublicProperties,
 } from "@/hooks/useAgency";
 import { isProfileVerified } from "@/hooks/useProfile";
-import { formatAvgRating } from "@/lib/agencyApi";
 import { buildCatalogUrl } from "@/lib/catalogLinks";
 
 export default function AgencyPublicPage() {
@@ -157,11 +157,17 @@ export default function AgencyPublicPage() {
                 <div className="text-[11px] text-muted-foreground uppercase tracking-wider">
                   Рейтинг
                 </div>
-                <div className="font-medium mt-0.5 inline-flex items-center gap-1.5">
-                  <Star className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500" />
-                  {agency.avg_rating && agency.reviews_count
-                    ? `${formatAvgRating(agency.avg_rating)} (${agency.reviews_count})`
-                    : "—"}
+                <div className="font-medium mt-0.5">
+                  {agency.avg_rating ? (
+                    <RatingBadge
+                      avgRating={agency.avg_rating}
+                      reviewsCount={agency.reviews_count}
+                      href="#reviews"
+                      className="text-sm"
+                    />
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </div>
               </div>
               <div>

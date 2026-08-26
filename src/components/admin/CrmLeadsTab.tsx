@@ -34,6 +34,7 @@ const SOURCE_LABELS: Record<string, string> = {
   consultation_widget: "Виджет консультации",
   category_contact: "Заявка по категории",
   management_request: "Передача в управление",
+  docs_bug_report: "Баг из документации",
   website: "Сайт",
 };
 

@@ -6,8 +6,15 @@ import {
   pluralApartments,
   pluralProjects,
 } from "@/components/specialists/specialistUtils";
+import {
+  RatingBadge,
+} from "@/components/specialists/SpecialistReviews";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { DEFAULT_AGENT } from "@/config/defaultAgent";
+import {
+  useAgencyPublic,
+  useManagerPublic,
+} from "@/hooks/useAgency";
 import {
   useDeveloperPublic,
   useDeveloperPublicProjects,
@@ -189,18 +196,58 @@ export default function PropertySidebarExtras({
       : null;
   const agencyHref = agencyId ? `/agentstvo/${agencyId}` : null;
   const managerHref = managerId ? `/rieltor/${managerId}` : null;
+
+  const { data: liveAgency } = useAgencyPublic(
+    !displayIsDeveloper && agencyId ? agencyId : undefined,
+  );
+  const { data: liveManager } = useManagerPublic(
+    !displayIsDeveloper && managerId ? managerId : undefined,
+  );
+
+  const liveRating =
+    displayIsDeveloper
+      ? Number(liveDeveloper?.avg_rating || 0)
+      : Number(
+          liveManager?.avg_rating ||
+            liveAgency?.avg_rating ||
+            0,
+        );
+  const liveReviewsCount = displayIsDeveloper
+    ? Number(liveDeveloper?.reviews_count || 0)
+    : Number(
+        liveManager?.reviews_count || liveAgency?.reviews_count || 0,
+      );
+
   const displayRating =
-    d.agent_rating > 0
-      ? d.agent_rating
-      : !hasOwnerData
-        ? DEFAULT_AGENT.rating
-        : 0;
+    liveRating > 0
+      ? liveRating
+      : d.agent_rating > 0
+        ? d.agent_rating
+        : !hasOwnerData
+          ? DEFAULT_AGENT.rating
+          : 0;
+  const displayReviewsCount =
+    liveReviewsCount > 0
+      ? liveReviewsCount
+      : !hasOwnerData && displayRating > 0
+        ? liveAgency?.reviews_count || 0
+        : liveReviewsCount;
   const displayResponseMin =
     d.agent_response_min > 0
       ? d.agent_response_min
-      : !hasOwnerData
-        ? DEFAULT_AGENT.responseMinutes
-        : 0;
+      : liveManager?.response_minutes ||
+          liveAgency?.response_minutes ||
+          (!hasOwnerData ? DEFAULT_AGENT.responseMinutes : 0);
+
+  const reviewsHref = displayIsDeveloper
+    ? developerHref
+      ? `${developerHref}#reviews`
+      : null
+    : managerHref
+      ? `${managerHref}#reviews`
+      : agencyHref
+        ? `${agencyHref}#reviews`
+        : null;
 
   const sectionTitle = displayIsDeveloper
     ? "Застройщик"
@@ -394,13 +441,19 @@ export default function PropertySidebarExtras({
             {displayRating > 0 && (
               <SpecRow
                 label="Рейтинг"
-                value={displayRating.toLocaleString("ru-RU", {
-                  minimumFractionDigits: 1,
-                  maximumFractionDigits: 1,
-                })}
+                value={
+                  <RatingBadge
+                    avgRating={displayRating}
+                    reviewsCount={
+                      displayReviewsCount > 0 ? displayReviewsCount : null
+                    }
+                    href={reviewsHref}
+                    className="justify-end"
+                  />
+                }
               />
             )}
-            {displayResponseMin > 0 && (
+            {Number(displayResponseMin) > 0 && (
               <SpecRow label="Ответ" value={`~${displayResponseMin} мин`} />
             )}
             {displayIsRealtor &&
