@@ -16,9 +16,10 @@ import type {
   ProjectUnitType,
 } from "@/lib/developerTypes";
 import {
-  defaultProjectKindForSubtype,
+  normalizeDeveloperSubtype,
   slugifyProjectTitle,
 } from "@/lib/developerTypes";
+import { resolveDeveloperProjectKind } from "@/lib/developerListingRules";
 
 const headers = {
   apikey: SERVICE_ROLE_KEY,
@@ -290,9 +291,10 @@ export async function createDeveloperProjectApi(input: {
   mortgage_terms?: string;
   installment_terms?: string;
 }): Promise<DeveloperProject> {
-  const kind =
-    input.project_kind ||
-    defaultProjectKindForSubtype(input.subtype || "apartment_developer");
+  const kind = resolveDeveloperProjectKind(
+    normalizeDeveloperSubtype(input.subtype || "apartment_developer"),
+    input.project_kind,
+  );
   const slug = `${slugifyProjectTitle(input.title)}-${Date.now().toString(36)}`;
   const rows = await restMutate<DeveloperProject[]>(
     "developer_projects",
@@ -324,10 +326,11 @@ export async function updateDeveloperProjectApi(
   projectId: string,
   patch: Partial<DeveloperProject>,
 ): Promise<DeveloperProject> {
+  const { project_kind: _dropKind, ...safePatch } = patch;
   const rows = await restMutate<DeveloperProject[]>(
     `developer_projects?id=eq.${encodeURIComponent(projectId)}`,
     "PATCH",
-    patch,
+    safePatch,
   );
   return Array.isArray(rows) ? rows[0] : rows;
 }

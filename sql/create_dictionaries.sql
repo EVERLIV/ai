@@ -74,6 +74,7 @@ ON CONFLICT (category, value) DO NOTHING;
 INSERT INTO dictionaries (category, value, parent, sort_order) VALUES
   ('property_type', 'Квартира', 'residential', 10),
   ('property_type', 'Дом', 'residential', 11),
+  ('property_type', 'Дом на заказ', 'residential', 18),
   ('property_type', 'Комната', 'residential', 12),
   ('property_type', 'Таунхаус', 'residential', 13),
   ('property_type', 'Апартаменты', 'residential', 15),
@@ -108,7 +109,8 @@ ON CONFLICT (category, value) DO NOTHING;
 
 INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('market', 'Вторичка', 1),
-  ('market', 'Новостройка', 2)
+  ('market', 'Новостройка', 2),
+  ('market', 'На заказ', 3)
 ON CONFLICT (category, value) DO NOTHING;
 
 INSERT INTO dictionaries (category, value, sort_order) VALUES

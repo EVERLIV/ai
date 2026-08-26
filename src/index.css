@@ -543,3 +543,57 @@
     padding-bottom: 0;
   }
 }
+
+/* Печать объявления: лист в portal на body (#property-print-sheet) */
+.print-only-sheet {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+    size: A4;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    overflow: visible !important;
+  }
+
+  /* Прячем приложение; лист — сосед #root на body */
+  body > *:not(#property-print-sheet) {
+    display: none !important;
+  }
+
+  #property-print-sheet.print-only-sheet,
+  #property-print-sheet {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #111 !important;
+    background: white !important;
+    position: static !important;
+  }
+
+  #property-print-sheet img {
+    max-width: 100%;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  #property-print-sheet,
+  #property-print-sheet * {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+}

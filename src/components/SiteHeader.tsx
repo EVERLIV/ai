@@ -242,7 +242,7 @@ export default function SiteHeader({
                 АРЕНДА<span className="text-primary">СИТИ</span>
               </span>
               <span className="text-[9px] font-medium tracking-wide text-muted-foreground mt-0.5 uppercase hidden sm:block">
-                Недвижимость в Иркутске
+                Недвижимость
               </span>
             </span>
           </Link>

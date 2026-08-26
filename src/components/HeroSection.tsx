@@ -1,14 +1,17 @@
 import { MapPin, Search, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import heroImg from "@/assets/hero-warehouses.jpg";
 import LocationPickerModal from "@/components/LocationPickerModal";
+import type { PropertySegment } from "@/config/propertySegments";
 import { useCountUp } from "@/hooks/useCountUp";
 import { useProperties } from "@/hooks/useProperties";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { buildCatalogUrl } from "@/lib/catalogLinks";
 import { buildPropertyDisplayTitle } from "@/lib/propertyCard";
+import { getResidentialMarket } from "@/lib/propertyResidential";
+import { propertyMatchesTypes } from "@/lib/propertyTypes";
 
 const stats = [
   { value: 1850, suffix: "+", label: "объектов" },
@@ -16,18 +19,50 @@ const stats = [
   { value: 97, suffix: "%", label: "довольных" },
 ];
 
-const TYPES = [
-  { label: "Офис", emoji: "🏢" },
-  { label: "Торговая", emoji: "🏪" },
-  { label: "Павильон", emoji: "🛖" },
-  { label: "Склад", emoji: "🏭" },
-  { label: "Производство", emoji: "⚙️" },
-  { label: "ПСН", emoji: "🏬" },
+type HeroCategory = {
+  id: string;
+  label: string;
+  emoji: string;
+  segment: PropertySegment;
+  types?: string | string[];
+  market?: string;
+};
+
+/** ПК-герой: короткие категории в одну строку без переноса */
+const TYPES: HeroCategory[] = [
+  {
+    id: "kvartiry",
+    label: "Квартиры",
+    emoji: "🏠",
+    segment: "residential",
+    types: "Квартира",
+  },
+  {
+    id: "doma",
+    label: "Дома",
+    emoji: "🏡",
+    segment: "residential",
+    types: ["Дом", "Дом на заказ", "Коттедж", "Дача"],
+  },
+  {
+    id: "novostroyki",
+    label: "Новостройки",
+    emoji: "🏗️",
+    segment: "residential",
+    market: "Новостройка",
+  },
+  {
+    id: "ofisy",
+    label: "Офисы",
+    emoji: "🏢",
+    segment: "commercial",
+    types: "Офис",
+  },
 ];
 
 export default function HeroSection() {
   const { ref, isVisible } = useScrollReveal(0.1);
-  const [searchType, setSearchType] = useState("Офис");
+  const [searchCategoryId, setSearchCategoryId] = useState(TYPES[0].id);
   const [searchQuery, setSearchQuery] = useState("");
   const [district, setDistrict] = useState("");
   const [locationOpen, setLocationOpen] = useState(false);
@@ -38,27 +73,39 @@ export default function HeroSection() {
   const searchBarRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { data: properties = [] } = useProperties({ segment: "commercial" });
+  const { data: properties = [] } = useProperties();
+
+  const activeCategory =
+    TYPES.find((t) => t.id === searchCategoryId) ?? TYPES[0];
 
   const c1 = useCountUp(stats[0].value, 2200, isVisible);
   const c2 = useCountUp(stats[1].value, 2000, isVisible);
   const c3 = useCountUp(stats[2].value, 1800, isVisible);
   const counts = [c1, c2, c3];
 
-  const suggestions =
-    searchQuery.trim().length >= 2
-      ? properties
-          .filter((p) => {
-            const q = searchQuery.toLowerCase();
-            return (
-              p.type === searchType &&
-              (p.address.toLowerCase().includes(q) ||
-                p.district.toLowerCase().includes(q) ||
-                (p.description || "").toLowerCase().includes(q))
-            );
-          })
-          .slice(0, 6)
-      : [];
+  const suggestions = useMemo(() => {
+    if (searchQuery.trim().length < 2) return [];
+    const q = searchQuery.toLowerCase();
+    return properties
+      .filter((p) => {
+        if (p.segment && p.segment !== activeCategory.segment) return false;
+        if (activeCategory.market) {
+          if (getResidentialMarket(p) !== activeCategory.market) return false;
+        }
+        if (activeCategory.types) {
+          const types = Array.isArray(activeCategory.types)
+            ? activeCategory.types
+            : [activeCategory.types];
+          if (!propertyMatchesTypes(p, types)) return false;
+        }
+        return (
+          p.address.toLowerCase().includes(q) ||
+          p.district.toLowerCase().includes(q) ||
+          (p.description || "").toLowerCase().includes(q)
+        );
+      })
+      .slice(0, 6);
+  }, [properties, searchQuery, activeCategory]);
 
   useEffect(() => {
     const update = () => {
@@ -93,8 +140,9 @@ export default function HeroSection() {
     setShowSuggestions(false);
     navigate(
       buildCatalogUrl({
-        segment: "commercial",
-        types: searchType !== "Офис" ? searchType : undefined,
+        segment: activeCategory.segment,
+        types: activeCategory.types,
+        market: activeCategory.market,
         q: searchQuery || undefined,
         district: district || undefined,
       }),
@@ -137,20 +185,19 @@ export default function HeroSection() {
             доступ к объектам без переплат на агрегаторах и лишних комиссий
           </p>
 
-          {/* Search block */}
           <div
             className="max-w-xl mx-auto"
             style={{ position: "relative", zIndex: 100 }}
           >
-            {/* Type pills — одна строка, скролл на мобильных */}
-            <div className="flex gap-1.5 mb-3 overflow-x-auto scrollbar-none pb-0.5 justify-start sm:justify-center">
+            {/* Одна строка на ПК, без переноса и обрезки */}
+            <div className="flex flex-nowrap justify-center gap-1.5 mb-3">
               {TYPES.map((t) => (
                 <button
-                  key={t.label}
+                  key={t.id}
                   type="button"
-                  onClick={() => setSearchType(t.label)}
-                  className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap shrink-0 transition-all duration-200 active:scale-95 ${
-                    searchType === t.label
+                  onClick={() => setSearchCategoryId(t.id)}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap shrink-0 transition-all duration-200 active:scale-95 ${
+                    searchCategoryId === t.id
                       ? "bg-primary text-primary-foreground"
                       : "bg-card/80 text-foreground/70 hover:bg-card hover:text-foreground border border-border/60"
                   }`}
@@ -161,7 +208,6 @@ export default function HeroSection() {
               ))}
             </div>
 
-            {/* Search input */}
             <div className="relative">
               <div
                 ref={searchBarRef}
@@ -171,14 +217,12 @@ export default function HeroSection() {
                     : "shadow-[0_4px_20px_-4px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_24px_-4px_rgba(0,0,0,0.16)]"
                 } border ${focused ? "border-primary/40" : "border-border"}`}
               >
-                {/* Search icon */}
                 <div className="flex items-center pl-4 text-muted-foreground shrink-0">
                   <Search
                     className={`w-4 h-4 transition-colors duration-200 ${focused ? "text-primary" : ""}`}
                   />
                 </div>
 
-                {/* Input */}
                 <input
                   ref={inputRef}
                   type="text"
@@ -197,7 +241,6 @@ export default function HeroSection() {
                   className="flex-1 px-3 py-3.5 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none min-w-0"
                 />
 
-                {/* Clear */}
                 {searchQuery && (
                   <button
                     type="button"
@@ -222,7 +265,6 @@ export default function HeroSection() {
                 </button>
                 <span className="hidden sm:block w-px h-5 bg-border shrink-0" />
 
-                {/* Search button */}
                 <button
                   type="button"
                   onClick={handleSearch}
@@ -233,7 +275,6 @@ export default function HeroSection() {
                 </button>
               </div>
 
-              {/* Autocomplete */}
               {showSuggestions &&
                 suggestions.length > 0 &&
                 dropdownRect &&
@@ -313,7 +354,6 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* Stats */}
         <div
           className={`flex justify-center gap-8 sm:gap-20 mt-10 sm:mt-14 ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}
           style={{ animationDelay: "0.3s", position: "relative", zIndex: 0 }}
@@ -340,11 +380,6 @@ export default function HeroSection() {
           setDistrict(location === "Все" ? "" : location);
         }}
       />
-
-      <style>{`
-        .scrollbar-none::-webkit-scrollbar { display: none; }
-        .scrollbar-none { scrollbar-width: none; }
-      `}</style>
     </section>
   );
 }

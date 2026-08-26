@@ -164,6 +164,15 @@ export const footerResidentialLinks = [
     label: "Новостройки",
     href: buildCatalogUrl({ segment: "residential", market: "Новостройка" }),
   },
+  {
+    label: "Дом на заказ",
+    href: buildCatalogUrl({
+      segment: "residential",
+      types: ["Дом на заказ", "Дом", "Коттедж", "Дача"],
+      market: "На заказ",
+      deal: "Продажа",
+    }),
+  },
 ];
 
 function parseCsvParam(searchParams: URLSearchParams, key: string): string[] {

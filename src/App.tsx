@@ -18,6 +18,7 @@ const TaskAnalyticsPage = lazy(() => import("./pages/TaskAnalyticsPage"));
 import CookieBanner from "@/components/CookieBanner";
 import InstallPrompt from "@/components/InstallPrompt";
 import ScrollToTop from "@/components/ScrollToTop";
+import AnalyticsBeacon from "@/components/AnalyticsBeacon";
 import MobileBottomNav from "@/components/mobile/MobileBottomNav";
 import AboutPage from "./pages/AboutPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
@@ -71,6 +72,7 @@ const App = () => {
             <MotionConfig reducedMotion="user">
               <BrowserRouter>
                 <ScrollToTop />
+                <AnalyticsBeacon />
                 <InstallPrompt />
                 <CookieBanner />
                 <div className="pb-mobile-nav">

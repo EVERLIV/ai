@@ -1,0 +1,25 @@
+-- =============================================================================
+-- ТайгаДом: справочники + сид застройщика деревянных домов
+-- Email: vanandrey.smi@mail.ru
+--
+-- Перед запуском:
+--   1) Пользователь зарегистрирован на сайте (есть в auth.users)
+--   2) Задеплоены фото public/mock/wooden-houses/*.jpg
+--   3) Есть таблицы developers (self_hosted_developers.sql)
+--
+-- Из корня репозитория:
+--
+--   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
+--     -f sql/seed_market_made_to_order.sql \
+--     -f sql/seed_vanandrey_wooden_developer.sql
+--
+-- Или Windows PowerShell:
+--
+--   psql $env:DATABASE_URL -v ON_ERROR_STOP=1 `
+--     -f sql/seed_market_made_to_order.sql `
+--     -f sql/seed_vanandrey_wooden_developer.sql
+-- =============================================================================
+
+-- Этот файл только документирует порядок.
+-- Реальный SQL: seed_market_made_to_order.sql + seed_vanandrey_wooden_developer.sql
+SELECT 'Use: psql -f sql/seed_market_made_to_order.sql -f sql/seed_vanandrey_wooden_developer.sql' AS how_to_run;

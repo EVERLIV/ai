@@ -94,6 +94,11 @@ export default function DeveloperProjectPage() {
     return fallback;
   }, [developer?.promotions, project?.mortgage_terms, project?.installment_terms]);
 
+  const isHouseSeries = project?.project_kind === "house_series";
+  const developerIntents = isHouseSeries
+    ? (["Дом на заказ", "Ипотека", "Рассрочка", "Показ", "Другой запрос"] as const)
+    : DEVELOPER_INTENTS;
+
   useEffect(() => {
     if (!project?.id) return;
     track.mutate({
@@ -176,12 +181,14 @@ export default function DeveloperProjectPage() {
               <div className="p-5 space-y-2">
                 <div className="flex flex-wrap gap-2 text-[11px]">
                   <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                    {DEVELOPER_PROJECT_STATUS_LABELS[project.status]}
+                    {isHouseSeries
+                      ? "Под заказ"
+                      : DEVELOPER_PROJECT_STATUS_LABELS[project.status]}
                   </span>
                   <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground">
                     {DEVELOPER_PROJECT_KIND_LABELS[project.project_kind]}
                   </span>
-                  {project.delivery_year && (
+                  {!isHouseSeries && project.delivery_year && (
                     <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground">
                       Сдача {project.delivery_year}
                       {project.delivery_quarter
@@ -215,7 +222,9 @@ export default function DeveloperProjectPage() {
 
             {unitTypes.length > 0 && (
               <section className="space-y-3">
-                <h2 className="text-lg font-semibold">Планировки</h2>
+                <h2 className="text-lg font-semibold">
+                  {isHouseSeries ? "Модели серии" : "Планировки"}
+                </h2>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {unitTypes.map((u) => {
                     const listing = propertyByUnit.get(u.id);
@@ -273,7 +282,9 @@ export default function DeveloperProjectPage() {
 
             {properties.length > 0 && (
               <section className="space-y-3">
-                <h2 className="text-lg font-semibold">Квартиры</h2>
+                <h2 className="text-lg font-semibold">
+                  {isHouseSeries ? "Дома на заказ" : "Квартиры"}
+                </h2>
                 <div className="grid sm:grid-cols-2 gap-4">
                   {properties.map((p) => (
                     <PropertyGridCard key={p.id} property={p} />
@@ -282,7 +293,7 @@ export default function DeveloperProjectPage() {
               </section>
             )}
 
-            {phases.length > 0 && (
+            {!isHouseSeries && phases.length > 0 && (
               <section>
                 <h2 className="text-lg font-semibold mb-3">Очереди</h2>
                 <ul className="rounded-xl border border-border/60 divide-y divide-border/60 bg-card">
@@ -351,7 +362,7 @@ export default function DeveloperProjectPage() {
                 title="Оставить заявку"
                 source="developer_contact"
                 targetLabel={developer?.name || project.title}
-                intents={DEVELOPER_INTENTS}
+                intents={developerIntents}
               />
             </div>
           </aside>

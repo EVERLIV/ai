@@ -20,6 +20,18 @@ export function isNewbuildListing(property: PropertyLike): boolean {
   return getResidentialMarket(property) === "Новостройка";
 }
 
+/** Дом / объект индивидуальной сборки (ещё нет — строят под заказ) */
+export function isMadeToOrderListing(property: PropertyLike): boolean {
+  if (getResidentialMarket(property) === "На заказ") return true;
+  const types = [
+    property.type,
+    ...((property.extras?.property_types as unknown[]) || []),
+  ]
+    .filter((t): t is string => typeof t === "string")
+    .map((t) => t.trim());
+  return types.includes("Дом на заказ");
+}
+
 export function propertyHasVideo(
   extras?: Record<string, unknown> | null,
 ): boolean {
@@ -58,17 +70,31 @@ export function getFinishingBadgeLabel(
 }
 
 export function getNewbuildPhotoBadges(property: PropertyLike): string[] {
+  if (isMadeToOrderListing(property)) {
+    return ["На заказ"];
+  }
   if (!isNewbuildListing(property) && !isDeveloperListing(property)) {
     return [];
+  }
+  // Застройщик домов без рынка «Новостройка» — не «Первичная продажа»
+  if (isDeveloperListing(property) && !isNewbuildListing(property)) {
+    return ["На заказ"];
   }
   return ["Первичная продажа"];
 }
 
 export function getNewbuildBodyBadges(property: PropertyLike): string[] {
-  if (!isNewbuildListing(property) && !isDeveloperListing(property)) {
+  if (
+    !isMadeToOrderListing(property) &&
+    !isNewbuildListing(property) &&
+    !isDeveloperListing(property)
+  ) {
     return [];
   }
   const badges: string[] = [];
+  if (isMadeToOrderListing(property)) {
+    badges.push("Индивидуальная сборка");
+  }
   const finishing = getFinishingBadgeLabel(property);
   if (finishing) badges.push(finishing);
   return badges;
@@ -97,9 +123,13 @@ export function getCardDeveloperLabel(property: PropertyLike): {
   return null;
 }
 
-export function formatProjectCardTitle(title: string): string {
+export function formatProjectCardTitle(
+  title: string,
+  projectKind?: string | null,
+): string {
   const t = title.trim();
   if (!t) return "";
-  if (/^жк\b/i.test(t) || /^«/.test(t)) return t;
+  if (projectKind === "house_series") return t;
+  if (/^жк\b/i.test(t) || /^серия\b/i.test(t) || /^«/.test(t)) return t;
   return `ЖК «${t}»`;
 }

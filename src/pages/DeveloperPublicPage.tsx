@@ -38,6 +38,14 @@ const DEVELOPER_INTENTS = [
   "Другой запрос",
 ] as const;
 
+const FRAME_DEVELOPER_INTENTS = [
+  "Дом на заказ",
+  "Ипотека",
+  "Рассрочка",
+  "Показ",
+  "Другой запрос",
+] as const;
+
 export default function DeveloperPublicPage() {
   const { id } = useParams<{ id: string }>();
   const { data: developer, isLoading, error } = useDeveloperPublic(id);
@@ -89,11 +97,18 @@ export default function DeveloperPublicPage() {
   }
 
   const verified = isProfileVerified(developer.verification_status);
+  const isFrameBuilder = developer.subtype === "frame_house_builder";
   const catalogHref = buildCatalogUrl({
     seller: "developer",
     segment: "residential",
+    ...(isFrameBuilder
+      ? { types: ["Дом на заказ", "Дом", "Коттедж", "Дача"], market: "На заказ" }
+      : {}),
   });
   const objectsCount = properties.length;
+  const listingsTitle = isFrameBuilder
+    ? "Дома на заказ"
+    : "Квартиры в продаже";
   const backTab =
     developer.subtype === "frame_house_builder"
       ? "/zastroyshchiki?tab=derevo"
@@ -196,8 +211,12 @@ export default function DeveloperPublicPage() {
                           {p.title}
                         </h3>
                         <p className="text-[11px] text-muted-foreground">
-                          {DEVELOPER_PROJECT_STATUS_LABELS[p.status]}
-                          {p.delivery_year ? ` · ${p.delivery_year}` : ""}
+                          {isFrameBuilder
+                            ? "Под заказ"
+                            : DEVELOPER_PROJECT_STATUS_LABELS[p.status]}
+                          {!isFrameBuilder && p.delivery_year
+                            ? ` · ${p.delivery_year}`
+                            : ""}
                         </p>
                         {p.address && (
                           <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
@@ -214,7 +233,7 @@ export default function DeveloperPublicPage() {
 
             <section className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold">Квартиры в продаже</h2>
+                <h2 className="text-lg font-semibold">{listingsTitle}</h2>
                 {!propsLoading && objectsCount > 0 && (
                   <Link
                     to={catalogHref}
@@ -269,7 +288,9 @@ export default function DeveloperPublicPage() {
                 title="Свяжитесь с застройщиком"
                 source="developer_contact"
                 targetLabel={developer.name}
-                intents={DEVELOPER_INTENTS}
+                intents={
+                  isFrameBuilder ? FRAME_DEVELOPER_INTENTS : DEVELOPER_INTENTS
+                }
               />
             </div>
           </aside>

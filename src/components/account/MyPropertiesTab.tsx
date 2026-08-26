@@ -43,6 +43,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMyAgency } from "@/hooks/useAgency";
 import { useMyDeveloper } from "@/hooks/useDeveloper";
 import { type MyProperty, useMyProperties } from "@/hooks/useMyProperties";
+import {
+  developerAddListingCtaLabel,
+} from "@/lib/developerListingRules";
+import { normalizeDeveloperSubtype } from "@/lib/developerTypes";
 import { formatPropertyAddressShort } from "@/lib/propertyCard";
 import {
   canCancelProperty,
@@ -326,6 +330,8 @@ export default function MyPropertiesTab({
   const [wizardRequestType, setWizardRequestType] = useState<
     RequestType | undefined
   >(undefined);
+  const [wizardProjectId, setWizardProjectId] = useState<string | null>(null);
+  const [wizardUnitTypeId, setWizardUnitTypeId] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<MyProperty | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<MyProperty | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MyProperty | null>(null);
@@ -340,13 +346,35 @@ export default function MyPropertiesTab({
     autoOpenedRef.current = true;
     setEditProperty(null);
     setWizardRequestType(initialRequestType);
+    const params = new URLSearchParams(location.search);
+    setWizardProjectId(params.get("project_id"));
+    setWizardUnitTypeId(params.get("unit_type_id"));
     setWizardOpen(true);
 
-    const params = new URLSearchParams(location.search);
     params.delete("request_type");
+    params.delete("project_id");
+    params.delete("unit_type_id");
     const qs = params.toString();
     navigate(`/account${qs ? `?${qs}` : ""}#properties`, { replace: true });
   }, [initialRequestType, location.search, navigate]);
+
+  useEffect(() => {
+    if (autoOpenedRef.current) return;
+    const params = new URLSearchParams(location.search);
+    const projectId = params.get("project_id");
+    const unitTypeId = params.get("unit_type_id");
+    if (!projectId && !unitTypeId) return;
+    if (!developer) return;
+    autoOpenedRef.current = true;
+    setEditProperty(null);
+    setWizardProjectId(projectId);
+    setWizardUnitTypeId(unitTypeId);
+    setWizardOpen(true);
+    params.delete("project_id");
+    params.delete("unit_type_id");
+    const qs = params.toString();
+    navigate(`/account${qs ? `?${qs}` : ""}#properties`, { replace: true });
+  }, [developer, location.search, navigate]);
 
   const statusCounts = useMemo(() => {
     const counts: Record<StatusFilter, number> = {
@@ -478,14 +506,28 @@ export default function MyPropertiesTab({
   const openNew = () => {
     setEditProperty(null);
     setWizardRequestType(undefined);
+    setWizardProjectId(null);
+    setWizardUnitTypeId(null);
     setWizardOpen(true);
   };
 
   const openEdit = (property: MyProperty) => {
     setEditProperty(property);
     setWizardRequestType(undefined);
+    setWizardProjectId(null);
+    setWizardUnitTypeId(null);
     setWizardOpen(true);
   };
+
+  const developerSubtype = developer
+    ? normalizeDeveloperSubtype(developer.subtype)
+    : null;
+  const addLabel = developerSubtype
+    ? `Добавить ${developerAddListingCtaLabel(developerSubtype).toLowerCase()}`
+    : "Добавить объект за 0 ₽";
+  const addLabelShort = developerSubtype
+    ? developerAddListingCtaLabel(developerSubtype)
+    : "Добавить";
 
   return (
     <div>
@@ -504,8 +546,8 @@ export default function MyPropertiesTab({
         </div>
         <Button onClick={openNew} size="sm" className="shrink-0">
           <Plus className="w-4 h-4 mr-1" />
-          <span className="sm:hidden">Добавить</span>
-          <span className="hidden sm:inline">Добавить объект за 0 ₽</span>
+          <span className="sm:hidden">{addLabelShort}</span>
+          <span className="hidden sm:inline">{addLabel}</span>
         </Button>
       </div>
 
@@ -528,15 +570,18 @@ export default function MyPropertiesTab({
             Объектов пока нет
           </p>
           <p className="text-sm text-muted-foreground mb-8 max-w-sm mx-auto leading-relaxed">
-            Добавьте объект бесплатно — мы проверим и опубликуем его в каталоге
+            {developerSubtype === "frame_house_builder"
+              ? "Добавьте дом на заказ из серии проектов — после проверки он появится в каталоге"
+              : developerSubtype === "apartment_developer"
+                ? "Добавьте квартиру в ваш ЖК — после проверки она появится в каталоге"
+                : "Добавьте объект бесплатно — мы проверим и опубликуем его в каталоге"}
           </p>
           <Button
             onClick={openNew}
             variant="outline"
             className="rounded-md border-foreground/20 hover:bg-foreground hover:text-background"
           >
-            <Plus className="w-4 h-4 mr-1.5" strokeWidth={1.75} /> Добавить
-            объект за 0 ₽
+            <Plus className="w-4 h-4 mr-1.5" strokeWidth={1.75} /> {addLabel}
           </Button>
         </div>
       ) : (
@@ -699,15 +744,19 @@ export default function MyPropertiesTab({
           if (!o) {
             setEditProperty(null);
             setWizardRequestType(undefined);
+            setWizardProjectId(null);
+            setWizardUnitTypeId(null);
           }
         }}
         editProperty={editProperty}
         segment={
-          editProperty?.segment === "residential"
+          editProperty?.segment === "residential" || developer
             ? "residential"
             : defaultSegment
         }
         initialRequestType={wizardRequestType}
+        initialProjectId={wizardProjectId}
+        initialUnitTypeId={wizardUnitTypeId}
       />
 
       <AlertDialog

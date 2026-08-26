@@ -61,10 +61,18 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAgencyManagers, useMyAgency } from "@/hooks/useAgency";
 import { useAuth } from "@/hooks/useAuth";
-import { useMyDeveloper } from "@/hooks/useDeveloper";
+import { useMyDeveloper, useMyDeveloperProjects, useProjectUnitTypes } from "@/hooks/useDeveloper";
 import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 import type { MyProperty } from "@/hooks/useMyProperties";
 import { buildDeveloperListingExtras } from "@/lib/developerListing";
+import {
+  allowedPropertyTypesForSubtype,
+  assertDeveloperListingPayload,
+  defaultMarketForSubtype,
+  defaultPropertyTypeForSubtype,
+  filterTypesForDeveloperSubtype,
+} from "@/lib/developerListingRules";
+import { normalizeDeveloperSubtype } from "@/lib/developerTypes";
 import { notifyPropertyEmail } from "@/lib/notifyPropertyEmail";
 import { isDailyDeal, isLongTermRent, isSaleDeal } from "@/lib/propertyDeal";
 import {
@@ -230,6 +238,8 @@ const emptyForm: PropertyFormState = {
   wood_finish: "",
   video_urls: [],
   plan_image_url: "",
+  developer_project_id: "",
+  developer_unit_type_id: "",
 };
 
 const STEPS = [
@@ -304,6 +314,9 @@ interface Props {
   editProperty?: MyProperty | null;
   segment?: PropertySegment;
   initialRequestType?: RequestType;
+  /** Prefill при создании объявления из проекта застройщика */
+  initialProjectId?: string | null;
+  initialUnitTypeId?: string | null;
 }
 
 export default function PropertySubmissionWizard({
@@ -312,6 +325,8 @@ export default function PropertySubmissionWizard({
   editProperty = null,
   segment = "commercial",
   initialRequestType,
+  initialProjectId = null,
+  initialUnitTypeId = null,
 }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -323,6 +338,11 @@ export default function PropertySubmissionWizard({
   const { data: agencyManagers = [] } = useAgencyManagers(agencyId, true);
   const { data: myDeveloper } = useMyDeveloper();
   const developerId = myDeveloper?.id;
+  const developerSubtype = myDeveloper
+    ? normalizeDeveloperSubtype(myDeveloper.subtype)
+    : null;
+  const isDeveloperMode = !!myDeveloper && !agencyId;
+  const { data: developerProjects = [] } = useMyDeveloperProjects();
   const { propertyTypes } = useAllDictionaryValues();
 
   const [step, setStep] = useState<StepKey>("basic");
@@ -338,6 +358,10 @@ export default function PropertySubmissionWizard({
   const [uploading, setUploading] = useState(false);
   const [locationGeocoding, setLocationGeocoding] = useState(false);
   const wasRejected = editProperty?.moderation_status === "rejected";
+
+  const { data: unitTypes = [] } = useProjectUnitTypes(
+    form.developer_project_id || undefined,
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -359,6 +383,30 @@ export default function PropertySubmissionWizard({
       );
       setVideoUrlDraft("");
       setStep("basic");
+    } else if (isDeveloperMode && developerSubtype) {
+      setEditId(null);
+      setForm({
+        ...emptyForm,
+        segment: "residential",
+        types: [defaultPropertyTypeForSubtype(developerSubtype)],
+        class: "-",
+        deal_type: "Продажа",
+        market: defaultMarketForSubtype(developerSubtype),
+        landlord_type: "Застройщик",
+        condition: "-",
+        layout: "-",
+        request_type: initialRequestType || "free_listing",
+        developer_project_id: initialProjectId || "",
+        developer_unit_type_id: initialUnitTypeId || "",
+      });
+      setExistingPhotos([]);
+      setPhotoPreviews([]);
+      setPhotoFiles([]);
+      setCoverIndex(0);
+      setPlanFile(null);
+      setPlanPreview("");
+      setVideoUrlDraft("");
+      setStep("basic");
     } else {
       setEditId(null);
       setForm({
@@ -377,7 +425,16 @@ export default function PropertySubmissionWizard({
       setVideoUrlDraft("");
       setStep("basic");
     }
-  }, [open, editProperty, segment, initialRequestType]);
+  }, [
+    open,
+    editProperty,
+    segment,
+    initialRequestType,
+    isDeveloperMode,
+    developerSubtype,
+    initialProjectId,
+    initialUnitTypeId,
+  ]);
 
   const isSale = isSaleDeal(form.deal_type);
   const isDaily = isDailyDeal(form.deal_type);
@@ -397,7 +454,16 @@ export default function PropertySubmissionWizard({
   const flatLike = isFlatLike(typesSource);
   const houseLike = isHouseLike(typesSource);
   const parkingLike = isParkingLike(typesSource);
-  const typeOptions = propertyTypes(form.segment);
+  const rawTypeOptions = propertyTypes(form.segment);
+  const typeOptions =
+    isDeveloperMode && developerSubtype
+      ? filterTypesForDeveloperSubtype(
+          developerSubtype,
+          rawTypeOptions.length
+            ? rawTypeOptions
+            : [...allowedPropertyTypesForSubtype(developerSubtype)],
+        )
+      : rawTypeOptions;
   const conditionOptions = isResidential ? RESIDENTIAL_CONDITIONS : CONDITIONS;
   const featureGroups = getFeatureGroupsFor(form.segment, form.types);
   const depositOptions = isDaily ? DAILY_DEPOSIT_OPTIONS : DEPOSIT_OPTIONS;
@@ -413,12 +479,29 @@ export default function PropertySubmissionWizard({
   const reset = () => {
     setStep("basic");
     setEditId(null);
-    setForm({
-      ...emptyForm,
-      segment,
-      types: [defaultTypeForSegment(segment)],
-      ...dealDefaults("Аренда"),
-    });
+    if (isDeveloperMode && developerSubtype) {
+      setForm({
+        ...emptyForm,
+        segment: "residential",
+        types: [defaultPropertyTypeForSubtype(developerSubtype)],
+        class: "-",
+        deal_type: "Продажа",
+        market: defaultMarketForSubtype(developerSubtype),
+        landlord_type: "Застройщик",
+        condition: "-",
+        layout: "-",
+        request_type: "free_listing",
+        developer_project_id: "",
+        developer_unit_type_id: "",
+      });
+    } else {
+      setForm({
+        ...emptyForm,
+        segment,
+        types: [defaultTypeForSegment(segment)],
+        ...dealDefaults("Аренда"),
+      });
+    }
     setPhotoFiles([]);
     setPhotoPreviews([]);
     setExistingPhotos([]);
@@ -546,6 +629,16 @@ export default function PropertySubmissionWizard({
       if (!form.address.trim()) throw new Error("Укажите адрес");
       if (form.types.length === 0)
         throw new Error("Выберите хотя бы один тип объекта");
+
+      if (isDeveloperMode && developerSubtype) {
+        assertDeveloperListingPayload({
+          subtype: developerSubtype,
+          segment: form.segment,
+          types: form.types,
+          developer_project_id: form.developer_project_id,
+          developer_unit_type_id: form.developer_unit_type_id,
+        });
+      }
 
       setUploading(true);
 
@@ -896,8 +989,15 @@ export default function PropertySubmissionWizard({
               <WizardSection
                 icon={Layers}
                 title="Тип и сегмент"
-                hint="Выберите сегмент и один или несколько типов объекта."
+                hint={
+                  isDeveloperMode
+                    ? developerSubtype === "frame_house_builder"
+                      ? "Деревянный застройщик: только дома в серии проектов."
+                      : "Застройщик МКД: только квартиры в ваших ЖК."
+                    : "Выберите сегмент и один или несколько типов объекта."
+                }
               >
+                {!isDeveloperMode && (
                 <div>
                   <Label className="text-xs mb-1 block">Сегмент</Label>
                   <div className="grid grid-cols-3 gap-2">
@@ -962,6 +1062,128 @@ export default function PropertySubmissionWizard({
                     ))}
                   </div>
                 </div>
+                )}
+                {isDeveloperMode && (
+                  <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                    Сегмент: жилая ·{" "}
+                    {developerSubtype === "frame_house_builder"
+                      ? "дома на заказ"
+                      : "квартиры в ЖК"}
+                  </div>
+                )}
+                {isDeveloperMode && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <Label className="text-xs mb-1 block">
+                        {developerSubtype === "frame_house_builder"
+                          ? "Серия домов *"
+                          : "Проект (ЖК) *"}
+                      </Label>
+                      <Select
+                        value={form.developer_project_id || "none"}
+                        onValueChange={(v) => {
+                          const projectId = v === "none" ? "" : v;
+                          const project = developerProjects.find(
+                            (p) => p.id === projectId,
+                          );
+                          setForm((prev) => ({
+                            ...prev,
+                            developer_project_id: projectId,
+                            developer_unit_type_id: "",
+                            address:
+                              prev.address.trim() ||
+                              project?.address ||
+                              prev.address,
+                            district:
+                              project?.district?.trim() || prev.district,
+                            ...(developerSubtype === "frame_house_builder" &&
+                            project?.material
+                              ? {
+                                  building_type: project.material,
+                                }
+                              : {}),
+                          }));
+                        }}
+                      >
+                        <SelectTrigger className="h-9 text-sm bg-background">
+                          <SelectValue placeholder="Выберите" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {developerProjects.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {developerProjects.length === 0 && (
+                        <p className="text-[11px] text-amber-700 mt-1">
+                          Сначала создайте проект во вкладке «Проекты».
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs mb-1 block">
+                        {developerSubtype === "frame_house_builder"
+                          ? "Модель / планировка *"
+                          : "Планировка *"}
+                      </Label>
+                      <Select
+                        value={form.developer_unit_type_id || "none"}
+                        onValueChange={(v) => {
+                          const unitId = v === "none" ? "" : v;
+                          const unit = unitTypes.find((u) => u.id === unitId);
+                          setForm((prev) => ({
+                            ...prev,
+                            developer_unit_type_id: unitId,
+                            ...(unit
+                              ? {
+                                  rooms: unit.rooms || prev.rooms,
+                                  area:
+                                    unit.area_from != null
+                                      ? Number(unit.area_from)
+                                      : prev.area,
+                                  price:
+                                    unit.price_from != null
+                                      ? Number(unit.price_from)
+                                      : prev.price,
+                                  total_floors: (() => {
+                                    const f = String(unit.floors || "").trim();
+                                    const n = Number.parseInt(f, 10);
+                                    return Number.isFinite(n) && n > 0
+                                      ? n
+                                      : prev.total_floors;
+                                  })(),
+                                  plan_image_url:
+                                    unit.plan_image_url || prev.plan_image_url,
+                                }
+                              : {}),
+                          }));
+                          if (unit?.plan_image_url) {
+                            setPlanPreview(unit.plan_image_url);
+                          }
+                        }}
+                        disabled={!form.developer_project_id}
+                      >
+                        <SelectTrigger className="h-9 text-sm bg-background">
+                          <SelectValue placeholder="Выберите" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {unitTypes.map((u) => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.title}
+                              {u.area_from != null
+                                ? ` · от ${u.area_from} м²`
+                                : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <Label className="text-xs mb-1 block">Тип объекта</Label>
                   <div className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-md border border-border/60 bg-background p-3">
@@ -984,9 +1206,13 @@ export default function PropertySubmissionWizard({
                     })}
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    {isResidential
-                      ? "Можно выбрать несколько жилых типов для одного объявления."
-                      : "Можно выбрать несколько типов. «Земля» — только отдельно."}
+                    {isDeveloperMode
+                      ? developerSubtype === "frame_house_builder"
+                        ? "«Дом на заказ» — объекта ещё нет, строят по проекту на участке."
+                        : "Доступны только типы по профилю застройщика."
+                      : isResidential
+                        ? "Можно выбрать несколько жилых типов для одного объявления."
+                        : "Можно выбрать несколько типов. «Земля» — только отдельно."}
                   </p>
                 </div>
               </WizardSection>
@@ -1031,11 +1257,18 @@ export default function PropertySubmissionWizard({
                           <SelectItem value="none">—</SelectItem>
                           {MARKET_OPTIONS.map((item) => (
                             <SelectItem key={item} value={item}>
-                              {item}
+                              {item === "На заказ"
+                                ? "На заказ (индивидуальная сборка)"
+                                : item}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      {form.market === "На заказ" && (
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Дома ещё нет — строят под заказ на участке клиента.
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1231,7 +1464,9 @@ export default function PropertySubmissionWizard({
                         </Select>
                       </div>
                     </div>
-                    {houseLike && (
+                    {houseLike &&
+                      (!isDeveloperMode ||
+                        developerSubtype === "frame_house_builder") && (
                       <WoodenHouseConfigFields
                         compact
                         value={{

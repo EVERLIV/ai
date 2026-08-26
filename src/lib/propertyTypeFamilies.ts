@@ -8,7 +8,13 @@ export const FLAT_LIKE_TYPES = [
   "Апартаменты",
   "Доля",
 ] as const;
-export const HOUSE_LIKE_TYPES = ["Дом", "Коттедж", "Дача", "Таунхаус"] as const;
+export const HOUSE_LIKE_TYPES = [
+  "Дом",
+  "Дом на заказ",
+  "Коттедж",
+  "Дача",
+  "Таунхаус",
+] as const;
 export const PARKING_LIKE_TYPES = ["Гараж", "Машиноместо"] as const;
 
 export type PropertyTypesSource =

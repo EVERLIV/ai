@@ -27,9 +27,18 @@ import SiteHeader from "@/components/SiteHeader";
 import { absoluteUrl } from "@/config/site";
 import { useProperties } from "@/hooks/useProperties";
 import { buildCatalogUrl } from "@/lib/catalogLinks";
+import { getResidentialMarket } from "@/lib/propertyResidential";
 import { getPropertySegment, propertyMatchesTypes } from "@/lib/propertyTypes";
 
-const categories = [
+const categories: {
+  title: string;
+  href: string;
+  body: string;
+  type: string;
+  image: string;
+  imageAlt: string;
+  market?: string;
+}[] = [
   {
     title: "Квартиры",
     href: "/zhilaya/kvartiry",
@@ -45,6 +54,20 @@ const categories = [
     type: "Дом",
     image: residentialCategoryHouse,
     imageAlt: "Частный дом в пригороде",
+  },
+  {
+    title: "Дом на заказ",
+    href: buildCatalogUrl({
+      segment: "residential",
+      types: ["Дом на заказ", "Дом", "Коттедж", "Дача"],
+      market: "На заказ",
+      deal: "Продажа",
+    }),
+    body: "Индивидуальная сборка: каркас, брус, модули — дома ещё нет.",
+    type: "Дом на заказ",
+    image: residentialCategoryHouse,
+    imageAlt: "Дом индивидуальной сборки на заказ",
+    market: "На заказ",
   },
   {
     title: "Комнаты",
@@ -71,11 +94,17 @@ export default function ResidentialHomePage() {
   const featured = properties
     .filter((p) => getPropertySegment(p) === "residential")
     .slice(0, 12);
-  const countsByType = new Map<string, number>();
+  const countsByTitle = new Map<string, number>();
   for (const item of categories) {
-    countsByType.set(
-      item.type,
-      properties.filter((p) => propertyMatchesTypes(p, [item.type])).length,
+    countsByTitle.set(
+      item.title,
+      properties.filter((p) => {
+        if (!propertyMatchesTypes(p, [item.type])) return false;
+        if (item.market) {
+          return getResidentialMarket(p) === item.market;
+        }
+        return true;
+      }).length,
     );
   }
 
@@ -207,7 +236,7 @@ export default function ResidentialHomePage() {
                     {item.body}
                   </p>
                   <div className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-primary">
-                    {countsByType.get(item.type) || 0} объектов
+                    {countsByTitle.get(item.title) || 0} объектов
                     <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                   </div>
                 </div>

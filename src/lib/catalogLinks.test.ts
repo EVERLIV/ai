@@ -17,6 +17,17 @@ describe("buildCatalogUrl", () => {
       "/zhilaya/catalog?types=%D0%9A%D0%B2%D0%B0%D1%80%D1%82%D0%B8%D1%80%D0%B0&rooms=1%2C2&deal=%D0%90%D1%80%D0%B5%D0%BD%D0%B4%D0%B0",
     );
   });
+
+  test("builds made-to-order house filter url", () => {
+    expect(
+      buildCatalogUrl({
+        segment: "residential",
+        types: ["Дом", "Коттедж", "Дача"],
+        market: "На заказ",
+        deal: "Продажа",
+      }),
+    ).toContain("market=%D0%9D%D0%B0+%D0%B7%D0%B0%D0%BA%D0%B0%D0%B7");
+  });
 });
 
 describe("readCatalogFiltersFromSearchParams", () => {

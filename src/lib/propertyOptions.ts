@@ -14,7 +14,11 @@ export const RESIDENTIAL_DEAL_TYPES = [
   "Продажа",
   "Посуточно",
 ] as const;
-export const MARKET_OPTIONS = ["Вторичка", "Новостройка"] as const;
+export const MARKET_OPTIONS = [
+  "Вторичка",
+  "Новостройка",
+  "На заказ",
+] as const;
 
 export {
   DISTRICTS,

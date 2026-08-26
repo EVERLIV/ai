@@ -38,6 +38,7 @@ import {
 } from "@/lib/agencyApi";
 import { fetchMyDeveloperApi } from "@/lib/developerApi";
 import { buildDeveloperListingExtras } from "@/lib/developerListing";
+import { notifyMatchingSubscriptions } from "@/lib/notifyMatchingSubscriptions";
 import { notifyPropertyEmail } from "@/lib/notifyPropertyEmail";
 import {
   REQUEST_TYPE_LABELS,
@@ -244,6 +245,12 @@ export default function ModerationQueue() {
             request_type: item.request_type,
             description: item.description,
           },
+        });
+      }
+
+      if (isFreeListing) {
+        await notifyMatchingSubscriptions(item, {
+          excludeEmails: submitter?.email ? [submitter.email] : [],
         });
       }
     },

@@ -41,9 +41,9 @@ export default function PropertyGridCard({
   return (
     <Link
       to={`/property/${p.id}`}
-      className="group flex flex-col h-full bg-card rounded-xl overflow-hidden shadow-[var(--shadow-card)] transition-[box-shadow,transform] duration-200 hover:shadow-[var(--shadow-card-hover)] active:scale-[0.995]"
+      className="group flex flex-col h-full min-w-0 w-full bg-card rounded-xl overflow-hidden shadow-[var(--shadow-card)] transition-[box-shadow,transform] duration-200 hover:shadow-[var(--shadow-card-hover)] active:scale-[0.995]"
     >
-      <div className="relative aspect-[16/10] sm:aspect-[4/3] bg-muted overflow-hidden">
+      <div className="relative aspect-[16/10] sm:aspect-[4/3] bg-muted overflow-hidden shrink-0">
         <PropertyImage
           src={p.cover_photo}
           alt={title}
@@ -107,7 +107,7 @@ export default function PropertyGridCard({
           </div>
         </div>
 
-        <h3 className="text-sm font-semibold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2">
+        <h3 className="text-sm font-semibold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2 break-words">
           {title}
         </h3>
 

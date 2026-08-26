@@ -32,9 +32,11 @@ import {
 import {
   DEVELOPER_PROJECT_KIND_LABELS,
   DEVELOPER_PROJECT_STATUS_LABELS,
+  normalizeDeveloperSubtype,
   type DeveloperProjectStatus,
   type DeveloperSubtype,
 } from "@/lib/developerTypes";
+import { developerAddListingCtaLabel } from "@/lib/developerListingRules";
 import { WOODEN_HOUSE_CONFIGS } from "@/lib/woodenHouses";
 
 const STATUS_OPTIONS: DeveloperProjectStatus[] = [
@@ -78,7 +80,10 @@ export default function MyDeveloperProjectsTab() {
     );
   }
 
-  const subtype = developer.subtype as DeveloperSubtype;
+  const subtype = normalizeDeveloperSubtype(
+    developer.subtype as DeveloperSubtype,
+  );
+  const isFrameBuilder = subtype === "frame_house_builder";
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,7 +98,8 @@ export default function MyDeveloperProjectsTab() {
         description: description.trim(),
         material: material.trim(),
         housing_class: housingClass.trim(),
-        delivery_year: deliveryYear ? Number(deliveryYear) : null,
+        delivery_year:
+          isFrameBuilder || !deliveryYear ? null : Number(deliveryYear),
       });
       toast({ title: "Проект создан" });
       setTitle("");
@@ -168,18 +174,25 @@ export default function MyDeveloperProjectsTab() {
                 ))}
               </select>
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">
-                Год сдачи
-              </label>
-              <input
-                type="number"
-                value={deliveryYear}
-                onChange={(e) => setDeliveryYear(e.target.value)}
-                placeholder="2027"
-                className="w-full h-10 px-3 border border-border bg-background text-sm rounded-md"
-              />
-            </div>
+            {!isFrameBuilder && (
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">
+                  Год сдачи
+                </label>
+                <input
+                  type="number"
+                  value={deliveryYear}
+                  onChange={(e) => setDeliveryYear(e.target.value)}
+                  placeholder="2027"
+                  className="w-full h-10 px-3 border border-border bg-background text-sm rounded-md"
+                />
+              </div>
+            )}
+            {isFrameBuilder && (
+              <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground self-end">
+                Дома строятся под заказ — очереди и год сдачи не используются.
+              </div>
+            )}
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
@@ -306,7 +319,11 @@ export default function MyDeveloperProjectsTab() {
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
                       {p.address || "Адрес не указан"}
-                      {p.delivery_year ? ` · сдача ${p.delivery_year}` : ""}
+                      {!isFrameBuilder && p.delivery_year
+                        ? ` · сдача ${p.delivery_year}`
+                        : isFrameBuilder
+                          ? " · под заказ"
+                          : ""}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-1.5 shrink-0">
@@ -381,6 +398,7 @@ export default function MyDeveloperProjectsTab() {
                   <ProjectDetailsEditor
                     projectId={p.id}
                     developerId={developer.id}
+                    subtype={subtype}
                   />
                 )}
               </li>
@@ -395,14 +413,21 @@ export default function MyDeveloperProjectsTab() {
 function ProjectDetailsEditor({
   projectId,
   developerId,
+  subtype,
 }: {
   projectId: string;
   developerId: string;
+  subtype: DeveloperSubtype;
 }) {
+  const isFrame = subtype === "frame_house_builder";
   return (
     <div className="border-t border-border/60 px-4 py-4 space-y-6 bg-muted/20">
-      <UnitTypesBlock projectId={projectId} developerId={developerId} />
-      <PhasesBlock projectId={projectId} />
+      <UnitTypesBlock
+        projectId={projectId}
+        developerId={developerId}
+        subtype={subtype}
+      />
+      {!isFrame && <PhasesBlock projectId={projectId} />}
       <StagesBlock projectId={projectId} />
       <MediaBlock projectId={projectId} />
     </div>
@@ -412,9 +437,11 @@ function ProjectDetailsEditor({
 function UnitTypesBlock({
   projectId,
   developerId,
+  subtype,
 }: {
   projectId: string;
   developerId: string;
+  subtype: DeveloperSubtype;
 }) {
   const { toast } = useToast();
   const { data: rows = [] } = useProjectUnitTypes(projectId);
@@ -425,10 +452,14 @@ function UnitTypesBlock({
   const [areaFrom, setAreaFrom] = useState("");
   const [priceFrom, setPriceFrom] = useState("");
   const [planFile, setPlanFile] = useState<File | null>(null);
+  const isFrame = subtype === "frame_house_builder";
+  const listingCta = developerAddListingCtaLabel(subtype);
 
   return (
     <section>
-      <h3 className="text-sm font-semibold mb-2">Планировки / типовые дома</h3>
+      <h3 className="text-sm font-semibold mb-2">
+        {isFrame ? "Модели серии" : "Планировки"}
+      </h3>
       <ul className="space-y-1.5 mb-3">
         {rows.map((u) => (
           <li
@@ -452,13 +483,21 @@ function UnitTypesBlock({
                   : ""}
               </span>
             </span>
-            <button
-              type="button"
-              className="text-destructive"
-              onClick={() => remove.mutate(u.id)}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            <span className="flex items-center gap-2 shrink-0">
+              <Link
+                to={`/account?project_id=${projectId}&unit_type_id=${u.id}#properties`}
+                className="text-[11px] font-medium text-primary hover:underline whitespace-nowrap"
+              >
+                {listingCta}
+              </Link>
+              <button
+                type="button"
+                className="text-destructive"
+                onClick={() => remove.mutate(u.id)}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </span>
           </li>
         ))}
       </ul>
@@ -503,7 +542,7 @@ function UnitTypesBlock({
         <input
           value={rooms}
           onChange={(e) => setRooms(e.target.value)}
-          placeholder="Комнат"
+          placeholder={isFrame ? "Этажи / зоны" : "Комнат"}
           className="h-8 px-2 border border-border rounded text-xs bg-background w-20"
         />
         <input

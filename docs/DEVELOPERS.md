@@ -18,6 +18,7 @@ psql "$DATABASE_URL" -f supabase/self_hosted_signup_roles.sql
 ```
 
 Демо-seed застройщика ЖК (`wewa666@mail.ru`): [SEED_WEWA666_DEVELOPER.md](SEED_WEWA666_DEVELOPER.md) → `sql/seed_wewa666_developer.sql`.
+Демо-seed деревянных домов (`vanandrey.smi@mail.ru`): [SEED_VANANDREY_WOODEN_DEVELOPER.md](SEED_VANANDREY_WOODEN_DEVELOPER.md) → `sql/seed_vanandrey_wooden_developer.sql`.
 
 ## Роли
 
@@ -28,6 +29,21 @@ psql "$DATABASE_URL" -f supabase/self_hosted_signup_roles.sql
 | `developer_member_role` | `owner` \| `admin` \| `member` |
 
 Signup meta: `account_type=developer`, `developer_name`, `developer_subtype`, опционально `developer_city` / `developer_about`.
+
+## Матрица прав по subtype
+
+| | `apartment_developer` (МКД / ЖК) | `frame_house_builder` (дерево) |
+|--|----------------------------------|--------------------------------|
+| Проекты | только `residential_complex` | только `house_series` |
+| Объявления | **Квартира**, **Апартаменты** | **Дом**, **Коттедж**, **Дача** |
+| Привязка | обязательны `developer_project_id` + `developer_unit_type_id` | то же |
+| Сегмент | только `residential` | только `residential` |
+| Рынок по умолчанию | Новостройка | На заказ |
+| Очереди / сдача | да | нет (под заказ) |
+| Коммерция / земля | запрещены | запрещены |
+
+Правила: `src/lib/developerListingRules.ts` (UI wizard + `insertMyPropertyApi` / `updateMyPropertyApi`).
+Страницы `/list-property` для залогиненного developer редиректят в `/account#properties`.
 
 ## Таблицы (ядро)
 

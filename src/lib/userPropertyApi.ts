@@ -3,6 +3,13 @@ import {
   SUPABASE_URL,
   supabaseAdmin,
 } from "@/integrations/supabase/adminClient";
+import {
+  assertDeveloperListingPayload,
+} from "@/lib/developerListingRules";
+import {
+  normalizeDeveloperSubtype,
+  type DeveloperSubtype,
+} from "@/lib/developerTypes";
 
 /**
  * Кабинет клиента: PostgREST на api.arendacity.com часто отклоняет user JWT
@@ -23,6 +30,81 @@ function parseError(data: unknown, res: Response): Error {
     if (typeof o.hint === "string" && o.hint.trim()) return new Error(o.hint);
   }
   return new Error(`HTTP ${res.status}`);
+}
+
+async function fetchDeveloperSubtypeApi(
+  developerId: string,
+): Promise<DeveloperSubtype> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/developers?id=eq.${encodeURIComponent(developerId)}&select=subtype&limit=1`,
+    { headers },
+  );
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw parseError(data, res);
+  const row = Array.isArray(data) ? data[0] : data;
+  return normalizeDeveloperSubtype(
+    row && typeof row === "object"
+      ? (row as { subtype?: string }).subtype
+      : null,
+  );
+}
+
+async function assertProjectBelongsToDeveloper(
+  developerId: string,
+  projectId: string,
+  unitTypeId: string,
+) {
+  const projectRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/developer_projects?id=eq.${encodeURIComponent(projectId)}&developer_id=eq.${encodeURIComponent(developerId)}&select=id&limit=1`,
+    { headers },
+  );
+  const projectData = await projectRes.json().catch(() => ({}));
+  if (!projectRes.ok) throw parseError(projectData, projectRes);
+  const projectRow = Array.isArray(projectData) ? projectData[0] : projectData;
+  if (!projectRow?.id) {
+    throw new Error("Проект не найден или не принадлежит застройщику");
+  }
+
+  const unitRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/project_unit_types?id=eq.${encodeURIComponent(unitTypeId)}&project_id=eq.${encodeURIComponent(projectId)}&select=id&limit=1`,
+    { headers },
+  );
+  const unitData = await unitRes.json().catch(() => ({}));
+  if (!unitRes.ok) throw parseError(unitData, unitRes);
+  const unitRow = Array.isArray(unitData) ? unitData[0] : unitData;
+  if (!unitRow?.id) {
+    throw new Error("Планировка не найдена в выбранном проекте");
+  }
+}
+
+async function enforceDeveloperListingRules(
+  developerId: string,
+  payload: Record<string, unknown>,
+) {
+  const subtype = await fetchDeveloperSubtypeApi(developerId);
+  const extras =
+    payload.extras && typeof payload.extras === "object"
+      ? (payload.extras as Record<string, unknown>)
+      : null;
+  assertDeveloperListingPayload({
+    subtype,
+    segment: typeof payload.segment === "string" ? payload.segment : null,
+    type: typeof payload.type === "string" ? payload.type : null,
+    extras,
+    developer_project_id:
+      typeof payload.developer_project_id === "string"
+        ? payload.developer_project_id
+        : null,
+    developer_unit_type_id:
+      typeof payload.developer_unit_type_id === "string"
+        ? payload.developer_unit_type_id
+        : null,
+  });
+  await assertProjectBelongsToDeveloper(
+    developerId,
+    String(payload.developer_project_id),
+    String(payload.developer_unit_type_id),
+  );
 }
 
 export async function fetchMyPropertiesApi(
@@ -63,6 +145,9 @@ export async function insertMyPropertyApi(
   agencyId?: string | null,
   developerId?: string | null,
 ) {
+  if (developerId && !agencyId) {
+    await enforceDeveloperListingRules(developerId, payload);
+  }
   const body = {
     ...payload,
     submitted_by: userId,
@@ -89,6 +174,9 @@ export async function updateMyPropertyApi(
   agencyId?: string | null,
   developerId?: string | null,
 ) {
+  if (developerId && !agencyId) {
+    await enforceDeveloperListingRules(developerId, payload);
+  }
   const filter = agencyId
     ? `id=eq.${propertyId}&or=(submitted_by.eq.${userId},agency_id.eq.${agencyId})`
     : developerId

@@ -405,6 +405,8 @@ export const WOOD_ROOF_OPTIONS = [
 ] as const;
 
 export const WOOD_FINISH_OPTIONS = [
+  "Тёплый контур",
+  "Стандарт",
   "Под ключ",
   "Под чистовую отделку",
   "Под чистовую",

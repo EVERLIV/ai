@@ -125,6 +125,9 @@ export interface PropertyFormState {
   video_urls: string[];
   /** Планировка / план дома */
   plan_image_url: string;
+  /** Привязка к проекту застройщика */
+  developer_project_id: string;
+  developer_unit_type_id: string;
 }
 
 export function propertyToFormState(property: MyProperty): PropertyFormState {
@@ -215,6 +218,8 @@ export function propertyToFormState(property: MyProperty): PropertyFormState {
     wood_finish: String(e[RESIDENTIAL_EXTRAS_KEYS.woodFinish] || ""),
     video_urls: readPropertyMediaExtras(e).videoUrls,
     plan_image_url: readPropertyMediaExtras(e).planImageUrl || "",
+    developer_project_id: property.developer_project_id || "",
+    developer_unit_type_id: property.developer_unit_type_id || "",
   };
 }
 
@@ -407,6 +412,8 @@ export function buildPropertyPayload(
     client_id: userId,
     listing_manager_id: form.listing_manager_id || null,
     extras: typesExtras,
+    developer_project_id: form.developer_project_id.trim() || null,
+    developer_unit_type_id: form.developer_unit_type_id.trim() || null,
   };
 
   if (options.isEdit) {

@@ -1647,7 +1647,7 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
               <div className="flex gap-8 items-start">
                 <div className="flex-1 min-w-0">
                   {isLoading ? (
-                    <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
                       {Array.from({ length: 8 }).map((_, i) => (
                         <PropertyGridCardSkeleton key={i} />
                       ))}
@@ -1674,7 +1674,7 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
                       </button>
                     </div>
                   ) : viewMode === "grid" ? (
-                    <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
                       {gridItems}
                     </div>
                   ) : (
@@ -1736,6 +1736,18 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
         onOpenChange={setSearchAlertOpen}
         filterSummary={filterSummary}
         resultsCount={filtered.length}
+        segment={segment}
+        filters={{
+          segment,
+          deal_type: dealType,
+          district,
+          market: selectedMarket,
+          propertyTypes: selectedTypes,
+          price_min: isPriceFiltered ? priceMin : null,
+          price_max: isPriceFiltered ? priceMax : null,
+          area_min: isAreaFiltered ? areaMin : null,
+          area_max: isAreaFiltered ? areaMax : null,
+        }}
       />
     </div>
   );

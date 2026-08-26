@@ -1,4 +1,7 @@
-export type PropertyEmailEvent = "submitted" | "approved";
+export type PropertyEmailEvent =
+  | "submitted"
+  | "approved"
+  | "subscription_match";
 
 export type PropertyEmailPayload = {
   event: PropertyEmailEvent;

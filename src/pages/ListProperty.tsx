@@ -1,10 +1,13 @@
 import { ArrowLeft } from "lucide-react";
+import { useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import ListPropertyBlock from "@/components/ListPropertyBlock";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import type { PropertySegment } from "@/config/propertySegments";
 import { SEGMENT_ROUTES } from "@/config/propertySegments";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { listPropertyPath } from "@/lib/listPropertyLinks";
 
 interface ListPropertyProps {
@@ -16,10 +19,18 @@ export default function ListProperty({
 }: ListPropertyProps) {
   const navigate = useNavigate();
   const { search } = useLocation();
+  const { user } = useAuth();
+  const { data: profile } = useProfile();
   const mode = new URLSearchParams(search).get("mode");
   const isResidential = segment === "residential";
   const isLand = segment === "land";
   const segmentHome = SEGMENT_ROUTES[segment].home;
+
+  useEffect(() => {
+    if (!user) return;
+    if (profile?.account_type !== "developer") return;
+    navigate("/account#properties", { replace: true });
+  }, [user, profile?.account_type, navigate]);
 
   const modeLabel =
     mode === "rent"
@@ -34,6 +45,14 @@ export default function ListProperty({
     : isResidential
       ? "Разместить жильё"
       : "Разместить объект";
+
+  if (user && profile?.account_type === "developer") {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">
+        Перенаправление в кабинет застройщика…
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

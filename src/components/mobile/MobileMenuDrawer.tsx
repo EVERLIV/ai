@@ -13,8 +13,8 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { CONTACTS } from "@/config/company";
 import { useAllDictionaryValues } from "@/hooks/useDictionaries";
@@ -36,12 +36,20 @@ type Props = {
   onOpenWizard?: () => void;
 };
 
+/** Сброс scroll-lock Radix после ухода со страницы с открытым Sheet */
+function clearBodyScrollLock() {
+  document.body.style.pointerEvents = "";
+  document.body.style.overflow = "";
+  document.body.style.paddingRight = "";
+  document.documentElement.style.overflow = "";
+}
+
 function SecondaryRow({
   item,
   onNavigate,
 }: {
   item: MenuItem;
-  onNavigate: () => void;
+  onNavigate: (href?: string) => void;
 }) {
   const Icon = item.icon;
   const className = cn(
@@ -65,10 +73,14 @@ function SecondaryRow({
   }
 
   return (
-    <Link to={item.href!} className={className} onClick={onNavigate}>
+    <button
+      type="button"
+      className={className}
+      onClick={() => onNavigate(item.href)}
+    >
       <Icon className="w-4 h-4 shrink-0 opacity-70" />
       {item.label}
-    </Link>
+    </button>
   );
 }
 
@@ -79,7 +91,7 @@ export default function MobileMenuDrawer({
   placeHref,
   onOpenWizard,
 }: Props) {
-  const close = () => onOpenChange(false);
+  const navigate = useNavigate();
   const { propertyTypes } = useAllDictionaryValues();
   const commercialTypes = useMemo(
     () => propertyTypes("commercial"),
@@ -93,6 +105,14 @@ export default function MobileMenuDrawer({
       }),
     [isLoggedIn, commercialTypes],
   );
+
+  const go = (href?: string) => {
+    onOpenChange(false);
+    window.setTimeout(() => {
+      clearBodyScrollLock();
+      if (href) navigate(href);
+    }, 50);
+  };
 
   const secondaryItems: MenuItem[] = [
     { label: "Риелторы", href: "/rieltory", icon: Users },
@@ -113,7 +133,13 @@ export default function MobileMenuDrawer({
   ];
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        onOpenChange(next);
+        if (!next) clearBodyScrollLock();
+      }}
+    >
       <SheetContent
         side="left"
         className="w-[min(100vw,360px)] max-w-[100vw] p-0 gap-0 flex flex-col [&>button]:hidden"
@@ -124,21 +150,21 @@ export default function MobileMenuDrawer({
           <button
             type="button"
             aria-label="Закрыть меню"
-            onClick={close}
+            onClick={() => go()}
             className="w-9 h-9 flex items-center justify-center text-foreground rounded-md hover:bg-muted shrink-0"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <Link
-            to="/"
-            onClick={close}
-            className="font-display text-[14px] font-bold tracking-tight text-foreground leading-none"
+          <button
+            type="button"
+            onClick={() => go("/")}
+            className="font-display text-[14px] font-bold tracking-tight text-foreground leading-none text-left"
           >
             АРЕНДА<span className="text-primary">СИТИ</span>
-          </Link>
-          <Link
-            to={isLoggedIn ? "/account" : "/auth"}
-            onClick={close}
+          </button>
+          <button
+            type="button"
+            onClick={() => go(isLoggedIn ? "/account" : "/auth")}
             className="ml-auto flex items-center gap-1.5 pr-1 text-[13px] text-muted-foreground hover:text-foreground"
           >
             {isLoggedIn ? (
@@ -147,26 +173,26 @@ export default function MobileMenuDrawer({
               <LogIn className="w-4 h-4" />
             )}
             {isLoggedIn ? "Кабинет" : "Войти"}
-          </Link>
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain">
           <nav className="pt-1">
             {megaMenus.map((menu) => (
-              <Link
+              <button
                 key={menu.id}
-                to={menu.catalogHref}
-                onClick={close}
-                className="block px-4 py-[7px] text-[15px] font-medium leading-tight text-foreground hover:bg-muted/50"
+                type="button"
+                onClick={() => go(menu.catalogHref)}
+                className="block w-full text-left px-4 py-[7px] text-[15px] font-medium leading-tight text-foreground hover:bg-muted/50"
               >
                 {menu.triggerLabel}
-              </Link>
+              </button>
             ))}
           </nav>
 
           <div className="border-t border-border/60 mt-1 pt-1">
             {secondaryItems.map((item) => (
-              <SecondaryRow key={item.label} item={item} onNavigate={close} />
+              <SecondaryRow key={item.label} item={item} onNavigate={go} />
             ))}
           </div>
         </div>

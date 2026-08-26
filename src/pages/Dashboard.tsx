@@ -35,6 +35,8 @@ import AddressAutocomplete from "@/components/AddressAutocomplete";
 import AdPlacementsManager from "@/components/admin/AdPlacementsManager";
 import AdPlacementsTab from "@/components/admin/AdPlacementsTab";
 import CrmLeadsTab from "@/components/admin/CrmLeadsTab";
+import SeekersCatalogTab from "@/components/admin/SeekersCatalogTab";
+import AdminSiteAnalyticsTab from "@/components/admin/AdminSiteAnalyticsTab";
 import DictionariesTab from "@/components/admin/DictionariesTab";
 import ModerationQueue from "@/components/admin/ModerationQueue";
 import AgencyReviewsModeration from "@/components/admin/AgencyReviewsModeration";
@@ -285,6 +287,7 @@ function buildAdminNav(isAdmin: boolean): {
             icon: UserCircle,
           },
           { value: "leads", label: "Заявки", icon: Inbox },
+          { value: "seekers", label: "Ищут недвижимость", icon: Search },
           ...(isAdmin
             ? [{ value: "tasks", label: "Задачи", icon: CheckSquare }]
             : []),
@@ -303,6 +306,7 @@ function buildAdminNav(isAdmin: boolean): {
         title: "Система",
         items: [
           { value: "users", label: "Пользователи", icon: Users },
+          { value: "analytics", label: "Аналитика", icon: BarChart3 },
           { value: "dictionaries", label: "Справочники", icon: Settings2 },
         ],
       },
@@ -3278,6 +3282,14 @@ export default function Dashboard() {
 
           <TabsContent value="leads" className="space-y-4">
             <CrmLeadsTab />
+          </TabsContent>
+
+          <TabsContent value="seekers" className="space-y-4">
+            <SeekersCatalogTab />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-4">
+            <AdminSiteAnalyticsTab />
           </TabsContent>
 
           <TabsContent value="moderation" className="space-y-8">

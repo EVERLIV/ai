@@ -203,7 +203,7 @@ function button(href: string, label: string) {
 }
 
 function buildEmail(
-  event: "submitted" | "approved",
+  event: "submitted" | "approved" | "subscription_match",
   name: string,
   p: PropertyPayload,
 ) {
@@ -211,6 +211,25 @@ function buildEmail(
   const card = propertyCard(p);
   const cabinet = `${SITE_URL}/account`;
   const objectUrl = p.id ? `${SITE_URL}/property/${p.id}` : cabinet;
+
+  if (event === "subscription_match") {
+    const title = "Новый объект по вашей подписке — АрендаСити";
+    const inner = `
+      <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">Новый объект по вашей подписке</h1>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#333;">
+        ${hello} В каталоге появилось объявление, которое подходит под параметры вашего поиска.
+      </p>
+      ${card}
+      <p style="margin:20px 0 16px;font-size:14px;line-height:1.55;color:#333;">
+        Откройте карточку, чтобы посмотреть детали и связаться с собственником.
+      </p>
+      ${button(objectUrl, "Смотреть объект")}
+      <p style="margin:16px 0 0;">
+        <a href="${SITE_URL}/catalog" style="color:#8a6d2f;font-size:14px;font-weight:700;">Открыть каталог</a>
+      </p>
+    `;
+    return { subject: title, html: layout(title, inner) };
+  }
 
   if (event === "submitted") {
     const title = "Объект отправлен на проверку — АрендаСити";
@@ -407,7 +426,9 @@ Deno.serve(async (req) => {
         ? "approved"
         : body.event === "submitted"
           ? "submitted"
-          : null;
+          : body.event === "subscription_match"
+            ? "subscription_match"
+            : null;
     if (!event) return json({ error: "Неизвестный event" }, 400);
 
     const host = Deno.env.get("SMTP_HOST") || "smtp.timeweb.ru";

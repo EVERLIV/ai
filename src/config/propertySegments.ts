@@ -14,6 +14,7 @@ export const COMMERCIAL_PROPERTY_TYPES = [
 export const RESIDENTIAL_PROPERTY_TYPES = [
   "Квартира",
   "Дом",
+  "Дом на заказ",
   "Комната",
   "Таунхаус",
   "Апартаменты",
@@ -28,7 +29,11 @@ export const LAND_PROPERTY_TYPES = ["Земля", "Участок"] as const;
 
 export const LAND_DEAL_TYPES = ["Аренда", "Продажа"] as const;
 
-export const RESIDENTIAL_MARKET_TYPES = ["Вторичка", "Новостройка"] as const;
+export const RESIDENTIAL_MARKET_TYPES = [
+  "Вторичка",
+  "Новостройка",
+  "На заказ",
+] as const;
 
 export const RESIDENTIAL_DEAL_TYPES = [
   "Аренда",
@@ -107,6 +112,11 @@ export const SEGMENT_QUICK_LINKS = {
         label: "Дома",
         desc: "Дома, коттеджи и таунхаусы",
         href: "/zhilaya/doma",
+      },
+      {
+        label: "Дом на заказ",
+        desc: "Индивидуальная сборка — дома ещё нет, строят под вас",
+        href: "/zhilaya/catalog?types=%D0%94%D0%BE%D0%BC%2C%D0%9A%D0%BE%D1%82%D1%82%D0%B5%D0%B4%D0%B6%2C%D0%94%D0%B0%D1%87%D0%B0&market=%D0%9D%D0%B0+%D0%B7%D0%B0%D0%BA%D0%B0%D0%B7&deal=%D0%9F%D1%80%D0%BE%D0%B4%D0%B0%D0%B6%D0%B0",
       },
       {
         label: "Комнаты",

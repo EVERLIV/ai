@@ -31,7 +31,7 @@ export default function PropertyImage({
   return (
     <div
       className={cn(
-        "relative w-full h-full overflow-hidden bg-muted",
+        "relative w-full h-full min-h-0 min-w-0 overflow-hidden bg-muted",
         className,
       )}
     >
@@ -40,9 +40,11 @@ export default function PropertyImage({
           src={src as string}
           alt={alt}
           loading="lazy"
-          className={cn("w-full h-full object-cover", imgClassName)}
+          className={cn(
+            "absolute inset-0 w-full h-full object-cover",
+            imgClassName,
+          )}
           onError={(e) => {
-            // Hide broken image, sibling placeholder will show through
             (e.currentTarget as HTMLImageElement).style.display = "none";
           }}
         />

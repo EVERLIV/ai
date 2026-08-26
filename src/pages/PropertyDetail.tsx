@@ -37,9 +37,11 @@ import PropertyAIChat from "@/components/PropertyAIChat";
 import PropertyDescription from "@/components/PropertyDescription";
 import PropertyJsonLd from "@/components/PropertyJsonLd";
 import PropertyMap from "@/components/PropertyMap";
+import PropertyPrintButton from "@/components/PropertyPrintButton";
 import PropertyShareButton from "@/components/PropertyShareButton";
 import PropertySidebarExtras from "@/components/PropertySidebarExtras";
 import PropertyMediaGallery from "@/components/property/PropertyMediaGallery";
+import PropertyPrintSheet from "@/components/property/PropertyPrintSheet";
 import { useCompareProperties } from "@/hooks/useCompareProperties";
 import { SpecGrid, SpecQuickStats, SpecRow } from "@/components/PropertySpecList";
 import PropertyStickyNav from "@/components/PropertyStickyNav";
@@ -631,13 +633,14 @@ export default function PropertyDetail() {
               />
             </button>
             <PropertyShareButton property={property} />
+            <PropertyPrintButton />
           </div>
         </div>
       </div>
 
       {/* Mobile bottom action bar */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_24px_-12px_hsl(0_0%_0%/0.15)]">
-        <div className="grid grid-cols-5 px-2 py-2 gap-1 max-w-lg mx-auto">
+        <div className="grid grid-cols-6 px-1.5 py-2 gap-0.5 max-w-lg mx-auto">
           <RevealListingPhone property={property} variant="bar" />
           {isResidential ? (
             <OwnerMessageDialog
@@ -709,6 +712,7 @@ export default function PropertyDetail() {
             <span className="text-[10px] font-medium">Сохранить</span>
           </button>
           <PropertyShareButton property={property} variant="bar" />
+          <PropertyPrintButton variant="bar" />
         </div>
         <div className="h-[env(safe-area-inset-bottom)]" />
       </div>
@@ -1014,6 +1018,10 @@ export default function PropertyDetail() {
         property={property}
         initialTab={galleryTab}
         initialPhotoIndex={activePhoto}
+      />
+      <PropertyPrintSheet
+        property={property}
+        pageUrl={sharePayload.url}
       />
     </div>
   );

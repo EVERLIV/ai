@@ -200,7 +200,8 @@ export function getMainNavMegaMenus(
       match: (pathname, search) =>
         (pathname.startsWith("/zhilaya") || pathname === "/catalog") &&
         dealIs(search, "Продажа") &&
-        !marketIs(search, "Новостройка"),
+        !marketIs(search, "Новостройка") &&
+        !marketIs(search, "На заказ"),
       columns: [
         {
           sections: [
@@ -219,6 +220,14 @@ export function getMainNavMegaMenus(
                   label: "Дома и коттеджи",
                   href: r({
                     types: ["Дом", "Дача", "Коттедж"],
+                    deal: "Продажа",
+                  }),
+                },
+                {
+                  label: "Дом на заказ",
+                  href: r({
+                    types: ["Дом", "Дача", "Коттедж"],
+                    market: "На заказ",
                     deal: "Продажа",
                   }),
                 },
@@ -298,6 +307,14 @@ export function getMainNavMegaMenus(
                     market: "Новостройка",
                   }),
                 },
+                {
+                  label: "Дом на заказ",
+                  href: r({
+                    types: ["Дом на заказ", "Дом", "Коттедж", "Дача"],
+                    market: "На заказ",
+                    deal: "Продажа",
+                  }),
+                },
                 { label: "Застройщики", href: "/zastroyshchiki" },
               ],
             },
@@ -330,6 +347,7 @@ export function getMainNavMegaMenus(
         if (pathname.startsWith("/zemlya") || pathname.startsWith("/land"))
           return false;
         if (pathname.startsWith("/zhilaya/uchastki")) return false;
+        if (marketIs(search, "На заказ")) return true;
         const types = new URLSearchParams(search).get("types") || "";
         return (
           pathname.startsWith("/zhilaya") &&
@@ -360,6 +378,14 @@ export function getMainNavMegaMenus(
                   }),
                 },
                 {
+                  label: "Дом на заказ",
+                  href: r({
+                    types: ["Дом на заказ", "Дом", "Коттедж", "Дача"],
+                    market: "На заказ",
+                    deal: "Продажа",
+                  }),
+                },
+                {
                   label: "Таунхаусы",
                   href: r({ types: "Таунхаус" }),
                 },
@@ -369,6 +395,27 @@ export function getMainNavMegaMenus(
         },
         {
           sections: [
+            {
+              title: "На заказ",
+              links: [
+                {
+                  label: "Все дома на заказ",
+                  href: r({
+                    types: ["Дом", "Коттедж", "Дача"],
+                    market: "На заказ",
+                    deal: "Продажа",
+                  }),
+                },
+                {
+                  label: "Деревянные / каркас",
+                  href: "/zastroyshchiki?tab=derevo",
+                },
+                {
+                  label: "Застройщики домов",
+                  href: "/zastroyshchiki",
+                },
+              ],
+            },
             {
               title: "Сервисы",
               links: [
@@ -384,10 +431,14 @@ export function getMainNavMegaMenus(
         },
       ],
       promo: {
-        title: "Ищете дом?",
-        text: "Разместите объявление бесплатно или найдите специалиста",
-        cta: "Разместить",
-        href: listRent,
+        title: "Дом на заказ",
+        text: "Индивидуальная сборка: каркас, брус, модули — под ваш участок",
+        cta: "Смотреть",
+        href: r({
+          types: ["Дом", "Коттедж", "Дача"],
+          market: "На заказ",
+          deal: "Продажа",
+        }),
       },
     },
     {

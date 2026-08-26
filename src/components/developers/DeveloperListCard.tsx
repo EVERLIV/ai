@@ -1,6 +1,8 @@
 import { Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import CatalogCountChip from "@/components/specialists/CatalogCountChip";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { pluralProjects } from "@/components/specialists/specialistUtils";
 import {
   DEVELOPER_SUBTYPE_LABELS,
   type Developer,
@@ -25,7 +27,7 @@ export default function DeveloperListCard({
       <Link
         to={`/zastroyshchik/${developer.id}`}
         className={cn(
-          "group flex gap-4 sm:gap-5 items-start p-4 sm:p-5",
+          "group flex gap-3 sm:gap-4 items-start p-4 sm:p-5",
           "rounded-xl border border-border/60 bg-card",
           "hover:border-border hover:bg-muted/20 transition-colors",
         )}
@@ -63,19 +65,11 @@ export default function DeveloperListCard({
           )}
         </div>
 
-        <div className="shrink-0 self-center text-right pl-1">
-          <div className="min-w-[4.5rem] rounded-xl bg-muted/50 px-3 py-2.5">
-            <div className="text-lg sm:text-xl font-semibold text-foreground tabular-nums leading-none">
-              {projectsCount}
-            </div>
-            <div className="text-[10px] text-muted-foreground mt-1 leading-snug">
-              {projectsCount === 1
-                ? "проект"
-                : projectsCount >= 2 && projectsCount <= 4
-                  ? "проекта"
-                  : "проектов"}
-            </div>
-          </div>
+        <div className="shrink-0 self-center">
+          <CatalogCountChip
+            count={projectsCount}
+            label={pluralProjects(projectsCount)}
+          />
         </div>
       </Link>
     </article>

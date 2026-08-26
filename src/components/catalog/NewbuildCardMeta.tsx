@@ -8,6 +8,7 @@ import {
   formatProjectCardTitle,
   getCardDeveloperLabel,
   getNewbuildBodyBadges,
+  isMadeToOrderListing,
   isNewbuildListing,
 } from "@/lib/propertyNewbuildCard";
 import { cn } from "@/lib/utils";
@@ -74,6 +75,7 @@ export default function NewbuildCardMeta({
 }: Props) {
   const show =
     isNewbuildListing(property) ||
+    isMadeToOrderListing(property) ||
     !!property.developer_project_id ||
     !!property.developer_id;
 
@@ -93,7 +95,7 @@ export default function NewbuildCardMeta({
     : rawDev || null;
   const developerShow = pickDeveloper(property, projectDeveloper);
   const projectTitle = project?.title
-    ? formatProjectCardTitle(project.title)
+    ? formatProjectCardTitle(project.title, project.project_kind)
     : null;
   const projectHref = projectId ? `/proekt/${projectId}` : null;
   const badges = getNewbuildBodyBadges(property);

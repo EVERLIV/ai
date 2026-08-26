@@ -7,6 +7,7 @@ INSERT INTO dictionaries (category, value, parent, sort_order) VALUES
   ('property_type', 'Апартаменты', 'residential', 15),
   ('property_type', 'Дача', 'residential', 16),
   ('property_type', 'Коттедж', 'residential', 17),
+  ('property_type', 'Дом на заказ', 'residential', 18),
   ('property_type', 'Гараж', 'residential', 19),
   ('property_type', 'Машиноместо', 'residential', 20),
   ('property_type', 'Доля', 'residential', 21)
@@ -22,10 +23,11 @@ UPDATE dictionaries
 SET is_active = false
 WHERE category = 'property_type' AND value = 'Новостройка';
 
--- Рынок (вторичка / новостройка)
+-- Рынок (вторичка / новостройка / на заказ)
 INSERT INTO dictionaries (category, value, sort_order) VALUES
   ('market', 'Вторичка', 1),
-  ('market', 'Новостройка', 2)
+  ('market', 'Новостройка', 2),
+  ('market', 'На заказ', 3)
 ON CONFLICT (category, value) DO NOTHING;
 
 -- Тип сделки: посуточно
