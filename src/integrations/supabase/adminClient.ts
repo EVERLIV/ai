@@ -2,6 +2,18 @@ export const SUPABASE_URL = "https://api.arendacity.com";
 export const SERVICE_ROLE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3Nzg4NDI5NDAsImV4cCI6MTkzNjUyMjk0MH0.3cy9jvXONpIRoTDA2YOvo13LdBCTZzWTPs-J6_1RhKg";
 
+/**
+ * На localhost upload идёт через Vite proxy `/storage` → api.arendacity.com,
+ * чтобы обойти CORS Storage. Публичные URL для <img> всегда абсолютные.
+ */
+function storageRequestBase(): string {
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") return "";
+  }
+  return SUPABASE_URL;
+}
+
 const authHeaders = {
   apikey: SERVICE_ROLE_KEY,
   Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
@@ -123,19 +135,19 @@ export const supabaseAdmin = {
       file: File,
     ): Promise<{ error: string | null }> {
       const clean = path.replace(/^\/+/, "");
-      const res = await fetch(
-        `${SUPABASE_URL}/storage/v1/object/${bucket}/${clean}`,
-        {
-          method: "POST",
-          headers: {
-            apikey: SERVICE_ROLE_KEY,
-            Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-            "Content-Type": file.type || "application/octet-stream",
-            "x-upsert": "true",
-          },
-          body: file,
+      const base = storageRequestBase();
+      const bytes = await file.arrayBuffer();
+      // PUT + x-upsert надёжнее на self-hosted, чем POST
+      const res = await fetch(`${base}/storage/v1/object/${bucket}/${clean}`, {
+        method: "PUT",
+        headers: {
+          apikey: SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+          "Content-Type": file.type || "application/octet-stream",
+          "x-upsert": "true",
         },
-      );
+        body: bytes,
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         const msg =
@@ -154,9 +166,25 @@ export const supabaseAdmin = {
       }
       return { error: null };
     },
+    /** Проверка, что объект реально лежит в bucket (service_role). */
+    async exists(bucket: string, path: string): Promise<boolean> {
+      const clean = path.replace(/^\/+/, "");
+      const base = storageRequestBase();
+      const res = await fetch(
+        `${base}/storage/v1/object/authenticated/${bucket}/${clean}`,
+        {
+          method: "GET",
+          headers: {
+            apikey: SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+          },
+        },
+      );
+      return res.ok;
+    },
     getPublicUrl(bucket: string, path: string): string {
       const clean = path.replace(/^\/+/, "");
-      // Всегда public — иначе <img> ловит 401/CORS на self-hosted
+      // Всегда абсолютный public URL для <img> (не через proxy)
       return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${clean}`;
     },
   },

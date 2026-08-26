@@ -15,6 +15,12 @@ export default defineConfig(() => ({
         target: process.env.CHAT_BACKEND_URL || "http://127.0.0.1:8787",
         changeOrigin: true,
       },
+      // Storage upload с localhost иначе ловит CORS (нет ACAO на 401/ошибках)
+      "/storage": {
+        target: "https://api.arendacity.com",
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
   plugins: [

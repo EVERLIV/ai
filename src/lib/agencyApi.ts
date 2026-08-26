@@ -723,16 +723,19 @@ export async function uploadAgencyAssetApi(
     throw new Error(
       typeof error === "string" ? error : "Не удалось загрузить файл",
     );
+
+  const stored = await supabaseAdmin.storage.exists("agency-assets", path);
+  if (!stored) {
+    throw new Error(
+      "Файл не сохранился в Storage. Проверьте bucket agency-assets и sql/fix_agency_storage_public_urls.sql.",
+    );
+  }
+
   const url = toPublicStorageUrl(
     supabaseAdmin.storage.getPublicUrl("agency-assets", path),
   );
-  // Проверяем, что объект реально отдаётся как public (иначе в UI будет 404/CORS)
-  const check = await fetch(url, { method: "GET", cache: "no-store" });
-  if (!check.ok) {
-    throw new Error(
-      `Файл не доступен по публичной ссылке (${check.status}). ` +
-        `Выполните sql/fix_agency_storage_public_urls.sql и supabase/self_hosted_agency_hotfix.sql на сервере, затем загрузите логотип снова.`,
-    );
+  if (!url.includes("/storage/v1/object/public/")) {
+    throw new Error("Внутренняя ошибка: публичный URL логотипа сформирован неверно");
   }
   return url;
 }

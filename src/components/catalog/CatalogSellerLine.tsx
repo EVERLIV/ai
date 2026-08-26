@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { formatAgentObjectsLabel } from "@/lib/propertyCard";
 import { getListingAgentDisplay } from "@/lib/propertySidebar";
+import { publicStorageUrl } from "@/lib/storageUrl";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -84,9 +85,12 @@ export default function CatalogSellerLine({ extras, className }: Props) {
     >
       {agent.avatarUrl && !agent.isDeveloper ? (
         <img
-          src={agent.avatarUrl}
+          src={publicStorageUrl(agent.avatarUrl) || agent.avatarUrl}
           alt=""
           className="w-6 h-6 rounded object-cover shrink-0 bg-muted"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = "none";
+          }}
         />
       ) : (
         <span className="w-6 h-6 rounded bg-muted flex items-center justify-center shrink-0">

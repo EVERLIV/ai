@@ -33,6 +33,7 @@ import {
   formatAgentObjectsLabel,
 } from "@/lib/propertyCard";
 import { resolveSidebarDisplay } from "@/lib/propertySidebar";
+import { publicStorageUrl } from "@/lib/storageUrl";
 
 interface Props {
   property: {
@@ -358,9 +359,14 @@ export default function PropertySidebarExtras({
           <div className="flex items-start gap-3">
             {displayAgentAvatar ? (
               <img
-                src={displayAgentAvatar}
+                src={
+                  publicStorageUrl(displayAgentAvatar) || displayAgentAvatar
+                }
                 alt={displayAgentName}
                 className="w-12 h-12 rounded-md object-cover shrink-0 bg-muted"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
               />
             ) : (
               <div className="w-12 h-12 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0 text-sm font-bold">
