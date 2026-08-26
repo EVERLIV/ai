@@ -201,9 +201,9 @@ export default function PropertyMediaGallery({
         </button>
       </header>
 
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
-        <div className="flex-1 min-w-0 min-h-0 flex flex-col bg-muted/40">
-          <div className="relative flex-1 min-h-[40vh] flex items-center justify-center p-2 sm:p-4">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+        <div className="flex-1 min-h-0 min-w-0 flex flex-col bg-muted/40 overflow-hidden">
+          <div className="relative flex-1 min-h-0 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
             {tab === "plan" && planUrl && (
               <img
                 src={planUrl}
@@ -293,18 +293,18 @@ export default function PropertyMediaGallery({
           </div>
         </div>
 
-        {/* Sidebar */}
-        <aside className="shrink-0 w-full lg:w-[340px] xl:w-[380px] border-t lg:border-t-0 lg:border-l border-border overflow-y-auto max-h-[42vh] lg:max-h-none bg-card">
+        {/* Sidebar — на мобиле фиксированная высота, чтобы длинный агент/застройщик не срезал фото */}
+        <aside className="shrink-0 w-full lg:w-[340px] xl:w-[380px] border-t lg:border-t-0 lg:border-l border-border overflow-y-auto max-h-[min(36vh,280px)] lg:max-h-none bg-card">
           <div className="p-4 space-y-4">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h2 className="text-sm font-semibold text-foreground leading-snug">
+                <h2 className="text-sm font-semibold text-foreground leading-snug line-clamp-2">
                   {title}
                 </h2>
                 {developerHref && agent?.primaryLabel && (
                   <Link
                     to={developerHref}
-                    className="text-xs text-primary hover:underline mt-1 inline-block"
+                    className="text-xs text-primary hover:underline mt-1 inline-block truncate max-w-full"
                     onClick={() => onOpenChange(false)}
                   >
                     {agent.primaryLabel}
@@ -334,13 +334,13 @@ export default function PropertyMediaGallery({
                   <img
                     src={agent.avatarUrl}
                     alt=""
-                    className="w-11 h-11 rounded-md object-cover bg-muted"
+                    className="w-11 h-11 rounded-md object-cover bg-muted shrink-0"
                   />
                 ) : (
-                  <div className="w-11 h-11 rounded-md bg-muted" />
+                  <div className="w-11 h-11 rounded-md bg-muted shrink-0" />
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 min-w-0">
                     <span className="text-sm font-semibold truncate">
                       {agent.primaryLabel}
                     </span>
@@ -348,7 +348,7 @@ export default function PropertyMediaGallery({
                       <VerifiedBadge size="sm" showLabel={false} />
                     )}
                   </div>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground truncate">
                     {agent.secondaryLabel}
                   </p>
                 </div>

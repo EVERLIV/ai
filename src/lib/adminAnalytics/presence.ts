@@ -1,4 +1,8 @@
 import { supabasePublic } from "@/integrations/supabase/client";
+import {
+  SERVICE_ROLE_KEY,
+  SUPABASE_URL,
+} from "@/integrations/supabase/adminClient";
 import { getAnalyticsSessionId } from "@/lib/adminAnalytics/session";
 
 const HEARTBEAT_MS = 30_000;
@@ -21,23 +25,29 @@ export async function upsertPresence(opts?: {
     path,
   };
 
-  const { error: insertError } = await supabasePublic
-    .from("site_presence" as never)
-    .insert(row as never);
-
-  if (!insertError) return;
-
-  const { error: updateError } = await supabasePublic
-    .from("site_presence" as never)
-    .update({
-      user_id: row.user_id,
-      last_seen_at: row.last_seen_at,
-      path: row.path,
-    } as never)
-    .eq("session_id", session_id);
-
-  if (updateError) {
-    console.warn("presence upsert failed", updateError.message);
+  // Raw REST upsert: избегаем 409 от insert + проблем onConflict в клиенте.
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/site_presence?on_conflict=session_id`,
+      {
+        method: "POST",
+        headers: {
+          apikey: SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates,return=minimal",
+        },
+        body: JSON.stringify(row),
+      },
+    );
+    if (res.ok || res.status === 200 || res.status === 201) return;
+    // fallback anon upsert
+    const { error } = await supabasePublic
+      .from("site_presence" as never)
+      .upsert(row as never, { onConflict: "session_id" });
+    if (error) console.warn("presence upsert failed", error.message);
+  } catch (e) {
+    console.warn("presence upsert failed", e);
   }
 }
 

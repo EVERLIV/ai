@@ -19,6 +19,22 @@ CREATE TABLE IF NOT EXISTS public.search_subscriptions (
 CREATE UNIQUE INDEX IF NOT EXISTS search_subscriptions_user_uidx
   ON public.search_subscriptions (user_id);
 
+-- PostgREST on_conflict нужен CONSTRAINT
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'search_subscriptions_user_id_key'
+      AND conrelid = 'public.search_subscriptions'::regclass
+  ) THEN
+    ALTER TABLE public.search_subscriptions
+      ADD CONSTRAINT search_subscriptions_user_id_key UNIQUE (user_id);
+  END IF;
+EXCEPTION
+  WHEN duplicate_table THEN NULL;
+  WHEN duplicate_object THEN NULL;
+END $$;
+
 CREATE INDEX IF NOT EXISTS search_subscriptions_active_idx
   ON public.search_subscriptions (is_active)
   WHERE is_active = true;
@@ -142,8 +158,10 @@ CREATE POLICY "site_presence_delete_staff"
     OR public.has_role(auth.uid(), 'manager')
   );
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.search_subscriptions TO authenticated;
-GRANT SELECT, INSERT ON public.site_analytics_events TO anon, authenticated;
-GRANT SELECT ON public.site_analytics_events TO authenticated;
-GRANT SELECT, INSERT, UPDATE ON public.site_presence TO anon, authenticated;
-GRANT DELETE ON public.site_presence TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.search_subscriptions TO authenticated, service_role;
+GRANT SELECT, INSERT ON public.site_analytics_events TO anon, authenticated, service_role;
+GRANT SELECT ON public.site_analytics_events TO authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE ON public.site_presence TO anon, authenticated, service_role;
+GRANT DELETE ON public.site_presence TO authenticated, service_role;
+
+NOTIFY pgrst, 'reload schema';

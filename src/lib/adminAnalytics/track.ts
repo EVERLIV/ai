@@ -1,4 +1,7 @@
-import { supabasePublic } from "@/integrations/supabase/client";
+import {
+  SERVICE_ROLE_KEY,
+  SUPABASE_URL,
+} from "@/integrations/supabase/adminClient";
 import {
   getAnalyticsSessionId,
   type TrackPayload,
@@ -12,20 +15,31 @@ export async function insertAnalyticsEvent(
   payload: TrackPayload,
 ): Promise<void> {
   const session_id = getAnalyticsSessionId();
-  const { error } = await supabasePublic
-    .from("site_analytics_events" as never)
-    .insert({
-      event_type: payload.event_type,
-      path: payload.path ?? null,
-      section: payload.section ?? null,
-      property_id: payload.property_id ?? null,
-      user_id: payload.user_id ?? null,
-      session_id,
-      meta: payload.meta ?? {},
-    } as never);
-
-  if (error) {
-    console.warn("analytics insert failed", error.message);
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/site_analytics_events`, {
+      method: "POST",
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({
+        event_type: payload.event_type,
+        path: payload.path ?? null,
+        section: payload.section ?? null,
+        property_id: payload.property_id ?? null,
+        user_id: payload.user_id ?? null,
+        session_id,
+        meta: payload.meta ?? {},
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.warn("analytics insert failed", res.status, text);
+    }
+  } catch (e) {
+    console.warn("analytics insert failed", e);
   }
 }
 
@@ -54,7 +68,9 @@ export function trackSectionView(
   void insertAnalyticsEvent({
     event_type: "section_view",
     section,
-    path: opts?.path ?? (typeof window !== "undefined" ? window.location.pathname : null),
+    path:
+      opts?.path ??
+      (typeof window !== "undefined" ? window.location.pathname : null),
     user_id: opts?.userId ?? null,
   });
 }
@@ -67,7 +83,9 @@ export function trackPropertyView(
   void insertAnalyticsEvent({
     event_type: "property_view",
     property_id: propertyId,
-    path: opts?.path ?? (typeof window !== "undefined" ? window.location.pathname : null),
+    path:
+      opts?.path ??
+      (typeof window !== "undefined" ? window.location.pathname : null),
     section: "property",
     user_id: opts?.userId ?? null,
   });

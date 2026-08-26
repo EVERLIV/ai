@@ -4,8 +4,11 @@
 
 ```bash
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
-  -f sql/search_subscriptions_and_analytics.sql
+  -f sql/search_subscriptions_and_analytics.sql \
+  -f sql/fix_search_subscriptions_postgrest.sql
 ```
+
+Второй файл добавляет UNIQUE CONSTRAINT для upsert и делает `NOTIFY pgrst, 'reload schema'`.
 
 Зеркало миграции: `supabase/migrations/20260826_search_subscriptions_and_analytics.sql`.
 

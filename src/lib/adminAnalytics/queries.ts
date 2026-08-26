@@ -1,4 +1,7 @@
-import { supabase } from "@/integrations/supabase/client";
+import {
+  SERVICE_ROLE_KEY,
+  SUPABASE_URL,
+} from "@/integrations/supabase/adminClient";
 import { ONLINE_WINDOW_MS } from "@/lib/adminAnalytics/presence";
 
 export type PathCount = { path: string; count: number };
@@ -27,6 +30,22 @@ type EventRow = {
   occurred_at: string;
 };
 
+const headers = {
+  apikey: SERVICE_ROLE_KEY,
+  Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+};
+
+async function restGet(pathAndQuery: string): Promise<unknown> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${pathAndQuery}`, {
+    headers: { ...headers, Prefer: "count=exact" },
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
 function countBy(
   rows: EventRow[],
   key: "path" | "section" | "property_id",
@@ -46,13 +65,22 @@ function countBy(
 
 export async function fetchOnlineCount(): Promise<number> {
   const since = new Date(Date.now() - ONLINE_WINDOW_MS).toISOString();
-  const { count, error } = await supabase
-    .from("site_presence" as never)
-    .select("*", { count: "exact", head: true })
-    .gt("last_seen_at", since);
-
-  if (error) throw error;
-  return count ?? 0;
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/site_presence?last_seen_at=gt.${encodeURIComponent(since)}&select=*`,
+    {
+      method: "HEAD",
+      headers: { ...headers, Prefer: "count=exact" },
+    },
+  );
+  const range = res.headers.get("content-range");
+  if (range) {
+    const m = range.match(/\/(\d+|\*)/);
+    if (m && m[1] !== "*") return Number(m[1]) || 0;
+  }
+  const data = (await restGet(
+    `site_presence?last_seen_at=gt.${encodeURIComponent(since)}&select=session_id`,
+  )) as unknown[];
+  return Array.isArray(data) ? data.length : 0;
 }
 
 export async function fetchAdminSiteStats(): Promise<AdminSiteStats> {
@@ -60,19 +88,14 @@ export async function fetchAdminSiteStats(): Promise<AdminSiteStats> {
   const since7d = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
   const since24h = new Date(now - 24 * 60 * 60 * 1000).toISOString();
 
-  const [onlineCount, eventsRes] = await Promise.all([
+  const [onlineCount, eventsRaw] = await Promise.all([
     fetchOnlineCount(),
-    supabase
-      .from("site_analytics_events" as never)
-      .select("event_type, path, section, property_id, occurred_at")
-      .gte("occurred_at", since7d)
-      .order("occurred_at", { ascending: false })
-      .limit(5000),
+    restGet(
+      `site_analytics_events?occurred_at=gte.${encodeURIComponent(since7d)}&select=event_type,path,section,property_id,occurred_at&order=occurred_at.desc&limit=5000`,
+    ),
   ]);
 
-  if (eventsRes.error) throw eventsRes.error;
-  const events = (eventsRes.data || []) as unknown as EventRow[];
-
+  const events = (Array.isArray(eventsRaw) ? eventsRaw : []) as EventRow[];
   const in24h = events.filter((e) => e.occurred_at >= since24h);
   const pageViews24h = in24h.filter((e) => e.event_type === "page_view").length;
   const pageViews7d = events.filter((e) => e.event_type === "page_view").length;

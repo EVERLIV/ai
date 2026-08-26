@@ -42,6 +42,7 @@ import PropertyShareButton from "@/components/PropertyShareButton";
 import PropertySidebarExtras from "@/components/PropertySidebarExtras";
 import PropertyMediaGallery from "@/components/property/PropertyMediaGallery";
 import PropertyPrintSheet from "@/components/property/PropertyPrintSheet";
+import PropertyDeveloperProjectSection from "@/components/property/PropertyDeveloperProjectSection";
 import { useCompareProperties } from "@/hooks/useCompareProperties";
 import { SpecGrid, SpecQuickStats, SpecRow } from "@/components/PropertySpecList";
 import PropertyStickyNav from "@/components/PropertyStickyNav";
@@ -898,11 +899,12 @@ export default function PropertyDetail() {
               </span>
             </div>
 
-            <div className="lg:hidden mb-8">
+            <div className="lg:hidden mb-8 space-y-5">
               <PropertyPriceBlock
                 property={property}
                 hasAiConsultant={hasAiConsultant}
               />
+              <PropertySidebarExtras property={property} />
             </div>
 
             <section id="description" className="mb-10 scroll-mt-14">
@@ -972,6 +974,8 @@ export default function PropertyDetail() {
                 </div>
               </div>
             </section>
+
+            <PropertyDeveloperProjectSection property={property} />
           </div>
 
           <aside className="hidden lg:block w-[360px] shrink-0">

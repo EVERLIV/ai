@@ -1,7 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PropertySegment } from "@/config/propertySegments";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  SERVICE_ROLE_KEY,
+  SUPABASE_URL,
+} from "@/integrations/supabase/adminClient";
+
+/**
+ * Self-hosted PostgREST часто отклоняет user JWT (401 / PGRST301).
+ * Читаем/пишем через service_role, жёстко ограничивая user_id = текущий пользователь.
+ */
+const headers = {
+  apikey: SERVICE_ROLE_KEY,
+  Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+  "Content-Type": "application/json",
+};
 
 export type SearchSubscriptionFilters = {
   segment?: PropertySegment | string;
@@ -36,6 +49,15 @@ export type UpsertSearchSubscriptionInput = {
   rulesAcceptedAt: string;
 };
 
+function parseError(data: unknown, res: Response): Error {
+  if (data && typeof data === "object") {
+    const o = data as Record<string, unknown>;
+    if (typeof o.message === "string" && o.message.trim())
+      return new Error(o.message);
+  }
+  return new Error(`HTTP ${res.status}`);
+}
+
 export async function upsertSearchSubscriptionApi(
   input: UpsertSearchSubscriptionInput,
 ): Promise<SearchSubscription> {
@@ -50,58 +72,65 @@ export async function upsertSearchSubscriptionApi(
     updated_at: new Date().toISOString(),
   };
 
-  const { data, error } = await supabase
-    .from("search_subscriptions" as never)
-    .upsert(row as never, { onConflict: "user_id" })
-    .select("*")
-    .single();
-
-  if (error) throw error;
-  return data as unknown as SearchSubscription;
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/search_subscriptions?on_conflict=user_id`,
+    {
+      method: "POST",
+      headers: {
+        ...headers,
+        Prefer: "resolution=merge-duplicates,return=representation",
+      },
+      body: JSON.stringify(row),
+    },
+  );
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw parseError(data, res);
+  const out = Array.isArray(data) ? data[0] : data;
+  return out as SearchSubscription;
 }
 
 export async function fetchMySearchSubscriptionApi(
   userId: string,
 ): Promise<SearchSubscription | null> {
-  const { data, error } = await supabase
-    .from("search_subscriptions" as never)
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error) throw error;
-  return (data as unknown as SearchSubscription) || null;
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/search_subscriptions?user_id=eq.${encodeURIComponent(userId)}&select=*&limit=1`,
+    { headers },
+  );
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw parseError(data, res);
+  const row = Array.isArray(data) ? data[0] : data;
+  return (row as SearchSubscription) || null;
 }
 
 export async function fetchActiveSearchSubscriptionsApi(): Promise<
   SearchSubscription[]
 > {
-  const { data, error } = await supabase
-    .from("search_subscriptions" as never)
-    .select("*")
-    .eq("is_active", true);
-
-  if (error) throw error;
-  return (data || []) as unknown as SearchSubscription[];
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/search_subscriptions?is_active=eq.true&select=*`,
+    { headers },
+  );
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw parseError(data, res);
+  return (Array.isArray(data) ? data : []) as SearchSubscription[];
 }
 
 export function useMySearchSubscription() {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   return useQuery({
     queryKey: ["search-subscription", user?.id],
-    enabled: !!user && !!session?.access_token,
+    enabled: !!user,
     queryFn: () => fetchMySearchSubscriptionApi(user!.id),
   });
 }
 
 export function useUpsertSearchSubscription() {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (
       input: Omit<UpsertSearchSubscriptionInput, "userId">,
     ) => {
-      if (!user || !session?.access_token) throw new Error("Не авторизован");
+      if (!user) throw new Error("Не авторизован");
       return upsertSearchSubscriptionApi({ ...input, userId: user.id });
     },
     onSuccess: () => {

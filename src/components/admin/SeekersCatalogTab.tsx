@@ -21,6 +21,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ACCOUNT_TYPE_LABELS } from "@/hooks/useProfile";
+import {
+  SERVICE_ROLE_KEY,
+  SUPABASE_URL,
+} from "@/integrations/supabase/adminClient";
 import { supabase } from "@/integrations/supabase/client";
 import type { SearchSubscription } from "@/lib/searchSubscriptions";
 
@@ -33,6 +37,26 @@ type SeekerRow = {
 };
 
 type FilterMode = "all" | "subscribed" | "unsubscribed";
+
+const serviceHeaders = {
+  apikey: SERVICE_ROLE_KEY,
+  Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+};
+
+async function serviceSelect<T>(query: string): Promise<T[]> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${query}`, {
+    headers: serviceHeaders,
+  });
+  const data = await res.json().catch(() => []);
+  if (!res.ok) {
+    const msg =
+      data && typeof data === "object" && "message" in data
+        ? String((data as { message: string }).message)
+        : `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return (Array.isArray(data) ? data : []) as T[];
+}
 
 export default function SeekersCatalogTab() {
   const [q, setQ] = useState("");
@@ -47,36 +71,28 @@ export default function SeekersCatalogTab() {
   } = useQuery({
     queryKey: ["admin-seekers"],
     queryFn: async () => {
-      const [profilesRes, subsRes, presenceRes] = await Promise.all([
+      const [profilesRes, subs, presence] = await Promise.all([
         supabase
           .from("profiles")
           .select("id, full_name, email, created_at, account_type")
           .eq("account_type", "seeker")
           .order("created_at", { ascending: false })
           .limit(500),
-        supabase
-          .from("search_subscriptions" as never)
-          .select("*")
-          .eq("is_active", true),
-        supabase
-          .from("site_presence" as never)
-          .select("user_id, last_seen_at, path")
-          .not("user_id", "is", null)
-          .order("last_seen_at", { ascending: false })
-          .limit(500),
+        serviceSelect<SearchSubscription>(
+          "search_subscriptions?is_active=eq.true&select=*",
+        ),
+        serviceSelect<{
+          user_id: string;
+          last_seen_at: string;
+          path: string | null;
+        }>(
+          "site_presence?user_id=not.is.null&select=user_id,last_seen_at,path&order=last_seen_at.desc&limit=500",
+        ),
       ]);
 
       if (profilesRes.error) throw profilesRes.error;
-      if (subsRes.error) throw subsRes.error;
 
       const seekers = (profilesRes.data || []) as SeekerRow[];
-      const subs = (subsRes.data || []) as unknown as SearchSubscription[];
-      const presence = (presenceRes.data || []) as unknown as {
-        user_id: string;
-        last_seen_at: string;
-        path: string | null;
-      }[];
-
       const subByUser = new Map(subs.map((s) => [s.user_id, s]));
       const lastByUser = new Map<string, { at: string; path: string | null }>();
       for (const p of presence) {

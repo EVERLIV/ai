@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Building2,
   ChevronLeft,
   Columns2,
   Heart,
@@ -116,6 +117,7 @@ export default function MobileMenuDrawer({
 
   const secondaryItems: MenuItem[] = [
     { label: "Риелторы", href: "/rieltory", icon: Users },
+    { label: "Застройщики", href: "/zastroyshchiki", icon: Building2 },
     { label: "Разместить за 0 ₽", href: placeHref, icon: Plus },
     {
       label: "Сравнение",
