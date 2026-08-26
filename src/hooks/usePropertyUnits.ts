@@ -1,22 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/adminClient";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 export type PropertyUnit = Tables<"property_units">;
 
+/**
+ * Self-hosted PostgREST часто отклоняет user JWT (401).
+ * Читаем/пишем через service_role по property_id.
+ */
 export function usePropertyUnits(propertyId: string | undefined) {
   return useQuery({
     queryKey: ["property-units", propertyId],
     enabled: !!propertyId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("property_units")
-        .select("*")
-        .eq("property_id", propertyId!)
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return (data || []) as PropertyUnit[];
+      const { data, error } = await supabaseAdmin.db.select(
+        "property_units",
+        `select=*&property_id=eq.${propertyId}&order=sort_order.asc,created_at.asc`,
+      );
+      if (error) {
+        const msg =
+          typeof error === "object" && error && "message" in error
+            ? String((error as { message?: string }).message)
+            : "Не удалось загрузить юниты";
+        throw new Error(msg);
+      }
+      return (Array.isArray(data) ? data : []) as PropertyUnit[];
     },
   });
 }
@@ -27,11 +35,18 @@ export function useUpsertUnit(propertyId: string) {
     mutationFn: async (unit: Partial<PropertyUnit> & { id?: string }) => {
       if (unit.id) {
         const { id, ...patch } = unit;
-        const { error } = await supabase
-          .from("property_units")
-          .update(patch)
-          .eq("id", id);
-        if (error) throw error;
+        const { error } = await supabaseAdmin.db.update(
+          "property_units",
+          `id=eq.${id}`,
+          patch,
+        );
+        if (error) {
+          throw new Error(
+            typeof error === "object" && error && "message" in error
+              ? String((error as { message?: string }).message)
+              : "Не удалось обновить юнит",
+          );
+        }
       } else {
         const payload: TablesInsert<"property_units"> = {
           property_id: propertyId,
@@ -46,8 +61,17 @@ export function useUpsertUnit(propertyId: string) {
           sort_order: Number(unit.sort_order || 0),
           photos: unit.photos || [],
         };
-        const { error } = await supabase.from("property_units").insert(payload);
-        if (error) throw error;
+        const { error } = await supabaseAdmin.db.insert(
+          "property_units",
+          payload,
+        );
+        if (error) {
+          throw new Error(
+            typeof error === "object" && error && "message" in error
+              ? String((error as { message?: string }).message)
+              : "Не удалось создать юнит",
+          );
+        }
       }
     },
     onSuccess: () =>
@@ -59,11 +83,17 @@ export function useDeleteUnit(propertyId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("property_units")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
+      const { error } = await supabaseAdmin.db.delete(
+        "property_units",
+        `id=eq.${id}`,
+      );
+      if (error) {
+        throw new Error(
+          typeof error === "object" && error && "message" in error
+            ? String((error as { message?: string }).message)
+            : "Не удалось удалить юнит",
+        );
+      }
     },
     onSuccess: () =>
       qc.invalidateQueries({ queryKey: ["property-units", propertyId] }),

@@ -12,6 +12,7 @@ import { Link, useParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
+import StorageImage from "@/components/StorageImage";
 import SpecialistContactForm from "@/components/specialists/SpecialistContactForm";
 import SpecialistReviews, {
   RatingBadge,
@@ -103,10 +104,13 @@ export default function AgencyPublicPage() {
             <section className="flex flex-col sm:flex-row gap-5 items-start">
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border border-border bg-muted overflow-hidden shrink-0 flex items-center justify-center">
                 {agency.logo_url ? (
-                  <img
+                  <StorageImage
                     src={agency.logo_url}
                     alt=""
                     className="w-full h-full object-cover"
+                    fallback={
+                      <Building2 className="w-8 h-8 text-muted-foreground" />
+                    }
                   />
                 ) : (
                   <Building2 className="w-8 h-8 text-muted-foreground" />

@@ -122,8 +122,9 @@ export const supabaseAdmin = {
       path: string,
       file: File,
     ): Promise<{ error: string | null }> {
+      const clean = path.replace(/^\/+/, "");
       const res = await fetch(
-        `${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`,
+        `${SUPABASE_URL}/storage/v1/object/${bucket}/${clean}`,
         {
           method: "POST",
           headers: {
@@ -137,14 +138,25 @@ export const supabaseAdmin = {
       );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        const msg =
+          typeof data === "object" && data
+            ? String(
+                (data as { error?: string; message?: string; msg?: string })
+                  .message ||
+                  (data as { error?: string }).error ||
+                  (data as { msg?: string }).msg ||
+                  "",
+              )
+            : "";
         return {
-          error: data.error ?? data.message ?? `Upload failed (${res.status})`,
+          error: msg || `Upload failed (${res.status})`,
         };
       }
       return { error: null };
     },
     getPublicUrl(bucket: string, path: string): string {
       const clean = path.replace(/^\/+/, "");
+      // Всегда public — иначе <img> ловит 401/CORS на self-hosted
       return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${clean}`;
     },
   },

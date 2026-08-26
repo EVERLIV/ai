@@ -32,6 +32,7 @@ import StatsTab from "@/components/account/StatsTab";
 import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
+import StorageImage from "@/components/StorageImage";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useMyAgency } from "@/hooks/useAgency";
 import { useAuth } from "@/hooks/useAuth";
@@ -232,14 +233,17 @@ export default function AccountPage() {
               {/* Profile */}
               <div className="flex items-center gap-3 p-4">
                 {myDeveloper?.logo_url || myAgency?.agency.logo_url ? (
-                  <img
+                  <StorageImage
                     src={
-                      (myDeveloper?.logo_url ||
-                        myAgency?.agency.logo_url ||
-                        "") as string
+                      myDeveloper?.logo_url || myAgency?.agency.logo_url || null
                     }
                     alt=""
                     className="w-10 h-10 rounded-md object-cover shrink-0 bg-muted"
+                    fallback={
+                      <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold shrink-0">
+                        {initials}
+                      </div>
+                    }
                   />
                 ) : (
                   <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold shrink-0">

@@ -9,14 +9,11 @@ import {
   useMyAgencyProperties,
 } from "@/hooks/useAgency";
 import { useAllDictionaryValues } from "@/hooks/useDictionaries";
+import { publicStorageUrl } from "@/lib/storageUrl";
 
 /** Старые URL без /public/ на self-hosted отдают 401/CORS */
 function publicAssetUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  return url.replace(
-    /\/storage\/v1\/object\/(?!public\/)/,
-    "/storage/v1/object/public/",
-  );
+  return publicStorageUrl(url);
 }
 
 function TypeChips({

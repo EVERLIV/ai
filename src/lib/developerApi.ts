@@ -3,6 +3,7 @@ import {
   SUPABASE_URL,
   supabaseAdmin,
 } from "@/integrations/supabase/adminClient";
+import { publicStorageUrl, toPublicStorageUrl } from "@/lib/storageUrl";
 import type {
   ConstructionStage,
   Developer,
@@ -74,26 +75,31 @@ export async function fetchMyDeveloperApi(
   const rows = await restGet<Developer[]>(
     `developers?id=eq.${encodeURIComponent(membership[0].developer_id)}&select=*&limit=1`,
   );
-  return rows?.[0] ?? null;
+  return rows?.[0] ? normalizeDeveloper(rows[0]) : null;
 }
 
 export async function updateDeveloperApi(
   developerId: string,
   patch: Partial<Developer>,
 ): Promise<Developer> {
+  const next = { ...patch };
+  if (typeof next.logo_url === "string") {
+    next.logo_url = toPublicStorageUrl(next.logo_url);
+  }
   const rows = await restMutate<Developer[]>(
     `developers?id=eq.${encodeURIComponent(developerId)}`,
     "PATCH",
-    patch,
+    next,
   );
-  return Array.isArray(rows) ? rows[0] : rows;
+  const row = Array.isArray(rows) ? rows[0] : rows;
+  return normalizeDeveloper(row);
 }
 
-function toPublicStorageUrl(url: string): string {
-  return url.replace(
-    /\/storage\/v1\/object\/(?!public\/)/,
-    "/storage/v1/object/public/",
-  );
+function normalizeDeveloper(d: Developer): Developer {
+  return {
+    ...d,
+    logo_url: publicStorageUrl(d.logo_url),
+  };
 }
 
 /** Логотип застройщика — тот же bucket, что у агентств (service_role). */
@@ -112,9 +118,17 @@ export async function uploadDeveloperAssetApi(
     throw new Error(
       typeof error === "string" ? error : "Не удалось загрузить файл",
     );
-  return toPublicStorageUrl(
+  const url = toPublicStorageUrl(
     supabaseAdmin.storage.getPublicUrl("agency-assets", path),
   );
+  const check = await fetch(url, { method: "GET", cache: "no-store" });
+  if (!check.ok) {
+    throw new Error(
+      `Файл не доступен по публичной ссылке (${check.status}). ` +
+        `Выполните sql/fix_agency_storage_public_urls.sql на сервере.`,
+    );
+  }
+  return url;
 }
 
 export async function requestDeveloperVerificationApi(
@@ -158,7 +172,9 @@ export async function fetchVerifiedDevelopersApi(params?: {
   if (params?.q?.trim()) {
     parts.push(`or=(name.ilike.*${encodeURIComponent(params.q.trim())}*,city.ilike.*${encodeURIComponent(params.q.trim())}*)`);
   }
-  return restGet<Developer[]>(`developers?${parts.join("&")}`);
+  return restGet<Developer[]>(`developers?${parts.join("&")}`).then((rows) =>
+    (Array.isArray(rows) ? rows : []).map(normalizeDeveloper),
+  );
 }
 
 export async function fetchDeveloperByIdApi(
@@ -167,13 +183,14 @@ export async function fetchDeveloperByIdApi(
   const rows = await restGet<Developer[]>(
     `developers?id=eq.${encodeURIComponent(id)}&select=*&limit=1`,
   );
-  return rows?.[0] ?? null;
+  return rows?.[0] ? normalizeDeveloper(rows[0]) : null;
 }
 
 export async function fetchAllDevelopersAdminApi(): Promise<Developer[]> {
-  return restGet<Developer[]>(
+  const rows = await restGet<Developer[]>(
     `developers?select=*&order=created_at.desc&limit=500`,
   );
+  return (Array.isArray(rows) ? rows : []).map(normalizeDeveloper);
 }
 
 export async function fetchDeveloperPropertiesApi(

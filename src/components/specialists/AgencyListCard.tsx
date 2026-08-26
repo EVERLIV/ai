@@ -2,6 +2,7 @@ import { Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import CatalogCountChip from "@/components/specialists/CatalogCountChip";
 import { RatingBadge } from "@/components/specialists/SpecialistReviews";
+import StorageImage from "@/components/StorageImage";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import type { PublicAgencyCard } from "@/lib/agencyApi";
 import { cn } from "@/lib/utils";
@@ -27,10 +28,11 @@ export default function AgencyListCard({ agency, className }: Props) {
       >
         <div className="w-14 h-14 sm:w-[4.5rem] sm:h-[4.5rem] rounded-xl border border-border/60 overflow-hidden bg-muted shrink-0 flex items-center justify-center">
           {agency.logo_url ? (
-            <img
+            <StorageImage
               src={agency.logo_url}
               alt=""
               className="w-full h-full object-cover"
+              fallback={<Building2 className="w-6 h-6 text-muted-foreground" />}
             />
           ) : (
             <Building2 className="w-6 h-6 text-muted-foreground" />

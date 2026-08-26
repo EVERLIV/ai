@@ -3,6 +3,7 @@ import {
   SUPABASE_URL,
   supabaseAdmin,
 } from "@/integrations/supabase/adminClient";
+import { publicStorageUrl, toPublicStorageUrl } from "@/lib/storageUrl";
 import { supabase } from "@/integrations/supabase/client";
 
 const headers = {
@@ -201,7 +202,21 @@ export async function fetchAgencyByIdApi(agencyId: string) {
   const rows = await restGet<Agency[]>(`agencies?id=eq.${agencyId}&select=*`);
   const row = Array.isArray(rows) ? rows[0] : null;
   if (!row) throw new Error("Агентство не найдено");
-  return row;
+  return normalizeAgency(row);
+}
+
+function normalizeAgency(agency: Agency): Agency {
+  return {
+    ...agency,
+    logo_url: publicStorageUrl(agency.logo_url),
+  };
+}
+
+function normalizeManager<T extends { photo_url?: string | null }>(m: T): T {
+  return {
+    ...m,
+    photo_url: publicStorageUrl(m.photo_url),
+  };
 }
 
 export async function fetchMyAgencyApi(userId: string) {
@@ -215,9 +230,13 @@ export async function updateAgencyApi(
   agencyId: string,
   payload: Partial<Agency>,
 ) {
-  const data = await restMutate(`agencies?id=eq.${agencyId}`, "PATCH", payload);
+  const next = { ...payload };
+  if (typeof next.logo_url === "string") {
+    next.logo_url = toPublicStorageUrl(next.logo_url);
+  }
+  const data = await restMutate(`agencies?id=eq.${agencyId}`, "PATCH", next);
   const row = Array.isArray(data) ? data[0] : data;
-  return row as Agency;
+  return normalizeAgency(row as Agency);
 }
 
 export async function requestAgencyVerificationApi(agencyId: string) {
@@ -335,6 +354,7 @@ export async function fetchPublicAgenciesCatalogApi(): Promise<
 
   return list.map((a) => ({
     ...a,
+    logo_url: publicStorageUrl(a.logo_url),
     about: a.about || "",
     working_hours: a.working_hours || "",
     objects_count: propCounts.get(a.id) || 0,
@@ -367,7 +387,7 @@ function normalizeAgencyEmbed(
   return {
     id: a.id,
     name: a.name,
-    logo_url: a.logo_url,
+    logo_url: publicStorageUrl(a.logo_url),
     verification_status: a.verification_status,
   };
 }
@@ -403,7 +423,7 @@ export async function fetchPublicManagersApi(): Promise<PublicManagerCard[]> {
       if (!agency || agency.verification_status !== "verified") return null;
       const { agencies: _a, ...manager } = row;
       return {
-        ...manager,
+        ...normalizeManager(manager),
         property_types: Array.isArray(manager.property_types)
           ? manager.property_types
           : [],
@@ -542,10 +562,12 @@ export async function fetchAgencyManagersApi(
   const rows = await restGet<AgencyManager[]>(
     `agency_managers?agency_id=eq.${agencyId}${filter}&select=*&order=sort_order.asc,created_at.asc`,
   );
-  return rows.map((m) => ({
-    ...m,
-    property_types: Array.isArray(m.property_types) ? m.property_types : [],
-  }));
+  return rows.map((m) =>
+    normalizeManager({
+      ...m,
+      property_types: Array.isArray(m.property_types) ? m.property_types : [],
+    }),
+  );
 }
 
 export async function createAgencyManagerApi(
@@ -685,14 +707,6 @@ export async function fetchMyAgencyPropertiesApi(agencyId: string) {
   }
 }
 
-function toPublicStorageUrl(url: string): string {
-  // /storage/v1/object/bucket/... → /storage/v1/object/public/bucket/...
-  return url.replace(
-    /\/storage\/v1\/object\/(?!public\/)/,
-    "/storage/v1/object/public/",
-  );
-}
-
 export async function uploadAgencyAssetApi(
   agencyId: string,
   file: File,
@@ -709,9 +723,18 @@ export async function uploadAgencyAssetApi(
     throw new Error(
       typeof error === "string" ? error : "Не удалось загрузить файл",
     );
-  return toPublicStorageUrl(
+  const url = toPublicStorageUrl(
     supabaseAdmin.storage.getPublicUrl("agency-assets", path),
   );
+  // Проверяем, что объект реально отдаётся как public (иначе в UI будет 404/CORS)
+  const check = await fetch(url, { method: "GET", cache: "no-store" });
+  if (!check.ok) {
+    throw new Error(
+      `Файл не доступен по публичной ссылке (${check.status}). ` +
+        `Выполните sql/fix_agency_storage_public_urls.sql и supabase/self_hosted_agency_hotfix.sql на сервере, затем загрузите логотип снова.`,
+    );
+  }
+  return url;
 }
 
 /** Ensure agency exists for legacy realtor profiles when migration not yet run on row */

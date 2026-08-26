@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import StorageImage from "@/components/StorageImage";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -392,10 +393,11 @@ export default function ProfileTab() {
               className="relative w-20 h-20 rounded-xl border border-border overflow-hidden bg-muted flex items-center justify-center shrink-0"
             >
               {developer.logo_url ? (
-                <img
+                <StorageImage
                   src={developer.logo_url}
                   alt=""
                   className="w-full h-full object-cover"
+                  fallback={<Camera className="w-5 h-5 text-muted-foreground" />}
                 />
               ) : (
                 <Camera className="w-5 h-5 text-muted-foreground" />
@@ -601,10 +603,11 @@ export default function ProfileTab() {
               className="relative w-20 h-20 rounded-xl border border-border overflow-hidden bg-muted flex items-center justify-center shrink-0"
             >
               {agency.logo_url ? (
-                <img
+                <StorageImage
                   src={agency.logo_url}
                   alt=""
                   className="w-full h-full object-cover"
+                  fallback={<Camera className="w-5 h-5 text-muted-foreground" />}
                 />
               ) : (
                 <Camera className="w-5 h-5 text-muted-foreground" />
