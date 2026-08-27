@@ -154,6 +154,19 @@ function formatPrice(p: MyProperty): string {
   return `${price.toLocaleString("ru-RU")} ₽${p.deal_type === "Аренда" ? "/мес" : ""}`;
 }
 
+function formatCardDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function PropertyCard({
   property: p,
   onEdit,
@@ -229,6 +242,21 @@ function PropertyCard({
               {REQUEST_TYPE_LABELS[requestType]}
             </p>
           )}
+
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">
+            <span>
+              Добавлено:{" "}
+              <span className="text-foreground/80">
+                {formatCardDate(p.created_at)}
+              </span>
+            </span>
+            <span>
+              Обновлено:{" "}
+              <span className="text-foreground/80">
+                {formatCardDate(p.updated_at || p.created_at)}
+              </span>
+            </span>
+          </div>
 
           {status === "rejected" && p.rejection_reason && (
             <p className="text-[10px] text-destructive line-clamp-2 bg-destructive/5 rounded px-2 py-1">

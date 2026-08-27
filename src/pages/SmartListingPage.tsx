@@ -14,6 +14,7 @@ import {
 } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import BrandMark from "@/components/BrandMark";
+import LocationPickerModal from "@/components/LocationPickerModal";
 import SmartListingPreview from "@/components/smart-listing/SmartListingPreview";
 import TypingText from "@/components/smart-listing/TypingText";
 import SeoHead from "@/components/SeoHead";
@@ -36,6 +37,7 @@ import {
 import {
   type AccountRoleKind,
   type ListingFlowOpts,
+  type LocationScope,
   buildWelcomeMessage,
   createAiListingForm,
   enrichSuggestions,
@@ -45,8 +47,10 @@ import {
   tryQuickApplyChip,
   chipsForField,
   nextListingField,
+  promptForField,
   resolveLandlordType,
 } from "@/lib/listingAiFlow";
+import { IRKUTSK_CITY_DISTRICTS } from "@/lib/irkutskLocations";
 import {
   listPropertyAiPath,
   listPropertyPath,
@@ -106,6 +110,9 @@ export default function SmartListingPage({
   const [readyForPhotos, setReadyForPhotos] = useState(false);
   const [readyToCommit, setReadyToCommit] = useState(false);
   const [typingBusy, setTypingBusy] = useState(false);
+  const [photosSkipped, setPhotosSkipped] = useState(false);
+  const [locationScope, setLocationScope] = useState<LocationScope>(null);
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
 
   const aiPath = listPropertyAiPath(form.segment || segment);
 
@@ -139,6 +146,8 @@ export default function SmartListingPage({
       companyName,
       isAgency: accountRole === "agency",
       isDeveloper: accountRole === "developer",
+      locationScope,
+      photosSkipped,
       managers: agencyManagers.map((m) => ({
         id: m.id,
         full_name: m.full_name,
@@ -153,6 +162,8 @@ export default function SmartListingPage({
       accountRole,
       companyName,
       agencyManagers,
+      locationScope,
+      photosSkipped,
     ],
   );
 
@@ -229,11 +240,13 @@ export default function SmartListingPage({
       {
         id: "welcome",
         role: "assistant",
-        content: buildWelcomeMessage(opts),
+        content: `${buildWelcomeMessage(opts)}\n\nАссистент в режиме бета-теста — учится и может ошибаться.`,
         animate: true,
       },
     ]);
     setTypingBusy(true);
+    setPhotosSkipped(false);
+    setLocationScope(null);
   }, [
     authLoading,
     profileLoading,
@@ -263,16 +276,74 @@ export default function SmartListingPage({
     ]);
     setForm(quick.form);
     if (quick.segmentChosen) setSegmentChosen(true);
+    if (quick.locationScope !== undefined) setLocationScope(quick.locationScope);
+    if (quick.photosSkipped) {
+      setPhotosSkipped(true);
+      setReadyForPhotos(false);
+      setReadyToCommit(true);
+    }
     setPhase(quick.phase);
     const nextOpts = {
       ...flowOpts,
       segmentChosen: quick.segmentChosen ?? segmentChosen,
+      photosSkipped: quick.photosSkipped ?? photosSkipped,
+      locationScope:
+        quick.locationScope !== undefined
+          ? quick.locationScope
+          : locationScope,
     };
     setMissingFields(missingKeysFromForm(quick.form, nextOpts));
     setSuggestions(quick.suggestions);
-    if (quick.nextField === "photos") setReadyForPhotos(true);
+    if (quick.nextField === "photos" && !quick.photosSkipped) {
+      setReadyForPhotos(true);
+    }
     if (quick.nextField === "done") setReadyToCommit(true);
+    if (quick.openLocationPicker) {
+      // Открыть каталог после короткой печати сообщения
+      window.setTimeout(() => setLocationPickerOpen(true), 350);
+    }
     return true;
+  };
+
+  const applyLocationFromCatalog = (location: string) => {
+    const loc = location.trim();
+    if (!loc || loc === "Все") {
+      setLocationPickerOpen(false);
+      return;
+    }
+    const isIrkutskDistrict = IRKUTSK_CITY_DISTRICTS.some(
+      (d) => d.toLowerCase() === loc.toLowerCase(),
+    );
+    const addressHint = isIrkutskDistrict ? `г. Иркутск, ${loc}` : loc;
+    const nextForm = {
+      ...form,
+      district: loc,
+      address: form.address.trim() ? form.address : addressHint,
+    };
+    setForm(nextForm);
+    setLocationScope(null);
+    setLocationPickerOpen(false);
+    const nextOpts: ListingFlowOpts = {
+      ...flowOpts,
+      locationScope: null,
+      segmentChosen: true,
+    };
+    const nf = nextListingField(nextForm, nextOpts);
+    setMissingFields(missingKeysFromForm(nextForm, nextOpts));
+    setSuggestions(chipsForField(nf, nextForm, nextOpts));
+    setPhase(nf === "photos" ? "photos" : "clarify");
+    if (nf === "photos") setReadyForPhotos(true);
+    if (nf === "done") setReadyToCommit(true);
+    setTypingBusy(true);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `a-loc-${Date.now()}`,
+        role: "assistant",
+        content: `Записал локацию: ${loc}. ${promptForField(nf, nextForm, nextOpts)}`,
+        animate: true,
+      },
+    ]);
   };
 
   const sendMessage = async (text: string) => {
@@ -552,6 +623,9 @@ export default function SmartListingPage({
       fileRef.current?.click();
       return;
     }
+    if (lower.includes("каталог")) {
+      setLocationPickerOpen(true);
+    }
 
     if (applyQuick(q, q)) return;
     void sendMessage(q);
@@ -564,7 +638,10 @@ export default function SmartListingPage({
         onClick: () => navigate("/account#properties"),
       };
     }
-    if (phase === "photos" || (readyForPhotos && photoFiles.length === 0)) {
+    if (
+      !photosSkipped &&
+      (phase === "photos" || (readyForPhotos && photoFiles.length === 0))
+    ) {
       return {
         label: "Загрузить фото",
         onClick: () => fileRef.current?.click(),
@@ -577,7 +654,12 @@ export default function SmartListingPage({
         disabled: enhancing || committing,
       };
     }
-    if (readyToCommit || phase === "preview" || phase === "commit") {
+    if (
+      readyToCommit ||
+      photosSkipped ||
+      phase === "preview" ||
+      phase === "commit"
+    ) {
       return {
         label: committing ? "Сохраняем…" : "Создать черновик",
         onClick: () => void commitDraft(),
@@ -591,6 +673,7 @@ export default function SmartListingPage({
     readyForPhotos,
     photoFiles.length,
     readyToCommit,
+    photosSkipped,
     enhancing,
     committing,
     navigate,
@@ -649,6 +732,9 @@ export default function SmartListingPage({
               <span className="text-[10px] text-muted-foreground md:hidden">
                 Ассистент
               </span>
+            </span>
+            <span className="shrink-0 text-[10px] sm:text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30">
+              Бета-тест
             </span>
           </Link>
           <Link
@@ -832,6 +918,14 @@ export default function SmartListingPage({
           )}
         </aside>
       </div>
+
+      <LocationPickerModal
+        open={locationPickerOpen}
+        onOpenChange={setLocationPickerOpen}
+        value={form.district}
+        elevated
+        onSelect={applyLocationFromCatalog}
+      />
 
       <input
         ref={fileRef}
