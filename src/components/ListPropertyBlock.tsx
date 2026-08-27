@@ -25,8 +25,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import {
   type ListPropertyMode,
+  listPropertyAiPath,
   listPropertyPath,
   loginToAddPropertyPath,
+  loginToSmartListingPath,
   placementCtaPath,
 } from "@/lib/listPropertyLinks";
 
@@ -38,8 +40,8 @@ interface Props {
 const freeStepsCommercial = [
   { title: "Зарегистрируйтесь", body: "Имя, телефон и email — меньше минуты." },
   {
-    title: "Заполните карточку объекта",
-    body: "Адрес, площадь, ставка, фото и описание в кабинете.",
+    title: "Расскажите об объекте ИИ или заполните сами",
+    body: "Диалог заполнит карточку за вас — или откройте форму в кабинете.",
   },
   {
     title: "Дождитесь проверки",
@@ -50,8 +52,8 @@ const freeStepsCommercial = [
 const freeStepsResidential = [
   { title: "Зарегистрируйтесь", body: "Имя, телефон и email — меньше минуты." },
   {
-    title: "Добавьте квартиру, дом или комнату",
-    body: "Адрес, площадь, цена, фото и описание в кабинете.",
+    title: "Расскажите о жилье ИИ или заполните сами",
+    body: "Умный чат соберёт черновик — или заполните карточку вручную.",
   },
   {
     title: "Дождитесь проверки",
@@ -364,6 +366,9 @@ function FreeListingContent({
 }) {
   const ctaTo = placementCtaPath(segment, "rent", user);
   const loginTo = loginToAddPropertyPath(segment, "free_listing");
+  const aiTo = user
+    ? listPropertyAiPath(segment)
+    : loginToSmartListingPath(segment);
 
   return (
     <section className="py-12 lg:py-16 bg-background" id="list-property">
@@ -394,20 +399,32 @@ function FreeListingContent({
               ))}
             </ul>
 
-            <PrimaryCta
-              to={ctaTo}
-              loggedIn={user}
-              mode="rent"
-              className="w-full sm:w-auto"
-            />
-            {!user && (
-              <p className="text-xs text-muted-foreground">
-                Уже есть аккаунт?{" "}
-                <Link to={loginTo} className="text-foreground hover:underline">
-                  Войти
-                </Link>
-              </p>
-            )}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link
+                to={aiTo}
+                className="inline-flex items-center justify-center h-11 px-5 rounded-full bg-[#ff5c85] hover:bg-[#ff4574] text-white text-sm font-semibold transition-colors"
+              >
+                Создать с ИИ
+              </Link>
+              <PrimaryCta
+                to={ctaTo}
+                loggedIn={user}
+                mode="rent"
+                className="w-full sm:w-auto"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Или заполните карточку вручную в кабинете.
+              {!user && (
+                <>
+                  {" "}
+                  Уже есть аккаунт?{" "}
+                  <Link to={loginTo} className="text-foreground hover:underline">
+                    Войти
+                  </Link>
+                </>
+              )}
+            </p>
           </div>
 
           <div className="bg-card border border-border p-6 sm:p-7">

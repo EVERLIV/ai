@@ -1,69 +1,90 @@
 #!/usr/bin/env bash
 #
-# Прописывает ANTHROPIC_API_KEY в окружение self-hosted Supabase на VPS
-# и перезапускает контейнер edge-функций.
+# Пишет ANTHROPIC_API_KEY в volumes/functions/.env и перезапускает functions.
+# Запуск на VPS:
+#   bash /tmp/set-anthropic-key.sh
+#   # или: bash /tmp/set-anthropic-key.sh 'sk-ant-api03-...'
 #
-# Запускать НА СЕРВЕРЕ (ssh на VPS), а не на локальной машине:
-#   bash set-anthropic-key.sh sk-ant-api03-...
-#
-# Ключ можно не передавать аргументом — скрипт спросит его без эха,
-# чтобы он не попал в историю команд (~/.bash_history).
-
 set -euo pipefail
 
-ENV_FILE="${SUPABASE_ENV_FILE:-/opt/supabase/.env}"
 KEY_NAME="ANTHROPIC_API_KEY"
+SUPABASE_DIR="${SUPABASE_DIR:-/opt/supabase}"
+PRIMARY_ENV="${SUPABASE_ENV_FILE:-$SUPABASE_DIR/volumes/functions/.env}"
 
 key="${1:-}"
 if [ -z "$key" ]; then
-  read -rsp "Вставьте ANTHROPIC_API_KEY (ввод скрыт): " key
+  echo "Вставьте ТОЛЬКО ключ sk-ant-... и нажмите Enter (ввод скрыт)."
+  echo "Не вставляйте сюда другие команды."
+  read -rsp "ANTHROPIC_API_KEY: " key
   echo
 fi
 
+# trim whitespace / CR
+key="$(printf '%s' "$key" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
 if [ -z "$key" ]; then
-  echo "Ошибка: ключ не указан." >&2
+  echo "Ошибка: пустой ключ." >&2
+  exit 1
+fi
+
+if [[ "$key" == *" "* ]] || [[ "$key" == cd\ * ]] || [[ "$key" == docker* ]]; then
+  echo "Ошибка: похоже, в поле ключа попала команда shell, а не API key." >&2
+  echo "len=${#key}" >&2
   exit 1
 fi
 
 case "$key" in
   sk-ant-*) ;;
-  *) echo "Ошибка: ключ должен начинаться с 'sk-ant-'." >&2; exit 1 ;;
+  *)
+    echo "Ошибка: ключ должен начинаться с sk-ant- (сейчас len=${#key})." >&2
+    exit 1
+    ;;
 esac
 
-if [ ! -f "$ENV_FILE" ]; then
-  echo "Ошибка: не найден $ENV_FILE" >&2
-  echo "Укажите путь: SUPABASE_ENV_FILE=/путь/к/.env bash $0" >&2
+if [ "${#key}" -lt 40 ]; then
+  echo "Ошибка: ключ слишком короткий (len=${#key}, нужно обычно 100+)." >&2
+  echo "Скопируйте полный ключ из console.anthropic.com" >&2
   exit 1
 fi
 
-# Резервная копия перед изменением.
-backup="${ENV_FILE}.bak.$(date +%Y%m%d%H%M%S)"
-cp "$ENV_FILE" "$backup"
-echo "Резервная копия: $backup"
-
-# Обновляем существующую строку или добавляем новую.
-if grep -q "^${KEY_NAME}=" "$ENV_FILE"; then
-  tmp="$(mktemp)"
-  grep -v "^${KEY_NAME}=" "$ENV_FILE" > "$tmp"
-  printf '%s=%s\n' "$KEY_NAME" "$key" >> "$tmp"
-  mv "$tmp" "$ENV_FILE"
-  echo "Обновлён существующий $KEY_NAME."
-else
-  printf '%s=%s\n' "$KEY_NAME" "$key" >> "$ENV_FILE"
-  echo "Добавлен $KEY_NAME."
+mkdir -p "$(dirname "$PRIMARY_ENV")"
+if [ -f "$PRIMARY_ENV" ]; then
+  backup="${PRIMARY_ENV}.bak.$(date +%Y%m%d%H%M%S)"
+  cp "$PRIMARY_ENV" "$backup"
+  echo "Backup: $backup"
 fi
 
-chmod 600 "$ENV_FILE"
+tmp="$(mktemp)"
+if [ -f "$PRIMARY_ENV" ]; then
+  grep -v "^${KEY_NAME}=" "$PRIMARY_ENV" > "$tmp" || true
+else
+  : > "$tmp"
+fi
+printf '%s=%s\n' "$KEY_NAME" "$key" >> "$tmp"
+mv "$tmp" "$PRIMARY_ENV"
+chmod 600 "$PRIMARY_ENV"
 
-echo "Проверка (значение скрыто):"
-grep "^${KEY_NAME}=" "$ENV_FILE" | sed 's/=.*/=***/'
+# verify file (no secret printed)
+python3 - <<PY
+from pathlib import Path
+p = Path("$PRIMARY_ENV")
+vals = []
+for line in p.read_text().splitlines():
+    if line.startswith("$KEY_NAME="):
+        vals.append(line.split("=", 1)[1])
+assert len(vals) == 1, vals
+v = vals[0]
+assert v.startswith("sk-ant-"), "prefix"
+assert len(v) >= 40, len(v)
+print(f"FILE_OK len={len(v)} path={p}")
+PY
 
-echo
-echo "Перезапустите контейнер функций, чтобы переменная подхватилась:"
-echo "  cd \"$(dirname "$ENV_FILE")\" && docker compose up -d functions"
-echo
-echo "Затем проверьте, что чат отвечает:"
-echo "  curl -s -X POST https://api.arendacity.com/functions/v1/ai-chat \\"
-echo "    -H 'Content-Type: application/json' \\"
-echo "    -H \"Authorization: Bearer \$SUPABASE_ANON_KEY\" \\"
-echo "    -d '{\"messages\":[{\"role\":\"user\",\"content\":\"привет\"}]}' | head -c 300"
+echo "Restarting functions..."
+cd "$SUPABASE_DIR"
+docker compose up -d functions --force-recreate
+sleep 3
+
+docker exec supabase-edge-functions sh -c \
+  'k="$ANTHROPIC_API_KEY"; if echo "$k" | grep -q "^sk-ant-" && [ "${#k}" -ge 40 ]; then echo EDGE=ok len=${#k}; else echo EDGE=bad len=${#k}; exit 1; fi'
+
+echo "Готово."

@@ -231,6 +231,8 @@ export function buildPropertyPayload(
     isLand: boolean;
     isEdit?: boolean;
     resubmit?: boolean;
+    /** Черновик без отправки на модерацию */
+    asDraft?: boolean;
   },
 ) {
   const isSale = options.isSale || isSaleDeal(form.deal_type);
@@ -430,7 +432,9 @@ export function buildPropertyPayload(
 
   return {
     ...base,
-    moderation_status: "on_moderation" as const,
+    moderation_status: (options.asDraft ? "draft" : "on_moderation") as
+      | "draft"
+      | "on_moderation",
     is_active: false,
     submitted_by: userId,
   };

@@ -22,6 +22,7 @@ import {
   Search,
   Settings2,
   Shield,
+  Sparkles,
   Star,
   Trash2,
   Upload,
@@ -30,7 +31,7 @@ import {
   X,
 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import AdPlacementsManager from "@/components/admin/AdPlacementsManager";
 import AdPlacementsTab from "@/components/admin/AdPlacementsTab";
@@ -1300,6 +1301,12 @@ export default function Dashboard() {
           <TabsContent value="properties" className="space-y-4">
             <div className="flex flex-wrap justify-between items-center gap-2">
               <h2 className="text-lg font-semibold">Объекты недвижимости</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button asChild variant="outline">
+                  <Link to="/list-property/ai">
+                    <Sparkles className="w-4 h-4 mr-1" /> Размещение с ИИ
+                  </Link>
+                </Button>
               <Sheet
                 open={dialogOpen}
                 onOpenChange={(open) => {
@@ -2772,6 +2779,7 @@ export default function Dashboard() {
                   </form>
                 </SheetContent>
               </Sheet>
+              </div>
             </div>
 
             <Card>

@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.track-property-view]
 verify_jwt = false
+
+[functions.ai-listing-create]
+verify_jwt = false

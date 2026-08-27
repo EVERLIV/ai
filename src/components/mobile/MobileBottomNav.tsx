@@ -44,14 +44,21 @@ const tabs = [
   },
 ] as const;
 
+/** Страницы без нижней мобильной навигации (и без pb-mobile-nav). */
+export function shouldHideMobileBottomNav(pathname: string): boolean {
+  return (
+    pathname.startsWith("/property/") ||
+    pathname.includes("/list-property/ai")
+  );
+}
+
 export default function MobileBottomNav() {
   const { pathname, hash } = useLocation();
   const { user } = useAuth();
   const placeHref = placementCtaPath("commercial", "rent", !!user);
   const profileHref = user ? "/account#profile" : "/auth";
 
-  // На карточке объекта — своя нижняя панель (звонок / поделиться / печать)
-  if (pathname.startsWith("/property/")) return null;
+  if (shouldHideMobileBottomNav(pathname)) return null;
 
   return (
     <nav

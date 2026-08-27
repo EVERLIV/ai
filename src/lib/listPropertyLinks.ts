@@ -12,6 +12,15 @@ export function listPropertyPath(
   return mode ? `${base}?mode=${mode}` : base;
 }
 
+/** Полноэкранный ИИ-чат создания объявления */
+export function listPropertyAiPath(segment: PropertySegment): string {
+  return `${SEGMENT_ROUTES[segment].listProperty}/ai`;
+}
+
+export function loginToSmartListingPath(segment: PropertySegment): string {
+  return `/auth?redirect=${encodeURIComponent(listPropertyAiPath(segment))}`;
+}
+
 export function modeToRequestType(mode: ListPropertyMode): RequestType {
   return mode === "rent" ? "free_listing" : "management";
 }

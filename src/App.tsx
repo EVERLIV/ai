@@ -1,12 +1,13 @@
 import { ConversationProvider } from "@elevenlabs/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MotionConfig } from "framer-motion";
-import { lazy, Suspense } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { lazy, Suspense, type ReactNode } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 
 // Ленивая загрузка — не попадает в основной бандл
 const TasksPage = lazy(() => import("./pages/TasksPage"));
@@ -19,7 +20,9 @@ import CookieBanner from "@/components/CookieBanner";
 import InstallPrompt from "@/components/InstallPrompt";
 import ScrollToTop from "@/components/ScrollToTop";
 import AnalyticsBeacon from "@/components/AnalyticsBeacon";
-import MobileBottomNav from "@/components/mobile/MobileBottomNav";
+import MobileBottomNav, {
+  shouldHideMobileBottomNav,
+} from "@/components/mobile/MobileBottomNav";
 import AboutPage from "./pages/AboutPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
 import AdsCatalog from "./pages/AdsCatalog.tsx";
@@ -34,6 +37,7 @@ import Index from "./pages/Index.tsx";
 import LandPage from "./pages/LandPage.tsx";
 import LegalDocPage from "./pages/LegalDocPage.tsx";
 import ListProperty from "./pages/ListProperty.tsx";
+import SmartListingPage from "./pages/SmartListingPage.tsx";
 import NewsPage from "./pages/NewsPage.tsx";
 import NewsPostPage from "./pages/NewsPostPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -62,6 +66,18 @@ import WarehousesPage from "./pages/WarehousesPage.tsx";
 
 const queryClient = new QueryClient();
 
+/** Оболочка: скрывает нижнюю навигацию на fullscreen-страницах (ИИ-размещение, объект). */
+function MobileAppShell({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  const hideNav = shouldHideMobileBottomNav(pathname);
+  return (
+    <>
+      <div className={cn(!hideNav && "pb-mobile-nav")}>{children}</div>
+      <MobileBottomNav />
+    </>
+  );
+}
+
 const App = () => {
   return (
     <ConversationProvider>
@@ -76,7 +92,7 @@ const App = () => {
                 <AnalyticsBeacon />
                 <InstallPrompt />
                 <CookieBanner />
-                <div className="pb-mobile-nav">
+                <MobileAppShell>
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route
@@ -94,6 +110,10 @@ const App = () => {
                     <Route path="/land" element={<LandPage />} />
                     <Route path="/ads" element={<AdsCatalog />} />
                     <Route path="/list-property" element={<ListProperty />} />
+                    <Route
+                      path="/list-property/ai"
+                      element={<SmartListingPage segment="commercial" />}
+                    />
                     <Route path="/news" element={<NewsPage />} />
                     <Route path="/news/:slug" element={<NewsPostPage />} />
                     <Route path="/about" element={<AboutPage />} />
@@ -156,11 +176,19 @@ const App = () => {
                       path="/zhilaya/list-property"
                       element={<ListProperty segment="residential" />}
                     />
+                    <Route
+                      path="/zhilaya/list-property/ai"
+                      element={<SmartListingPage segment="residential" />}
+                    />
                     <Route path="/zemlya" element={<LandHomePage />} />
                     <Route path="/zemlya/catalog" element={<LandCatalog />} />
                     <Route
                       path="/zemlya/list-property"
                       element={<ListProperty segment="land" />}
+                    />
+                    <Route
+                      path="/zemlya/list-property/ai"
+                      element={<SmartListingPage segment="land" />}
                     />
                     {/* Таск-менеджер — lazy, не влияет на основной бандл */}
                     <Route
@@ -235,8 +263,7 @@ const App = () => {
                     />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                </div>
-                <MobileBottomNav />
+                </MobileAppShell>
               </BrowserRouter>
             </MotionConfig>
           </TooltipProvider>

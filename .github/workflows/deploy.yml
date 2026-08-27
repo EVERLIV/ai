@@ -51,11 +51,14 @@ jobs:
         with:
           version: latest
 
-      - name: supabase functions deploy ai-chat notify-lead telegram-bot notify-property-email send-agency-invite
+      - name: supabase functions deploy ai-chat ai-listing-create notify-lead telegram-bot notify-property-email send-agency-invite
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           supabase functions deploy ai-chat \
+            --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}" \
+            --no-verify-jwt
+          supabase functions deploy ai-listing-create \
             --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}" \
             --no-verify-jwt
           supabase functions deploy notify-lead \

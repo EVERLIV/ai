@@ -11,6 +11,7 @@ import {
   Pencil,
   Plus,
   Search,
+  Sparkles,
   Trash2,
   X,
   XCircle,
@@ -47,6 +48,7 @@ import {
   developerAddListingCtaLabel,
 } from "@/lib/developerListingRules";
 import { normalizeDeveloperSubtype } from "@/lib/developerTypes";
+import { listPropertyAiPath } from "@/lib/listPropertyLinks";
 import { formatPropertyAddressShort } from "@/lib/propertyCard";
 import {
   canCancelProperty,
@@ -522,6 +524,7 @@ export default function MyPropertiesTab({
   const developerSubtype = developer
     ? normalizeDeveloperSubtype(developer.subtype)
     : null;
+  const listingSegment: PropertySegment = defaultSegment;
   const addLabel = developerSubtype
     ? `Добавить ${developerAddListingCtaLabel(developerSubtype).toLowerCase()}`
     : "Добавить объект за 0 ₽";
@@ -544,11 +547,20 @@ export default function MyPropertiesTab({
             </p>
           )}
         </div>
-        <Button onClick={openNew} size="sm" className="shrink-0">
-          <Plus className="w-4 h-4 mr-1" />
-          <span className="sm:hidden">{addLabelShort}</span>
-          <span className="hidden sm:inline">{addLabel}</span>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <Button asChild size="sm" variant="outline" className="shrink-0">
+            <Link to={listPropertyAiPath(listingSegment)}>
+              <Sparkles className="w-4 h-4 mr-1" />
+              <span className="sm:hidden">С ИИ</span>
+              <span className="hidden sm:inline">Размещение с ИИ</span>
+            </Link>
+          </Button>
+          <Button onClick={openNew} size="sm" className="shrink-0">
+            <Plus className="w-4 h-4 mr-1" />
+            <span className="sm:hidden">{addLabelShort}</span>
+            <span className="hidden sm:inline">{addLabel}</span>
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -576,13 +588,21 @@ export default function MyPropertiesTab({
                 ? "Добавьте квартиру в ваш ЖК — после проверки она появится в каталоге"
                 : "Добавьте объект бесплатно — мы проверим и опубликуем его в каталоге"}
           </p>
-          <Button
-            onClick={openNew}
-            variant="outline"
-            className="rounded-md border-foreground/20 hover:bg-foreground hover:text-background"
-          >
-            <Plus className="w-4 h-4 mr-1.5" strokeWidth={1.75} /> {addLabel}
-          </Button>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button asChild variant="outline" className="rounded-md">
+              <Link to={listPropertyAiPath(listingSegment)}>
+                <Sparkles className="w-4 h-4 mr-1.5" strokeWidth={1.75} />
+                Размещение с ИИ
+              </Link>
+            </Button>
+            <Button
+              onClick={openNew}
+              variant="outline"
+              className="rounded-md border-foreground/20 hover:bg-foreground hover:text-background"
+            >
+              <Plus className="w-4 h-4 mr-1.5" strokeWidth={1.75} /> {addLabel}
+            </Button>
+          </div>
         </div>
       ) : (
         <>
