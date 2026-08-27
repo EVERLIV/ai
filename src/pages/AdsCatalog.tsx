@@ -10,9 +10,11 @@ import {
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PropertyImage from "@/components/PropertyImage";
+import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import { Skeleton } from "@/components/ui/skeleton";
+import { absoluteUrl } from "@/config/site";
 import { useAdPlacementsWithProperty } from "@/hooks/useAdPlacements";
 import {
   AD_TYPE_MAP,
@@ -273,6 +275,11 @@ export default function AdsCatalog() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SeoHead
+        title="Каталог рекламных размещений"
+        description="Билборды, фасадные баннеры и брендирование на коммерческой недвижимости в Иркутске и области."
+        url={absoluteUrl("/ads")}
+      />
       <SiteHeader />
 
       <main className="flex-1 pt-16">

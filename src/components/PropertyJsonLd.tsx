@@ -17,6 +17,7 @@ type Props = {
   description?: string | null;
   coverPhoto?: string | null;
   photos?: string[];
+  segment?: "commercial" | "residential" | "land";
 };
 
 export default function PropertyJsonLd({
@@ -31,6 +32,7 @@ export default function PropertyJsonLd({
   description,
   coverPhoto,
   photos,
+  segment = "commercial",
 }: Props) {
   useEffect(() => {
     const p = {
@@ -49,41 +51,81 @@ export default function PropertyJsonLd({
     const priceNum = Number(price) || 0;
     const url = `${SITE_URL}/property/${id}`;
     const primaryType = type || "Офис";
+    const catalogPath =
+      segment === "land"
+        ? "/zemlya/catalog"
+        : segment === "residential"
+          ? "/zhilaya/catalog"
+          : "/catalog";
+    const catalogUrl = absoluteUrl(catalogPath);
+    const catalogName =
+      segment === "land"
+        ? "Каталог земли"
+        : segment === "residential"
+          ? "Каталог жилья"
+          : "Каталог";
 
     const data = {
       "@context": "https://schema.org",
-      "@type": "RealEstateListing",
-      name: title,
-      description: desc,
-      url,
-      ...(image ? { image: absoluteUrl(image) } : {}),
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: address || "",
-        addressLocality: district || "Иркутск",
-        addressRegion: "Иркутская область",
-        addressCountry: "RU",
-      },
-      ...(Number(area) > 0
-        ? {
-            floorSize: {
-              "@type": "QuantitativeValue",
-              value: area,
-              unitCode: "MTK",
+      "@graph": [
+        {
+          "@type": "RealEstateListing",
+          name: title,
+          description: desc,
+          url,
+          ...(image ? { image: absoluteUrl(image) } : {}),
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: address || "",
+            addressLocality: district || "Иркутск",
+            addressRegion: "Иркутская область",
+            addressCountry: "RU",
+          },
+          ...(Number(area) > 0
+            ? {
+                floorSize: {
+                  "@type": "QuantitativeValue",
+                  value: area,
+                  unitCode: "MTK",
+                },
+              }
+            : {}),
+          ...(priceNum > 0
+            ? {
+                offers: {
+                  "@type": "Offer",
+                  price: priceNum,
+                  priceCurrency: "RUB",
+                  availability: "https://schema.org/InStock",
+                },
+              }
+            : {}),
+          category: primaryType,
+        },
+        {
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            {
+              "@type": "ListItem",
+              position: 1,
+              name: "Главная",
+              item: SITE_URL,
             },
-          }
-        : {}),
-      ...(priceNum > 0
-        ? {
-            offers: {
-              "@type": "Offer",
-              price: priceNum,
-              priceCurrency: "RUB",
-              availability: "https://schema.org/InStock",
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: catalogName,
+              item: catalogUrl,
             },
-          }
-        : {}),
-      category: primaryType,
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: title,
+              item: url,
+            },
+          ],
+        },
+      ],
     };
 
     const script = document.createElement("script");
@@ -107,6 +149,7 @@ export default function PropertyJsonLd({
     description,
     coverPhoto,
     photos,
+    segment,
   ]);
 
   return null;

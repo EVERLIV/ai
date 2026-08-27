@@ -29,12 +29,13 @@ import PropertyGridCard, {
   PropertyGridCardSkeleton,
 } from "@/components/PropertyGridCard";
 import SeoHead from "@/components/SeoHead";
+import { absoluteUrl } from "@/config/site";
+import { catalogHasFilterQuery } from "@/lib/seo/catalogIndexability";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { PropertySegment } from "@/config/propertySegments";
 import { LAND_DEAL_TYPES } from "@/config/propertySegments";
-import { absoluteUrl } from "@/config/site";
 import { useVerifiedAgencies } from "@/hooks/useAgency";
 import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 import { useProperties } from "@/hooks/useProperties";
@@ -1051,6 +1052,13 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
     return items;
   }, [filtered, catalogPromos]);
 
+  const catalogPath = isLand
+    ? "/zemlya/catalog"
+    : isResidential
+      ? "/zhilaya/catalog"
+      : "/catalog";
+  const catalogFiltered = catalogHasFilterQuery(searchParams);
+
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
       <SeoHead
@@ -1068,13 +1076,8 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
               ? "Квартиры, дома и комнаты в Иркутске и области. Фильтры по комнатам, цене, площади и району."
               : "Офисы, торговые площади, склады и производство в Иркутске и области. Фильтры по цене, площади и району."
         }
-        url={absoluteUrl(
-          isLand
-            ? "/zemlya/catalog"
-            : isResidential
-              ? "/zhilaya/catalog"
-              : "/catalog",
-        )}
+        url={absoluteUrl(catalogPath)}
+        noindex={catalogFiltered}
       />
       <SiteHeader contextSegment={segment} />
 
@@ -1718,6 +1721,51 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
 
         {viewMode !== "map" && <CtaBanner segment={segment} />}
       </div>
+
+      <nav
+        aria-label="Разделы каталога"
+        className="container mx-auto px-4 lg:px-8 py-8 border-t border-border/40"
+      >
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+          Смотрите также
+        </p>
+        <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+          {(isResidential
+            ? [
+                { to: "/zhilaya/kvartiry", label: "Квартиры" },
+                { to: "/zhilaya/doma", label: "Дома" },
+                { to: "/zhilaya/komnaty", label: "Комнаты" },
+                { to: "/zhilaya/uchastki", label: "Участки" },
+                { to: "/catalog", label: "Коммерция" },
+                { to: "/rieltory", label: "Риелторы" },
+              ]
+            : isLand
+              ? [
+                  { to: "/zemlya", label: "Земля" },
+                  { to: "/zhilaya/uchastki", label: "Участки (жильё)" },
+                  { to: "/catalog", label: "Коммерция" },
+                  { to: "/zhilaya/catalog", label: "Жильё" },
+                ]
+              : [
+                  { to: "/offices", label: "Офисы" },
+                  { to: "/retail", label: "Торговля" },
+                  { to: "/warehouses", label: "Склады" },
+                  { to: "/zemlya/catalog", label: "Земля" },
+                  { to: "/zhilaya/catalog", label: "Жильё" },
+                  { to: "/rieltory", label: "Риелторы" },
+                ]
+          ).map((item) => (
+            <li key={item.to}>
+              <Link
+                to={item.to}
+                className="text-primary hover:underline underline-offset-2"
+              >
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
       <LocationPickerModal
         open={locationPickerOpen}

@@ -22,7 +22,9 @@ import {
   IRKUTSK_CITY_DISTRICTS,
   IRKUTSK_OBLAST_CITIES,
 } from "@/lib/irkutskLocations";
+import { catalogHasFilterQuery } from "@/lib/seo/catalogIndexability";
 import { cn } from "@/lib/utils";
+import { absoluteUrl } from "@/config/site";
 
 type Tab = "rieltory" | "agentstva";
 type Sort = "default" | "objects" | "name";
@@ -173,6 +175,8 @@ export default function SpecialistsCatalog() {
       <SeoHead
         title="Риелторы и агентства недвижимости — АрендаСити"
         description="Каталог проверенных риелторов и агентств в Иркутске. Подберём специалиста под ваш запрос."
+        url={absoluteUrl("/rieltory")}
+        noindex={catalogHasFilterQuery(params)}
       />
       <SiteHeader />
 

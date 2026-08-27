@@ -54,10 +54,22 @@ export default function Index() {
               <Building2 className="w-4 h-4 text-primary" /> Коммерция
             </Link>
             <Link
+              to="/zemlya"
+              className="inline-flex items-center gap-1.5 h-7 px-[11px] rounded border border-border bg-card text-sm font-medium text-foreground hover:border-primary/40 transition-colors"
+            >
+              <TreePine className="w-4 h-4 text-primary" /> Земля
+            </Link>
+            <Link
               to="/zhilaya/uchastki"
               className="inline-flex items-center gap-1.5 h-7 px-[11px] rounded border border-border bg-card text-sm font-medium text-foreground hover:border-primary/40 transition-colors"
             >
-              <TreePine className="w-4 h-4 text-primary" /> Участки
+              Участки
+            </Link>
+            <Link
+              to="/rieltory"
+              className="inline-flex items-center gap-1.5 h-7 px-[11px] text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Риелторы →
             </Link>
             <Link
               to="/zhilaya/catalog"

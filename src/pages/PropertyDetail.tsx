@@ -74,6 +74,12 @@ import {
   formatListingViews,
   formatPropertyAddressShort,
 } from "@/lib/propertyCard";
+import { buildPropertySeoIntro } from "@/lib/seo/propertySeoIntro";
+import {
+  buildPropertySeoDescription,
+  buildPropertySeoTitle,
+} from "@/lib/seo/propertySeoTitle";
+import { buildPropertySharePayload } from "@/lib/propertyShare";
 import {
   planTabLabel,
   readPropertyMediaExtras,
@@ -101,10 +107,6 @@ import { isHouseLike } from "@/lib/propertyTypeFamilies";
 import { getWoodenHouseConfig } from "@/lib/woodenHouses";
 import { resolveSidebarDisplay } from "@/lib/propertySidebar";
 import { buildYandexMapsUrl } from "@/lib/yandexMapsLink";
-import {
-  buildPropertyShareOgDescription,
-  buildPropertySharePayload,
-} from "@/lib/propertyShare";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import {
   formatPropertyTypesLabel,
@@ -412,10 +414,11 @@ export default function PropertyDetail() {
         ...rentTerms.map((t) => ({ label: t.label, value: t.value })),
       ];
 
-  const seoTitle = buildPropertyDisplayTitle(property);
-  const seoDescription = buildPropertyShareOgDescription(property);
+  const seoTitle = buildPropertySeoTitle(property);
+  const seoDescription = buildPropertySeoDescription(property);
+  const seoIntro = buildPropertySeoIntro(property);
   const sharePayload = buildPropertySharePayload(property);
-  const displayTitle = seoTitle;
+  const displayTitle = buildPropertyDisplayTitle(property);
   const addressShort = formatPropertyAddressShort(property.address);
   const listingActivity = formatListingActivityDates(property);
   const yandexMapsUrl = buildYandexMapsUrl({
@@ -451,6 +454,9 @@ export default function PropertyDetail() {
         description={property.description}
         coverPhoto={property.cover_photo}
         photos={photos}
+        segment={
+          isLand ? "land" : isResidential ? "residential" : "commercial"
+        }
       />
 
       {/* ── Попап формы заявки ── */}
@@ -928,6 +934,9 @@ export default function PropertyDetail() {
               <h2 className="font-display text-xl font-semibold text-foreground mb-4">
                 Описание
               </h2>
+              <p className="text-sm text-foreground/90 leading-relaxed mb-4">
+                {seoIntro}
+              </p>
               <PropertyDescription text={property.description} />
             </section>
 

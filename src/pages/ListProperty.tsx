@@ -2,10 +2,12 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import ListPropertyBlock from "@/components/ListPropertyBlock";
+import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import type { PropertySegment } from "@/config/propertySegments";
 import { SEGMENT_ROUTES } from "@/config/propertySegments";
+import { absoluteUrl } from "@/config/site";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { listPropertyPath } from "@/lib/listPropertyLinks";
@@ -56,6 +58,17 @@ export default function ListProperty({
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SeoHead
+        title={placeLabel}
+        description={
+          isLand
+            ? "Разместите участок на АрендаСити бесплатно. Иркутск и область."
+            : isResidential
+              ? "Сдайте или продайте жильё на АрендаСити бесплатно. Иркутск и область."
+              : "Разместите коммерческий объект на АрендаСити бесплатно. Иркутск и область."
+        }
+        url={absoluteUrl(basePath)}
+      />
       <SiteHeader contextSegment={segment} />
 
       <div className="mt-[56px] lg:mt-[104px] border-b border-border/40">

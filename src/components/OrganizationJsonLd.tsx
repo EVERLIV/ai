@@ -6,24 +6,45 @@ export default function OrganizationJsonLd() {
   useEffect(() => {
     const data = {
       "@context": "https://schema.org",
-      "@type": "RealEstateAgent",
-      name: COMPANY.brand,
-      legalName: COMPANY.legalName,
-      url: SITE_URL,
-      logo: SITE.ogImage,
-      telephone: CONTACTS.phoneTel,
-      email: CONTACTS.email,
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: COMPANY.officeAddress,
-        addressLocality: COMPANY.city,
-        addressRegion: "Иркутская область",
-        addressCountry: "RU",
-      },
-      areaServed: {
-        "@type": "AdministrativeArea",
-        name: "Иркутская область",
-      },
+      "@graph": [
+        {
+          "@type": "RealEstateAgent",
+          "@id": `${SITE_URL}/#organization`,
+          name: COMPANY.brand,
+          legalName: COMPANY.legalName,
+          url: SITE_URL,
+          logo: SITE.ogImage,
+          telephone: CONTACTS.phoneTel,
+          email: CONTACTS.email,
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: COMPANY.officeAddress,
+            addressLocality: COMPANY.city,
+            addressRegion: "Иркутская область",
+            addressCountry: "RU",
+          },
+          areaServed: {
+            "@type": "AdministrativeArea",
+            name: "Иркутская область",
+          },
+        },
+        {
+          "@type": "WebSite",
+          "@id": `${SITE_URL}/#website`,
+          name: SITE.name,
+          url: SITE_URL,
+          publisher: { "@id": `${SITE_URL}/#organization` },
+          inLanguage: "ru-RU",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: {
+              "@type": "EntryPoint",
+              urlTemplate: `${SITE_URL}/catalog?q={search_term_string}`,
+            },
+            "query-input": "required name=search_term_string",
+          },
+        },
+      ],
     };
 
     const script = document.createElement("script");

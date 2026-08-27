@@ -1,17 +1,52 @@
 /**
- * Prebuild: sitemap.xml, feed.xml, robots.txt from Supabase catalog.
- * Env: VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY
+ * Prebuild: sitemap.xml, feed.xml, robots.txt, rich /og/property HTML from Supabase.
+ * Env: VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY (или .env в корне)
  */
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SITE_URL = "https://arendacity.com";
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const publicDir = join(__dirname, "..", "public");
+const rootDir = join(__dirname, "..");
+const publicDir = join(rootDir, "public");
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL?.replace(/\/$/, "");
-const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+function loadEnvFile() {
+  try {
+    const raw = readFileSync(join(rootDir, ".env"), "utf8");
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eq = trimmed.indexOf("=");
+      if (eq <= 0) continue;
+      const key = trimmed.slice(0, eq).trim();
+      let val = trimmed.slice(eq + 1).trim();
+      if (
+        (val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))
+      ) {
+        val = val.slice(1, -1);
+      }
+      if (process.env[key] == null || process.env[key] === "") {
+        process.env[key] = val;
+      }
+    }
+  } catch {
+    // .env optional
+  }
+}
+
+loadEnvFile();
+
+const SUPABASE_URL = (
+  process.env.VITE_SUPABASE_URL ||
+  process.env.SUPABASE_URL ||
+  ""
+).replace(/\/$/, "");
+const SUPABASE_KEY =
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.SUPABASE_PUBLISHABLE_KEY;
 
 const TYPE_SEO = {
   Офис: "офис",
@@ -41,11 +76,20 @@ const STATIC_PATHS = [
   "/retail",
   "/warehouses",
   "/land",
+  "/zemlya",
+  "/zemlya/catalog",
   "/about",
   "/contacts",
   "/vacancies",
   "/news",
   "/list-property",
+  "/ads",
+  "/rieltory",
+  "/zastroyshchiki",
+  "/docs",
+  "/help",
+  "/privacy",
+  "/terms",
   "/zhilaya",
   "/zhilaya/catalog",
   "/zhilaya/kvartiry",
@@ -375,14 +419,103 @@ function writePropertyOgPages(properties) {
     const title = buildPropertySeoTitle(p);
     const description = buildPropertySeoDescription(p);
     const url = absoluteUrl(`/property/${p.id}`);
+    const catalogUrl = absoluteUrl("/catalog");
     const image =
       p.cover_photo &&
       (p.cover_photo.startsWith("http://") ||
         p.cover_photo.startsWith("https://"))
         ? p.cover_photo
         : absoluteUrl("/og-default.jpg");
-    const cta = `Больше объектов на АрендаСити → ${absoluteUrl("/catalog")}`;
-    const ogDescription = `${description}\n\n${cta}`.slice(0, 300);
+    const typeLabel = typeSeoLabel(getPrimaryPropertyType(p));
+    const area = Number(p.area) > 0 ? `${p.area} м²` : "";
+    const price = formatPriceShort(p.price, p.deal_type);
+    const deal = (p.deal_type || "Аренда").trim();
+    const address = String(p.address || "").trim();
+    const district = String(p.district || "").trim();
+    const descText = String(p.description || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 1200);
+    const priceNum = Number(p.price) || 0;
+
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "RealEstateListing",
+          name: title,
+          description,
+          url,
+          image,
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: address,
+            addressLocality: district || "Иркутск",
+            addressRegion: "Иркутская область",
+            addressCountry: "RU",
+          },
+          ...(Number(p.area) > 0
+            ? {
+                floorSize: {
+                  "@type": "QuantitativeValue",
+                  value: Number(p.area),
+                  unitCode: "MTK",
+                },
+              }
+            : {}),
+          ...(priceNum > 0
+            ? {
+                offers: {
+                  "@type": "Offer",
+                  price: priceNum,
+                  priceCurrency: "RUB",
+                  availability: "https://schema.org/InStock",
+                },
+              }
+            : {}),
+          category: p.type || typeLabel,
+        },
+        {
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            {
+              "@type": "ListItem",
+              position: 1,
+              name: "Главная",
+              item: SITE_URL,
+            },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: "Каталог",
+              item: catalogUrl,
+            },
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: title,
+              item: url,
+            },
+          ],
+        },
+      ],
+    };
+
+    const facts = [
+      ["Тип сделки", deal],
+      ["Тип объекта", typeLabel],
+      area ? ["Площадь", area] : null,
+      ["Цена", price],
+      district ? ["Район", district] : null,
+      address ? ["Адрес", address] : null,
+    ].filter(Boolean);
+
+    const factsHtml = facts
+      .map(
+        ([label, value]) =>
+          `    <div><dt>${escapeXml(label)}</dt><dd>${escapeXml(value)}</dd></div>`,
+      )
+      .join("\n");
 
     const html = `<!DOCTYPE html>
 <html lang="ru">
@@ -390,10 +523,10 @@ function writePropertyOgPages(properties) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${escapeXml(title)} — АрендаСити</title>
-  <meta name="description" content="${escapeXml(ogDescription)}" />
+  <meta name="description" content="${escapeXml(description.slice(0, 300))}" />
   <link rel="canonical" href="${escapeXml(url)}" />
   <meta property="og:title" content="${escapeXml(title)}" />
-  <meta property="og:description" content="${escapeXml(ogDescription)}" />
+  <meta property="og:description" content="${escapeXml(description.slice(0, 300))}" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="${escapeXml(url)}" />
   <meta property="og:site_name" content="АрендаСити" />
@@ -403,19 +536,36 @@ function writePropertyOgPages(properties) {
   <meta property="og:image:alt" content="${escapeXml(title)}" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeXml(title)}" />
-  <meta name="twitter:description" content="${escapeXml(ogDescription)}" />
+  <meta name="twitter:description" content="${escapeXml(description.slice(0, 300))}" />
   <meta name="twitter:image" content="${escapeXml(image)}" />
-  <meta http-equiv="refresh" content="0;url=${escapeXml(url)}" />
+  <script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:720px;margin:24px auto;padding:0 16px;line-height:1.5;color:#111}
+    a{color:#0b57d0} nav{font-size:14px;color:#555;margin-bottom:16px}
+    h1{font-size:1.5rem;margin:0 0 12px} dl{margin:16px 0} dl div{display:flex;gap:12px;padding:6px 0;border-bottom:1px solid #eee}
+    dt{min-width:110px;color:#666;font-size:13px} dd{margin:0;font-weight:600}
+  </style>
 </head>
 <body>
-  <p><a href="${escapeXml(url)}">${escapeXml(title)}</a></p>
+  <nav>
+    <a href="${escapeXml(SITE_URL)}">Главная</a> /
+    <a href="${escapeXml(catalogUrl)}">Каталог</a> /
+    <span>Объект</span>
+  </nav>
+  <h1>${escapeXml(title)}</h1>
+  <p>${escapeXml(description)}</p>
+  <dl>
+${factsHtml}
+  </dl>
+  ${descText ? `<section><h2>Описание</h2><p>${escapeXml(descText)}</p></section>` : ""}
+  <p><a href="${escapeXml(url)}">Открыть объявление на АрендаСити</a> · <a href="${escapeXml(catalogUrl)}">Все объекты</a></p>
 </body>
 </html>
 `;
     writeFileSync(join(ogDir, `${p.id}.html`), html, "utf8");
   }
 
-  console.log(`✓ public/og/property (${properties.length} OG pages)`);
+  console.log(`✓ public/og/property (${properties.length} SEO pages)`);
 }
 
 console.log("[generate-seo] Starting…");

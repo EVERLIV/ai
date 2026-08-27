@@ -319,6 +319,7 @@ export default function ComparePage() {
       <SeoHead
         title="Сравнение объектов"
         description="Сравните объекты одной категории: площадь, цена, цена за м² и характеристики."
+        noindex
       />
       <SiteHeader />
 
