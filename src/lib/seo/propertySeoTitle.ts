@@ -90,6 +90,10 @@ function parseAddress(
 
 /** SEO title: «Аренда — помещение для торговли — Ангарск, 11 мкр — 45 тыс ₽/мес» */
 export function buildPropertySeoTitle(p: PropertySeoInput): string {
+  const extras = p.extras as { seo_title?: string } | null | undefined;
+  const override = extras?.seo_title?.trim();
+  if (override) return override;
+
   const deal = (p.deal_type || "Аренда").trim();
   const typeLabel = typeSeoLabel(getPrimaryPropertyType(p));
   const address = (p.address || "").trim();
@@ -105,6 +109,10 @@ export function buildPropertySeoTitle(p: PropertySeoInput): string {
 }
 
 export function buildPropertySeoDescription(p: PropertySeoInput): string {
+  const extras = p.extras as { seo_description?: string } | null | undefined;
+  const override = extras?.seo_description?.trim();
+  if (override) return override;
+
   const typeLabel = typeSeoLabel(getPrimaryPropertyType(p));
   const area = Number(p.area) > 0 ? `${p.area} м²` : "";
   const price = formatPriceShort(Number(p.price) || null, p.deal_type);

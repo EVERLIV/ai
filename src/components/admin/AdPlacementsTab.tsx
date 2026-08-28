@@ -1,5 +1,6 @@
 import { Megaphone, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { AdminTableHead } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
@@ -33,6 +33,11 @@ import {
   TRAFFIC_LABELS,
   type TrafficKey,
 } from "@/lib/adTypes";
+import {
+  compareValues,
+  nextSortState,
+  type SortDir,
+} from "@/lib/adminTableSort";
 
 export default function AdPlacementsTab() {
   const { data = [], isLoading } = useAllAdPlacements();
@@ -42,6 +47,14 @@ export default function AdPlacementsTab() {
   const [q, setQ] = useState("");
   const [type, setType] = useState<AdTypeKey | "all">("all");
   const [avail, setAvail] = useState<AvailabilityKey | "all">("all");
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  const handleSort = (field: string) => {
+    const next = nextSortState(sortField, sortDir, field);
+    setSortField(next.field);
+    setSortDir(next.dir);
+  };
 
   const filtered = useMemo(() => {
     let list = data as any[];
@@ -57,6 +70,34 @@ export default function AdPlacementsTab() {
     if (avail !== "all") list = list.filter((p) => p.availability === avail);
     return list;
   }, [data, q, type, avail]);
+
+  const sorted = useMemo(() => {
+    if (!sortField) return filtered;
+    return [...filtered].sort((a: any, b: any) => {
+      if (sortField === "ad_type") {
+        const la = AD_TYPE_MAP[a.ad_type as AdTypeKey]?.short ?? a.ad_type;
+        const lb = AD_TYPE_MAP[b.ad_type as AdTypeKey]?.short ?? b.ad_type;
+        return compareValues(la, lb, sortDir);
+      }
+      if (sortField === "address") {
+        return compareValues(a.property?.address, b.property?.address, sortDir);
+      }
+      if (sortField === "district") {
+        return compareValues(a.property?.district, b.property?.district, sortDir);
+      }
+      if (sortField === "availability") {
+        return compareValues(a.availability, b.availability, sortDir);
+      }
+      if (sortField === "monthly_price") {
+        return compareValues(
+          Number(a.monthly_price || 0),
+          Number(b.monthly_price || 0),
+          sortDir,
+        );
+      }
+      return 0;
+    });
+  }, [filtered, sortField, sortDir]);
 
   const remove = async (id: string) => {
     if (!confirm("Удалить позицию?")) return;
@@ -157,16 +198,74 @@ export default function AdPlacementsTab() {
       <div className="border border-border rounded-md overflow-x-auto bg-card">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-[40px]"></TableHead>
-              <TableHead>Тип рекламы</TableHead>
-              <TableHead>Объект</TableHead>
-              <TableHead>Район</TableHead>
-              <TableHead>Размер</TableHead>
-              <TableHead>Трафик</TableHead>
-              <TableHead>Статус</TableHead>
-              <TableHead className="text-right">Цена/мес</TableHead>
-              <TableHead className="w-[60px]"></TableHead>
+            <TableRow className="hover:bg-transparent">
+              <AdminTableHead
+                label=""
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={handleSort}
+                className="w-[40px]"
+              />
+              <AdminTableHead
+                label="Тип рекламы"
+                field="ad_type"
+                sortable
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={handleSort}
+              />
+              <AdminTableHead
+                label="Объект"
+                field="address"
+                sortable
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={handleSort}
+              />
+              <AdminTableHead
+                label="Район"
+                field="district"
+                sortable
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={handleSort}
+              />
+              <AdminTableHead
+                label="Размер"
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={handleSort}
+              />
+              <AdminTableHead
+                label="Трафик"
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={handleSort}
+              />
+              <AdminTableHead
+                label="Статус"
+                field="availability"
+                sortable
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={handleSort}
+              />
+              <AdminTableHead
+                label="Цена/мес"
+                field="monthly_price"
+                sortable
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={handleSort}
+                className="text-right"
+              />
+              <AdminTableHead
+                label=""
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={handleSort}
+                className="w-[60px]"
+              />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -179,7 +278,7 @@ export default function AdPlacementsTab() {
                   Загрузка...
                 </TableCell>
               </TableRow>
-            ) : filtered.length === 0 ? (
+            ) : sorted.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={9}
@@ -190,11 +289,11 @@ export default function AdPlacementsTab() {
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((row: any) => {
+              sorted.map((row: any) => {
                 const meta = AD_TYPE_MAP[row.ad_type as AdTypeKey];
                 const Icon = meta?.icon || Megaphone;
                 return (
-                  <TableRow key={row.id}>
+                  <TableRow key={row.id} className="text-xs">
                     <TableCell>
                       <Icon className="w-3.5 h-3.5 text-muted-foreground" />
                     </TableCell>

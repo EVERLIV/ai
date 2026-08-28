@@ -7,6 +7,7 @@ import {
   User,
 } from "lucide-react";
 import { useState } from "react";
+import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -52,6 +53,7 @@ export default function OwnerMessageDialog({
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -68,6 +70,7 @@ export default function OwnerMessageDialog({
 
     setLoading(true);
     try {
+      const bot = await ensureGuard();
       await submitLead({
         object_id: propertyId,
         name,
@@ -76,14 +79,24 @@ export default function OwnerMessageDialog({
         message: `Заявка по объекту${ownerName ? ` (${ownerName})` : ""}${ownerUserId ? ` [user:${ownerUserId}]` : ""}:\n${message}`,
         source,
         business_category: propertyAddress,
+        website: bot.website,
+        captchaToken: bot.captchaToken,
       });
+      resetGuard();
       setSent(true);
       toast({
         title: "Заявка отправлена",
         description: "Разместивший объявление получит ваше обращение.",
       });
-    } catch {
-      toast({ title: "Не удалось отправить", variant: "destructive" });
+    } catch (err) {
+      if (err instanceof BotGuardError && err.message === "bot") return;
+      toast({
+        title:
+          err instanceof BotGuardError
+            ? err.message
+            : "Не удалось отправить",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -176,6 +189,7 @@ export default function OwnerMessageDialog({
                 required
               />
             </div>
+            <BotGuard />
             <Button type="submit" className="w-full gap-2" disabled={loading}>
               <Send className="w-4 h-4" />
               {loading ? "Отправка…" : "Отправить"}

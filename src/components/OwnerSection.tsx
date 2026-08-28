@@ -1,5 +1,6 @@
 import { Building, CheckCircle2, Loader2, Phone } from "lucide-react";
 import { useState } from "react";
+import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import { useToast } from "@/hooks/use-toast";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { submitLead } from "@/lib/submitLead";
@@ -18,6 +19,7 @@ const fieldClass =
 export default function OwnerSection() {
   const { ref, isVisible } = useScrollReveal();
   const { toast } = useToast();
+  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -36,20 +38,31 @@ export default function OwnerSection() {
 
     setLoading(true);
     try {
+      const bot = await ensureGuard();
       await submitLead({
         name,
         phone,
         message: message || null,
         source: "homepage_owner",
         business_category: objectType || "Сдать объект",
+        website: bot.website,
+        captchaToken: bot.captchaToken,
       });
+      resetGuard();
       setSent(true);
       toast({
         title: "Заявка отправлена!",
         description: "Мы свяжемся с вами в течение 1 рабочего дня.",
       });
-    } catch {
-      toast({ title: "Не удалось отправить", variant: "destructive" });
+    } catch (err) {
+      if (err instanceof BotGuardError && err.message === "bot") return;
+      toast({
+        title:
+          err instanceof BotGuardError
+            ? err.message
+            : "Не удалось отправить",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -147,6 +160,7 @@ export default function OwnerSection() {
                     rows={3}
                     className={`${fieldClass} resize-none`}
                   />
+                  <BotGuard />
                   <button
                     type="submit"
                     disabled={loading}

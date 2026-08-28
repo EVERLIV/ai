@@ -6,6 +6,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { DictionaryItem } from "@/hooks/useDictionaries";
+import {
+  getCatalogCityOptions,
+  getCatalogLocalityOptions,
+  type CatalogCityOption,
+} from "@/lib/catalogLocations";
 import {
   findLocationByName,
   getChildren,
@@ -38,6 +44,8 @@ type Props = {
   /** Подставить центроид узла, если у объекта ещё нет координат */
   applyCentroid?: boolean;
   hasCoords?: boolean;
+  /** Записи справочника локаций из БД */
+  catalogItems?: DictionaryItem[];
 };
 
 function resolveFromLeaf(leafName: string): LocationHierarchyChange | null {
@@ -74,6 +82,39 @@ function localityValueFromLeaf(value: string, cityId: string | null): string {
   return LOCALITY_CITY;
 }
 
+function catalogCityIdFromValue(
+  value: string,
+  cities: CatalogCityOption[],
+): string | null {
+  const byName = cities.find((c) => c.name === value);
+  if (byName) return byName.id;
+  for (const city of cities) {
+    const kids = getCatalogLocalityOptions([], city.name);
+    if (kids.some((k) => k.name === value)) return city.id;
+  }
+  return null;
+}
+
+function catalogChangeFromOption(
+  opt: CatalogCityOption,
+  cityName: string,
+): LocationHierarchyChange {
+  const locality = opt.id.startsWith("catalog:") ? opt.name : null;
+  const location: PropertyLocationExtras = {
+    region: IRKUTSK_REGION_NAME,
+    city: cityName,
+    locality,
+    kind: opt.kind,
+    path: locality ? [IRKUTSK_REGION_NAME, cityName, locality] : [IRKUTSK_REGION_NAME, cityName],
+    locationId: opt.id,
+  };
+  return {
+    district: locality ?? cityName,
+    location,
+    ...(opt.lat != null && opt.lng != null ? { lat: opt.lat, lng: opt.lng } : {}),
+  };
+}
+
 export default function LocationHierarchyPicker({
   value,
   onChange,
@@ -81,21 +122,80 @@ export default function LocationHierarchyPicker({
   className,
   applyCentroid = true,
   hasCoords = false,
+  catalogItems = [],
 }: Props) {
-  const cities = getCityNodes().sort((a, b) =>
-    a.name.localeCompare(b.name, "ru"),
-  );
-  const rayons = getChildren(IRKUTSK_REGION_ID)
-    .filter((n) => n.kind === "district" && n.id.startsWith("rayon:"))
-    .sort((a, b) => a.name.localeCompare(b.name, "ru"));
+  const useCatalog = catalogItems.length > 0;
+  const cities = useCatalog
+    ? getCatalogCityOptions(catalogItems)
+    : getCityNodes()
+        .sort((a, b) => a.name.localeCompare(b.name, "ru"))
+        .map((c) => ({
+          id: c.id,
+          name: c.name,
+          kind: c.kind,
+          lat: c.lat,
+          lng: c.lng,
+        }));
 
-  const cityId = cityIdFromValue(value);
-  const localities = cityId
-    ? getChildren(cityId).sort((a, b) => a.name.localeCompare(b.name, "ru"))
+  const rayons = useCatalog
+    ? []
+    : getChildren(IRKUTSK_REGION_ID)
+        .filter((n) => n.kind === "district" && n.id.startsWith("rayon:"))
+        .sort((a, b) => a.name.localeCompare(b.name, "ru"))
+        .map((r) => ({
+          id: r.id,
+          name: r.name,
+          kind: r.kind,
+          lat: r.lat,
+          lng: r.lng,
+        }));
+
+  const cityId = useCatalog
+    ? catalogCityIdFromValue(value, cities)
+    : cityIdFromValue(value);
+
+  const selectedCity = cities.find((c) => c.id === cityId);
+  const cityName = selectedCity?.name ?? "";
+
+  const localities = cityName
+    ? useCatalog
+      ? getCatalogLocalityOptions(catalogItems, cityName)
+      : cityId
+        ? getChildren(cityId)
+            .sort((a, b) => a.name.localeCompare(b.name, "ru"))
+            .map((l) => ({
+              id: l.id,
+              name: l.name,
+              kind: l.kind,
+              lat: l.lat,
+              lng: l.lng,
+            }))
+        : []
     : [];
-  const localitySelect = localityValueFromLeaf(value, cityId);
+
+  const localitySelect = useCatalog
+    ? localities.find((l) => l.name === value)?.id ?? LOCALITY_CITY
+    : localityValueFromLeaf(value, cityId);
 
   const emitNode = (nodeId: string) => {
+    if (useCatalog) {
+      const opt =
+        cities.find((c) => c.id === nodeId) ??
+        localities.find((l) => l.id === nodeId);
+      if (!opt || !cityName) return;
+      const change = catalogChangeFromOption(opt, cityName);
+      onChange({
+        ...change,
+        ...(applyCentroid &&
+        !hasCoords &&
+        change.lat != null &&
+        change.lng != null
+          ? { lat: change.lat, lng: change.lng }
+          : {}),
+      });
+      return;
+    }
+
     const node = getLocationById(nodeId);
     if (!node) return;
     const extras = toPropertyLocationExtras(node);
@@ -111,19 +211,45 @@ export default function LocationHierarchyPicker({
 
   const onCityChange = (nextCityId: string) => {
     if (nextCityId === CITY_NONE) return;
+    if (useCatalog) {
+      const opt = cities.find((c) => c.id === nextCityId);
+      if (!opt) return;
+      const change = catalogChangeFromOption(opt, opt.name);
+      onChange({
+        district: opt.name,
+        location: change.location,
+        ...(applyCentroid &&
+        !hasCoords &&
+        opt.lat != null &&
+        opt.lng != null
+          ? { lat: opt.lat, lng: opt.lng }
+          : {}),
+      });
+      return;
+    }
     emitNode(nextCityId);
   };
 
   const onLocalityChange = (nextLocalityId: string) => {
-    if (!cityId) return;
+    if (!cityId || !cityName) return;
     if (nextLocalityId === LOCALITY_CITY) {
-      emitNode(cityId);
+      if (useCatalog) {
+        const city = cities.find((c) => c.id === cityId);
+        if (city) onCityChange(city.id);
+      } else {
+        emitNode(cityId);
+      }
       return;
     }
     emitNode(nextLocalityId);
   };
 
-  const known = Boolean(findLocationByName(value));
+  const known = useCatalog
+    ? cities.some((c) => c.name === value) ||
+      localities.some((l) => l.name === value)
+    : Boolean(findLocationByName(value));
+
+  const allCities = [...cities, ...rayons];
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -142,14 +268,9 @@ export default function LocationHierarchyPicker({
               {!known && value && (
                 <SelectItem value={CITY_NONE}>{value}</SelectItem>
               )}
-              {cities.map((c) => (
+              {allCities.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.name}
-                </SelectItem>
-              ))}
-              {rayons.map((r) => (
-                <SelectItem key={r.id} value={r.id}>
-                  {r.name}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -1,6 +1,7 @@
 import LocationHierarchyPicker, {
   type LocationHierarchyChange,
 } from "@/components/LocationHierarchyPicker";
+import type { DictionaryItem } from "@/hooks/useDictionaries";
 
 type Props = {
   value: string;
@@ -9,6 +10,7 @@ type Props = {
   className?: string;
   applyCentroid?: boolean;
   hasCoords?: boolean;
+  catalogItems?: DictionaryItem[];
 };
 
 /**
@@ -22,6 +24,7 @@ export default function LocationDistrictSelect({
   className,
   applyCentroid = true,
   hasCoords = false,
+  catalogItems,
 }: Props) {
   return (
     <LocationHierarchyPicker
@@ -30,6 +33,7 @@ export default function LocationDistrictSelect({
       className={className}
       applyCentroid={applyCentroid}
       hasCoords={hasCoords}
+      catalogItems={catalogItems}
       onChange={(next) => onChange(next.district, next)}
     />
   );

@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import ReactMarkdown from "react-markdown";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import { CONTACTS } from "@/config/company";
@@ -118,6 +119,7 @@ export default function PropertyAIChat({
   /** Время открытия чата и последней отправки — простая защита от ботов. */
   const openedAt = useRef(0);
   const lastSentAt = useRef(0);
+  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
 
   useEffect(() => {
     setPropertyId(propertyIdProp);
@@ -141,7 +143,7 @@ export default function PropertyAIChat({
     return () => clearTimeout(t);
   }, [wiggle]);
 
-  // Open from cards / «Написать»
+  // Open from catalog cards / floating widget
   useEffect(() => {
     const h = (ev: Event) => {
       const detail =
@@ -310,6 +312,7 @@ export default function PropertyAIChat({
       /* ignore */
     }
     try {
+      const bot = await ensureGuard();
       await submitLead({
         name,
         phone,
@@ -318,8 +321,12 @@ export default function PropertyAIChat({
         message: propertyAddress
           ? `Чат по объекту: ${propertyAddress}`
           : "ИИ-чат",
+        website: bot.website,
+        captchaToken: bot.captchaToken,
       });
+      resetGuard();
     } catch (err) {
+      if (err instanceof BotGuardError && err.message === "bot") return;
       console.warn("chat intro lead", err);
     }
     setVisitor(next);
@@ -512,6 +519,7 @@ export default function PropertyAIChat({
             {introError && (
               <p className="mt-2 text-xs text-destructive">{introError}</p>
             )}
+            <BotGuard />
             <button
               type="submit"
               disabled={introSaving || introName.trim().length < 2}

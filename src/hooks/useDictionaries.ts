@@ -4,6 +4,12 @@ import type { PropertySegment } from "@/config/propertySegments";
 import { supabaseAdmin } from "@/integrations/supabase/adminClient";
 import { supabasePublic } from "@/integrations/supabase/client";
 import { propertyTypesForSegment } from "@/lib/dictionaryPropertyTypes";
+import {
+  CATALOG_CATEGORIES,
+  DICTIONARY_CATEGORIES,
+} from "@/lib/catalogRegistry";
+
+export type DictionaryMetadata = Record<string, unknown>;
 
 export interface DictionaryItem {
   id: string;
@@ -11,43 +17,38 @@ export interface DictionaryItem {
   value: string;
   label: string | null;
   parent: string | null;
+  parent_id: string | null;
   sort_order: number;
   is_active: boolean;
+  metadata: DictionaryMetadata;
+  slug: string | null;
+  description: string | null;
   created_at: string;
+  updated_at: string;
 }
 
-export const DICTIONARY_CATEGORIES: {
-  key: string;
-  title: string;
-  hasParent: boolean;
-}[] = [
-  { key: "property_type", title: "Тип объекта", hasParent: true },
-  { key: "property_class", title: "Класс объекта", hasParent: false },
-  { key: "deal_type", title: "Тип сделки", hasParent: false },
-  { key: "district", title: "Район / Локация", hasParent: true },
-  { key: "condition", title: "Состояние", hasParent: false },
-  { key: "layout", title: "Планировка", hasParent: false },
-  { key: "parking", title: "Парковка", hasParent: false },
-  { key: "purpose", title: "Назначение", hasParent: false },
-  { key: "deposit", title: "Залог", hasParent: false },
-  { key: "contract_term", title: "Срок договора", hasParent: false },
-  { key: "utilities", title: "Коммунальные", hasParent: false },
-  { key: "vat", title: "НДС", hasParent: false },
-  { key: "landlord_type", title: "Тип арендодателя", hasParent: false },
-  { key: "rooms", title: "Комнаты", hasParent: false },
-  { key: "building_type", title: "Тип дома", hasParent: false },
-  { key: "market", title: "Рынок", hasParent: false },
-  { key: "balcony", title: "Балкон", hasParent: false },
-  { key: "furniture", title: "Мебель", hasParent: false },
-  { key: "bathroom", title: "Санузел", hasParent: false },
-  { key: "window_view", title: "Вид из окон", hasParent: false },
-  {
-    key: "residential_condition",
-    title: "Состояние (жильё)",
-    hasParent: false,
-  },
-  { key: "residential_feature", title: "Особенности (жильё)", hasParent: true },
-];
+export { CATALOG_CATEGORIES, DICTIONARY_CATEGORIES };
+
+function normalizeDictionaryRow(row: Record<string, unknown>): DictionaryItem {
+  return {
+    id: String(row.id),
+    category: String(row.category),
+    value: String(row.value),
+    label: row.label != null ? String(row.label) : null,
+    parent: row.parent != null ? String(row.parent) : null,
+    parent_id: row.parent_id != null ? String(row.parent_id) : null,
+    sort_order: Number(row.sort_order ?? 0),
+    is_active: row.is_active !== false,
+    metadata:
+      row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
+        ? (row.metadata as DictionaryMetadata)
+        : {},
+    slug: row.slug != null ? String(row.slug) : null,
+    description: row.description != null ? String(row.description) : null,
+    created_at: String(row.created_at ?? ""),
+    updated_at: String(row.updated_at ?? row.created_at ?? ""),
+  };
+}
 
 function adminError(error: unknown, fallback: string) {
   const msg =
@@ -67,7 +68,9 @@ export function useAllDictionaryValues() {
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
       if (error) throw error;
-      return data as DictionaryItem[];
+      return (data ?? []).map((row) =>
+        normalizeDictionaryRow(row as Record<string, unknown>),
+      );
     },
     staleTime: 60_000,
   });
@@ -89,6 +92,21 @@ export function useAllDictionaryValues() {
   return { all, byCategory, propertyTypes, isLoading: query.isLoading };
 }
 
+export type DictionaryInsert = {
+  category: string;
+  value: string;
+  label?: string | null;
+  parent?: string | null;
+  parent_id?: string | null;
+  sort_order: number;
+  slug?: string | null;
+  description?: string | null;
+  metadata?: DictionaryMetadata;
+  is_active?: boolean;
+};
+
+export type DictionaryUpdate = Partial<DictionaryInsert> & { id: string };
+
 /** Админка «Справочники» — через service_role, user JWT Kong отклоняет. */
 export function useDictionaries(category?: string) {
   const queryClient = useQueryClient();
@@ -106,30 +124,27 @@ export function useDictionaries(category?: string) {
         params.toString(),
       );
       if (error) throw adminError(error, "Не удалось загрузить справочник");
-      return (data || []) as DictionaryItem[];
+      return ((data || []) as Record<string, unknown>[]).map(normalizeDictionaryRow);
     },
   });
 
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ["dictionaries"] });
+
   const addMutation = useMutation({
-    mutationFn: async (item: {
-      category: string;
-      value: string;
-      label?: string;
-      parent?: string;
-      sort_order: number;
-    }) => {
-      const { error } = await supabaseAdmin.db.insert("dictionaries", item);
+    mutationFn: async (item: DictionaryInsert) => {
+      const { error } = await supabaseAdmin.db.insert("dictionaries", {
+        ...item,
+        metadata: item.metadata ?? {},
+        is_active: item.is_active ?? true,
+      });
       if (error) throw adminError(error, "Не удалось добавить значение");
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["dictionaries"] }),
+    onSuccess: invalidate,
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({
-      id,
-      ...updates
-    }: Partial<DictionaryItem> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: DictionaryUpdate) => {
       const { error } = await supabaseAdmin.db.update(
         "dictionaries",
         `id=eq.${id}`,
@@ -137,8 +152,7 @@ export function useDictionaries(category?: string) {
       );
       if (error) throw adminError(error, "Не удалось сохранить значение");
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["dictionaries"] }),
+    onSuccess: invalidate,
   });
 
   const deleteMutation = useMutation({
@@ -149,8 +163,7 @@ export function useDictionaries(category?: string) {
       );
       if (error) throw adminError(error, "Не удалось удалить значение");
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["dictionaries"] }),
+    onSuccess: invalidate,
   });
 
   return {

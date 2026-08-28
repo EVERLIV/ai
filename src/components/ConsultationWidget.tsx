@@ -11,6 +11,7 @@ import {
 import { useEffect, useState } from "react";
 import consultantAvatar from "@/assets/consultant-anastasia.jpg";
 import { CONTACTS } from "@/config/company";
+import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import { submitLead } from "@/lib/submitLead";
 
 const PHONE = CONTACTS.phoneTel;
@@ -24,6 +25,7 @@ export default function ConsultationWidget() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
 
   // Wiggle animation: triggers after 4s, then every 12s
   useEffect(() => {
@@ -50,16 +52,25 @@ export default function ConsultationWidget() {
     setError(null);
     setLoading(true);
     try {
+      const bot = await ensureGuard();
       await submitLead({
         name: name.trim(),
         phone: phone.trim(),
         source: "consultation_widget",
         business_category: "Обратный звонок",
         message: "Заявка из виджета консультации на главной",
+        website: bot.website,
+        captchaToken: bot.captchaToken,
       });
+      resetGuard();
       setSent(true);
-    } catch {
-      setError("Не удалось отправить. Позвоните нам.");
+    } catch (err) {
+      if (err instanceof BotGuardError && err.message === "bot") return;
+      setError(
+        err instanceof BotGuardError
+          ? err.message
+          : "Не удалось отправить. Позвоните нам.",
+      );
     } finally {
       setLoading(false);
     }
@@ -190,6 +201,7 @@ export default function ConsultationWidget() {
                   required
                   className="w-full px-3 py-2 bg-muted text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:bg-background border border-transparent focus:border-border transition-colors"
                 />
+                <BotGuard />
                 <button
                   type="submit"
                   disabled={loading}

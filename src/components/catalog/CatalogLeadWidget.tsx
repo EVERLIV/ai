@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import { submitLead } from "@/lib/submitLead";
 
 interface Props {
@@ -18,6 +19,7 @@ export default function CatalogLeadWidget({
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,20 +29,31 @@ export default function CatalogLeadWidget({
     }
     setLoading(true);
     try {
+      const bot = await ensureGuard();
       await submitLead({
         name: name.trim(),
         phone: phone.trim(),
         source: "catalog_sidebar",
         message: `Подбор из каталога (${resultsCount} объектов). Фильтры: ${filterSummary}`,
+        website: bot.website,
+        captchaToken: bot.captchaToken,
       });
+      resetGuard();
       toast({
         title: "Заявка отправлена",
         description: "Менеджер свяжется в течение 15 минут.",
       });
       setName("");
       setPhone("");
-    } catch {
-      toast({ title: "Не удалось отправить", variant: "destructive" });
+    } catch (err) {
+      if (err instanceof BotGuardError && err.message === "bot") return;
+      toast({
+        title:
+          err instanceof BotGuardError
+            ? err.message
+            : "Не удалось отправить",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -70,6 +83,7 @@ export default function CatalogLeadWidget({
           className="h-9 text-sm"
           autoComplete="tel"
         />
+        <BotGuard />
         <Button type="submit" className="w-full h-9 gap-2" disabled={loading}>
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />

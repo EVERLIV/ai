@@ -29,7 +29,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import WoodenHouseConfigFields from "@/components/admin/WoodenHouseConfigFields";
@@ -343,7 +343,11 @@ export default function PropertySubmissionWizard({
     : null;
   const isDeveloperMode = !!myDeveloper && !agencyId;
   const { data: developerProjects = [] } = useMyDeveloperProjects();
-  const { propertyTypes } = useAllDictionaryValues();
+  const { propertyTypes, all: dictionaryAll } = useAllDictionaryValues();
+  const catalogDistricts = useMemo(
+    () => dictionaryAll.filter((i) => i.category === "district"),
+    [dictionaryAll],
+  );
 
   const [step, setStep] = useState<StepKey>("basic");
   const [editId, setEditId] = useState<string | null>(null);
@@ -2515,6 +2519,7 @@ export default function PropertySubmissionWizard({
               <LocationDistrictSelect
                 value={form.district}
                 hasCoords={form.lat != null && form.lng != null}
+                catalogItems={catalogDistricts}
                 onChange={(v, meta) => {
                   setForm((prev) => ({
                     ...prev,

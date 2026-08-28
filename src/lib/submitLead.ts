@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { isTurnstileEnabled } from "@/lib/botGuard";
 
 export type LeadInput = {
   name: string;
@@ -8,16 +8,23 @@ export type LeadInput = {
   source: string;
   business_category?: string | null;
   object_id?: string | null;
+  /** Honeypot — заполняют только боты */
+  website?: string;
+  /** Cloudflare Turnstile token */
+  captchaToken?: string | null;
 };
 
-/** Cloud edge-функция уведомлений (Telegram). */
-const NOTIFY_URL =
-  import.meta.env.VITE_NOTIFY_LEAD_URL ||
-  "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/notify-lead";
+function getSubmitLeadUrl(): string {
+  const explicit = import.meta.env.VITE_SUBMIT_LEAD_URL?.trim();
+  if (explicit) return explicit;
+  const base = import.meta.env.VITE_SUPABASE_URL?.trim().replace(/\/$/, "");
+  if (base) return `${base}/functions/v1/submit-lead`;
+  return "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/submit-lead";
+}
 
 /**
- * Сохраняет заявку в crm_leads (админка) и шлёт уведомление в Telegram
- * через Cloud Supabase Edge Function.
+ * Отправляет заявку через edge function submit-lead:
+ * honeypot + Turnstile на сервере → crm_leads → Telegram.
  */
 export async function submitLead(
   input: LeadInput,
@@ -36,6 +43,14 @@ export async function submitLead(
     throw new Error("Укажите телефон или email");
   }
 
+  if (input.website?.trim()) {
+    return { id: null };
+  }
+
+  if (isTurnstileEnabled() && !input.captchaToken?.trim()) {
+    throw new Error("Подтвердите, что вы не робот");
+  }
+
   const row = {
     name,
     phone,
@@ -45,23 +60,31 @@ export async function submitLead(
     business_category: input.business_category?.trim() || null,
     object_id: input.object_id || null,
     status: "new",
+    website: input.website?.trim() || "",
+    captcha_token: input.captchaToken?.trim() || null,
   };
 
-  // INSERT без SELECT: у anon есть только право вставлять, читать заявки нельзя.
-  // .select() после insert даёт ошибку RLS, хотя строка уже записана.
-  const { error } = await supabase.from("crm_leads").insert(row);
-  if (error) throw error;
+  const resp = await fetch(getSubmitLeadUrl(), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(row),
+    signal: AbortSignal.timeout(20_000),
+  });
 
-  // Telegram — best-effort: заявка уже в админке, уведомление не должно ломать форму
-  try {
-    await fetch(NOTIFY_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(row),
-    });
-  } catch (e) {
-    console.warn("notify-lead failed", e);
+  const data = (await resp.json().catch(() => ({}))) as {
+    ok?: boolean;
+    id?: string | null;
+    error?: string;
+    skipped?: string;
+  };
+
+  if (!resp.ok) {
+    throw new Error(data.error || `Ошибка отправки (${resp.status})`);
   }
 
-  return { id: null };
+  if (data.skipped === "bot") {
+    return { id: null };
+  }
+
+  return { id: data.id ?? null };
 }

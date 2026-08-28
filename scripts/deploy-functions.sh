@@ -2,8 +2,11 @@
 #
 # Копирует edge-функции на self-hosted Supabase и перезапускает рантайм.
 #
-# Запускать НА VPS из корня проекта (там, где лежит папка supabase/functions):
-#   bash scripts/deploy-functions.sh
+# Запускать НА VPS:
+#   SRC_DIR=/opt/arendacity-ai/supabase/functions bash scripts/deploy-functions.sh
+#
+# Или одной командой из /opt/supabase:
+#   curl -fsSL https://raw.githubusercontent.com/EVERLIV/ai/main/scripts/vps-setup-submit-lead.sh | bash
 #
 # Проблема, которую скрипт решает: в контейнере лежат не все функции.
 # В логах это выглядит так:
@@ -16,10 +19,13 @@ set -euo pipefail
 # Куда смонтирован каталог функций на хосте.
 TARGET_DIR="${SUPABASE_FUNCTIONS_DIR:-/opt/supabase/volumes/functions}"
 SUPABASE_DIR="${SUPABASE_DIR:-/opt/supabase}"
-SRC_DIR="supabase/functions"
+SRC_DIR="${SRC_DIR:-supabase/functions}"
 
 if [ ! -d "$SRC_DIR" ]; then
-  echo "Ошибка: не найден $SRC_DIR. Запустите скрипт из корня проекта." >&2
+  echo "Ошибка: не найден $SRC_DIR." >&2
+  echo "Клонируйте репозиторий или укажите путь:" >&2
+  echo "  git clone https://github.com/EVERLIV/ai.git /opt/arendacity-ai" >&2
+  echo "  SRC_DIR=/opt/arendacity-ai/supabase/functions bash $0" >&2
   exit 1
 fi
 

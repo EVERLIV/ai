@@ -17,6 +17,7 @@ import VacancyCard from "@/components/VacancyCard";
 import { COMPANY, CONTACTS } from "@/config/company";
 import { absoluteUrl } from "@/config/site";
 import { VACANCIES } from "@/data/vacancies";
+import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import { submitLead } from "@/lib/submitLead";
 
 const perks = [
@@ -43,6 +44,7 @@ export default function VacanciesPage() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
 
   useEffect(() => {
     const onScroll = () => {
@@ -74,6 +76,7 @@ export default function VacanciesPage() {
     setError(null);
     setLoading(true);
     try {
+      const bot = await ensureGuard();
       const resumeNote = message.trim()
         ? `Резюме / комментарий: ${message.trim()}`
         : null;
@@ -84,15 +87,21 @@ export default function VacanciesPage() {
         message: resumeNote,
         source: "vacancies_page",
         business_category: `Вакансия: ${selectedVacancy}`,
+        website: bot.website,
+        captchaToken: bot.captchaToken,
       });
+      resetGuard();
       setSent(true);
       setName("");
       setPhone("");
       setEmail("");
       setMessage("");
-    } catch {
+    } catch (err) {
+      if (err instanceof BotGuardError && err.message === "bot") return;
       setError(
-        "Не удалось отправить отклик. Позвоните нам или напишите на почту.",
+        err instanceof BotGuardError
+          ? err.message
+          : "Не удалось отправить отклик. Позвоните нам или напишите на почту.",
       );
     } finally {
       setLoading(false);
@@ -275,6 +284,7 @@ export default function VacanciesPage() {
                           rows={4}
                           className={`${inputClass} h-auto py-3 resize-none`}
                         />
+                        <BotGuard />
                         <button
                           type="submit"
                           disabled={loading}

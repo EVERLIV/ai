@@ -25,11 +25,24 @@ export function siteUrl() {
 }
 
 export function supabaseUrl() {
-  return Deno.env.get("SUPABASE_URL") || Deno.env.get("CATALOG_URL") || "";
+  for (const name of [
+    "SUPABASE_URL",
+    "SUPABASE_PUBLIC_URL",
+    "CATALOG_URL",
+  ]) {
+    const value = Deno.env.get(name)?.trim();
+    if (value) return value.replace(/\/$/, "");
+  }
+  // Self-hosted edge runtime → internal Kong
+  return "http://kong:8000";
 }
 
 export function serviceRoleKey() {
-  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  return (
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim() ||
+    Deno.env.get("SUPABASE_SECRET_KEY")?.trim() ||
+    ""
+  );
 }
 
 export function internalSecret() {

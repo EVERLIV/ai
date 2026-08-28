@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
+import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import { submitLead } from "@/lib/submitLead";
 import { cn } from "@/lib/utils";
 import { SPECIALIST_INTENTS } from "./specialistUtils";
@@ -28,12 +29,14 @@ export default function SpecialistContactForm({
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     try {
+      const bot = await ensureGuard();
       const parts = [
         targetLabel,
         intent || null,
@@ -45,10 +48,20 @@ export default function SpecialistContactForm({
         message: comment.trim() || null,
         source,
         business_category: parts.join(" · "),
+        website: bot.website,
+        captchaToken: bot.captchaToken,
       });
+      resetGuard();
       setSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось отправить");
+      if (err instanceof BotGuardError && err.message === "bot") return;
+      setError(
+        err instanceof BotGuardError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Не удалось отправить",
+      );
     } finally {
       setLoading(false);
     }
@@ -147,6 +160,8 @@ export default function SpecialistContactForm({
       </div>
 
       {error && <p className="text-xs text-destructive">{error}</p>}
+
+      <BotGuard />
 
       <button
         type="submit"

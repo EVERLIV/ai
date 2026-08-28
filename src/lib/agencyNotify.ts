@@ -3,13 +3,15 @@ import {
   SUPABASE_URL,
 } from "@/integrations/supabase/adminClient";
 
-export const TRACK_VIEW_URL =
-  import.meta.env.VITE_TRACK_PROPERTY_VIEW_URL ||
-  import.meta.env.VITE_NOTIFY_LEAD_URL?.replace(
-    "/notify-lead",
-    "/track-property-view",
-  ) ||
-  "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/track-property-view";
+function getTrackViewUrl(): string {
+  const explicit = import.meta.env.VITE_TRACK_PROPERTY_VIEW_URL?.trim();
+  if (explicit) return explicit;
+  const base = import.meta.env.VITE_SUPABASE_URL?.trim().replace(/\/$/, "");
+  if (base) return `${base}/functions/v1/track-property-view`;
+  return "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/track-property-view";
+}
+
+export const TRACK_VIEW_URL = getTrackViewUrl();
 
 /** Инкремент views_count на self-hosted, если cloud edge недоступен / CORS. */
 async function incrementViewsLocal(propertyId: string): Promise<void> {

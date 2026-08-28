@@ -3,10 +3,7 @@ import {
   Briefcase,
   Building2,
   ExternalLink,
-  FileText,
   Home,
-  Mail,
-  Phone,
   Search,
   ShieldCheck,
   User,
@@ -14,7 +11,18 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  AdminTableEmptyRow,
+  AdminTableHead,
+  AdminTableLoadingRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableRow,
+} from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -32,6 +40,11 @@ import {
   fetchClientProfiles,
   fetchPropertyCountsBySubmitter,
 } from "@/lib/adminModeration";
+import {
+  compareValues,
+  nextSortState,
+  type SortDir,
+} from "@/lib/adminTableSort";
 import {
   type Agency,
   adminUpdateAgencyApi,
@@ -53,192 +66,16 @@ const STATUS_STYLES: Record<VerificationStatus, string> = {
     "bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800",
 };
 
-function initials(name: string, email?: string | null) {
-  const n = name?.trim();
-  if (n)
-    return n
-      .split(/\s+/)
-      .map((p) => p[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-  return email?.[0]?.toUpperCase() || "?";
-}
-
-function ClientCard({
-  profile: u,
-  propertyCount,
-  onToggleVerified,
-  onReject,
-  busy,
-}: {
-  profile: UserProfile;
-  propertyCount: number;
-  onToggleVerified: (id: string, verified: boolean) => void;
-  onReject: (id: string) => void;
-  busy: boolean;
-}) {
-  const isRealtor = u.account_type === "realtor" || u.account_type === "agency";
-  const verified = u.verification_status === "verified";
-  const pending = u.verification_status === "pending";
-
+function StatusBadge({ status }: { status: VerificationStatus }) {
   return (
-    <article
+    <span
       className={cn(
-        "bg-card border border-border rounded-lg overflow-hidden flex flex-col h-full",
-        "shadow-sm hover:shadow-md transition-shadow duration-200",
-        pending && "ring-1 ring-amber-300/60",
-        verified && "ring-1 ring-emerald-300/40",
+        "inline-flex text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap",
+        STATUS_STYLES[status],
       )}
     >
-      {/* Accent strip */}
-      <div
-        className={cn(
-          "h-1 w-full",
-          isRealtor ? "bg-primary" : "bg-slate-400",
-          pending && "bg-amber-500",
-          verified && "bg-emerald-500",
-        )}
-      />
-
-      <div className="p-4 flex flex-col flex-1 gap-3">
-        {/* Header */}
-        <div className="flex items-start gap-3">
-          <div
-            className={cn(
-              "w-11 h-11 rounded-md flex items-center justify-center text-sm font-bold shrink-0",
-              isRealtor
-                ? "bg-primary/10 text-primary"
-                : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
-            )}
-          >
-            {initials(u.full_name, u.email)}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-              <h3 className="text-sm font-semibold text-foreground truncate">
-                {u.full_name || "Без имени"}
-              </h3>
-              {verified && <VerifiedBadge showLabel={false} />}
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded",
-                  isRealtor
-                    ? "bg-primary/10 text-primary"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                {isRealtor ? (
-                  <Building2 className="w-3 h-3" />
-                ) : (
-                  <User className="w-3 h-3" />
-                )}
-                {ACCOUNT_TYPE_LABELS[u.account_type as ProfileAccountType]}
-              </span>
-              <span
-                className={cn(
-                  "text-[10px] font-medium px-2 py-0.5 rounded-full",
-                  STATUS_STYLES[u.verification_status],
-                )}
-              >
-                {VERIFICATION_LABELS[u.verification_status]}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Contacts */}
-        <div className="space-y-1.5 text-xs">
-          {u.email && (
-            <a
-              href={`mailto:${u.email}`}
-              className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors truncate"
-            >
-              <Mail className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{u.email}</span>
-            </a>
-          )}
-          {u.phone && (
-            <a
-              href={`tel:${u.phone}`}
-              className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Phone className="w-3.5 h-3.5 shrink-0" />
-              {u.phone}
-            </a>
-          )}
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Home className="w-3.5 h-3.5 shrink-0" />
-            <span>
-              {propertyCount > 0
-                ? `${propertyCount} ${propertyCount === 1 ? "объект" : propertyCount < 5 ? "объекта" : "объектов"}`
-                : "Объектов нет"}
-            </span>
-          </div>
-        </div>
-
-        {/* Agency block — realtors */}
-        {isRealtor && (u.agency_name || u.agency_staff_count) && (
-          <div className="rounded-md bg-muted/50 border border-border/60 px-3 py-2 space-y-1">
-            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              <Briefcase className="w-3 h-3" />
-              Агентство
-            </div>
-            {u.agency_name && (
-              <p className="text-xs font-medium text-foreground">
-                {u.agency_name}
-              </p>
-            )}
-            {u.agency_staff_count != null && u.agency_staff_count > 0 && (
-              <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                <Users className="w-3 h-3" />
-                {u.agency_staff_count} сотрудников
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* About */}
-        {u.agency_about && (
-          <div className="rounded-md border border-border/50 px-3 py-2 bg-background/50">
-            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-              <FileText className="w-3 h-3" />
-              {isRealtor ? "Об агентстве" : "О себе"}
-            </div>
-            <p className="text-[11px] text-muted-foreground line-clamp-3 leading-relaxed">
-              {u.agency_about}
-            </p>
-          </div>
-        )}
-
-        {/* Footer actions */}
-        <div className="mt-auto pt-3 border-t border-border/60 flex items-center justify-between gap-2">
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <Switch
-              checked={verified}
-              disabled={busy}
-              onCheckedChange={(checked) => onToggleVerified(u.id, checked)}
-            />
-            <span className="text-[11px] font-medium text-muted-foreground">
-              Верифицирован
-            </span>
-          </label>
-          {pending && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-[10px] text-destructive border-destructive/30 hover:bg-destructive/5"
-              disabled={busy}
-              onClick={() => onReject(u.id)}
-            >
-              Отклонить
-            </Button>
-          )}
-        </div>
-      </div>
-    </article>
+      {VERIFICATION_LABELS[status]}
+    </span>
   );
 }
 
@@ -248,6 +85,22 @@ export default function OwnersRealtorsTab() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [agencySortField, setAgencySortField] = useState<string | null>(null);
+  const [agencySortDir, setAgencySortDir] = useState<SortDir>("asc");
+  const [profileSortField, setProfileSortField] = useState<string | null>(null);
+  const [profileSortDir, setProfileSortDir] = useState<SortDir>("asc");
+
+  const handleAgencySort = (field: string) => {
+    const next = nextSortState(agencySortField, agencySortDir, field);
+    setAgencySortField(next.field);
+    setAgencySortDir(next.dir);
+  };
+
+  const handleProfileSort = (field: string) => {
+    const next = nextSortState(profileSortField, profileSortDir, field);
+    setProfileSortField(next.field);
+    setProfileSortDir(next.dir);
+  };
 
   const {
     data: users = [],
@@ -444,6 +297,57 @@ export default function OwnersRealtorsTab() {
     });
   }, [agencies, typeFilter, statusFilter, search]);
 
+  const sortedAgencies = useMemo(() => {
+    if (!agencySortField) return filteredAgencies;
+    return [...filteredAgencies].sort((a, b) => {
+      if (agencySortField === "name") {
+        return compareValues(a.name, b.name, agencySortDir);
+      }
+      if (agencySortField === "verification_status") {
+        return compareValues(
+          a.verification_status,
+          b.verification_status,
+          agencySortDir,
+        );
+      }
+      return 0;
+    });
+  }, [filteredAgencies, agencySortField, agencySortDir]);
+
+  const sortedProfiles = useMemo(() => {
+    if (!profileSortField) return filtered;
+    return [...filtered].sort((a, b) => {
+      if (profileSortField === "name") {
+        return compareValues(
+          a.full_name || a.email,
+          b.full_name || b.email,
+          profileSortDir,
+        );
+      }
+      if (profileSortField === "email") {
+        return compareValues(a.email, b.email, profileSortDir);
+      }
+      if (profileSortField === "account_type") {
+        return compareValues(a.account_type, b.account_type, profileSortDir);
+      }
+      if (profileSortField === "verification_status") {
+        return compareValues(
+          a.verification_status,
+          b.verification_status,
+          profileSortDir,
+        );
+      }
+      if (profileSortField === "objects") {
+        return compareValues(
+          propertyCounts[a.id] || 0,
+          propertyCounts[b.id] || 0,
+          profileSortDir,
+        );
+      }
+      return 0;
+    });
+  }, [filtered, profileSortField, profileSortDir, propertyCounts]);
+
   const busy =
     toggleVerified.isPending ||
     rejectMutation.isPending ||
@@ -452,7 +356,6 @@ export default function OwnersRealtorsTab() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -474,7 +377,6 @@ export default function OwnersRealtorsTab() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
         {[
           { label: "Профили", value: stats.total, icon: Users },
@@ -512,7 +414,6 @@ export default function OwnersRealtorsTab() {
         ))}
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap gap-2">
         <div className="flex gap-1 p-0.5 bg-muted/50 rounded-lg border border-border/60">
           {(
@@ -524,6 +425,7 @@ export default function OwnersRealtorsTab() {
           ).map(([key, label]) => (
             <button
               key={key}
+              type="button"
               onClick={() => setTypeFilter(key)}
               className={cn(
                 "text-[11px] font-medium px-3 py-1.5 rounded-md transition-colors",
@@ -547,6 +449,7 @@ export default function OwnersRealtorsTab() {
           ).map(([key, label]) => (
             <button
               key={key}
+              type="button"
               onClick={() => setStatusFilter(key)}
               className={cn(
                 "text-[11px] font-medium px-2.5 py-1.5 rounded-md transition-colors whitespace-nowrap",
@@ -561,17 +464,7 @@ export default function OwnersRealtorsTab() {
         </div>
       </div>
 
-      {/* Cards grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-52 bg-card border border-border rounded-lg animate-pulse"
-            />
-          ))}
-        </div>
-      ) : isError ? (
+      {isError ? (
         <div className="text-center py-16 border border-dashed border-border rounded-lg bg-card">
           <p className="text-sm text-destructive font-medium">
             Не удалось загрузить пользователей
@@ -585,154 +478,363 @@ export default function OwnersRealtorsTab() {
             Повторить
           </Button>
         </div>
-      ) : filtered.length === 0 && filteredAgencies.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-border rounded-lg bg-card">
-          <Users className="w-10 h-10 text-muted-foreground/25 mx-auto mb-3" />
-          <p className="text-sm font-medium text-foreground">
-            Ничего не найдено
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {search
-              ? "Измените поиск или фильтры"
-              : "Собственники и агентства появятся здесь"}
-          </p>
-        </div>
       ) : (
-        <div className="space-y-6">
-          {filteredAgencies.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold">
-                Агентства ({filteredAgencies.length})
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {filteredAgencies.map((a) => {
-                  const verified = a.verification_status === "verified";
-                  const pending = a.verification_status === "pending";
-                  return (
-                    <article
-                      key={a.id}
-                      className={cn(
-                        "bg-card border border-border rounded-lg overflow-hidden flex flex-col",
-                        pending && "ring-1 ring-amber-300/60",
-                        verified && "ring-1 ring-emerald-300/40",
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "h-1 w-full",
-                          pending
-                            ? "bg-amber-500"
-                            : verified
-                              ? "bg-emerald-500"
-                              : "bg-primary",
-                        )}
-                      />
-                      <div className="p-4 flex flex-col flex-1 gap-3">
-                        <div className="flex items-start gap-3">
-                          <div className="w-11 h-11 rounded-md overflow-hidden bg-primary/10 flex items-center justify-center shrink-0">
-                            {a.logo_url ? (
-                              <img
-                                src={a.logo_url}
-                                alt=""
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <Building2 className="w-5 h-5 text-primary" />
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5">
-                              <h3 className="text-sm font-semibold truncate">
-                                {a.name || "Без названия"}
-                              </h3>
-                              {verified && <VerifiedBadge showLabel={false} />}
-                            </div>
-                            <span
+        <div className="space-y-4">
+          {typeFilter !== "owner" && (
+            <Card>
+              <CardContent className="p-0">
+                <div className="px-4 py-3 border-b border-border">
+                  <h3 className="text-sm font-semibold">
+                    Агентства ({sortedAgencies.length})
+                  </h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <AdminTableHead
+                          label="Название"
+                          field="name"
+                          sortable
+                          sortField={agencySortField}
+                          sortDir={agencySortDir}
+                          onSort={handleAgencySort}
+                        />
+                        <AdminTableHead
+                          label="Статус"
+                          field="verification_status"
+                          sortable
+                          sortField={agencySortField}
+                          sortDir={agencySortDir}
+                          onSort={handleAgencySort}
+                          className="w-32"
+                        />
+                        <AdminTableHead
+                          label="Описание"
+                          sortField={agencySortField}
+                          sortDir={agencySortDir}
+                          onSort={handleAgencySort}
+                        />
+                        <AdminTableHead
+                          label="Страница"
+                          sortField={agencySortField}
+                          sortDir={agencySortDir}
+                          onSort={handleAgencySort}
+                          className="w-28"
+                        />
+                        <AdminTableHead
+                          label="Верификация"
+                          sortField={agencySortField}
+                          sortDir={agencySortDir}
+                          onSort={handleAgencySort}
+                          className="w-36"
+                        />
+                        <AdminTableHead
+                          label="Действия"
+                          sortField={agencySortField}
+                          sortDir={agencySortDir}
+                          onSort={handleAgencySort}
+                          className="w-24 text-right"
+                        />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {isLoading ? (
+                        <AdminTableLoadingRow colSpan={6} />
+                      ) : sortedAgencies.length === 0 ? (
+                        <AdminTableEmptyRow
+                          colSpan={6}
+                          message="Агентства не найдены"
+                        />
+                      ) : (
+                        sortedAgencies.map((a) => {
+                          const verified = a.verification_status === "verified";
+                          const pending = a.verification_status === "pending";
+                          return (
+                            <TableRow
+                              key={a.id}
                               className={cn(
-                                "text-[10px] font-medium px-2 py-0.5 rounded-full",
-                                STATUS_STYLES[a.verification_status],
+                                "text-xs even:bg-muted/30",
+                                pending && "bg-amber-50/40 dark:bg-amber-950/10",
                               )}
                             >
-                              {VERIFICATION_LABELS[a.verification_status]}
-                            </span>
-                          </div>
-                        </div>
-                        {a.about && (
-                          <p className="text-[11px] text-muted-foreground line-clamp-3">
-                            {a.about}
-                          </p>
-                        )}
-                        <Link
-                          to={`/agentstvo/${a.id}`}
-                          className="text-xs text-primary inline-flex items-center gap-1 hover:underline"
-                        >
-                          Публичная страница{" "}
-                          <ExternalLink className="w-3 h-3" />
-                        </Link>
-                        <div className="mt-auto pt-3 border-t border-border/60 flex items-center justify-between gap-2">
-                          <label className="flex items-center gap-2 cursor-pointer select-none">
-                            <Switch
-                              checked={verified}
-                              disabled={busy}
-                              onCheckedChange={(checked) =>
-                                toggleAgencyVerified.mutate({
-                                  id: a.id,
-                                  verified: checked,
-                                })
+                              <TableCell className="py-1.5 font-medium">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <span className="truncate max-w-[200px]">
+                                    {a.name || "Без названия"}
+                                  </span>
+                                  {verified && (
+                                    <VerifiedBadge showLabel={false} />
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-1.5">
+                                <StatusBadge status={a.verification_status} />
+                              </TableCell>
+                              <TableCell className="py-1.5 text-muted-foreground max-w-[280px] truncate">
+                                {a.about || "—"}
+                              </TableCell>
+                              <TableCell className="py-1.5">
+                                <Link
+                                  to={`/agentstvo/${a.id}`}
+                                  className="text-primary inline-flex items-center gap-1 hover:underline whitespace-nowrap"
+                                >
+                                  Открыть
+                                  <ExternalLink className="w-3 h-3" />
+                                </Link>
+                              </TableCell>
+                              <TableCell className="py-1.5">
+                                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                                  <Switch
+                                    checked={verified}
+                                    disabled={busy}
+                                    onCheckedChange={(checked) =>
+                                      toggleAgencyVerified.mutate({
+                                        id: a.id,
+                                        verified: checked,
+                                      })
+                                    }
+                                  />
+                                  <span className="text-[11px] text-muted-foreground">
+                                    {verified ? "Да" : "Нет"}
+                                  </span>
+                                </label>
+                              </TableCell>
+                              <TableCell className="py-1.5 text-right">
+                                {pending && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 text-[10px] text-destructive border-destructive/30"
+                                    disabled={busy}
+                                    onClick={() =>
+                                      rejectAgencyMutation.mutate(a.id)
+                                    }
+                                  >
+                                    Отклонить
+                                  </Button>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card>
+            <CardContent className="p-0">
+              <div className="px-4 py-3 border-b border-border">
+                <h3 className="text-sm font-semibold">
+                  Профили ({sortedProfiles.length})
+                </h3>
+              </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <AdminTableHead
+                        label="Имя"
+                        field="name"
+                        sortable
+                        sortField={profileSortField}
+                        sortDir={profileSortDir}
+                        onSort={handleProfileSort}
+                      />
+                      <AdminTableHead
+                        label="Тип"
+                        field="account_type"
+                        sortable
+                        sortField={profileSortField}
+                        sortDir={profileSortDir}
+                        onSort={handleProfileSort}
+                        className="w-28"
+                      />
+                      <AdminTableHead
+                        label="Email"
+                        field="email"
+                        sortable
+                        sortField={profileSortField}
+                        sortDir={profileSortDir}
+                        onSort={handleProfileSort}
+                      />
+                      <AdminTableHead
+                        label="Телефон"
+                        sortField={profileSortField}
+                        sortDir={profileSortDir}
+                        onSort={handleProfileSort}
+                        className="w-28"
+                      />
+                      <AdminTableHead
+                        label="Объекты"
+                        field="objects"
+                        sortable
+                        sortField={profileSortField}
+                        sortDir={profileSortDir}
+                        onSort={handleProfileSort}
+                        className="w-20"
+                      />
+                      <AdminTableHead
+                        label="Агентство"
+                        sortField={profileSortField}
+                        sortDir={profileSortDir}
+                        onSort={handleProfileSort}
+                        className="w-32"
+                      />
+                      <AdminTableHead
+                        label="Статус"
+                        field="verification_status"
+                        sortable
+                        sortField={profileSortField}
+                        sortDir={profileSortDir}
+                        onSort={handleProfileSort}
+                        className="w-32"
+                      />
+                      <AdminTableHead
+                        label="Верификация"
+                        sortField={profileSortField}
+                        sortDir={profileSortDir}
+                        onSort={handleProfileSort}
+                        className="w-36"
+                      />
+                      <AdminTableHead
+                        label="Действия"
+                        sortField={profileSortField}
+                        sortDir={profileSortDir}
+                        onSort={handleProfileSort}
+                        className="w-24 text-right"
+                      />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoading ? (
+                      <AdminTableLoadingRow colSpan={9} />
+                    ) : sortedProfiles.length === 0 ? (
+                      <AdminTableEmptyRow
+                        colSpan={9}
+                        message="Профили не найдены"
+                      />
+                    ) : (
+                      sortedProfiles.map((u) => {
+                        const profile = u as UserProfile;
+                        const verified =
+                          profile.verification_status === "verified";
+                        const pending =
+                          profile.verification_status === "pending";
+                        const count = propertyCounts[profile.id] || 0;
+                        const isRealtor =
+                          profile.account_type === "realtor" ||
+                          profile.account_type === "agency";
+
+                        return (
+                          <TableRow
+                            key={profile.id}
+                            className={cn(
+                              "text-xs even:bg-muted/30",
+                              pending && "bg-amber-50/40 dark:bg-amber-950/10",
+                            )}
+                          >
+                            <TableCell className="py-1.5 font-medium">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="truncate max-w-[180px]">
+                                  {profile.full_name || "Без имени"}
+                                </span>
+                                {verified && (
+                                  <VerifiedBadge showLabel={false} />
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-1.5 whitespace-nowrap">
+                              {
+                                ACCOUNT_TYPE_LABELS[
+                                  profile.account_type as ProfileAccountType
+                                ]
                               }
-                            />
-                            <span className="text-[11px] font-medium text-muted-foreground">
-                              Верифицировано
-                            </span>
-                          </label>
-                          {pending && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-[10px] text-destructive border-destructive/30"
-                              disabled={busy}
-                              onClick={() => rejectAgencyMutation.mutate(a.id)}
-                            >
-                              Отклонить
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
+                            </TableCell>
+                            <TableCell className="py-1.5 text-muted-foreground max-w-[200px] truncate">
+                              {profile.email ? (
+                                <a
+                                  href={`mailto:${profile.email}`}
+                                  className="hover:text-primary"
+                                >
+                                  {profile.email}
+                                </a>
+                              ) : (
+                                "—"
+                              )}
+                            </TableCell>
+                            <TableCell className="py-1.5 whitespace-nowrap">
+                              {profile.phone ? (
+                                <a
+                                  href={`tel:${profile.phone}`}
+                                  className="hover:text-primary"
+                                >
+                                  {profile.phone}
+                                </a>
+                              ) : (
+                                "—"
+                              )}
+                            </TableCell>
+                            <TableCell className="py-1.5 tabular-nums">
+                              <span className="inline-flex items-center gap-1">
+                                <Home className="w-3 h-3 text-muted-foreground" />
+                                {count}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-1.5 truncate max-w-[140px]">
+                              {isRealtor && profile.agency_name
+                                ? profile.agency_name
+                                : "—"}
+                            </TableCell>
+                            <TableCell className="py-1.5">
+                              <StatusBadge status={profile.verification_status} />
+                            </TableCell>
+                            <TableCell className="py-1.5">
+                              <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                                <Switch
+                                  checked={verified}
+                                  disabled={busy}
+                                  onCheckedChange={(checked) =>
+                                    toggleVerified.mutate({
+                                      id: profile.id,
+                                      verified: checked,
+                                    })
+                                  }
+                                />
+                                <span className="text-[11px] text-muted-foreground">
+                                  {verified ? "Да" : "Нет"}
+                                </span>
+                              </label>
+                            </TableCell>
+                            <TableCell className="py-1.5 text-right">
+                              {pending && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 text-[10px] text-destructive border-destructive/30"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    rejectMutation.mutate(profile.id)
+                                  }
+                                >
+                                  Отклонить
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
               </div>
-            </div>
-          )}
-
-          {filtered.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold">
-                Профили ({filtered.length})
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {filtered.map((u) => (
-                  <ClientCard
-                    key={u.id}
-                    profile={u as UserProfile}
-                    propertyCount={propertyCounts[u.id] || 0}
-                    busy={busy}
-                    onToggleVerified={(id, verified) =>
-                      toggleVerified.mutate({ id, verified })
-                    }
-                    onReject={(id) => rejectMutation.mutate(id)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+            </CardContent>
+          </Card>
         </div>
-      )}
-
-      {!isLoading && (filtered.length > 0 || filteredAgencies.length > 0) && (
-        <p className="text-[10px] text-muted-foreground text-center">
-          Профили: {filtered.length} · Агентства: {filteredAgencies.length}
-        </p>
       )}
     </div>
   );

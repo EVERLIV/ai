@@ -11,11 +11,57 @@ import {
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import heroImg from "@/assets/hero-commercial.jpg";
+import RegisterRoleWizard, {
+  REGISTER_HEADINGS,
+  type RegisterWizardStep,
+} from "@/components/auth/RegisterRoleWizard";
 import BrandMark from "@/components/BrandMark";
 import SeoHead from "@/components/SeoHead";
 import { useToast } from "@/hooks/use-toast";
+import {
+  ACCOUNT_TYPE_LABELS,
+  type ProfileAccountType,
+} from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { describeAuthError } from "@/lib/authErrors";
+
+type RegisterStep = RegisterWizardStep | "form";
+
+const LISTER_ACCOUNT_TYPES = new Set<ProfileAccountType>([
+  "owner",
+  "agency",
+  "realtor",
+  "developer",
+]);
+
+function accountTypeFromUrl(search: string): ProfileAccountType | null {
+  const type = new URLSearchParams(search).get("type");
+  if (type === "developer") return "developer";
+  if (type === "agency") return "agency";
+  if (type === "owner") return "owner";
+  if (type === "realtor") return "realtor";
+  if (type === "seeker") return "seeker";
+  return null;
+}
+
+function initialRegisterStep(
+  search: string,
+  inviteToken: string,
+): RegisterStep {
+  if (inviteToken) return "form";
+  const type = accountTypeFromUrl(search);
+  if (type && LISTER_ACCOUNT_TYPES.has(type)) return "form";
+  if (type === "seeker") return "form";
+  return "group";
+}
+
+function initialAccountType(
+  search: string,
+  inviteToken: string,
+): ProfileAccountType | null {
+  if (inviteToken) return "agency";
+  return accountTypeFromUrl(search);
+}
 
 const BENEFITS = [
   { icon: Heart, text: "Сохраняйте понравившиеся объекты в избранное" },
@@ -33,16 +79,18 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [accountType, setAccountType] = useState<
-    "seeker" | "owner" | "agency" | "realtor" | "developer"
-  >(() => {
-    const t = new URLSearchParams(window.location.search).get("type");
-    if (t === "developer") return "developer";
-    if (t === "agency") return "agency";
-    if (t === "owner") return "owner";
-    if (t === "realtor") return "realtor";
-    return "seeker";
-  });
+  const navigate = useNavigate();
+  const { search } = useLocation();
+  const searchParams = new URLSearchParams(search);
+  const redirectTo = searchParams.get("redirect") || "/";
+  const inviteToken = searchParams.get("invite") || "";
+  const { toast } = useToast();
+  const [registerStep, setRegisterStep] = useState<RegisterStep>(() =>
+    initialRegisterStep(search, inviteToken),
+  );
+  const [accountType, setAccountType] = useState<ProfileAccountType | null>(
+    () => initialAccountType(search, inviteToken),
+  );
   const [agencyName, setAgencyName] = useState("");
   const [agencyStaffCount, setAgencyStaffCount] = useState("");
   const [developerName, setDeveloperName] = useState("");
@@ -58,16 +106,32 @@ export default function Auth() {
     kind: string;
   } | null>(null);
   const [resendBusy, setResendBusy] = useState(false);
-  const navigate = useNavigate();
-  const { search } = useLocation();
-  const searchParams = new URLSearchParams(search);
-  const redirectTo = searchParams.get("redirect") || "/";
-  const inviteToken = searchParams.get("invite") || "";
-  const { toast } = useToast();
+
+  const resetRegisterWizard = () => {
+    setRegisterStep(initialRegisterStep(search, inviteToken));
+    setAccountType(initialAccountType(search, inviteToken));
+  };
+
+  const openRegisterTab = () => {
+    setTab("register");
+    setLoginHint(null);
+    resetRegisterWizard();
+  };
+
+  const handleChangeAccountType = () => {
+    if (inviteToken) return;
+    if (accountType === "seeker" || accountType === null) {
+      setRegisterStep("group");
+      setAccountType(null);
+      return;
+    }
+    setRegisterStep("lister");
+  };
 
   useEffect(() => {
     if (inviteToken) {
       setAccountType("agency");
+      setRegisterStep("form");
       setTab("register");
     }
   }, [inviteToken]);
@@ -135,6 +199,8 @@ export default function Auth() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    const selectedType = inviteToken ? "agency" : accountType;
+    if (!selectedType) return;
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -144,19 +210,19 @@ export default function Auth() {
           data: {
             full_name: fullName,
             phone,
-            account_type: inviteToken ? "agency" : accountType,
+            account_type: selectedType,
             agency_name:
-              accountType === "agency" && !inviteToken ? agencyName.trim() : "",
+              selectedType === "agency" && !inviteToken ? agencyName.trim() : "",
             agency_staff_count:
-              accountType === "agency" && !inviteToken
+              selectedType === "agency" && !inviteToken
                 ? agencyStaffCount.trim()
                 : "",
             developer_name:
-              accountType === "developer" && !inviteToken
+              selectedType === "developer" && !inviteToken
                 ? developerName.trim()
                 : "",
             developer_subtype:
-              accountType === "developer" && !inviteToken
+              selectedType === "developer" && !inviteToken
                 ? developerSubtype
                 : "",
             invite_token: inviteToken || "",
@@ -276,6 +342,10 @@ export default function Auth() {
             <button
               key={key}
               onClick={() => {
+                if (key === "register") {
+                  openRegisterTab();
+                  return;
+                }
                 setTab(key);
                 setLoginHint(null);
               }}
@@ -383,47 +453,66 @@ export default function Auth() {
             <p className="text-xs text-muted-foreground mt-6 text-center">
               Нет аккаунта?{" "}
               <button
-                onClick={() => setTab("register")}
+                onClick={openRegisterTab}
                 className="text-primary hover:underline font-medium"
               >
                 Зарегистрироваться
               </button>
             </p>
           </>
+        ) : registerStep === "group" || registerStep === "lister" ? (
+          <>
+            <RegisterRoleWizard
+              step={registerStep}
+              onSelectSeeker={() => {
+                setAccountType("seeker");
+                setRegisterStep("form");
+              }}
+              onSelectLister={() => setRegisterStep("lister")}
+              onSelectListerRole={(role) => {
+                setAccountType(role);
+                setRegisterStep("form");
+              }}
+              onBack={() => setRegisterStep("group")}
+            />
+            <p className="text-xs text-muted-foreground mt-6 text-center">
+              Уже есть аккаунт?{" "}
+              <button
+                onClick={() => setTab("login")}
+                className="text-primary hover:underline font-medium"
+              >
+                Войти
+              </button>
+            </p>
+          </>
         ) : (
           <>
             <h1 className="font-display text-2xl font-bold text-foreground mb-1">
-              Создать аккаунт
+              {inviteToken
+                ? REGISTER_HEADINGS.agency.title
+                : REGISTER_HEADINGS[accountType ?? "seeker"].title}
             </h1>
             <p className="text-sm text-muted-foreground mb-7">
-              Бесплатно — доступ к избранному и заявкам
+              {inviteToken
+                ? "Вы присоединяетесь к команде агентства"
+                : REGISTER_HEADINGS[accountType ?? "seeker"].subtitle}
             </p>
             <form onSubmit={handleRegister} className="space-y-4">
-              {!inviteToken && (
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">
-                    Я хочу
-                  </label>
-                  <select
-                    value={accountType}
-                    onChange={(e) =>
-                      setAccountType(
-                        e.target.value as
-                          | "seeker"
-                          | "owner"
-                          | "agency"
-                          | "realtor"
-                          | "developer",
-                      )
-                    }
-                    className="w-full h-11 px-3 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary"
+              {!inviteToken && accountType && (
+                <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/40 px-3 py-2">
+                  <span className="text-xs text-muted-foreground">
+                    Тип аккаунта:{" "}
+                    <span className="font-medium text-foreground">
+                      {ACCOUNT_TYPE_LABELS[accountType]}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleChangeAccountType}
+                    className="text-xs font-medium text-primary hover:underline shrink-0"
                   >
-                    <option value="seeker">Хочу найти</option>
-                    <option value="owner">Хочу сдать (собственник)</option>
-                    <option value="agency">Агентство</option>
-                    <option value="realtor">Риелтор</option>
-                    <option value="developer">Застройщик</option>
-                  </select>
+                    Изменить
+                  </button>
                 </div>
               )}
               {inviteToken && (

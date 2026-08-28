@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDown,
   ArrowLeft,
@@ -38,6 +38,9 @@ import AdPlacementsTab from "@/components/admin/AdPlacementsTab";
 import CrmLeadsTab from "@/components/admin/CrmLeadsTab";
 import SeekersCatalogTab from "@/components/admin/SeekersCatalogTab";
 import AdminSiteAnalyticsTab from "@/components/admin/AdminSiteAnalyticsTab";
+import PropertiesAdminTable from "@/components/admin/PropertiesAdminTable";
+import PropertySeoFields from "@/components/admin/PropertySeoFields";
+import UsersRolesTab from "@/components/admin/UsersRolesTab";
 import DictionariesTab from "@/components/admin/DictionariesTab";
 import ModerationQueue from "@/components/admin/ModerationQueue";
 import AgencyReviewsModeration from "@/components/admin/AgencyReviewsModeration";
@@ -90,6 +93,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useAllDictionaryValues } from "@/hooks/useDictionaries";
+import { useListScrollRestore } from "@/hooks/useListScrollRestore";
 import {
   SERVICE_ROLE_KEY,
   SUPABASE_URL,
@@ -144,6 +148,7 @@ import {
   togglePropertyType,
 } from "@/lib/propertyTypes";
 import { syncLocationExtras } from "@/lib/propertyFormMapper";
+import { cn } from "@/lib/utils";
 import { isHouseLike } from "@/lib/propertyTypeFamilies";
 import {
   getResidentialBuildingType,
@@ -171,6 +176,8 @@ interface PropertyExtras extends PropertySidebarExtras {
   wood_foundation?: string;
   wood_roof?: string;
   wood_finish?: string;
+  seo_title?: string;
+  seo_description?: string;
 }
 
 interface PropertyForm {
@@ -333,12 +340,24 @@ function firstTabInSection(
   return groups[0]?.items[0]?.value ?? "properties";
 }
 
+const sidebarNavButtonClass = (active: boolean) =>
+  cn(
+    "w-full flex items-start gap-2.5 rounded-md px-3 py-2 text-left text-xs leading-snug transition-colors",
+    active
+      ? "bg-primary text-primary-foreground font-medium"
+      : "text-foreground hover:bg-muted",
+  );
+
 export default function Dashboard() {
   const { user, loading, signOut, hasRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { byCategory, propertyTypes } = useAllDictionaryValues();
+  const { byCategory, propertyTypes, all: dictionaryAll } = useAllDictionaryValues();
+  const catalogDistricts = useMemo(
+    () => dictionaryAll.filter((i) => i.category === "district"),
+    [dictionaryAll],
+  );
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [adminTab, setAdminTab] = useState("properties");
@@ -351,10 +370,10 @@ export default function Dashboard() {
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
   const [uploading, setUploading] = useState(false);
-  const [propSearch, setPropSearch] = useState("");
   const [geocoding, setGeocoding] = useState(false);
   const [latText, setLatText] = useState("");
   const [lngText, setLngText] = useState("");
+  const scrollRestore = useListScrollRestore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const TYPES = propertyTypes(form.segment);
@@ -401,99 +420,7 @@ export default function Dashboard() {
       ? byCategory("purpose")
       : [...FALLBACK_PURPOSE];
 
-  // Sorting
-  const [sortField, setSortField] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-
-  // Column visibility
-  type ColKey =
-    | "photo"
-    | "type"
-    | "address"
-    | "district"
-    | "area"
-    | "price"
-    | "price_per_m2"
-    | "deal_type"
-    | "floor"
-    | "ceiling_height"
-    | "parking"
-    | "condition"
-    | "layout"
-    | "deposit"
-    | "contract_term"
-    | "features"
-    | "photos_count"
-    | "views_count"
-    | "manager"
-    | "client"
-    | "status"
-    | "published_date"
-    | "actions";
-
-  const ALL_COLUMNS: { key: ColKey; label: string; defaultOn: boolean }[] = [
-    { key: "photo", label: "Фото", defaultOn: true },
-    { key: "type", label: "Тип", defaultOn: true },
-    { key: "address", label: "Адрес", defaultOn: true },
-    { key: "district", label: "Район", defaultOn: true },
-    { key: "area", label: "Площадь", defaultOn: true },
-    { key: "price", label: "Цена", defaultOn: true },
-    { key: "price_per_m2", label: "₽/м²", defaultOn: false },
-    { key: "deal_type", label: "Сделка", defaultOn: true },
-    { key: "floor", label: "Этаж", defaultOn: false },
-    { key: "ceiling_height", label: "Потолки", defaultOn: false },
-    { key: "parking", label: "Парковка", defaultOn: false },
-    { key: "condition", label: "Состояние", defaultOn: false },
-    { key: "layout", label: "Планировка", defaultOn: false },
-    { key: "deposit", label: "Залог", defaultOn: false },
-    { key: "contract_term", label: "Срок", defaultOn: false },
-    { key: "features", label: "Особенности", defaultOn: false },
-    { key: "photos_count", label: "Кол-во фото", defaultOn: false },
-    { key: "views_count", label: "Просмотры", defaultOn: false },
-    { key: "published_date", label: "Дата", defaultOn: false },
-    { key: "manager", label: "Менеджер", defaultOn: true },
-    { key: "client", label: "Клиент", defaultOn: true },
-    { key: "status", label: "Статус", defaultOn: true },
-    { key: "actions", label: "Действия", defaultOn: true },
-  ];
-
-  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(
-    () => new Set(ALL_COLUMNS.filter((c) => c.defaultOn).map((c) => c.key)),
-  );
-
-  const toggleCol = (key: ColKey) => {
-    setVisibleCols((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
-
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      if (sortDir === "asc") setSortDir("desc");
-      else {
-        setSortField(null);
-        setSortDir("asc");
-      }
-    } else {
-      setSortField(field);
-      setSortDir("asc");
-    }
-  };
-
-  const SortIcon = ({ field }: { field: string }) => {
-    if (sortField !== field)
-      return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" />;
-    return sortDir === "asc" ? (
-      <ArrowUp className="w-3 h-3 ml-1" />
-    ) : (
-      <ArrowDown className="w-3 h-3 ml-1" />
-    );
-  };
-
-  const { data: properties = [], isLoading } = useQuery({
+  const { data: properties = [], isLoading, isFetching } = useQuery({
     queryKey: ["dashboard-properties"],
     queryFn: async () => {
       const { data, error } = await supabaseAdmin.db.select(
@@ -504,6 +431,7 @@ export default function Dashboard() {
         throw new Error(error.message || "Не удалось загрузить объекты");
       return data;
     },
+    placeholderData: keepPreviousData,
   });
 
   const { data: users = [] } = useQuery({
@@ -631,6 +559,9 @@ export default function Dashboard() {
           {
             ...(typesExtras as PropertyExtras),
             ...(locationExtras ? { location: locationExtras } : {}),
+            seo_title: formData.extras.seo_title?.trim() || undefined,
+            seo_description:
+              formData.extras.seo_description?.trim() || undefined,
           },
           primaryType,
           formData.deal_type,
@@ -638,6 +569,7 @@ export default function Dashboard() {
       };
 
       setUploading(true);
+      const savedEditId = editId;
 
       if (editId) {
         // Always update photos when editing (handles deletions too)
@@ -669,12 +601,29 @@ export default function Dashboard() {
         }
       }
       setUploading(false);
+      return { isEdit: !!savedEditId, id: savedEditId || null, payload };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dashboard-properties"] });
-      setDialogOpen(false);
-      resetForm();
-      toast({ title: editId ? "Объект обновлён" : "Объект добавлен" });
+    onSuccess: (result) => {
+      if (result?.isEdit && result.id) {
+        queryClient.setQueryData(["dashboard-properties"], (old: unknown) => {
+          if (!Array.isArray(old)) return old;
+          return old.map((p: { id: string }) =>
+            p.id === result.id ? { ...p, ...result.payload } : p,
+          );
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["dashboard-properties"],
+        });
+        scrollRestore.restore();
+        toast({ title: "Сохранено" });
+      } else {
+        void queryClient.invalidateQueries({
+          queryKey: ["dashboard-properties"],
+        });
+        setDialogOpen(false);
+        resetForm();
+        toast({ title: "Объект добавлен" });
+      }
     },
     onError: (err: Error) => {
       setUploading(false);
@@ -960,32 +909,6 @@ export default function Dashboard() {
     ),
   };
 
-  const sortedProperties = useMemo(() => {
-    let list = properties;
-    if (propSearch.trim()) {
-      const q = propSearch.trim().toLowerCase();
-      list = list.filter(
-        (p: any) =>
-          p.address?.toLowerCase().includes(q) ||
-          p.district?.toLowerCase().includes(q) ||
-          getPropertyTypes(p).some((t) => t.toLowerCase().includes(q)) ||
-          p.description?.toLowerCase().includes(q),
-      );
-    }
-    if (!sortField) return list;
-    return [...list].sort((a: any, b: any) => {
-      let aVal = a[sortField];
-      let bVal = b[sortField];
-      if (typeof aVal === "string") aVal = aVal.toLowerCase();
-      if (typeof bVal === "string") bVal = bVal.toLowerCase();
-      if (aVal == null) return 1;
-      if (bVal == null) return -1;
-      if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [properties, sortField, sortDir, propSearch]);
-
   const isSale = isSaleDeal(form.deal_type);
   const isLandForm = isLandProperty({
     type: form.types[0],
@@ -1103,7 +1026,7 @@ export default function Dashboard() {
         className="flex-1 flex flex-col lg:flex-row min-h-0"
       >
         {/* Desktop sidebar */}
-        <aside className="hidden lg:flex w-60 shrink-0 flex-col border-r border-border bg-card sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
+        <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border bg-card sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
           <div className="p-3 pb-0">
             <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
               <button
@@ -1147,14 +1070,10 @@ export default function Dashboard() {
                         key={t.value}
                         type="button"
                         onClick={() => selectAdminTab(t.value)}
-                        className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors ${
-                          active
-                            ? "bg-primary text-primary-foreground font-medium"
-                            : "text-foreground hover:bg-muted"
-                        }`}
+                        className={sidebarNavButtonClass(active)}
                       >
-                        <Icon className="w-4 h-4 shrink-0" />
-                        {t.label}
+                        <Icon className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span className="flex-1 min-w-0">{t.label}</span>
                       </button>
                     );
                   })}
@@ -1215,14 +1134,10 @@ export default function Dashboard() {
                             selectAdminTab(t.value);
                             setMobileNavOpen(false);
                           }}
-                          className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2.5 text-sm ${
-                            adminTab === t.value
-                              ? "bg-primary text-primary-foreground"
-                              : "hover:bg-muted"
-                          }`}
+                          className={sidebarNavButtonClass(adminTab === t.value)}
                         >
-                          <Icon className="w-4 h-4" />
-                          {t.label}
+                          <Icon className="w-4 h-4 shrink-0 mt-0.5" />
+                          <span className="flex-1 min-w-0">{t.label}</span>
                         </button>
                       );
                     })}
@@ -1338,7 +1253,10 @@ export default function Dashboard() {
                       </Button>
                       <Button
                         size="sm"
-                        onClick={() => saveMutation.mutate(form)}
+                        onClick={() => {
+                          if (editId) scrollRestore.capture(editId);
+                          saveMutation.mutate(form);
+                        }}
                         disabled={saveMutation.isPending || uploading}
                         className="bg-primary hover:bg-primary/90 text-primary-foreground"
                       >
@@ -1530,6 +1448,7 @@ export default function Dashboard() {
                       <LocationDistrictSelect
                           value={form.district}
                           hasCoords={form.lat != null && form.lng != null}
+                          catalogItems={catalogDistricts}
                           onChange={(v, meta) => {
                             setForm((prev) => ({
                               ...prev,
@@ -2095,6 +2014,36 @@ export default function Dashboard() {
                           className="text-xs min-h-[200px] whitespace-pre-wrap leading-relaxed"
                         />
                       </div>
+                      <PropertySeoFields
+                        property={{
+                          deal_type: form.deal_type,
+                          type: form.types[0],
+                          extras: {
+                            property_types: form.types,
+                            seo_title: form.extras.seo_title,
+                            seo_description: form.extras.seo_description,
+                          },
+                          address: form.address,
+                          district: form.district,
+                          price: form.price,
+                          area: form.area,
+                          description: form.description,
+                        }}
+                        seoTitle={form.extras.seo_title || ""}
+                        seoDescription={form.extras.seo_description || ""}
+                        onSeoTitleChange={(v) =>
+                          updateField("extras", {
+                            ...form.extras,
+                            seo_title: v,
+                          })
+                        }
+                        onSeoDescriptionChange={(v) =>
+                          updateField("extras", {
+                            ...form.extras,
+                            seo_description: v,
+                          })
+                        }
+                      />
                     </fieldset>
 
                     {/* Section: Особенности */}
@@ -2782,510 +2731,13 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <Card>
-              <CardHeader className="py-3 px-4 flex-row items-center justify-between gap-3 flex-wrap">
-                <CardTitle className="text-sm font-medium">
-                  Список объектов ({sortedProperties.length}
-                  {propSearch ? ` из ${properties.length}` : ""})
-                </CardTitle>
-                <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-                  <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                    <Input
-                      value={propSearch}
-                      onChange={(e) => setPropSearch(e.target.value)}
-                      placeholder="Поиск по адресу, району, типу..."
-                      className="pl-8 h-8 text-xs"
-                    />
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs gap-1"
-                      >
-                        <Settings2 className="w-3.5 h-3.5" /> Столбцы
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-48 max-h-80 overflow-y-auto"
-                    >
-                      {ALL_COLUMNS.filter((c) => c.key !== "actions").map(
-                        (col) => (
-                          <DropdownMenuCheckboxItem
-                            key={col.key}
-                            checked={visibleCols.has(col.key)}
-                            onCheckedChange={() => toggleCol(col.key)}
-                          >
-                            {col.label}
-                          </DropdownMenuCheckboxItem>
-                        ),
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                {/* Compact mobile list */}
-                <div className="lg:hidden divide-y divide-border">
-                  {isLoading ? (
-                    <div className="text-center py-8 text-sm text-muted-foreground">
-                      Загрузка...
-                    </div>
-                  ) : sortedProperties.length === 0 ? (
-                    <div className="text-center py-8 text-sm text-muted-foreground">
-                      Нет объектов
-                    </div>
-                  ) : (
-                    sortedProperties.map((p: any) => (
-                      <div
-                        key={p.id}
-                        className="flex items-center gap-3 px-4 py-3"
-                        onClick={() => openEdit(p)}
-                      >
-                        {p.cover_photo ? (
-                          <img
-                            src={p.cover_photo}
-                            alt=""
-                            className="w-12 h-12 rounded object-cover shrink-0"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded bg-muted flex items-center justify-center shrink-0">
-                            <ImageIcon className="w-4 h-4 text-muted-foreground" />
-                          </div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <div className="flex flex-wrap gap-1">
-                              {getPropertyTypes(p).map((t) => (
-                                <Badge
-                                  key={t}
-                                  variant="secondary"
-                                  className="text-[10px] px-1.5 py-0"
-                                >
-                                  {t}
-                                </Badge>
-                              ))}
-                            </div>
-                            {!p.is_active && (
-                              <Badge
-                                variant="outline"
-                                className="text-[10px] px-1.5 py-0"
-                              >
-                                Скрыт
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs truncate">{p.address}</p>
-                          <p className="text-xs font-medium">
-                            {Number(p.price).toLocaleString()} ₽
-                            {p.deal_type === "Аренда" ? "/мес" : ""}
-                            <span className="text-muted-foreground font-normal">
-                              {" "}
-                              · {p.area} м²
-                            </span>
-                          </p>
-                        </div>
-                        <div className="flex flex-col gap-1 shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openEdit(p);
-                            }}
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm("Удалить объект?"))
-                                deleteMutation.mutate(p.id);
-                            }}
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-                <div className="hidden lg:block overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {visibleCols.has("photo") && (
-                          <TableHead className="w-12">Фото</TableHead>
-                        )}
-                        {visibleCols.has("type") && (
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("type")}
-                          >
-                            <span className="flex items-center">
-                              Тип
-                              <SortIcon field="type" />
-                            </span>
-                          </TableHead>
-                        )}
-                        {visibleCols.has("address") && (
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("address")}
-                          >
-                            <span className="flex items-center">
-                              Адрес
-                              <SortIcon field="address" />
-                            </span>
-                          </TableHead>
-                        )}
-                        {visibleCols.has("district") && (
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("district")}
-                          >
-                            <span className="flex items-center">
-                              Район
-                              <SortIcon field="district" />
-                            </span>
-                          </TableHead>
-                        )}
-                        {visibleCols.has("area") && (
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("area")}
-                          >
-                            <span className="flex items-center">
-                              Площадь
-                              <SortIcon field="area" />
-                            </span>
-                          </TableHead>
-                        )}
-                        {visibleCols.has("price") && (
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("price")}
-                          >
-                            <span className="flex items-center">
-                              Цена
-                              <SortIcon field="price" />
-                            </span>
-                          </TableHead>
-                        )}
-                        {visibleCols.has("price_per_m2") && (
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("price_per_m2")}
-                          >
-                            <span className="flex items-center">
-                              ₽/м²
-                              <SortIcon field="price_per_m2" />
-                            </span>
-                          </TableHead>
-                        )}
-                        {visibleCols.has("deal_type") && (
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("deal_type")}
-                          >
-                            <span className="flex items-center">
-                              Сделка
-                              <SortIcon field="deal_type" />
-                            </span>
-                          </TableHead>
-                        )}
-                        {visibleCols.has("floor") && (
-                          <TableHead>Этаж</TableHead>
-                        )}
-                        {visibleCols.has("ceiling_height") && (
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("ceiling_height")}
-                          >
-                            <span className="flex items-center">
-                              Потолки
-                              <SortIcon field="ceiling_height" />
-                            </span>
-                          </TableHead>
-                        )}
-                        {visibleCols.has("parking") && (
-                          <TableHead>Парковка</TableHead>
-                        )}
-                        {visibleCols.has("condition") && (
-                          <TableHead>Состояние</TableHead>
-                        )}
-                        {visibleCols.has("layout") && (
-                          <TableHead>Планировка</TableHead>
-                        )}
-                        {visibleCols.has("deposit") && (
-                          <TableHead>Залог</TableHead>
-                        )}
-                        {visibleCols.has("contract_term") && (
-                          <TableHead>Срок</TableHead>
-                        )}
-                        {visibleCols.has("features") && (
-                          <TableHead>Особенности</TableHead>
-                        )}
-                        {visibleCols.has("photos_count") && (
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("photos_count")}
-                          >
-                            <span className="flex items-center">
-                              Фото
-                              <SortIcon field="photos_count" />
-                            </span>
-                          </TableHead>
-                        )}
-                        {visibleCols.has("views_count") && (
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("views_count")}
-                          >
-                            <span className="flex items-center">
-                              Просм.
-                              <SortIcon field="views_count" />
-                            </span>
-                          </TableHead>
-                        )}
-                        {visibleCols.has("published_date") && (
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("published_date")}
-                          >
-                            <span className="flex items-center">
-                              Дата
-                              <SortIcon field="published_date" />
-                            </span>
-                          </TableHead>
-                        )}
-                        {visibleCols.has("manager") && (
-                          <TableHead>Менеджер</TableHead>
-                        )}
-                        {visibleCols.has("client") && (
-                          <TableHead>Клиент</TableHead>
-                        )}
-                        {visibleCols.has("status") && (
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("is_active")}
-                          >
-                            <span className="flex items-center">
-                              Статус
-                              <SortIcon field="is_active" />
-                            </span>
-                          </TableHead>
-                        )}
-                        {visibleCols.has("actions") && (
-                          <TableHead className="text-right">Действия</TableHead>
-                        )}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {isLoading ? (
-                        <TableRow>
-                          <TableCell
-                            colSpan={visibleCols.size}
-                            className="text-center py-8 text-muted-foreground"
-                          >
-                            Загрузка...
-                          </TableCell>
-                        </TableRow>
-                      ) : sortedProperties.length === 0 ? (
-                        <TableRow>
-                          <TableCell
-                            colSpan={visibleCols.size}
-                            className="text-center py-8 text-muted-foreground"
-                          >
-                            Нет объектов
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        sortedProperties.map((p: any) => (
-                          <TableRow key={p.id}>
-                            {visibleCols.has("photo") && (
-                              <TableCell>
-                                {p.cover_photo ? (
-                                  <img
-                                    src={p.cover_photo}
-                                    alt=""
-                                    className="w-10 h-10 rounded object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
-                                    <ImageIcon className="w-4 h-4 text-muted-foreground" />
-                                  </div>
-                                )}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("type") && (
-                              <TableCell>
-                                <div className="flex flex-wrap gap-1">
-                                  {getPropertyTypes(p).map((t) => (
-                                    <Badge
-                                      key={t}
-                                      variant="secondary"
-                                      className="text-[10px]"
-                                    >
-                                      {t}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </TableCell>
-                            )}
-                            {visibleCols.has("address") && (
-                              <TableCell className="text-xs whitespace-normal min-w-[220px]">
-                                {p.address}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("district") && (
-                              <TableCell className="text-xs">
-                                {p.district || "—"}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("area") && (
-                              <TableCell className="text-xs">
-                                {p.area} м²
-                              </TableCell>
-                            )}
-                            {visibleCols.has("price") && (
-                              <TableCell className="font-medium text-xs whitespace-nowrap">
-                                {Number(p.price).toLocaleString()} ₽
-                                {p.deal_type === "Аренда" ? "/мес" : ""}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("price_per_m2") && (
-                              <TableCell className="text-xs">
-                                {Number(p.price_per_m2).toLocaleString()} ₽
-                              </TableCell>
-                            )}
-                            {visibleCols.has("deal_type") && (
-                              <TableCell className="text-xs">
-                                {p.deal_type}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("floor") && (
-                              <TableCell className="text-xs">
-                                {p.floor || "—"}
-                                {p.total_floors ? `/${p.total_floors}` : ""}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("ceiling_height") && (
-                              <TableCell className="text-xs">
-                                {p.ceiling_height
-                                  ? `${p.ceiling_height} м`
-                                  : "—"}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("parking") && (
-                              <TableCell className="text-xs">
-                                {p.parking || "—"}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("condition") && (
-                              <TableCell className="text-xs">
-                                {p.condition || "—"}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("layout") && (
-                              <TableCell className="text-xs">
-                                {p.layout || "—"}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("deposit") && (
-                              <TableCell className="text-xs">
-                                {p.deposit || "—"}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("contract_term") && (
-                              <TableCell className="text-xs">
-                                {p.contract_term || "—"}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("features") && (
-                              <TableCell className="text-xs max-w-[150px] truncate">
-                                {(p.features || []).join(", ") || "—"}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("photos_count") && (
-                              <TableCell className="text-xs">
-                                {p.photos_count || p.photos?.length || 0}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("views_count") && (
-                              <TableCell className="text-xs">
-                                {p.views_count || 0}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("published_date") && (
-                              <TableCell className="text-xs whitespace-nowrap">
-                                {p.published_date
-                                  ? new Date(
-                                      p.published_date,
-                                    ).toLocaleDateString("ru-RU")
-                                  : "—"}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("manager") && (
-                              <TableCell className="text-xs">
-                                {p.manager?.full_name || "—"}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("client") && (
-                              <TableCell className="text-xs">
-                                {p.client?.full_name || "—"}
-                              </TableCell>
-                            )}
-                            {visibleCols.has("status") && (
-                              <TableCell>
-                                <Badge
-                                  variant={p.is_active ? "default" : "outline"}
-                                  className="text-[10px]"
-                                >
-                                  {p.is_active ? "Активен" : "Скрыт"}
-                                </Badge>
-                              </TableCell>
-                            )}
-                            {visibleCols.has("actions") && (
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={() => openEdit(p)}
-                                  >
-                                    <Edit className="w-3.5 h-3.5" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={() => {
-                                      if (confirm("Удалить объект?"))
-                                        deleteMutation.mutate(p.id);
-                                    }}
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            )}
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+            <PropertiesAdminTable
+              properties={properties}
+              isLoading={isLoading}
+              isFetching={isFetching}
+              onEdit={openEdit}
+              onDelete={(id) => deleteMutation.mutate(id)}
+            />
           </TabsContent>
 
           <TabsContent value="leads" className="space-y-4">
@@ -3377,580 +2829,5 @@ export default function Dashboard() {
         </main>
       </Tabs>
     </div>
-  );
-}
-
-// ── Компонент управления пользователями и ролями ──
-function formatLastSignIn(value: string | null | undefined) {
-  if (!value) return "Никогда";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString("ru-RU", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function UsersRolesTab({
-  isAdmin,
-  currentUserId,
-}: {
-  isAdmin: boolean;
-  currentUserId?: string;
-}) {
-  const { toast } = useToast();
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "staff" | "client">(
-    "all",
-  );
-  const [pwDialog, setPwDialog] = useState<{
-    open: boolean;
-    userId: string;
-    email: string;
-  }>({ open: false, userId: "", email: "" });
-  const [newPw, setNewPw] = useState("");
-  const [addOpen, setAddOpen] = useState(false);
-  const [newUser, setNewUser] = useState({
-    email: "",
-    password: "",
-    full_name: "",
-    role: "client",
-  });
-  const [creating, setCreating] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const {
-    data: users = [],
-    isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ["admin-all-users"],
-    queryFn: async () => {
-      const { data: authData, error } =
-        await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
-      if (error) throw error;
-      const authHeaders = {
-        apikey: SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-      };
-      const [rolesRes, profilesRes] = await Promise.all([
-        fetch(`${SUPABASE_URL}/rest/v1/user_roles?select=user_id,role`, {
-          headers: authHeaders,
-        }),
-        fetch(
-          `${SUPABASE_URL}/rest/v1/profiles?select=id,full_name,phone,account_type,verification_status`,
-          { headers: authHeaders },
-        ),
-      ]);
-      const rolesData = await rolesRes.json();
-      const profiles = await profilesRes.json();
-      const rolesMap: Record<string, string[]> = {};
-      (Array.isArray(rolesData) ? rolesData : []).forEach(
-        (r: { user_id: string; role: string }) => {
-          if (!rolesMap[r.user_id]) rolesMap[r.user_id] = [];
-          rolesMap[r.user_id].push(r.role);
-        },
-      );
-      const profileMap: Record<
-        string,
-        {
-          full_name?: string | null;
-          phone?: string | null;
-          account_type?: string | null;
-          verification_status?: string | null;
-        }
-      > = {};
-      (Array.isArray(profiles) ? profiles : []).forEach((p) => {
-        profileMap[p.id] = p;
-      });
-      return (authData.users || []).map((u: any) => ({
-        id: u.id,
-        email: u.email || "",
-        full_name:
-          profileMap[u.id]?.full_name || u.user_metadata?.full_name || null,
-        phone: profileMap[u.id]?.phone || u.phone || null,
-        account_type:
-          profileMap[u.id]?.account_type ||
-          u.user_metadata?.account_type ||
-          "owner",
-        verification_status:
-          profileMap[u.id]?.verification_status || "unverified",
-        created_at: u.created_at,
-        last_sign_in: u.last_sign_in_at || null,
-        roles: rolesMap[u.id] || [],
-        confirmed: !!u.email_confirmed_at,
-      }));
-    },
-    enabled: isAdmin,
-    staleTime: 0,
-    refetchOnMount: "always",
-  });
-
-  const roleLabel = (r: string) =>
-    r === "admin"
-      ? "Администратор"
-      : r === "manager"
-        ? "Менеджер"
-        : r === "staff"
-          ? "Сотрудник"
-          : r === "client"
-            ? "Клиент"
-            : r;
-
-  const roleBadgeColor = (r: string) =>
-    r === "admin"
-      ? "bg-red-100 text-red-700"
-      : r === "manager"
-        ? "bg-blue-100 text-blue-700"
-        : r === "staff"
-          ? "bg-purple-100 text-purple-700"
-          : "bg-gray-100 text-gray-600";
-
-  const accountTypeLabel = (t: string) =>
-    t === "agency" || t === "realtor"
-      ? "Агентство"
-      : t === "owner"
-        ? "Собственник"
-        : t;
-
-  const toggleRole = async (userId: string, role: string, hasIt: boolean) => {
-    await supabaseAdmin.roles.toggle(userId, role, hasIt);
-    await refetch();
-    toast({ title: hasIt ? `Роль убрана` : `Роль назначена` });
-  };
-
-  const setPassword = async () => {
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(
-      pwDialog.userId,
-      { password: newPw },
-    );
-    if (error) {
-      toast({
-        title: "Ошибка",
-        description: (error as any).message || String(error),
-        variant: "destructive",
-      });
-      return;
-    }
-    toast({ title: "Пароль изменён" });
-    setPwDialog({ open: false, userId: "", email: "" });
-    setNewPw("");
-  };
-
-  const deleteUser = async (userId: string, email: string) => {
-    if (
-      !confirm(
-        `Удалить пользователя ${email || userId}?\n\nБудет удалён аккаунт входа. Связанные данные с CASCADE тоже удалятся; если есть FK без CASCADE — удаление не пройдёт.`,
-      )
-    ) {
-      return;
-    }
-    setDeletingId(userId);
-    try {
-      const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-      if (error) {
-        toast({
-          title: "Не удалось удалить",
-          description: (error as any).message || JSON.stringify(error),
-          variant: "destructive",
-        });
-        return;
-      }
-      await refetch();
-      toast({ title: "Пользователь удалён" });
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  const confirmEmail = async (userId: string) => {
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-      email_confirm: true,
-    });
-    if (error) {
-      toast({
-        title: "Ошибка",
-        description: (error as any).message || String(error),
-        variant: "destructive",
-      });
-      return;
-    }
-    refetch();
-    toast({ title: "Email подтверждён" });
-  };
-
-  const createUser = async () => {
-    if (!newUser.email || newUser.password.length < 6) {
-      toast({
-        title: "Заполните email и пароль (мин. 6 символов)",
-        variant: "destructive",
-      });
-      return;
-    }
-    setCreating(true);
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
-      email: newUser.email,
-      password: newUser.password,
-      full_name: newUser.full_name || undefined,
-    });
-    if (error) {
-      toast({
-        title: "Ошибка создания",
-        description:
-          (error as any).message || (error as any).msg || JSON.stringify(error),
-        variant: "destructive",
-      });
-      setCreating(false);
-      return;
-    }
-    if (newUser.role !== "client" && data?.id) {
-      await supabaseAdmin.roles.set(data.id, newUser.role);
-    }
-    toast({ title: "Пользователь создан" });
-    setAddOpen(false);
-    setNewUser({ email: "", password: "", full_name: "", role: "client" });
-    setCreating(false);
-    refetch();
-  };
-
-  const filtered = users
-    .filter((u) => {
-      if (roleFilter === "staff") {
-        return u.roles.some(
-          (r: string) => r === "admin" || r === "manager" || r === "staff",
-        );
-      }
-      if (roleFilter === "client") {
-        return !u.roles.some(
-          (r: string) => r === "admin" || r === "manager" || r === "staff",
-        );
-      }
-      return true;
-    })
-    .filter(
-      (u) =>
-        !search ||
-        u.email.toLowerCase().includes(search.toLowerCase()) ||
-        u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-        u.phone?.toLowerCase().includes(search.toLowerCase()),
-    )
-    .sort((a, b) => {
-      const aT = a.last_sign_in ? new Date(a.last_sign_in).getTime() : 0;
-      const bT = b.last_sign_in ? new Date(b.last_sign_in).getTime() : 0;
-      return bT - aT;
-    });
-
-  return (
-    <>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-3 flex-wrap">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Shield className="w-5 h-5 text-primary" /> Все пользователи (
-            {users.length})
-          </CardTitle>
-          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-            <div className="flex gap-1 p-0.5 bg-muted/50 rounded-lg border border-border/60">
-              {(
-                [
-                  ["all", "Все"],
-                  ["client", "Клиенты"],
-                  ["staff", "Сотрудники"],
-                ] as const
-              ).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setRoleFilter(key)}
-                  className={`text-[11px] font-medium px-2.5 py-1.5 rounded-md transition-colors ${
-                    roleFilter === key
-                      ? "bg-card text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Email, имя, телефон…"
-                className="pl-8 h-8 text-xs"
-              />
-            </div>
-            {isAdmin && (
-              <Button
-                size="sm"
-                className="h-8 text-xs gap-1.5"
-                onClick={() => setAddOpen(true)}
-              >
-                <Plus className="w-3.5 h-3.5" /> Добавить
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="p-0 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="pl-4">Пользователь</TableHead>
-                <TableHead>Тип</TableHead>
-                <TableHead>Роли</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Последний вход</TableHead>
-                <TableHead>Регистрация</TableHead>
-                {isAdmin && (
-                  <TableHead className="text-right pr-4">Действия</TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center py-8 text-muted-foreground text-sm"
-                  >
-                    Загрузка...
-                  </TableCell>
-                </TableRow>
-              ) : filtered.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center py-8 text-muted-foreground text-sm"
-                  >
-                    Пользователи не найдены
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filtered.map((u: any) => {
-                  const isSelf = u.id === currentUserId;
-                  return (
-                    <TableRow key={u.id}>
-                      <TableCell className="pl-4">
-                        <div className="font-medium text-sm">
-                          {u.full_name || "—"}
-                          {isSelf && (
-                            <span className="ml-1 text-[10px] text-muted-foreground">
-                              (вы)
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {u.email}
-                        </div>
-                        {u.phone && (
-                          <div className="text-[11px] text-muted-foreground">
-                            {u.phone}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-[11px] text-muted-foreground">
-                          {accountTypeLabel(u.account_type)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {u.roles.length === 0 ? (
-                            <span className="text-xs text-muted-foreground">
-                              Клиент
-                            </span>
-                          ) : (
-                            u.roles.map((r: string) => (
-                              <span
-                                key={r}
-                                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${roleBadgeColor(r)}`}
-                              >
-                                {roleLabel(r)}
-                              </span>
-                            ))
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {u.confirmed ? (
-                          <span className="text-xs text-green-600">
-                            подтверждён
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => confirmEmail(u.id)}
-                            className="text-xs text-amber-500 hover:underline"
-                          >
-                            подтвердить
-                          </button>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                        {formatLastSignIn(u.last_sign_in)}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                        {u.created_at
-                          ? new Date(u.created_at).toLocaleDateString("ru-RU")
-                          : "—"}
-                      </TableCell>
-                      {isAdmin && (
-                        <TableCell className="text-right pr-4">
-                          <div className="flex items-center justify-end gap-1">
-                            {["manager", "admin"].map((role) => {
-                              const has = u.roles.includes(role);
-                              return (
-                                <button
-                                  key={role}
-                                  onClick={() => toggleRole(u.id, role, has)}
-                                  disabled={isSelf && role === "admin"}
-                                  className={`text-[10px] px-2 py-1 rounded border transition-colors ${has ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary hover:text-primary"} disabled:opacity-40 disabled:cursor-not-allowed`}
-                                >
-                                  {has ? "✓ " : ""}
-                                  {roleLabel(role)}
-                                </button>
-                              );
-                            })}
-                            <button
-                              onClick={() => {
-                                setNewPw("");
-                                setPwDialog({
-                                  open: true,
-                                  userId: u.id,
-                                  email: u.email,
-                                });
-                              }}
-                              className="text-[10px] px-2 py-1 rounded border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-                            >
-                              Пароль
-                            </button>
-                            {!isSelf && (
-                              <button
-                                onClick={() => deleteUser(u.id, u.email)}
-                                disabled={deletingId === u.id}
-                                className="text-[10px] px-2 py-1 rounded border border-border text-muted-foreground hover:border-destructive hover:text-destructive transition-colors disabled:opacity-50"
-                                title="Удалить пользователя"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            )}
-                          </div>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Add user dialog */}
-      <Sheet open={addOpen} onOpenChange={setAddOpen}>
-        <SheetContent side="right" className="w-80">
-          <SheetHeader>
-            <SheetTitle>Новый пользователь</SheetTitle>
-          </SheetHeader>
-          <div className="space-y-4 mt-6">
-            <div>
-              <Label className="text-xs">Email</Label>
-              <Input
-                type="email"
-                value={newUser.email}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, email: e.target.value })
-                }
-                placeholder="user@example.com"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Имя</Label>
-              <Input
-                value={newUser.full_name}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, full_name: e.target.value })
-                }
-                placeholder="Имя Фамилия"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Пароль</Label>
-              <Input
-                type="password"
-                value={newUser.password}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, password: e.target.value })
-                }
-                placeholder="Минимум 6 символов"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Роль</Label>
-              <select
-                value={newUser.role}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, role: e.target.value })
-                }
-                className="mt-1 w-full h-9 px-3 border border-input rounded-md text-sm bg-background"
-              >
-                <option value="client">Клиент</option>
-                <option value="staff">Сотрудник</option>
-                <option value="manager">Менеджер</option>
-                <option value="admin">Администратор</option>
-              </select>
-            </div>
-            <Button
-              onClick={createUser}
-              disabled={
-                creating || !newUser.email || newUser.password.length < 6
-              }
-              className="w-full"
-            >
-              {creating ? "Создание..." : "Создать"}
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* Set password dialog */}
-      <Sheet
-        open={pwDialog.open}
-        onOpenChange={(open) =>
-          !open && setPwDialog({ open: false, userId: "", email: "" })
-        }
-      >
-        <SheetContent side="right" className="w-80">
-          <SheetHeader>
-            <SheetTitle>Изменить пароль</SheetTitle>
-          </SheetHeader>
-          <div className="space-y-4 mt-6">
-            <p className="text-sm text-muted-foreground">{pwDialog.email}</p>
-            <div>
-              <Label className="text-xs">Новый пароль</Label>
-              <Input
-                type="password"
-                value={newPw}
-                onChange={(e) => setNewPw(e.target.value)}
-                placeholder="Минимум 6 символов"
-                className="mt-1"
-              />
-            </div>
-            <Button
-              onClick={setPassword}
-              disabled={newPw.length < 6}
-              className="w-full"
-            >
-              Сохранить
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
-    </>
   );
 }

@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { submitLead } from "@/lib/submitLead";
+import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import { cn } from "@/lib/utils";
 import {
   dismissQuizPermanently,
@@ -26,6 +27,7 @@ export default function SpecialistMatchQuiz({ open, onOpenChange }: Props) {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
 
   const reset = () => {
     setStep("intent");
@@ -58,16 +60,27 @@ export default function SpecialistMatchQuiz({ open, onOpenChange }: Props) {
     setLoading(true);
     setError("");
     try {
+      const bot = await ensureGuard();
       await submitLead({
         name,
         phone,
         source: "specialist_quiz",
         business_category: intent,
+        website: bot.website,
+        captchaToken: bot.captchaToken,
       });
+      resetGuard();
       dismissQuizPermanently();
       setStep("done");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось отправить");
+      if (err instanceof BotGuardError && err.message === "bot") return;
+      setError(
+        err instanceof BotGuardError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Не удалось отправить",
+      );
     } finally {
       setLoading(false);
     }
@@ -160,6 +173,7 @@ export default function SpecialistMatchQuiz({ open, onOpenChange }: Props) {
               {error && (
                 <p className="text-xs text-destructive">{error}</p>
               )}
+              <BotGuard />
               <button
                 type="submit"
                 disabled={loading}

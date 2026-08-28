@@ -1,4 +1,5 @@
 import type { DictionaryItem } from "@/hooks/useDictionaries";
+import { mergeCatalogWithStaticTree } from "@/lib/catalogLocations";
 import {
   getChildren,
   getCityNodes,
@@ -48,28 +49,15 @@ export function buildLocationTree(
   dictItems: DictionaryItem[] = [],
   extraLocations: string[] = [],
 ): LocationCityNode[] {
+  const merged = mergeCatalogWithStaticTree(buildStaticLocationTree(), dictItems);
   const map = new Map<string, string[]>();
-  const irkutskDistricts = new Set(getIrkutskDistrictNames());
-  const irkutskMicros = new Set(getIrkutskMicrodistrictNames());
 
-  for (const node of buildStaticLocationTree()) {
+  for (const node of merged) {
     map.set(node.city, [...node.districts]);
   }
 
-  for (const item of dictItems) {
-    if (item.category !== "district" || item.is_active === false) continue;
-    const value = item.value?.trim();
-    if (!value) continue;
-    const parent = item.parent?.trim() || null;
-
-    if (!parent || parent === value) {
-      if (!map.has(value)) map.set(value, []);
-      continue;
-    }
-
-    const existing = map.get(parent) || [];
-    map.set(parent, mergeDistricts(existing, [value]));
-  }
+  const irkutskDistricts = new Set(getIrkutskDistrictNames());
+  const irkutskMicros = new Set(getIrkutskMicrodistrictNames());
 
   const known = new Set<string>();
   for (const [city, districts] of map) {

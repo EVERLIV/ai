@@ -29,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { COMPANY, CONTACTS } from "@/config/company";
 import { absoluteUrl } from "@/config/site";
 import { submitLead } from "@/lib/submitLead";
+import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import { cn } from "@/lib/utils";
 
 type TocItem = {
@@ -130,12 +131,14 @@ function BugReportForm() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
+      const bot = await ensureGuard();
       const pageHint = form.page.trim()
         ? `\nСтраница: ${form.page.trim()}`
         : typeof window !== "undefined"
@@ -148,11 +151,21 @@ function BugReportForm() {
         source: "docs_bug_report",
         business_category: "Баг / проблема на сайте",
         message: `[Нашёл баг] ${form.message.trim()}${pageHint}`,
+        website: bot.website,
+        captchaToken: bot.captchaToken,
       });
+      resetGuard();
       setSent(true);
       setForm({ name: "", phone: "", email: "", page: "", message: "" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось отправить");
+      if (err instanceof BotGuardError && err.message === "bot") return;
+      setError(
+        err instanceof BotGuardError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Не удалось отправить",
+      );
     } finally {
       setLoading(false);
     }
@@ -256,6 +269,8 @@ function BugReportForm() {
           {error}
         </p>
       )}
+
+      <BotGuard />
 
       <Button type="submit" disabled={loading} className="gap-2">
         <Send className="w-4 h-4" />

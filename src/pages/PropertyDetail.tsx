@@ -14,7 +14,6 @@ import {
   Layers,
   Mail,
   MapPin,
-  MessageSquareText,
   Paintbrush,
   Ruler,
   Flag,
@@ -28,10 +27,9 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import NearbyPropertiesSlider from "@/components/NearbyPropertiesSlider";
-import OwnerMessageDialog, {
-  propertyCtaButtonClass,
-} from "@/components/OwnerMessageDialog";
+import OwnerMessageDialog from "@/components/OwnerMessageDialog";
 import PKKMapModal from "@/components/PKKMapModal";
 import PropertyAIChat from "@/components/PropertyAIChat";
 import PropertyDescription from "@/components/PropertyDescription";
@@ -63,7 +61,6 @@ import { trackPropertyView } from "@/lib/agencyNotify";
 import {
   consultantAvatarForListing,
   listingHasAiConsultant,
-  openConsultantChat,
   useAiConsultantAccess,
 } from "@/lib/aiConsultant";
 import { isAgencyListing } from "@/lib/listingSource";
@@ -161,6 +158,7 @@ export default function PropertyDetail() {
   });
   const [contactSent, setContactSent] = useState(false);
   const [contactLoading, setContactLoading] = useState(false);
+  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
 
   const _SUBJECTS = [
@@ -174,6 +172,7 @@ export default function PropertyDetail() {
     e.preventDefault();
     setContactLoading(true);
     try {
+      const bot = await ensureGuard();
       const extras = (property?.extras || {}) as Record<string, unknown>;
       const managerName =
         extras.listing_manager_id && typeof extras.agent_name === "string"
@@ -191,7 +190,10 @@ export default function PropertyDetail() {
         message: contactForm.message || null,
         source: "property_contact",
         business_category: categoryParts.join(" · ") || null,
+        website: bot.website,
+        captchaToken: bot.captchaToken,
       });
+      resetGuard();
       setContactSent(true);
     } catch {
       // silent fallback
@@ -557,6 +559,7 @@ export default function PropertyDetail() {
                       className="w-full px-3 py-2.5 bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary transition-colors resize-none"
                     />
                   </div>
+                  <BotGuard />
                   <button
                     type="submit"
                     disabled={contactLoading}
@@ -923,10 +926,7 @@ export default function PropertyDetail() {
             </div>
 
             <div className="lg:hidden mb-8 space-y-5">
-              <PropertyPriceBlock
-                property={property}
-                hasAiConsultant={hasAiConsultant}
-              />
+              <PropertyPriceBlock property={property} />
               <PropertySidebarExtras property={property} />
             </div>
 
@@ -1025,10 +1025,7 @@ export default function PropertyDetail() {
                 headerCollapsed ? "top-16" : "top-24"
               }`}
             >
-              <PropertyPriceBlock
-                property={property}
-                hasAiConsultant={hasAiConsultant}
-              />
+              <PropertyPriceBlock property={property} />
               <PropertySidebarExtras property={property} />
             </div>
           </aside>
@@ -1072,13 +1069,7 @@ export default function PropertyDetail() {
   );
 }
 
-function PropertyPriceBlock({
-  property,
-  hasAiConsultant,
-}: {
-  property: any;
-  hasAiConsultant: boolean;
-}) {
+function PropertyPriceBlock({ property }: { property: any }) {
   const extras = (property.extras || {}) as Record<string, unknown>;
   const ownerListing = isOwnerListing(extras, property.submitted_by);
   const agencyListing = isAgencyListing(property);
@@ -1164,25 +1155,7 @@ function PropertyPriceBlock({
       )}
 
       <div className="grid grid-cols-2 gap-2">
-        {hasAiConsultant ? (
-          <button
-            type="button"
-            onClick={() =>
-              openConsultantChat({
-                propertyId: property.id,
-                propertyAddress: property.address,
-                avatarUrl: consultantAvatarForListing(
-                  property,
-                  consultantAvatar,
-                ),
-              })
-            }
-            className={`${propertyCtaButtonClass} bg-primary text-primary-foreground`}
-          >
-            <MessageSquareText className="w-4 h-4 shrink-0" />
-            Написать
-          </button>
-        ) : useOwnerInquiry ? (
+        {useOwnerInquiry ? (
           <OwnerMessageDialog
             propertyId={property.id}
             propertyAddress={property.address}

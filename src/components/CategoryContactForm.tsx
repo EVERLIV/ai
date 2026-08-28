@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CONTACTS } from "@/config/company";
 import { useToast } from "@/hooks/use-toast";
+import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import { submitLead } from "@/lib/submitLead";
 
 interface Props {
@@ -15,6 +16,7 @@ export default function CategoryContactForm({ category }: Props) {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -31,6 +33,7 @@ export default function CategoryContactForm({ category }: Props) {
 
     setLoading(true);
     try {
+      const bot = await ensureGuard();
       await submitLead({
         name,
         phone,
@@ -38,14 +41,24 @@ export default function CategoryContactForm({ category }: Props) {
         message: message || null,
         source: "category_contact",
         business_category: category,
+        website: bot.website,
+        captchaToken: bot.captchaToken,
       });
+      resetGuard();
       setSent(true);
       toast({
         title: "Заявка отправлена!",
         description: "Мы свяжемся с вами в ближайшее время.",
       });
-    } catch {
-      toast({ title: "Не удалось отправить", variant: "destructive" });
+    } catch (err) {
+      if (err instanceof BotGuardError && err.message === "bot") return;
+      toast({
+        title:
+          err instanceof BotGuardError
+            ? err.message
+            : "Не удалось отправить",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -122,6 +135,7 @@ export default function CategoryContactForm({ category }: Props) {
                   placeholder={`Требования к ${category.toLowerCase()}: площадь, район, бюджет...`}
                   rows={3}
                 />
+                <BotGuard />
                 <Button
                   type="submit"
                   className="w-full gap-2"

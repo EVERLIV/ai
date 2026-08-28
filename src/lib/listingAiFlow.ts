@@ -4,6 +4,8 @@ import {
   LAND_PROPERTY_TYPES,
   RESIDENTIAL_PROPERTY_TYPES,
 } from "@/config/propertySegments";
+import type { DictionaryItem } from "@/hooks/useDictionaries";
+import { getLocationCatalogLists } from "@/lib/catalogLocations";
 import {
   DISTRICTS,
   IRKUTSK_CITY_DISTRICTS,
@@ -62,6 +64,8 @@ export type ListingFlowOpts = {
   locationScope?: LocationScope;
   /** Фото пропущены («Позже») */
   photosSkipped?: boolean;
+  /** Записи справочника локаций из БД */
+  catalogDistricts?: DictionaryItem[];
 };
 
 export type ListingFlowStep = {
@@ -230,6 +234,20 @@ export function chipsForField(
   form: PropertyFormState,
   opts: ListingFlowOpts = {},
 ): string[] {
+  const locationLists = getLocationCatalogLists(opts.catalogDistricts ?? []);
+  const irkutskDistricts =
+    locationLists.irkutskDistricts.length > 0
+      ? locationLists.irkutskDistricts
+      : [...IRKUTSK_CITY_DISTRICTS];
+  const oblastCities =
+    locationLists.oblastCities.length > 0
+      ? locationLists.oblastCities
+      : [...IRKUTSK_OBLAST_CITIES];
+  const oblastRayons =
+    locationLists.oblastRayons.length > 0
+      ? locationLists.oblastRayons
+      : [...IRKUTSK_OBLAST_DISTRICTS];
+
   switch (field) {
     case "segment":
       if (opts.isDeveloper) return ["Жилая", "Коммерческая"];
@@ -242,11 +260,11 @@ export function chipsForField(
         : ["Аренда", "Продажа"];
     case "district": {
       if (opts.locationScope === "irkutsk") {
-        return [...IRKUTSK_CITY_DISTRICTS, "Каталог локаций", "Назад", "Введу сам"];
+        return [...irkutskDistricts, "Каталог локаций", "Назад", "Введу сам"];
       }
       if (opts.locationScope === "oblast_city") {
         return [
-          ...IRKUTSK_OBLAST_CITIES.slice(0, 14),
+          ...oblastCities.slice(0, 14),
           "Каталог локаций",
           "Назад",
           "Введу сам",
@@ -254,7 +272,7 @@ export function chipsForField(
       }
       if (opts.locationScope === "oblast_rayon") {
         return [
-          ...IRKUTSK_OBLAST_DISTRICTS.slice(0, 14),
+          ...oblastRayons.slice(0, 14),
           "Каталог локаций",
           "Назад",
           "Введу сам",
@@ -266,8 +284,8 @@ export function chipsForField(
         "Районы области",
         "Каталог локаций",
         "Введу сам",
-        ...IRKUTSK_CITY_DISTRICTS.slice(0, 3),
-        ...IRKUTSK_OBLAST_CITIES.slice(0, 4),
+        ...irkutskDistricts.slice(0, 3),
+        ...oblastCities.slice(0, 4),
       ];
     }
     case "area":

@@ -21,6 +21,7 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import { COMPANY, CONTACTS } from "@/config/company";
 import { absoluteUrl } from "@/config/site";
+import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import { submitLead } from "@/lib/submitLead";
 
 /** Темы обращений: сотрудничество, размещение, застройщики и пр. */
@@ -86,6 +87,7 @@ export default function ContactsPage() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -101,6 +103,7 @@ export default function ContactsPage() {
     setError(null);
     setLoading(true);
     try {
+      const bot = await ensureGuard();
       await submitLead({
         name,
         phone,
@@ -108,11 +111,17 @@ export default function ContactsPage() {
         message: `Тема: ${form.subject}${form.message.trim() ? `\n${form.message.trim()}` : ""}`,
         source: "contacts_page",
         business_category: form.subject,
+        website: bot.website,
+        captchaToken: bot.captchaToken,
       });
+      resetGuard();
       setSent(true);
-    } catch {
+    } catch (err) {
+      if (err instanceof BotGuardError && err.message === "bot") return;
       setError(
-        "Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам.",
+        err instanceof BotGuardError
+          ? err.message
+          : "Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам.",
       );
     } finally {
       setLoading(false);
@@ -454,6 +463,8 @@ export default function ContactsPage() {
                         {error}
                       </p>
                     )}
+
+                    <BotGuard />
 
                     <button
                       type="submit"

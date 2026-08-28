@@ -9,6 +9,7 @@ import {
   User,
 } from "lucide-react";
 import { useState } from "react";
+import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -52,6 +53,7 @@ export default function RequestPriceDialog({
   const [term, setTerm] = useState<Term>("12");
   const [price, setPrice] = useState<string>("");
   const { toast } = useToast();
+  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
 
   const isSale = isSaleDeal(dealType);
 
@@ -83,6 +85,7 @@ export default function RequestPriceDialog({
 
     setLoading(true);
     try {
+      const bot = await ensureGuard();
       await submitLead({
         object_id: propertyId ?? null,
         name,
@@ -93,16 +96,27 @@ export default function RequestPriceDialog({
           : `Предложение цены: ${offerPrice.toLocaleString("ru-RU")} ₽/мес при контракте на ${term === "12" ? "1 год" : "3 года"}.${message ? `\nКомментарий: ${message}` : ""}`,
         source: "price_offer",
         business_category: propertyAddress ?? null,
+        website: bot.website,
+        captchaToken: bot.captchaToken,
       });
+      resetGuard();
       setSent(true);
       toast({
         title: "Заявка отправлена",
         description: "Менеджер свяжется в течение 15 минут.",
       });
-    } catch (_err) {
+    } catch (err) {
+      if (err instanceof BotGuardError && err.message === "bot") return;
       toast({
-        title: "Не удалось отправить",
-        description: "Попробуйте ещё раз или позвоните нам.",
+        title:
+          err instanceof BotGuardError
+            ? err.message
+            : "Не удалось отправить",
+        description:
+          err instanceof BotGuardError
+            ? undefined
+            : "Попробуйте ещё раз или позвоните нам.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -294,6 +308,8 @@ export default function RequestPriceDialog({
                   .
                 </span>
               </label>
+
+              <BotGuard />
 
               <Button
                 type="submit"

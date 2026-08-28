@@ -3,20 +3,36 @@ import {
   buildLocationTree,
   flattenLocationOptions,
 } from "@/lib/locationPicker";
+import type { DictionaryItem } from "@/hooks/useDictionaries";
+
+function districtRow(
+  partial: Partial<DictionaryItem> & Pick<DictionaryItem, "value">,
+): DictionaryItem {
+  return {
+    id: partial.id ?? "1",
+    category: "district",
+    value: partial.value,
+    label: partial.label ?? null,
+    parent: partial.parent ?? null,
+    parent_id: partial.parent_id ?? null,
+    sort_order: partial.sort_order ?? 1,
+    is_active: partial.is_active ?? true,
+    metadata: partial.metadata ?? {},
+    slug: partial.slug ?? null,
+    description: partial.description ?? null,
+    created_at: partial.created_at ?? "",
+    updated_at: partial.updated_at ?? "",
+  };
+}
 
 describe("locationPicker districts", () => {
   it("includes dictionary districts under parent city", () => {
     const tree = buildLocationTree([
-      {
+      districtRow({
         id: "1",
-        category: "district",
         value: "Кировский",
-        label: null,
         parent: "Иркутск",
-        sort_order: 1,
-        is_active: true,
-        created_at: "",
-      },
+      }),
     ]);
     const irkutsk = tree.find((n) => n.city === "Иркутск");
     expect(irkutsk?.districts).toContain("Кировский");
@@ -41,5 +57,18 @@ describe("locationPicker districts", () => {
     const angarsk = tree.find((n) => n.city === "Ангарск");
     expect(angarsk?.districts).toContain("Китой");
     expect(tree.find((n) => n.city === "Китой")).toBeUndefined();
+  });
+
+  it("prefers catalog tree for new districts", () => {
+    const tree = buildLocationTree([
+      districtRow({
+        id: "db-1",
+        value: "Каталожный район",
+        parent: "Иркутск",
+        parent_id: "c-irk",
+      }),
+    ]);
+    const irkutsk = tree.find((n) => n.city === "Иркутск");
+    expect(irkutsk?.districts).toContain("Каталожный район");
   });
 });

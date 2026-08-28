@@ -22,6 +22,7 @@ import { absoluteUrl } from "@/config/site";
 import type { PropertySegment } from "@/config/propertySegments";
 import { useAgencyManagers, useMyAgency } from "@/hooks/useAgency";
 import { useAuth } from "@/hooks/useAuth";
+import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 import { useMyDeveloper } from "@/hooks/useDeveloper";
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/hooks/use-toast";
@@ -86,6 +87,11 @@ export default function SmartListingPage({
   const agencyId = myAgency?.agency?.id;
   const { data: agencyManagers = [] } = useAgencyManagers(agencyId, true);
   const { data: myDeveloper, isLoading: developerLoading } = useMyDeveloper();
+  const { all: dictionaryAll } = useAllDictionaryValues();
+  const catalogDistricts = useMemo(
+    () => dictionaryAll.filter((i) => i.category === "district"),
+    [dictionaryAll],
+  );
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -148,6 +154,7 @@ export default function SmartListingPage({
       isDeveloper: accountRole === "developer",
       locationScope,
       photosSkipped,
+      catalogDistricts,
       managers: agencyManagers.map((m) => ({
         id: m.id,
         full_name: m.full_name,
@@ -164,6 +171,7 @@ export default function SmartListingPage({
       agencyManagers,
       locationScope,
       photosSkipped,
+      catalogDistricts,
     ],
   );
 

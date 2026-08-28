@@ -47,6 +47,8 @@ export type PropertySidebarExtras = {
   };
   video_urls?: string[];
   plan_image_url?: string;
+  seo_title?: string;
+  seo_description?: string;
 };
 
 export type ListingAgentDisplay = {

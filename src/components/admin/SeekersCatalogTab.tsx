@@ -1,6 +1,7 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bell, BellOff, RefreshCw, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { AdminTableHead } from "@/components/admin/AdminDataTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,7 +17,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
@@ -27,6 +27,12 @@ import {
 } from "@/integrations/supabase/adminClient";
 import { supabase } from "@/integrations/supabase/client";
 import type { SearchSubscription } from "@/lib/searchSubscriptions";
+import {
+  compareDates,
+  compareValues,
+  nextSortState,
+  type SortDir,
+} from "@/lib/adminTableSort";
 
 type SeekerRow = {
   id: string;
@@ -61,6 +67,14 @@ async function serviceSelect<T>(query: string): Promise<T[]> {
 export default function SeekersCatalogTab() {
   const [q, setQ] = useState("");
   const [mode, setMode] = useState<FilterMode>("all");
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  const handleSort = (field: string) => {
+    const next = nextSortState(sortField, sortDir, field);
+    setSortField(next.field);
+    setSortDir(next.dir);
+  };
 
   const {
     data,
@@ -122,6 +136,24 @@ export default function SeekersCatalogTab() {
         return hay.includes(needle);
       });
   }, [data, mode, q]);
+
+  const sortedRows = useMemo(() => {
+    if (!sortField) return rows;
+    return [...rows].sort((a, b) => {
+      const sa = a.seeker;
+      const sb = b.seeker;
+      if (sortField === "name") {
+        return compareValues(sa.full_name || sa.email, sb.full_name || sb.email, sortDir);
+      }
+      if (sortField === "email") {
+        return compareValues(sa.email, sb.email, sortDir);
+      }
+      if (sortField === "created_at") {
+        return compareDates(sa.created_at, sb.created_at, sortDir);
+      }
+      return 0;
+    });
+  }, [rows, sortField, sortDir]);
 
   if (error) {
     return (
@@ -189,13 +221,49 @@ export default function SeekersCatalogTab() {
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Имя</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Регистрация</TableHead>
-                <TableHead>Подписка</TableHead>
-                <TableHead>Типы</TableHead>
-                <TableHead>Активность</TableHead>
+              <TableRow className="hover:bg-transparent">
+                <AdminTableHead
+                  label="Имя"
+                  field="name"
+                  sortable
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                />
+                <AdminTableHead
+                  label="Email"
+                  field="email"
+                  sortable
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                />
+                <AdminTableHead
+                  label="Регистрация"
+                  field="created_at"
+                  sortable
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                />
+                <AdminTableHead
+                  label="Подписка"
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                />
+                <AdminTableHead
+                  label="Типы"
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                />
+                <AdminTableHead
+                  label="Активность"
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -208,7 +276,7 @@ export default function SeekersCatalogTab() {
                     Загрузка…
                   </TableCell>
                 </TableRow>
-              ) : rows.length === 0 ? (
+              ) : sortedRows.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={6}
@@ -218,8 +286,8 @@ export default function SeekersCatalogTab() {
                   </TableCell>
                 </TableRow>
               ) : (
-                rows.map(({ seeker, sub, last }) => (
-                  <TableRow key={seeker.id}>
+                sortedRows.map(({ seeker, sub, last }) => (
+                  <TableRow key={seeker.id} className="text-xs">
                     <TableCell className="font-medium text-sm">
                       {seeker.full_name || "—"}
                     </TableCell>

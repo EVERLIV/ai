@@ -37,13 +37,15 @@ describe("OwnerSection", () => {
     );
 
     await waitFor(() => {
-      expect(submitLead).toHaveBeenCalledWith({
+      expect(submitLead).toHaveBeenCalledWith(
+        expect.objectContaining({
         name: "Андрей",
         phone: "+79999999",
         message: "Тест форма главная",
         source: "homepage_owner",
         business_category: "Офис",
-      });
+      }),
+      );
     });
 
     expect(await screen.findByText("Заявка отправлена")).toBeInTheDocument();

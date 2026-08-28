@@ -215,9 +215,14 @@ export type Database = {
           value: string;
           label: string | null;
           parent: string | null;
+          parent_id: string | null;
           sort_order: number;
           is_active: boolean;
+          metadata: Json;
+          slug: string | null;
+          description: string | null;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
@@ -225,9 +230,14 @@ export type Database = {
           value: string;
           label?: string | null;
           parent?: string | null;
+          parent_id?: string | null;
           sort_order?: number;
           is_active?: boolean;
+          metadata?: Json;
+          slug?: string | null;
+          description?: string | null;
           created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
@@ -235,11 +245,24 @@ export type Database = {
           value?: string;
           label?: string | null;
           parent?: string | null;
+          parent_id?: string | null;
           sort_order?: number;
           is_active?: boolean;
+          metadata?: Json;
+          slug?: string | null;
+          description?: string | null;
           created_at?: string;
+          updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "dictionaries_parent_id_fkey";
+            columns: ["parent_id"];
+            isOneToOne: false;
+            referencedRelation: "dictionaries";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       crm_events: {
         Row: {
