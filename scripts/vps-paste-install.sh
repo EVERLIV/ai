@@ -6,9 +6,18 @@ set -e
 cd /opt/supabase
 mkdir -p volumes/functions/submit-lead volumes/functions/_shared
 
-# --- Turnstile secret (замените если другой ключ) ---
+# --- Turnstile secret (НЕ коммитить в git; только env на сервере) ---
 ENV_FILE="volumes/functions/.env"
-KEY="0x4AAAAAAEe5BJlhGE6gZCE7TzNn-vEb_Qk"
+KEY="${TURNSTILE_SECRET_KEY:-}"
+if [ -z "$KEY" ]; then
+  echo "Вставьте Turnstile Secret Key из Cloudflare и Enter:"
+  read -rsp "TURNSTILE_SECRET_KEY: " KEY
+  echo
+fi
+if [ -z "$KEY" ]; then
+  echo "Ошибка: пустой TURNSTILE_SECRET_KEY" >&2
+  exit 1
+fi
 touch "$ENV_FILE"
 grep -v '^TURNSTILE_SECRET_KEY=' "$ENV_FILE" > /tmp/fn.env || true
 echo "TURNSTILE_SECRET_KEY=$KEY" >> /tmp/fn.env

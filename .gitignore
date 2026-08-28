@@ -32,3 +32,8 @@ deno.lock
 
 # Локальные настройки Claude Code: содержат команды с паролями и ключами
 .claude/settings.local.json
+
+# Локальные артефакты с ключами (не коммитить)
+turnstile.b64
+body1.txt
+supabase/.temp/
