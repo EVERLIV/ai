@@ -10,6 +10,7 @@ import {
   Newspaper,
   Plus,
   Search,
+  Smartphone,
   Sparkles,
   User,
   Users,
@@ -128,6 +129,7 @@ export default function MobileMenuDrawer({
     { label: "Поиск по каталогу", href: "/catalog", icon: Search },
     { label: "О нас", href: "/about", icon: Info },
     { label: "Контакты", href: "/contacts", icon: BookOpen },
+    { label: "Приложение", href: "/app", icon: Smartphone },
     { label: "Новости", href: "/news", icon: Newspaper },
     ...(onOpenWizard
       ? [{ label: "Умный подбор", icon: Sparkles, onClick: onOpenWizard }]
