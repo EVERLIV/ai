@@ -1,5 +1,6 @@
 import { Download, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -62,6 +63,12 @@ export default function InstallPrompt() {
           <span className="text-background/60 ml-2 hidden sm:inline">
             — установите приложение для быстрого доступа к каталогу
           </span>
+          <Link
+            to="/app"
+            className="text-background/70 hover:text-background ml-2 underline underline-offset-2 hidden md:inline"
+          >
+            Как установить
+          </Link>
         </p>
 
         {/* Кнопка установить */}

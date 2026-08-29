@@ -24,6 +24,7 @@ import MobileBottomNav, {
   shouldHideMobileBottomNav,
 } from "@/components/mobile/MobileBottomNav";
 import AboutPage from "./pages/AboutPage.tsx";
+import AppInstallPage from "./pages/AppInstallPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
 import AdsCatalog from "./pages/AdsCatalog.tsx";
 import AgencyPublicPage from "./pages/AgencyPublicPage.tsx";
@@ -153,6 +154,7 @@ const App = () => {
                       element={<LegalDocPage kind="terms" />}
                     />
                     <Route path="/help" element={<HelpCenterPage />} />
+                    <Route path="/app" element={<AppInstallPage />} />
                     <Route path="/docs" element={<DocsHandbookPage />} />
                     <Route
                       path="/recommendations"

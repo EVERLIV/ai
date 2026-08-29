@@ -4,6 +4,7 @@ import {
   FileText,
   HelpCircle,
   Scale,
+  Smartphone,
   Sparkles,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -41,6 +42,12 @@ const articles = [
     icon: FileText,
     title: "Правила пользования и лицензионное соглашение",
     desc: "Условия доступа к сайту и платных услуг.",
+  },
+  {
+    href: "/app",
+    icon: Smartphone,
+    title: "Приложение на телефон",
+    desc: "Как установить АрендаСити на iPhone (Safari) и Android (Chrome). QR-код для быстрого доступа.",
   },
   {
     href: "/about",

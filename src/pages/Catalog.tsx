@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import ctaRentOutBg from "@/assets/cta-rent-out.jpg";
 import CatalogListCard from "@/components/catalog/CatalogListCard";
+import CatalogHorizontalBanner from "@/components/catalog/CatalogHorizontalBanner";
 import CatalogResultsSidebar from "@/components/catalog/CatalogResultsSidebar";
 import CatalogSearchAlertDialog, {
   CatalogSearchAlertButton,
@@ -48,6 +49,10 @@ import {
   type CatalogSortKey,
 } from "@/lib/catalogSort";
 import { readCatalogFiltersFromSearchParams, serializeCatalogSearchParams } from "@/lib/catalogLinks";
+import {
+  getHorizontalBannerFallbackSlots,
+  getHorizontalBannersAfterPropertyIndex,
+} from "@/lib/catalogHorizontalBanners";
 import { listPropertyPath } from "@/lib/listPropertyLinks";
 import {
   type ListingSellerFilter,
@@ -1023,6 +1028,7 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
       [3, 0],
       [7, 1],
     ]);
+    let horizontalBannerInserted = false;
 
     filtered.forEach((p, i) => {
       const slot = promoSlots.get(i);
@@ -1039,6 +1045,19 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
           <PropertyGridCard property={p} />
         </FadeIn>,
       );
+
+      for (const hSlot of getHorizontalBannersAfterPropertyIndex(segment, i)) {
+        horizontalBannerInserted = true;
+        items.push(
+          <FadeIn
+            key={`hbanner-${hSlot.id}`}
+            delay={0.12}
+            className="col-span-full"
+          >
+            <CatalogHorizontalBanner banner={hSlot.banner} />
+          </FadeIn>,
+        );
+      }
     });
 
     if (filtered.length > 0 && filtered.length <= 3) {
@@ -1049,8 +1068,68 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
         </FadeIn>,
       );
     }
+
+    for (const hSlot of getHorizontalBannerFallbackSlots(
+      segment,
+      filtered.length,
+      horizontalBannerInserted,
+    )) {
+      items.push(
+        <FadeIn key={`hbanner-${hSlot.id}-tail`} className="col-span-full">
+          <CatalogHorizontalBanner banner={hSlot.banner} />
+        </FadeIn>,
+      );
+    }
+
     return items;
-  }, [filtered, catalogPromos]);
+  }, [filtered, catalogPromos, segment]);
+
+  const listItems = useMemo(() => {
+    const items: React.ReactNode[] = [];
+    let horizontalBannerInserted = false;
+
+    filtered.forEach((p, i) => {
+      items.push(
+        <FadeIn key={p.id}>
+          <CatalogListCard
+            ref={(el) => {
+              if (el) cardRefs.current.set(p.id, el);
+              else cardRefs.current.delete(p.id);
+            }}
+            property={p}
+            highlighted={highlightedId === p.id}
+            onHoverStart={() => setHighlightedId(p.id)}
+            onHoverEnd={() =>
+              setHighlightedId((cur) => (cur === p.id ? null : cur))
+            }
+          />
+        </FadeIn>,
+      );
+
+      for (const hSlot of getHorizontalBannersAfterPropertyIndex(segment, i)) {
+        horizontalBannerInserted = true;
+        items.push(
+          <FadeIn key={`hbanner-${hSlot.id}`}>
+            <CatalogHorizontalBanner banner={hSlot.banner} />
+          </FadeIn>,
+        );
+      }
+    });
+
+    for (const hSlot of getHorizontalBannerFallbackSlots(
+      segment,
+      filtered.length,
+      horizontalBannerInserted,
+    )) {
+      items.push(
+        <FadeIn key={`hbanner-${hSlot.id}-tail`}>
+          <CatalogHorizontalBanner banner={hSlot.banner} />
+        </FadeIn>,
+      );
+    }
+
+    return items;
+  }, [filtered, highlightedId, segment]);
 
   const catalogPath = isLand
     ? "/zemlya/catalog"
@@ -1681,26 +1760,7 @@ export default function Catalog({ segment = "commercial" }: CatalogProps) {
                       {gridItems}
                     </div>
                   ) : (
-                    <div className="space-y-1.5 sm:space-y-2">
-                      {filtered.map((p) => (
-                        <FadeIn key={p.id}>
-                          <CatalogListCard
-                            ref={(el) => {
-                              if (el) cardRefs.current.set(p.id, el);
-                              else cardRefs.current.delete(p.id);
-                            }}
-                            property={p}
-                            highlighted={highlightedId === p.id}
-                            onHoverStart={() => setHighlightedId(p.id)}
-                            onHoverEnd={() =>
-                              setHighlightedId((cur) =>
-                                cur === p.id ? null : cur,
-                              )
-                            }
-                          />
-                        </FadeIn>
-                      ))}
-                    </div>
+                    <div className="space-y-1.5 sm:space-y-2">{listItems}</div>
                   )}
                 </div>
 

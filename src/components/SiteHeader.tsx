@@ -14,6 +14,7 @@ import {
   Newspaper,
   Search,
   Settings2,
+  Smartphone,
   Sparkles,
   User,
 } from "lucide-react";
@@ -57,6 +58,12 @@ const COMPANY_SUBMENU: SubItem[] = [
     desc: "Адрес, телефон, режим работы",
     href: "/contacts",
     icon: BookOpen,
+  },
+  {
+    label: "Приложение",
+    desc: "Установка на iPhone и Android",
+    href: "/app",
+    icon: Smartphone,
   },
   {
     label: "Вакансии",
