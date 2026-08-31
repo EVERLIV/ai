@@ -2,16 +2,12 @@ import {
   SERVICE_ROLE_KEY,
   SUPABASE_URL,
 } from "@/integrations/supabase/adminClient";
+import { getEdgeFunctionUrl } from "@/lib/edgeFunctions";
 
-function getTrackViewUrl(): string {
-  const explicit = import.meta.env.VITE_TRACK_PROPERTY_VIEW_URL?.trim();
-  if (explicit) return explicit;
-  const base = import.meta.env.VITE_SUPABASE_URL?.trim().replace(/\/$/, "");
-  if (base) return `${base}/functions/v1/track-property-view`;
-  return "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/track-property-view";
-}
-
-export const TRACK_VIEW_URL = getTrackViewUrl();
+export const TRACK_VIEW_URL = getEdgeFunctionUrl(
+  "track-property-view",
+  "VITE_TRACK_PROPERTY_VIEW_URL",
+);
 
 /** Инкремент views_count на self-hosted, если cloud edge недоступен / CORS. */
 async function incrementViewsLocal(propertyId: string): Promise<void> {

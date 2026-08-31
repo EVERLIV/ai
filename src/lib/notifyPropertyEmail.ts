@@ -1,3 +1,5 @@
+import { getEdgeFunctionUrl } from "@/lib/edgeFunctions";
+
 export type PropertyEmailEvent =
   | "submitted"
   | "approved"
@@ -24,9 +26,10 @@ export type PropertyEmailPayload = {
   };
 };
 
-const NOTIFY_URL =
-  import.meta.env.VITE_NOTIFY_PROPERTY_EMAIL_URL ||
-  "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/notify-property-email";
+const NOTIFY_URL = getEdgeFunctionUrl(
+  "notify-property-email",
+  "VITE_NOTIFY_PROPERTY_EMAIL_URL",
+);
 
 const NOTIFY_SECRET = import.meta.env.VITE_NOTIFY_EMAIL_SECRET as
   | string

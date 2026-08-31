@@ -23,6 +23,7 @@ import {
   type OpenConsultantChatDetail,
 } from "@/lib/aiConsultant";
 import { submitLead } from "@/lib/submitLead";
+import { getEdgeFunctionUrl } from "@/lib/edgeFunctions";
 
 const VISITOR_KEY = "ac_chat_visitor";
 
@@ -41,14 +42,8 @@ function loadVisitor(): Visitor | null {
   return null;
 }
 
-/** Edge-функция чата на self-hosted API (cloud-проект больше не резолвится). */
-function getChatApiUrl(): string {
-  const explicit = import.meta.env.VITE_CHAT_API_URL?.trim();
-  if (explicit) return explicit;
-  const base = import.meta.env.VITE_SUPABASE_URL?.trim().replace(/\/$/, "");
-  if (base) return `${base}/functions/v1/ai-chat`;
-  return "https://api.arendacity.com/functions/v1/ai-chat";
-}
+/** Edge-функция чата на self-hosted VDS. */
+const getChatApiUrl = () => getEdgeFunctionUrl("ai-chat", "VITE_CHAT_API_URL");
 
 type Status = "sent" | "read";
 type Msg = {

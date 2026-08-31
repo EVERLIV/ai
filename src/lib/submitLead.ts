@@ -1,4 +1,5 @@
 import { isTurnstileEnabled } from "@/lib/botGuard";
+import { getEdgeFunctionUrl } from "@/lib/edgeFunctions";
 
 export type LeadInput = {
   name: string;
@@ -19,11 +20,7 @@ export type LeadInput = {
 };
 
 function getSubmitLeadUrl(): string {
-  const explicit = import.meta.env.VITE_SUBMIT_LEAD_URL?.trim();
-  if (explicit) return explicit;
-  const base = import.meta.env.VITE_SUPABASE_URL?.trim().replace(/\/$/, "");
-  if (base) return `${base}/functions/v1/submit-lead`;
-  return "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/submit-lead";
+  return getEdgeFunctionUrl("submit-lead", "VITE_SUBMIT_LEAD_URL");
 }
 
 /**

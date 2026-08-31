@@ -1,4 +1,5 @@
 import type { SmartPickCriteria, SmartPickLite } from "@/lib/smartPick";
+import { getEdgeFunctionUrl } from "@/lib/edgeFunctions";
 
 export type AIPick = {
   id: string;
@@ -12,15 +13,17 @@ export type AIResponse = {
   picks: AIPick[];
 };
 
-const SELF_HOSTED_URL =
-  "https://api.arendacity.com/functions/v1/ai-property-pick";
+const SELF_HOSTED_URL = getEdgeFunctionUrl(
+  "ai-property-pick",
+  "VITE_PROPERTY_PICK_API_URL",
+);
 
 const ANON_KEY =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4ODQyOTQwLCJleHAiOjE5MzY1MjI5NDB9.uK1BksB1rl0vNAlUc2nVpkqECeiWD9CKx0rIfHUlyWA";
 
 function pickEndpoint(): string {
-  return import.meta.env.VITE_PROPERTY_PICK_API_URL || SELF_HOSTED_URL;
+  return SELF_HOSTED_URL;
 }
 
 export function criteriaToApiPayload(criteria: SmartPickCriteria) {

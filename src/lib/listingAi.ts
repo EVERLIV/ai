@@ -1,5 +1,6 @@
 import type { PropertySegment } from "@/config/propertySegments";
 import type { ListingAiPhase } from "@/lib/listingAiDraft";
+import { getEdgeFunctionUrl } from "@/lib/edgeFunctions";
 
 export type ListingAiChatMessage = {
   role: "user" | "assistant";
@@ -19,12 +20,8 @@ export type ListingAiResponse = {
   reasonedMs?: number;
 };
 
-const CLOUD_URL =
-  "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/ai-listing-create";
-
 function endpoint(): string {
-  // Cloud Anthropic only — draft/history on client; publish via self-hosted user JWT
-  return import.meta.env.VITE_LISTING_AI_URL || CLOUD_URL;
+  return getEdgeFunctionUrl("ai-listing-create", "VITE_LISTING_AI_URL");
 }
 
 const CLIENT_TIMEOUT_MS = 45_000;

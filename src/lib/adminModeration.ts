@@ -2,6 +2,7 @@ import {
   SERVICE_ROLE_KEY,
   SUPABASE_URL,
 } from "@/integrations/supabase/adminClient";
+import { getEdgeFunctionUrl } from "@/lib/edgeFunctions";
 
 const adminHeaders = {
   apikey: SERVICE_ROLE_KEY,
@@ -73,10 +74,7 @@ export async function adminInsertCrmLead(payload: Record<string, unknown>) {
   }
 
   const row = Array.isArray(data) ? data[0] : data;
-  const notifyUrl =
-    (typeof import.meta !== "undefined" &&
-      (import.meta as any).env?.VITE_NOTIFY_LEAD_URL) ||
-    "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/notify-lead";
+  const notifyUrl = getEdgeFunctionUrl("notify-lead", "VITE_NOTIFY_LEAD_URL");
   try {
     await fetch(notifyUrl, {
       method: "POST",

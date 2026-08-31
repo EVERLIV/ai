@@ -1,3 +1,5 @@
+import { getEdgeFunctionUrl } from "@/lib/edgeFunctions";
+
 export type AgencyInviteEmailPayload = {
   to: string;
   agencyName: string;
@@ -7,13 +9,10 @@ export type AgencyInviteEmailPayload = {
   expiresAt?: string | null;
 };
 
-const INVITE_URL =
-  import.meta.env.VITE_SEND_AGENCY_INVITE_URL ||
-  import.meta.env.VITE_NOTIFY_PROPERTY_EMAIL_URL?.replace(
-    /notify-property-email\/?$/,
-    "send-agency-invite",
-  ) ||
-  "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/send-agency-invite";
+const INVITE_URL = getEdgeFunctionUrl(
+  "send-agency-invite",
+  "VITE_SEND_AGENCY_INVITE_URL",
+);
 
 const NOTIFY_SECRET = import.meta.env.VITE_NOTIFY_EMAIL_SECRET as
   | string

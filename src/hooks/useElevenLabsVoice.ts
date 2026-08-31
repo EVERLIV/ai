@@ -1,16 +1,18 @@
 import { useConversation } from "@elevenlabs/react";
 import { useCallback, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { getEdgeFunctionUrl } from "@/lib/edgeFunctions";
 
 /** ID агента из ElevenLabs (уже настроен). Можно переопределить через VITE_ELEVENLABS_AGENT_ID */
 export const ELEVENLABS_AGENT_ID =
   import.meta.env.VITE_ELEVENLABS_AGENT_ID ||
   "agent_7301kmyt4jxxf8etgj0av5x43qb4";
 
-/** Cloud Edge — как ai-chat / notify-lead (не self-hosted api.arendacity.com) */
-const ELEVENLABS_TOKEN_URL =
-  import.meta.env.VITE_ELEVENLABS_TOKEN_URL ||
-  "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/elevenlabs-conversation-token";
+/** Edge-функция на self-hosted VDS */
+const ELEVENLABS_TOKEN_URL = getEdgeFunctionUrl(
+  "elevenlabs-conversation-token",
+  "VITE_ELEVENLABS_TOKEN_URL",
+);
 
 type VoiceMsg = { role: "user" | "assistant"; content: string };
 
