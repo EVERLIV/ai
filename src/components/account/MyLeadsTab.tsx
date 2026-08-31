@@ -60,6 +60,20 @@ const STATUS_LABELS: Record<string, string> = {
   spam: "Спам",
 };
 
+const DIRECT_SOURCE_LABELS: Record<string, string> = {
+  realtor_contact: "Страница риелтора",
+  agency_contact: "Страница агентства",
+  developer_contact: "Страница застройщика",
+};
+
+function directLeadLabel(lead: CabinetLeadRow): string {
+  return (
+    lead.business_category?.trim() ||
+    DIRECT_SOURCE_LABELS[lead.source] ||
+    "Прямой контакт"
+  );
+}
+
 function leadStatus(lead: CabinetLeadRow): string {
   return lead.status || "new";
 }
@@ -94,10 +108,11 @@ function LeadRow({
 }) {
   const status = leadStatus(lead);
   const isNew = status === "new";
-  const address =
-    formatPropertyAddressShort(property?.address) ||
-    property?.address ||
-    "Объект";
+  const address = property
+    ? formatPropertyAddressShort(property.address) || property.address || "Объект"
+    : directLeadLabel(lead);
+  const managerLabel = property?.managerName
+    || (lead.manager_id ? "Риелтор" : lead.agency_id ? "Агентство" : "—");
 
   return (
     <div
@@ -126,7 +141,7 @@ function LeadRow({
             {lead.name || "Без имени"}
           </span>
           <span className="hidden md:block w-[22%] min-w-0 truncate text-xs text-muted-foreground">
-            {property?.managerName || "—"}
+            {managerLabel}
           </span>
           <span className="flex-1 min-w-0 truncate text-xs text-muted-foreground">
             {address}
@@ -261,15 +276,28 @@ export default function MyLeadsTab() {
       const status = leadStatus(lead);
       if (statusFilter !== "all" && status !== statusFilter) return false;
       const prop = lead.object_id ? propertyWithManager[lead.object_id] : undefined;
-      if (managerId !== "all" && prop?.listing_manager_id !== managerId) {
-        return false;
+      if (managerId !== "all") {
+        if (lead.object_id) {
+          if (prop?.listing_manager_id !== managerId) return false;
+        } else if (lead.manager_id !== managerId) {
+          return false;
+        }
       }
       if (oq) {
-        const addr = (prop?.address || "").toLowerCase();
+        const addr = lead.object_id
+          ? (prop?.address || "").toLowerCase()
+          : directLeadLabel(lead).toLowerCase();
         if (!addr.includes(oq)) return false;
       }
       if (q) {
-        const hay = [lead.name, lead.phone, lead.email, lead.message, prop?.address]
+        const hay = [
+          lead.name,
+          lead.phone,
+          lead.email,
+          lead.message,
+          prop?.address,
+          !lead.object_id ? directLeadLabel(lead) : null,
+        ]
           .filter(Boolean)
           .join(" ")
           .toLowerCase();
@@ -288,9 +316,13 @@ export default function MyLeadsTab() {
       const pa = a.object_id ? propertyWithManager[a.object_id] : undefined;
       const pb = b.object_id ? propertyWithManager[b.object_id] : undefined;
       if (sort === "object") {
-        return (pa?.address || "").localeCompare(pb?.address || "", "ru");
+        const aa = pa?.address || directLeadLabel(a);
+        const bb = pb?.address || directLeadLabel(b);
+        return aa.localeCompare(bb, "ru");
       }
-      return (pa?.managerName || "").localeCompare(pb?.managerName || "", "ru");
+      const ma = pa?.managerName || (a.manager_id ? "Риелтор" : "");
+      const mb = pb?.managerName || (b.manager_id ? "Риелтор" : "");
+      return ma.localeCompare(mb, "ru");
     });
     return rows;
   }, [
@@ -314,7 +346,7 @@ export default function MyLeadsTab() {
       { property?: LeadPropertyInfo; items: CabinetLeadRow[] }
     >();
     for (const lead of filtered) {
-      const key = lead.object_id || "none";
+      const key = lead.object_id || `direct:${lead.id}`;
       const cur = map.get(key) || {
         property: lead.object_id ? propertyWithManager[lead.object_id] : undefined,
         items: [],

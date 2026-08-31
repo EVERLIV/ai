@@ -106,6 +106,7 @@ import {
   parseCoordInput,
   parseCoordPair,
 } from "@/lib/propertyGeo";
+import { processPropertyPhotoFile } from "@/lib/processPropertyPhoto";
 import {
   isLandProperty,
   LAND_BUILDING_FIELD_DEFAULTS,
@@ -447,55 +448,18 @@ export default function Dashboard() {
     },
   });
 
-  const compressImage = (
-    file: File,
-    maxWidth = 1920,
-    quality = 0.82,
-  ): Promise<File> =>
-    new Promise((resolve) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        const scale = Math.min(1, maxWidth / img.width);
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        canvas
-          .getContext("2d")
-          ?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob(
-          (blob) =>
-            resolve(
-              blob
-                ? new File([blob], file.name.replace(/\.\w+$/, ".jpg"), {
-                    type: "image/jpeg",
-                  })
-                : file,
-            ),
-          "image/jpeg",
-          quality,
-        );
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        resolve(file);
-      };
-      img.src = url;
-    });
-
   const uploadPhotos = async (
     propertyId: string,
   ): Promise<{ urls: string[]; cover: string }> => {
     const urls: string[] = [...existingPhotos];
 
     for (const file of photoFiles) {
-      const compressed = await compressImage(file);
+      const processed = await processPropertyPhotoFile(file);
       const path = `${propertyId}/${crypto.randomUUID()}.jpg`;
       const { error } = await supabaseAdmin.storage.upload(
         "property-photos",
         path,
-        compressed,
+        processed,
       );
       if (error) throw new Error(error);
       urls.push(supabaseAdmin.storage.getPublicUrl("property-photos", path));

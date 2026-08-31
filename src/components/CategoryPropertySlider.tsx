@@ -16,6 +16,7 @@ import {
   buildPropertyDisplayTitle,
   formatPropertyAddressShort,
 } from "@/lib/propertyCard";
+import ProtectedImage from "@/components/ProtectedImage";
 import { getPropertyCover } from "@/lib/propertyImages";
 import {
   propertyMatchesSegment,
@@ -115,7 +116,7 @@ export default function CategoryPropertySlider({
               className="group min-w-[280px] max-w-[280px] snap-start rounded-xl border border-border bg-card overflow-hidden hover:shadow-lg transition-all duration-300 sm:min-w-[340px] sm:max-w-[340px]"
             >
               <div className="relative h-48 overflow-hidden bg-muted">
-                <img
+                <ProtectedImage
                   src={getPropertyCover(p.cover_photo, p.type)}
                   alt={p.address}
                   loading="lazy"

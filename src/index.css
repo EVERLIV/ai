@@ -347,6 +347,11 @@
   );
   animation: auroraDrift1 14s ease-in-out infinite;
 }
+img[data-protected="true"] {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
 .aurora-bg::after {
   width: 320px;
   height: 320px;

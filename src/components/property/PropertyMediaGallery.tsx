@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Play, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import ProtectedImage from "@/components/ProtectedImage";
 import PropertySaveButton from "@/components/PropertySaveButton";
 import PropertySidebarExtras from "@/components/PropertySidebarExtras";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -205,7 +206,7 @@ export default function PropertyMediaGallery({
         <div className="flex-1 min-h-0 min-w-0 flex flex-col bg-muted/40 overflow-hidden">
           <div className="relative flex-1 min-h-0 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
             {tab === "plan" && planUrl && (
-              <img
+              <ProtectedImage
                 src={planUrl}
                 alt={planLabel}
                 className="max-h-full max-w-full object-contain"
@@ -223,7 +224,7 @@ export default function PropertyMediaGallery({
               </div>
             )}
             {tab === "photos" && (
-              <img
+              <ProtectedImage
                 src={
                   photos[photoIndex] ||
                   property.cover_photo ||
@@ -393,7 +394,7 @@ function Thumb({
         active ? "border-primary" : "border-transparent",
       )}
     >
-      <img src={src} alt="" className="w-full h-full object-cover" />
+      <ProtectedImage src={src} alt="" className="w-full h-full object-cover" />
     </button>
   );
 }

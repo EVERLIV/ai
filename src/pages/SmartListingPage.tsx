@@ -26,7 +26,7 @@ import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 import { useMyDeveloper } from "@/hooks/useDeveloper";
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/hooks/use-toast";
-import { compressImageFile } from "@/lib/compressImage";
+import { processPropertyPhotoFile } from "@/lib/processPropertyPhoto";
 import { buildDeveloperListingExtras } from "@/lib/developerListing";
 import { invokeListingAi } from "@/lib/listingAi";
 import {
@@ -417,9 +417,9 @@ export default function SmartListingPage({
     for (const file of Array.from(files).slice(0, 12)) {
       if (!file.type.startsWith("image/")) continue;
       try {
-        const compressed = await compressImageFile(file);
-        nextFiles.push(compressed);
-        nextUrls.push(URL.createObjectURL(compressed));
+        const processed = await processPropertyPhotoFile(file);
+        nextFiles.push(processed);
+        nextUrls.push(URL.createObjectURL(processed));
       } catch {
         nextFiles.push(file);
         nextUrls.push(URL.createObjectURL(file));

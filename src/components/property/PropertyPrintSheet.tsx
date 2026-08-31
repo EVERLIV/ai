@@ -1,4 +1,5 @@
 import { createPortal } from "react-dom";
+import ProtectedImage from "@/components/ProtectedImage";
 import BrandMark from "@/components/BrandMark";
 import { DEFAULT_AGENT } from "@/config/defaultAgent";
 import { SITE, SITE_URL, absoluteUrl } from "@/config/site";
@@ -270,10 +271,11 @@ export default function PropertyPrintSheet({ property, pageUrl }: Props) {
           </h2>
           <div className="grid grid-cols-3 gap-2">
             {photos.map((src, i) => (
-              <img
+              <ProtectedImage
                 key={`${src}-${i}`}
                 src={src}
                 alt=""
+                protect={false}
                 className="w-full aspect-[4/3] object-cover bg-neutral-100"
                 loading="eager"
                 decoding="sync"

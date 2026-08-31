@@ -1,4 +1,5 @@
 import { ImageIcon } from "lucide-react";
+import ProtectedImage from "@/components/ProtectedImage";
 import { cn } from "@/lib/utils";
 
 interface PropertyImageProps {
@@ -36,7 +37,7 @@ export default function PropertyImage({
       )}
     >
       {hasImage ? (
-        <img
+        <ProtectedImage
           src={src as string}
           alt={alt}
           loading="lazy"

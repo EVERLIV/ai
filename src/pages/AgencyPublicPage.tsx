@@ -288,6 +288,7 @@ export default function AgencyPublicPage() {
                 title="Свяжитесь с агентством"
                 source="agency_contact"
                 targetLabel={agency.name}
+                agencyId={agency.id}
               />
             </div>
           </aside>

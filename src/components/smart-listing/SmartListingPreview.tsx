@@ -1,4 +1,5 @@
 import { Check, ImageIcon, Loader2 } from "lucide-react";
+import ProtectedImage from "@/components/ProtectedImage";
 import {
   buildPropertyDisplayTitle,
   formatPropertyAddressShort,
@@ -59,7 +60,7 @@ export default function SmartListingPreview({
       >
         <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-muted shrink-0">
           {photoUrls[0] ? (
-            <img
+            <ProtectedImage
               src={photoUrls[0]}
               alt=""
               className="absolute inset-0 w-full h-full object-cover"
@@ -108,7 +109,7 @@ export default function SmartListingPreview({
 
       <div className="relative aspect-[16/10] bg-muted">
         {photoUrls[0] ? (
-          <img
+          <ProtectedImage
             src={photoUrls[0]}
             alt={title}
             className="absolute inset-0 w-full h-full object-cover"
@@ -145,7 +146,7 @@ export default function SmartListingPreview({
         {photoUrls.length > 1 && (
           <div className="flex gap-1.5 pt-2 overflow-x-auto">
             {photoUrls.slice(0, 5).map((url) => (
-              <img
+              <ProtectedImage
                 key={url}
                 src={url}
                 alt=""

@@ -94,6 +94,18 @@ const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
       () => ({
         getHoneypot: () => honeypotRef.current?.value?.trim() || "",
         ensureToken: () => {
+          if (widgetIdRef.current && window.turnstile) {
+            try {
+              const live = window.turnstile.getResponse(widgetIdRef.current);
+              if (live) {
+                tokenRef.current = live;
+                return Promise.resolve(live);
+              }
+            } catch {
+              /* empty */
+            }
+          }
+
           if (tokenRef.current) return Promise.resolve(tokenRef.current);
           if (!widgetIdRef.current || !window.turnstile) {
             return Promise.reject(new Error("Turnstile unavailable"));
@@ -187,7 +199,7 @@ const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
         <input
           ref={honeypotRef}
           type="text"
-          name="website"
+          name="hp_field_ac"
           tabIndex={-1}
           autoComplete="off"
           aria-hidden

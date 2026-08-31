@@ -13,6 +13,8 @@ export type LeadPayload = {
   source?: string | null;
   business_category?: string | null;
   object_id?: string | null;
+  agency_id?: string | null;
+  manager_id?: string | null;
   status?: string | null;
 };
 
@@ -122,9 +124,14 @@ export async function insertCrmLead(row: Record<string, unknown>) {
 }
 
 export async function notifyAgencyForLead(body: LeadPayload) {
-  if (!body.object_id) return;
-  const prop = await fetchPropertyAgencyId(body.object_id);
-  if (!prop?.agency_id) return;
+  let agencyId = body.agency_id?.trim() || null;
+
+  if (!agencyId && body.object_id) {
+    const prop = await fetchPropertyAgencyId(body.object_id);
+    agencyId = prop?.agency_id || null;
+  }
+
+  if (!agencyId) return;
 
   const base = supabaseUrl();
   const secret = internalSecret();
@@ -138,7 +145,7 @@ export async function notifyAgencyForLead(body: LeadPayload) {
     },
     body: JSON.stringify({
       type: "lead",
-      agency_id: prop.agency_id,
+      agency_id: agencyId,
       payload: body,
     }),
     signal: AbortSignal.timeout(5_000),

@@ -10,6 +10,10 @@ type Props = {
   source: "realtor_contact" | "agency_contact" | "developer_contact";
   /** Для CRM: имя специалиста / агентства / застройщика */
   targetLabel: string;
+  /** Уведомление и привязка в CRM */
+  agencyId?: string | null;
+  /** Риелтор — для заявок со страницы /rieltor/... */
+  managerId?: string | null;
   className?: string;
   intents?: readonly string[];
 };
@@ -18,6 +22,8 @@ export default function SpecialistContactForm({
   title = "Свяжитесь со специалистом",
   source,
   targetLabel,
+  agencyId,
+  managerId,
   className,
   intents,
 }: Props) {
@@ -48,20 +54,28 @@ export default function SpecialistContactForm({
         message: comment.trim() || null,
         source,
         business_category: parts.join(" · "),
+        agency_id: agencyId || null,
+        manager_id: managerId || null,
         website: bot.website,
         captchaToken: bot.captchaToken,
       });
       resetGuard();
       setSent(true);
     } catch (err) {
-      if (err instanceof BotGuardError && err.message === "bot") return;
-      setError(
+      if (err instanceof BotGuardError && err.message === "bot") {
+        setError("Не удалось отправить. Обновите страницу и попробуйте снова.");
+        return;
+      }
+      const message =
         err instanceof BotGuardError
           ? err.message
           : err instanceof Error
             ? err.message
-            : "Не удалось отправить",
-      );
+            : "Не удалось отправить";
+      if (/captcha|робот|Turnstile/i.test(message)) {
+        resetGuard();
+      }
+      setError(message);
     } finally {
       setLoading(false);
     }

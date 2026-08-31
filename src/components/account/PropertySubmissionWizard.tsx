@@ -74,6 +74,7 @@ import {
 } from "@/lib/developerListingRules";
 import { normalizeDeveloperSubtype } from "@/lib/developerTypes";
 import { notifyPropertyEmail } from "@/lib/notifyPropertyEmail";
+import { processPropertyPhotoFile } from "@/lib/processPropertyPhoto";
 import { isDailyDeal, isLongTermRent, isSaleDeal } from "@/lib/propertyDeal";
 import {
   buildPropertyPayload,
@@ -579,49 +580,12 @@ export default function PropertySubmissionWizard({
 
   const allPhotoUrls = [...existingPhotos, ...photoPreviews];
 
-  const compressImage = (
-    file: File,
-    maxWidth = 1920,
-    quality = 0.82,
-  ): Promise<File> =>
-    new Promise((resolve) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        const scale = Math.min(1, maxWidth / img.width);
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        canvas
-          .getContext("2d")
-          ?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob(
-          (blob) =>
-            resolve(
-              blob
-                ? new File([blob], file.name.replace(/\.\w+$/, ".jpg"), {
-                    type: "image/jpeg",
-                  })
-                : file,
-            ),
-          "image/jpeg",
-          quality,
-        );
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        resolve(file);
-      };
-      img.src = url;
-    });
-
   const uploadPhotos = async (propertyId: string) => {
     const urls: string[] = [...existingPhotos];
 
     for (const file of photoFiles) {
-      const compressed = await compressImage(file);
-      urls.push(await uploadMyPropertyPhotoApi(propertyId, compressed));
+      const processed = await processPropertyPhotoFile(file);
+      urls.push(await uploadMyPropertyPhotoApi(propertyId, processed));
     }
     const cover = urls[coverIndex] || urls[0] || "";
     return { urls, cover };
@@ -716,7 +680,7 @@ export default function PropertySubmissionWizard({
         if (planFile) {
           planUrl = await uploadMyPropertyPhotoApi(
             editId,
-            await compressImage(planFile),
+            await processPropertyPhotoFile(planFile),
           );
         }
         extras = {
@@ -757,7 +721,7 @@ export default function PropertySubmissionWizard({
         if (planFile) {
           planUrl = await uploadMyPropertyPhotoApi(
             data.id,
-            await compressImage(planFile),
+            await processPropertyPhotoFile(planFile),
           );
         }
         const nextExtras = {

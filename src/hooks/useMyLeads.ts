@@ -4,6 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   type CabinetLeadRow,
   type CabinetPropertyLite,
+  fetchDirectAgencyLeadsApi,
+  fetchDirectAgencyNewLeadsCountApi,
   fetchLeadsForPropertyIdsApi,
   fetchMyPropertiesLiteApi,
   fetchNewLeadsCountApi,
@@ -74,38 +76,70 @@ export function useMyLeadProperties() {
 
 export function useNewLeadsCount() {
   const { user } = useAuth();
+  const { data: myAgency } = useMyAgency();
+  const agencyId = myAgency?.agency.id;
   const { data: props, isSuccess } = useMyLeadProperties();
 
   return useQuery({
-    queryKey: ["my-leads-new-count", user?.id, props?.list.length ?? 0],
+    queryKey: [
+      "my-leads-new-count",
+      user?.id,
+      agencyId,
+      props?.list.length ?? 0,
+    ],
     enabled: !!user && isSuccess,
     staleTime: 15_000,
     refetchInterval: 30_000,
     queryFn: async () => {
-      if (!props?.list.length) return 0;
-      return fetchNewLeadsCountApi(props.list.map((p) => p.id));
+      const propertyIds = props?.list.map((p) => p.id) ?? [];
+      const [fromProperties, fromDirect] = await Promise.all([
+        propertyIds.length ? fetchNewLeadsCountApi(propertyIds) : Promise.resolve(0),
+        agencyId
+          ? fetchDirectAgencyNewLeadsCountApi(agencyId)
+          : Promise.resolve(0),
+      ]);
+      return fromProperties + fromDirect;
     },
   });
 }
 
 export function useMyLeadsInbox(dateRange: LeadsDateRange) {
   const { user } = useAuth();
+  const { data: myAgency } = useMyAgency();
+  const agencyId = myAgency?.agency.id;
   const { data: props, isSuccess } = useMyLeadProperties();
 
   return useQuery({
-    queryKey: ["my-leads", user?.id, dateRange, props?.list.length ?? 0],
+    queryKey: [
+      "my-leads",
+      user?.id,
+      agencyId,
+      dateRange,
+      props?.list.length ?? 0,
+    ],
     enabled: !!user && isSuccess,
     staleTime: 15_000,
     refetchInterval: 30_000,
     queryFn: async () => {
-      if (!props?.list.length) {
-        return { leads: [] as CabinetLeadRow[], properties: props?.byId ?? {} };
+      const since = sinceIso(dateRange);
+      const propertyIds = props?.list.map((p) => p.id) ?? [];
+      const [propertyLeads, directLeads] = await Promise.all([
+        propertyIds.length
+          ? fetchLeadsForPropertyIdsApi(propertyIds, { since })
+          : Promise.resolve([] as CabinetLeadRow[]),
+        agencyId
+          ? fetchDirectAgencyLeadsApi(agencyId, { since })
+          : Promise.resolve([] as CabinetLeadRow[]),
+      ]);
+      const byId = new Map<string, CabinetLeadRow>();
+      for (const lead of [...propertyLeads, ...directLeads]) {
+        byId.set(lead.id, lead);
       }
-      const leads = await fetchLeadsForPropertyIdsApi(
-        props.list.map((p) => p.id),
-        { since: sinceIso(dateRange) },
+      const leads = [...byId.values()].sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
-      return { leads, properties: props.byId };
+      return { leads, properties: props?.byId ?? {} };
     },
   });
 }

@@ -39,6 +39,9 @@ const SOURCE_LABELS: Record<string, string> = {
   price_offer: "Предложение цены",
   owner_message: "Сообщение",
   consultation_widget: "Консультация",
+  realtor_contact: "Риелтор",
+  agency_contact: "Агентство",
+  developer_contact: "Застройщик",
 };
 
 function json(body: unknown, status = 200) {

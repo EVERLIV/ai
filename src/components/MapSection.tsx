@@ -6,6 +6,7 @@ import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { matchLocationFilter } from "@/lib/locations";
 import { buildPropertyDisplayTitle } from "@/lib/propertyCard";
 import { type Coords, getCoords, hasStreetView } from "@/lib/propertyGeo";
+import ProtectedImage from "@/components/ProtectedImage";
 import { getPropertyCover } from "@/lib/propertyImages";
 import { IRKUTSK_CENTER_LNGLAT, loadYandexMaps } from "@/lib/yandexMaps";
 import StreetViewModal from "./StreetViewModal";
@@ -286,7 +287,7 @@ export default function MapSection() {
                     className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors border border-border"
                   >
                     <div className="w-16 h-16 rounded-md overflow-hidden bg-muted shrink-0">
-                      <img
+                      <ProtectedImage
                         src={getPropertyCover(p.cover_photo, p.type)}
                         alt={p.address}
                         className="w-full h-full object-cover"
@@ -468,7 +469,7 @@ function PropertyCard({
   return (
     <div className="bg-card rounded-xl shadow-card-hover overflow-hidden border border-border">
       <div className="relative h-32 bg-muted">
-        <img
+        <ProtectedImage
           src={getPropertyCover(p.cover_photo, p.type)}
           alt={p.address}
           className="w-full h-full object-cover"

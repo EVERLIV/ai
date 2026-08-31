@@ -40,6 +40,8 @@ Deno.serve(async (req) => {
     const body = (await req.json().catch(() => ({}))) as LeadPayload & {
       website?: string;
       captcha_token?: string | null;
+      agency_id?: string | null;
+      manager_id?: string | null;
     };
 
     if (body.website?.trim()) {
@@ -85,6 +87,8 @@ Deno.serve(async (req) => {
       source: body.source?.trim() || "website",
       business_category: body.business_category?.trim() || null,
       object_id: body.object_id || null,
+      agency_id: body.agency_id?.trim() || null,
+      manager_id: body.manager_id?.trim() || null,
       status: "new",
     };
 

@@ -8,6 +8,10 @@ export type LeadInput = {
   source: string;
   business_category?: string | null;
   object_id?: string | null;
+  /** Привязка к агентству (страница риелтора / агентства) */
+  agency_id?: string | null;
+  /** Риелтор, если заявка со страницы /rieltor/... */
+  manager_id?: string | null;
   /** Honeypot — заполняют только боты */
   website?: string;
   /** Cloudflare Turnstile token */
@@ -59,6 +63,8 @@ export async function submitLead(
     source: input.source,
     business_category: input.business_category?.trim() || null,
     object_id: input.object_id || null,
+    agency_id: input.agency_id?.trim() || null,
+    manager_id: input.manager_id?.trim() || null,
     status: "new",
     website: input.website?.trim() || "",
     captcha_token: input.captchaToken?.trim() || null,

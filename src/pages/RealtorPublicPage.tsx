@@ -257,6 +257,8 @@ export default function RealtorPublicPage() {
                 title="Свяжитесь с риелтором"
                 source="realtor_contact"
                 targetLabel={`${manager.full_name} · ${manager.agency.name}`}
+                agencyId={manager.agency.id}
+                managerId={manager.id}
               />
             </div>
           </aside>

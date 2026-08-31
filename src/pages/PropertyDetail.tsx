@@ -39,6 +39,7 @@ import PropertyPrintButton from "@/components/PropertyPrintButton";
 import PropertyShareButton from "@/components/PropertyShareButton";
 import PropertySidebarExtras from "@/components/PropertySidebarExtras";
 import PropertyMediaGallery from "@/components/property/PropertyMediaGallery";
+import ProtectedImage from "@/components/ProtectedImage";
 import PropertyPrintSheet from "@/components/property/PropertyPrintSheet";
 import PropertyDeveloperProjectSection from "@/components/property/PropertyDeveloperProjectSection";
 import { useCompareProperties } from "@/hooks/useCompareProperties";
@@ -791,15 +792,19 @@ export default function PropertyDetail() {
                 }}
                 className="relative bg-muted aspect-[16/10] lg:aspect-[3/2] overflow-hidden rounded-lg cursor-zoom-in group/gallery"
               >
-                <img
-                  src={
-                    photos.length > 0
-                      ? photos[activePhoto]
-                      : getDefaultPropertyImage(primaryType)
-                  }
-                  alt={property.address}
-                  className="w-full h-full object-cover object-top"
-                />
+                {photos.length > 0 ? (
+                  <ProtectedImage
+                    src={photos[activePhoto]}
+                    alt={property.address}
+                    className="w-full h-full object-cover object-top"
+                  />
+                ) : (
+                  <img
+                    src={getDefaultPropertyImage(primaryType)}
+                    alt={property.address}
+                    className="w-full h-full object-cover object-top"
+                  />
+                )}
                 <div
                   className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-foreground/25 to-transparent"
                   aria-hidden
@@ -892,7 +897,7 @@ export default function PropertyDetail() {
                           : "border-transparent hover:border-border"
                       }`}
                     >
-                      <img
+                      <ProtectedImage
                         src={url}
                         alt=""
                         className="w-full h-full object-cover object-top"

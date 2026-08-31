@@ -287,11 +287,16 @@ export type CabinetLeadRow = {
   email: string | null;
   message: string | null;
   object_id: string | null;
+  agency_id?: string | null;
+  manager_id?: string | null;
   source: string;
   status: string | null;
   created_at: string;
   business_category: string | null;
 };
+
+const LEAD_SELECT =
+  "id,name,phone,email,message,object_id,agency_id,manager_id,source,status,created_at,business_category";
 
 export type CabinetPropertyLite = {
   id: string;
@@ -354,7 +359,7 @@ export async function fetchLeadsForPropertyIdsApi(
     "crm_leads",
     "object_id",
     unique,
-    "id,name,phone,email,message,object_id,source,status,created_at,business_category",
+    LEAD_SELECT,
     "created_at.desc",
     extra,
   );
@@ -377,6 +382,37 @@ export async function fetchNewLeadsCountApi(propertyIds: string[]) {
     "&or=(status.eq.new,status.is.null)",
   );
   return rows.length;
+}
+
+export async function fetchDirectAgencyLeadsApi(
+  agencyId: string,
+  opts?: { since?: string; status?: string },
+) {
+  if (!agencyId) return [] as CabinetLeadRow[];
+  let url =
+    `${SUPABASE_URL}/rest/v1/crm_leads?agency_id=eq.${encodeURIComponent(agencyId)}` +
+    `&object_id=is.null&select=${encodeURIComponent(LEAD_SELECT)}&order=created_at.desc`;
+  if (opts?.since) {
+    url += `&created_at=gte.${encodeURIComponent(opts.since)}`;
+  }
+  if (opts?.status && opts.status !== "all") {
+    url += `&status=eq.${encodeURIComponent(opts.status)}`;
+  }
+  const res = await fetch(url, { headers });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw parseError(data, res);
+  return (Array.isArray(data) ? data : []) as CabinetLeadRow[];
+}
+
+export async function fetchDirectAgencyNewLeadsCountApi(agencyId: string) {
+  if (!agencyId) return 0;
+  const url =
+    `${SUPABASE_URL}/rest/v1/crm_leads?agency_id=eq.${encodeURIComponent(agencyId)}` +
+    `&object_id=is.null&select=id&or=(status.eq.new,status.is.null)`;
+  const res = await fetch(url, { headers });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw parseError(data, res);
+  return Array.isArray(data) ? data.length : 0;
 }
 
 export async function updateLeadStatusApi(leadId: string, status: string) {

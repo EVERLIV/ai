@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import type { DbProperty } from "@/hooks/useProperties";
 import { buildPropertyDisplayTitle } from "@/lib/propertyCard";
 import { type Coords, getCoords, hasStreetView } from "@/lib/propertyGeo";
+import ProtectedImage from "@/components/ProtectedImage";
 import { getPropertyCover } from "@/lib/propertyImages";
 import { IRKUTSK_CENTER_LNGLAT, loadYandexMaps } from "@/lib/yandexMaps";
 import StreetViewModal from "./StreetViewModal";
@@ -364,7 +365,7 @@ function MapListItem({
       }`}
     >
       <div className="w-20 h-20 shrink-0 bg-muted overflow-hidden rounded-md">
-        <img
+        <ProtectedImage
           src={getPropertyCover(p.cover_photo, p.type)}
           alt={p.address}
           loading="lazy"
@@ -421,7 +422,7 @@ function ActiveCard({
         <div
           className={`${compact ? "w-24 h-24" : "w-28 h-28"} shrink-0 bg-muted overflow-hidden rounded-l-lg`}
         >
-          <img
+          <ProtectedImage
             src={getPropertyCover(p.cover_photo, p.type)}
             alt={p.address}
             loading="lazy"
@@ -488,7 +489,7 @@ function MobileCard({ p }: { p: DbProperty }) {
   return (
     <>
       <div className="h-28 bg-muted overflow-hidden rounded-t-lg">
-        <img
+        <ProtectedImage
           src={getPropertyCover(p.cover_photo, p.type)}
           alt={p.address}
           loading="lazy"

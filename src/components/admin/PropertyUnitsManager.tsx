@@ -17,6 +17,7 @@ import {
   useUpsertUnit,
 } from "@/hooks/usePropertyUnits";
 import { supabase } from "@/integrations/supabase/client";
+import { processPropertyPhotoFile } from "@/lib/processPropertyPhoto";
 
 interface Props {
   propertyId: string;
@@ -63,11 +64,11 @@ export default function PropertyUnitsManager({ propertyId }: Props) {
     try {
       const urls: string[] = [...(draft.photos || [])];
       for (const file of Array.from(files)) {
-        const ext = file.name.split(".").pop();
-        const path = `${propertyId}/units/${crypto.randomUUID()}.${ext}`;
+        const processed = await processPropertyPhotoFile(file);
+        const path = `${propertyId}/units/${crypto.randomUUID()}.jpg`;
         const { error } = await supabase.storage
           .from("property-photos")
-          .upload(path, file);
+          .upload(path, processed);
         if (error) throw error;
         const { data } = supabase.storage
           .from("property-photos")

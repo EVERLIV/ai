@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, MapPin, Maximize } from "lucide-react";
 import { useRef } from "react";
 import { Link } from "react-router-dom";
+import ProtectedImage from "@/components/ProtectedImage";
 import { useProperties } from "@/hooks/useProperties";
 import { matchLocationFilter } from "@/lib/locations";
 import {
@@ -98,7 +99,7 @@ export default function NearbyPropertiesSlider({
           >
             <div className="relative h-40 overflow-hidden bg-muted rounded-t-lg">
               {p.cover_photo ? (
-                <img
+                <ProtectedImage
                   src={p.cover_photo}
                   alt={p.address}
                   loading="lazy"
