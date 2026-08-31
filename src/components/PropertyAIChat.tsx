@@ -41,10 +41,14 @@ function loadVisitor(): Visitor | null {
   return null;
 }
 
-/** Edge-функция чата в облачном проекте Supabase. */
-const CHAT_API_URL =
-  import.meta.env.VITE_CHAT_API_URL ||
-  "https://xbdwapunrlnxcuxjhaca.supabase.co/functions/v1/ai-chat";
+/** Edge-функция чата на self-hosted API (cloud-проект больше не резолвится). */
+function getChatApiUrl(): string {
+  const explicit = import.meta.env.VITE_CHAT_API_URL?.trim();
+  if (explicit) return explicit;
+  const base = import.meta.env.VITE_SUPABASE_URL?.trim().replace(/\/$/, "");
+  if (base) return `${base}/functions/v1/ai-chat`;
+  return "https://api.arendacity.com/functions/v1/ai-chat";
+}
 
 type Status = "sent" | "read";
 type Msg = {
@@ -232,7 +236,7 @@ export default function PropertyAIChat({
     let result = "";
 
     try {
-      const resp = await fetch(CHAT_API_URL, {
+      const resp = await fetch(getChatApiUrl(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
