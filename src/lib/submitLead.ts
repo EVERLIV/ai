@@ -40,7 +40,12 @@ export async function submitLead(
   if (!phoneOptional && phone.length < 6) {
     throw new Error("Укажите имя и телефон");
   }
-  if (phoneOptional && phone.length < 6 && !input.email?.includes("@")) {
+  if (
+    phoneOptional &&
+    input.source === "catalog_search_alert" &&
+    phone.length < 6 &&
+    !input.email?.includes("@")
+  ) {
     throw new Error("Укажите телефон или email");
   }
 

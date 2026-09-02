@@ -36,6 +36,7 @@ const SOURCE_LABELS: Record<string, string> = {
   developer_contact: "Застройщик",
   catalog_sidebar: "Подбор из каталога",
   catalog_search_alert: "Подписка на поиск",
+  "ai-chat": "ИИ-чат",
   ai_chat: "ИИ-чат",
   specialist_contact: "Специалист",
   specialist_quiz: "Квиз специалистов",

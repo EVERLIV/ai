@@ -71,7 +71,12 @@ Deno.serve(async (req) => {
     if (!phoneOptional && phone.length < 6) {
       return json({ error: "Укажите имя и телефон" }, 400);
     }
-    if (phoneOptional && phone.length < 6 && !email?.includes("@")) {
+    if (
+      phoneOptional &&
+      body.source === "catalog_search_alert" &&
+      phone.length < 6 &&
+      !email?.includes("@")
+    ) {
       return json({ error: "Укажите телефон или email" }, 400);
     }
 

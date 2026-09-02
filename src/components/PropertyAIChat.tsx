@@ -24,8 +24,10 @@ import {
 } from "@/lib/aiConsultant";
 import { submitLead } from "@/lib/submitLead";
 import { getEdgeFunctionUrl } from "@/lib/edgeFunctions";
+import { extractPhoneFromText } from "@/lib/extractPhone";
 
 const VISITOR_KEY = "ac_chat_visitor";
+const LEAD_SENT_KEY = "ac_chat_lead_sent";
 
 type Visitor = { name: string; phone: string };
 
@@ -65,6 +67,17 @@ const STARTERS = [
   "Самое дешёвое помещение",
   "Условия аренды",
 ];
+
+function buildChatLeadMessage(msgs: Msg[], propertyAddress?: string): string {
+  const header = propertyAddress
+    ? `Чат по объекту: ${propertyAddress}`
+    : "ИИ-чат";
+  const transcript = msgs
+    .slice(-8)
+    .map((m) => `${m.role === "user" ? "Клиент" : "Анастасия"}: ${m.content}`)
+    .join("\n");
+  return `${header}\n\n${transcript}`;
+}
 
 /** Ответ, когда ИИ недоступен: не оставляем человека без реакции. */
 const FALLBACK_REPLY =
@@ -114,11 +127,57 @@ export default function PropertyAIChat({
   const inputRef = useRef<HTMLInputElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const honeypotRef = useRef<HTMLInputElement>(null);
+  const leadSubmittedRef = useRef(
+    typeof sessionStorage !== "undefined" &&
+      sessionStorage.getItem(LEAD_SENT_KEY) === "1",
+  );
   const initialized = useRef(false);
   /** Время открытия чата и последней отправки — простая защита от ботов. */
   const openedAt = useRef(0);
   const lastSentAt = useRef(0);
   const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
+
+  const markLeadSubmitted = useCallback(() => {
+    leadSubmittedRef.current = true;
+    try {
+      sessionStorage.setItem(LEAD_SENT_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const maybeSubmitChatLead = useCallback(
+    async (currentVisitor: Visitor, phone: string, history: Msg[]) => {
+      const normalized = extractPhoneFromText(phone) || phone.trim();
+      if (normalized.replace(/\D/g, "").length < 10) return;
+      if (leadSubmittedRef.current) return;
+
+      try {
+        const bot = await ensureGuard();
+        await submitLead({
+          name: currentVisitor.name,
+          phone: normalized,
+          source: "ai-chat",
+          object_id: propertyId || null,
+          message: buildChatLeadMessage(history, propertyAddress),
+          website: bot.website,
+          captchaToken: bot.captchaToken,
+        });
+        markLeadSubmitted();
+        resetGuard();
+      } catch (err) {
+        if (err instanceof BotGuardError && err.message === "bot") return;
+        console.warn("chat lead", err);
+      }
+    },
+    [
+      ensureGuard,
+      markLeadSubmitted,
+      propertyAddress,
+      propertyId,
+      resetGuard,
+    ],
+  );
 
   useEffect(() => {
     setPropertyId(propertyIdProp);
@@ -291,6 +350,19 @@ export default function PropertyAIChat({
 
     const next = [...msgs, userMsg];
     setMsgs(next);
+
+    const phoneFromText = extractPhoneFromText(t);
+    if (phoneFromText && visitor) {
+      const updatedVisitor = { ...visitor, phone: phoneFromText };
+      setVisitor(updatedVisitor);
+      try {
+        sessionStorage.setItem(VISITOR_KEY, JSON.stringify(updatedVisitor));
+      } catch {
+        /* ignore */
+      }
+      void maybeSubmitChatLead(updatedVisitor, phoneFromText, next);
+    }
+
     await sendAI(next, visitor?.name || "");
   };
 
@@ -323,6 +395,9 @@ export default function PropertyAIChat({
         website: bot.website,
         captchaToken: bot.captchaToken,
       });
+      if (phone.replace(/\D/g, "").length >= 10) {
+        markLeadSubmitted();
+      }
       resetGuard();
     } catch (err) {
       if (err instanceof BotGuardError && err.message === "bot") return;
@@ -681,6 +756,11 @@ export default function PropertyAIChat({
                 ))}
               </div>
             )}
+
+            {/* Turnstile остаётся смонтированным после intro — для заявки из чата */}
+            <div className="hidden" aria-hidden>
+              <BotGuard />
+            </div>
 
             {/* INPUT */}
             <form

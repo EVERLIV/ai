@@ -11,6 +11,14 @@
  */
 
 import { completeFalChat, FalChatError } from "../_shared/falChat.ts";
+import {
+  formatLeadTelegram,
+  insertCrmLead,
+  notifyAgencyForLead,
+  sendOpsTelegram,
+  type LeadPayload,
+} from "../_shared/leadOps.ts";
+import { extractPhoneFromText, phoneTailDigits } from "../_shared/phoneUtils.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -283,6 +291,89 @@ ${cat.summary}
 ${cat.text}${userName ? `\n\nПользователя зовут ${userName}. Обращайся по имени.` : ""}`;
 }
 
+function buildChatLeadMessage(
+  messages: Msg[],
+  propertyAddress?: string,
+): string {
+  const header = propertyAddress
+    ? `Чат по объекту: ${propertyAddress}`
+    : "ИИ-чат";
+  const transcript = messages
+    .slice(-8)
+    .map((m) => `${m.role === "user" ? "Клиент" : "Анастасия"}: ${m.content}`)
+    .join("\n");
+  return `${header}\n\n${transcript}`;
+}
+
+async function recentAiChatLeadExists(phone: string): Promise<boolean> {
+  const tail = phoneTailDigits(phone);
+  if (tail.length < 10) return false;
+
+  const base = Deno.env.get("SUPABASE_URL") || "";
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  if (!base || !key) return false;
+
+  const since = new Date(Date.now() - 30 * 60_000).toISOString();
+  const params = new URLSearchParams({
+    source: "eq.ai-chat",
+    created_at: `gte.${since}`,
+    phone: `like.*${tail}`,
+    select: "id",
+    limit: "1",
+  });
+
+  const resp = await fetch(`${base.replace(/\/$/, "")}/rest/v1/crm_leads?${params}`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+    signal: AbortSignal.timeout(5_000),
+  });
+  if (!resp.ok) return false;
+  const data = await resp.json();
+  return Array.isArray(data) && data.length > 0;
+}
+
+async function maybeCaptureChatLead(opts: {
+  messages: Msg[];
+  userName: string;
+  propertyId?: string;
+  propertyAddress?: string;
+  agencyId?: string;
+}) {
+  const userMessages = opts.messages.filter((m) => m.role === "user");
+  let phone: string | null = null;
+  for (let i = userMessages.length - 1; i >= 0; i--) {
+    phone = extractPhoneFromText(userMessages[i].content);
+    if (phone) break;
+  }
+  if (!phone || (await recentAiChatLeadExists(phone))) return;
+
+  const name = opts.userName?.trim() || "Гость";
+  const row = {
+    name,
+    phone,
+    email: null,
+    message: buildChatLeadMessage(opts.messages, opts.propertyAddress),
+    source: "ai-chat",
+    business_category: null,
+    object_id: opts.propertyId || null,
+    agency_id: opts.agencyId || null,
+    manager_id: null,
+    status: "new",
+  };
+
+  try {
+    const inserted = await insertCrmLead(row);
+    const lead: LeadPayload = { ...row, id: inserted?.id || null };
+    void sendOpsTelegram(formatLeadTelegram(lead)).catch((e) =>
+      console.warn("ai-chat telegram:", e),
+    );
+    void notifyAgencyForLead(lead).catch((e) =>
+      console.warn("ai-chat agency notify:", e),
+    );
+  } catch (e) {
+    console.warn("ai-chat lead capture:", e);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS")
     return new Response(null, { headers: corsHeaders });
@@ -321,8 +412,9 @@ Deno.serve(async (req) => {
           : undefined;
 
     let catalog;
+    let scope: SellerScope | null = null;
     try {
-      const scope = await resolveSellerScope(propertyId);
+      scope = await resolveSellerScope(propertyId);
       catalog = await loadCatalog(scope);
     } catch (e) {
       console.error("catalog:", e);
@@ -331,6 +423,14 @@ Deno.serve(async (req) => {
 
     const userName =
       typeof body.userName === "string" ? body.userName.slice(0, 60) : "";
+
+    void maybeCaptureChatLead({
+      messages,
+      userName,
+      propertyId,
+      propertyAddress: scope?.focusAddress,
+      agencyId: scope?.agencyId,
+    });
 
     try {
       const reply = await completeFalChat({
