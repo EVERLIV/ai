@@ -1,17 +1,16 @@
 /**
- * Чат-консультант «Анастасия» — Supabase Edge Function.
+ * Чат-консультант «Анастасия» — Supabase Edge Function (self-hosted VDS).
  *
- * Каталог читается по HTTP из боевой базы api.arendacity.com,
- * поэтому функция может жить в облачном проекте Supabase.
+ * LLM: Fal AI → OpenRouter (дешёвая модель, см. FAL_CHAT_MODEL).
  *
- * Каталог всегда режется по продавцу объекта (agency_id / submitted_by)
- * и только если у продавца включён ai_consultant_enabled.
- *
- * Переменные окружения (Project Settings → Edge Functions → Secrets):
- *   ANTHROPIC_API_KEY  — ключ Anthropic
+ * Переменные окружения:
+ *   FAL_KEY            — ключ fal.ai
+ *   FAL_CHAT_MODEL     — по умолчанию google/gemini-2.0-flash-lite
  *   CATALOG_URL        — по умолчанию https://api.arendacity.com
  *   CATALOG_ANON_KEY   — anon-ключ базы с объектами
  */
+
+import { completeFalChat, FalChatError } from "../_shared/falChat.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,7 +19,6 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const MODEL = "claude-haiku-4-5";
 const CATALOG_URL = Deno.env.get("CATALOG_URL") || "https://api.arendacity.com";
 const CATALOG_ANON_KEY = Deno.env.get("CATALOG_ANON_KEY") || "";
 
@@ -290,8 +288,8 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
 
   try {
-    const key = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!key) return json({ error: "ANTHROPIC_API_KEY не настроен" }, 500);
+    const falKey = Deno.env.get("FAL_KEY");
+    if (!falKey) return json({ error: "FAL_KEY не настроен" }, 500);
 
     const body = await req.json().catch(() => ({}));
     if (body.website) return json({ error: "Запрос отклонён." }, 400);
@@ -331,42 +329,23 @@ Deno.serve(async (req) => {
       return json({ error: "Каталог временно недоступен." }, 503);
     }
 
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 1024,
-        system: systemPrompt(
-          catalog,
-          typeof body.userName === "string" ? body.userName.slice(0, 60) : "",
-        ),
+    const userName =
+      typeof body.userName === "string" ? body.userName.slice(0, 60) : "";
+
+    try {
+      const reply = await completeFalChat({
+        system: systemPrompt(catalog, userName),
         messages,
-      }),
-    });
-
-    if (!resp.ok) {
-      const detail = await resp.text();
-      console.error("anthropic", resp.status, detail.slice(0, 300));
-      if (resp.status === 429)
-        return json(
-          { error: "Слишком много запросов. Попробуйте через минуту." },
-          429,
-        );
-      return json({ error: "Чат временно недоступен." }, 502);
+        maxTokens: 1024,
+        temperature: 0.6,
+      });
+      return json({ reply }, 200);
+    } catch (e) {
+      if (e instanceof FalChatError) {
+        return json({ error: e.message }, e.status);
+      }
+      throw e;
     }
-
-    const data = await resp.json();
-    const text =
-      (data.content ?? []).find((b: { type: string }) => b.type === "text")
-        ?.text ?? "";
-    if (!text) return json({ error: "Пустой ответ модели." }, 502);
-
-    return json({ reply: text }, 200);
   } catch (e) {
     console.error("ai-chat:", e);
     return json({ error: e instanceof Error ? e.message : "Ошибка" }, 500);

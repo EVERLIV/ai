@@ -18,8 +18,12 @@ if [ -z "$ANON" ]; then
   ANON="$(grep -E '^SUPABASE_ANON_KEY=' "$MAIN" | tail -1 | cut -d= -f2- | tr -d '\r\n')"
 fi
 ANTH="$(grep -E '^ANTHROPIC_API_KEY=' "$MAIN" | tail -1 | cut -d= -f2- | tr -d '\r\n')"
+FAL="$(grep -E '^FAL_KEY=' "$MAIN" | tail -1 | cut -d= -f2- | tr -d '\r\n')"
 if [ -z "$ANTH" ] && [ -f /opt/supabase/volumes/functions/.env ]; then
   ANTH="$(grep -E '^ANTHROPIC_API_KEY=' /opt/supabase/volumes/functions/.env | tail -1 | cut -d= -f2- | tr -d '\r\n')"
+fi
+if [ -z "$FAL" ] && [ -f /opt/supabase/volumes/functions/.env ]; then
+  FAL="$(grep -E '^FAL_KEY=' /opt/supabase/volumes/functions/.env | tail -1 | cut -d= -f2- | tr -d '\r\n')"
 fi
 if [ -z "$SRK" ]; then
   echo "Ошибка: SERVICE_ROLE_KEY не найден в $MAIN" >&2
@@ -28,13 +32,15 @@ fi
 
 mkdir -p "$(dirname "$FN")"
 touch "$FN"
-grep -vE '^(SUPABASE_URL|SUPABASE_SERVICE_ROLE_KEY|CATALOG_URL|CATALOG_ANON_KEY|ANTHROPIC_API_KEY)=' "$FN" > /tmp/fn.env || true
+grep -vE '^(SUPABASE_URL|SUPABASE_SERVICE_ROLE_KEY|CATALOG_URL|CATALOG_ANON_KEY|ANTHROPIC_API_KEY|FAL_KEY|FAL_CHAT_MODEL)=' "$FN" > /tmp/fn.env || true
 {
   echo 'SUPABASE_URL=http://kong:8000'
   echo "SUPABASE_SERVICE_ROLE_KEY=$SRK"
   echo 'CATALOG_URL=https://api.arendacity.com'
   [ -n "$ANON" ] && echo "CATALOG_ANON_KEY=$ANON"
   [ -n "$ANTH" ] && echo "ANTHROPIC_API_KEY=$ANTH"
+  [ -n "$FAL" ] && echo "FAL_KEY=$FAL"
+  echo 'FAL_CHAT_MODEL=google/gemini-2.0-flash-lite'
 } >> /tmp/fn.env
 mv /tmp/fn.env "$FN"
 chmod 600 "$FN"
