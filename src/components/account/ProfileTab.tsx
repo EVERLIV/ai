@@ -681,7 +681,7 @@ export default function ProfileTab() {
                 <input
                   value={agencyName}
                   onChange={(e) => setAgencyName(e.target.value)}
-                  placeholder="ООО «АрендаСити»"
+                  placeholder="ООО «ДАДАТУТ»"
                   className={inputClass}
                 />
               </label>

@@ -4,7 +4,7 @@ export default function ApartmentsPage() {
   return (
     <ResidentialCategoryPage
       title="Квартиры в Иркутске"
-      description="Квартиры в аренду и продажу в Иркутске и области. Студии, 1–4-комнатные квартиры и новостройки в жилом каталоге ArendaCity."
+      description="Квартиры в аренду и продажу в Иркутске и области. Студии, 1–4-комнатные квартиры и новостройки в жилом каталоге ДАДАТУТ."
       badge="Квартиры"
       type="Квартира"
       pageUrl="/zhilaya/kvartiry"

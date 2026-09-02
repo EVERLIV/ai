@@ -330,6 +330,74 @@ export type Database = {
         };
         Relationships: [];
       };
+      support_tickets: {
+        Row: {
+          id: string;
+          ticket_number: string;
+          user_id: string;
+          account_type: string | null;
+          category: string;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          ticket_number: string;
+          user_id: string;
+          account_type?: string | null;
+          category: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          ticket_number?: string;
+          user_id?: string;
+          account_type?: string | null;
+          category?: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      support_ticket_messages: {
+        Row: {
+          id: string;
+          ticket_id: string;
+          author_type: string;
+          author_id: string | null;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          ticket_id: string;
+          author_type: string;
+          author_id?: string | null;
+          body: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          ticket_id?: string;
+          author_type?: string;
+          author_id?: string | null;
+          body?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_messages_ticket_id_fkey";
+            columns: ["ticket_id"];
+            isOneToOne: false;
+            referencedRelation: "support_tickets";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       news_posts: {
         Row: {
           id: string;
@@ -762,6 +830,18 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      create_support_ticket: {
+        Args: { p_category: string; p_message: string };
+        Returns: Database["public"]["Tables"]["support_tickets"]["Row"];
+      };
+      reply_support_ticket: {
+        Args: { p_ticket_id: string; p_body: string };
+        Returns: Database["public"]["Tables"]["support_ticket_messages"]["Row"];
+      };
+      update_support_ticket_status: {
+        Args: { p_ticket_id: string; p_status: string };
+        Returns: Database["public"]["Tables"]["support_tickets"]["Row"];
+      };
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"];

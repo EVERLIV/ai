@@ -2,168 +2,426 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://arendacity.com/</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://arendacity.com/catalog</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/offices</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/retail</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/warehouses</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/land</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/zemlya</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/zemlya/catalog</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/about</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://arendacity.com/contacts</loc>
-    <lastmod>2026-08-27</lastmod>
+    <loc>https://arendacity.com/support</loc>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/vacancies</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/news</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/list-property</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/ads</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/rieltory</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/zastroyshchiki</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/docs</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/help</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/privacy</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/terms</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/zhilaya</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/zhilaya/catalog</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/zhilaya/kvartiry</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/zhilaya/doma</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/zhilaya/komnaty</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/zhilaya/uchastki</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://arendacity.com/zhilaya/list-property</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-09-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://arendacity.com/property/c6b5a4f3-e2d1-40c9-b8a7-f6e5d4c3b2a1</loc>
+    <lastmod>2026-09-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/1c2d3e4f-5a6b-47c8-d9e0-f1a2b3c4d5e6</loc>
+    <lastmod>2026-09-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/2b1a0f9e-8d7c-46b5-a4f3-d2c1e0d9c8b7</loc>
+    <lastmod>2026-09-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/47427cd9-95d2-429c-aada-72d89db82a99</loc>
+    <lastmod>2026-09-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/65de3738-8466-4622-b5f1-11743d4f9e83</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/3c73c29d-7dcb-406e-a585-646a576b596e</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/f4e3d2c1-b0a9-4f8e-d7c6-b5a4f3e2d1c0</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/f82b3d11-5a4e-4c21-9d82-8431e725b6a1</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/1b2c3d4e-5f6a-47b8-c9d0-e1f2a3b4c5d6</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/f9e8d7c6-b5a4-43f2-e1d0-c9b8a7f6e5d4</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/74b77660-fc8f-4b41-bbff-5b5407013282</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/d1000000-0000-4000-8000-000000000002</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/d1000000-0000-4000-8000-000000000003</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/5d4c3b2a-1f0e-49d8-c7b6-a5f4e3d2c1b0</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/9d8c7b6a-5f4e-43d2-c1b0-a9e8f7d6c5b4</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/5f0f020f-4de0-45e0-9ce7-cc2d68745f20</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/d1000000-0000-4000-8000-000000000004</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/fdecba09-8765-4321-abcd-ef0123456789</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/71c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/7528e692-044c-4bda-a966-f217de253bf6</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/67844cd6-3bd7-42e8-bcc8-9607ddd5a317</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/2fbff42e-c60e-44b7-803c-a55937a373b2</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/c78c4607-3143-4004-bd9f-f74810e87cd3</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/bcb7ee0a-6565-46e8-a6e3-0924a88ee179</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/6d5e4f3a-2b1c-40d1-e2f3-a4b5c6d7e8f9</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/4e3d2c1b-0a9f-48e7-d6c5-b4a3f2e1d0c9</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://arendacity.com/property/d1000000-0000-4000-8000-000000000005</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/a1111111-1111-4111-8111-111111111101</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/6c0f6ed6-63cc-414f-9ef4-7ac01dbfabd9</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/b5a4f3e2-d1c0-49b8-a7f6-e5d4c3b2a1f0</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/53fe78a8-be40-49c9-afb1-7189e85f417d</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/d1000000-0000-4000-8000-000000000006</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/32eec955-05c3-48a2-bb34-e0a1668c351d</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/c11059e9-d2c8-452f-89c0-8b78029fe8b3</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/e8d7c6b5-a4f3-42e1-d0c9-b8a7f6e5d4c3</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/055b873d-f21d-4669-8b5d-67328f619186</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/0c9b8a7f-6e5d-44c3-b2a1-d0f9e8d7c6b5</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/3845504b-5df4-4938-8f99-1d76b43ac56f</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/9bc5019b-0a62-4cb4-9f18-f145bdd5671f</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/8e7d6c5b-4a3f-42e1-9d0c-1b2a3f4e5d6c</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/f92d8e7c-6b5a-4f4e-8d8c-7b6a5f4e3d2c</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/9e32ff88-72ce-4142-b599-f4241bcdc1fe</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/a1b2c3d4-e5f6-40a1-b2c3-d4e5f6a1b2c3</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/881feea9-7adf-4754-9e50-d9233c62aca1</loc>
     <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -187,12 +445,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://arendacity.com/property/5d4c3b2a-1f0e-49d8-c7b6-a5f4e3d2c1b0</loc>
-    <lastmod>2026-08-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://arendacity.com/property/092618ed-1d90-4b9e-be8b-ef290c784b57</loc>
     <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
@@ -211,12 +463,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://arendacity.com/property/32eec955-05c3-48a2-bb34-e0a1668c351d</loc>
-    <lastmod>2026-08-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://arendacity.com/property/f87f8003-dad4-4466-a3ef-87b207709052</loc>
     <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
@@ -229,50 +475,8 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://arendacity.com/property/2fbff42e-c60e-44b7-803c-a55937a373b2</loc>
-    <lastmod>2026-08-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://arendacity.com/property/c9b8a7f6-e5d4-43c2-b1a0-f9e8d7c6b5a4</loc>
     <lastmod>2026-08-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/9d8c7b6a-5f4e-43d2-c1b0-a9e8f7d6c5b4</loc>
-    <lastmod>2026-08-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/6d5e4f3a-2b1c-40d1-e2f3-a4b5c6d7e8f9</loc>
-    <lastmod>2026-08-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/0c9b8a7f-6e5d-44c3-b2a1-d0f9e8d7c6b5</loc>
-    <lastmod>2026-08-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/4e3d2c1b-0a9f-48e7-d6c5-b4a3f2e1d0c9</loc>
-    <lastmod>2026-08-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/fdecba09-8765-4321-abcd-ef0123456789</loc>
-    <lastmod>2026-08-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/bcb7ee0a-6565-46e8-a6e3-0924a88ee179</loc>
-    <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -301,43 +505,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://arendacity.com/property/d1000000-0000-4000-8000-000000000003</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/71c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/d1000000-0000-4000-8000-000000000006</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://arendacity.com/property/e1000000-0000-4000-8000-000000000002</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/c6b5a4f3-e2d1-40c9-b8a7-f6e5d4c3b2a1</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/d1000000-0000-4000-8000-000000000004</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/1b2c3d4e-5f6a-47b8-c9d0-e1f2a3b4c5d6</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -350,12 +518,6 @@
   </url>
   <url>
     <loc>https://arendacity.com/property/e1000000-0000-4000-8000-000000000004</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/a1111111-1111-4111-8111-111111111101</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -385,31 +547,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://arendacity.com/property/f9e8d7c6-b5a4-43f2-e1d0-c9b8a7f6e5d4</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://arendacity.com/property/6e5d4c3b-2a1f-40e9-d8c7-b6a5f4e3d2c1</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/2b1a0f9e-8d7c-46b5-a4f3-d2c1e0d9c8b7</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/b5a4f3e2-d1c0-49b8-a7f6-e5d4c3b2a1f0</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/53fe78a8-be40-49c9-afb1-7189e85f417d</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -452,12 +590,6 @@
   </url>
   <url>
     <loc>https://arendacity.com/property/4a3f2e1d-0c9b-48a7-f6e5-d4c3b2a1f0e9</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/f4e3d2c1-b0a9-4f8e-d7c6-b5a4f3e2d1c0</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -517,12 +649,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://arendacity.com/property/8e7d6c5b-4a3f-42e1-9d0c-1b2a3f4e5d6c</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://arendacity.com/property/d1c2b3a4-e5f6-47a8-b9c0-d1e2f3a4b5c6</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
@@ -530,12 +656,6 @@
   </url>
   <url>
     <loc>https://arendacity.com/property/2a3b4c5d-6e7f-48a9-b0c1-d2e3f4a5b6c7</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/f82b3d11-5a4e-4c21-9d82-8431e725b6a1</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -549,138 +669,6 @@
   <url>
     <loc>https://arendacity.com/property/9a8b7c6d-5e4f-43a2-b1c0-d9e8f7a6b5c4</loc>
     <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/74b77660-fc8f-4b41-bbff-5b5407013282</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/aa39b35e-173b-48f7-aaa4-4489433acc44</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/61ee3d08-a111-4dd9-883d-426220403303</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/6280e4be-3f60-4e68-8747-3a6b250a2667</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/5f538f99-f88b-4524-a5e0-401f9c025f8e</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/6425b50c-1034-4592-8f32-b2c275958501</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/60398f90-2fba-48c1-a5db-1bc0eba6c6c3</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/79641eeb-0962-44e6-b684-540de43297a8</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/51827fa6-c007-4987-9b45-042de8ac84db</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/689508c0-851d-4d79-8fcd-b530325c2582</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/367d8e94-1b46-4343-a1a0-48b416cc579c</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/5993fb8c-f918-48b8-8753-b293a7264ddd</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/96816075-3500-4ff0-bbd7-59f40fcda631</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/6a5e353f-096e-4e2b-895d-0d3863435868</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/a2331fb9-e7e3-48f3-b842-04dae2707e76</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/e9fd5e7f-3120-48ef-b048-60ea46362f93</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/e8056cdf-3e7a-4f00-9938-7fc8ec8f7c15</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/522fa18c-8c69-47a2-862b-d26d431c598b</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/d8b93fba-2799-4ed4-8912-7c3002cb3406</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/3a396d7c-d6fa-499f-8605-5a9da29669dd</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/7af5359d-d2bb-4c29-b121-cd94bdd8babf</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/77e7865f-ec15-4697-99d4-1a53cdd36cd2</loc>
-    <lastmod>2026-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -775,6 +763,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://arendacity.com/property/4526c51e-0bc9-46ea-8c9e-2f1c160bf99e</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://arendacity.com/property/0ea50bfc-464b-4285-8d98-d0551ffc117a</loc>
     <lastmod>2026-08-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -841,7 +835,13 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://arendacity.com/property/4526c51e-0bc9-46ea-8c9e-2f1c160bf99e</loc>
+    <loc>https://arendacity.com/property/d5267b7c-6965-4f8e-a4ae-1073b7f5440e</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/a4dd1009-2c12-4c8c-a0cd-9e176da780a3</loc>
     <lastmod>2026-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -907,12 +907,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://arendacity.com/property/c11059e9-d2c8-452f-89c0-8b78029fe8b3</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://arendacity.com/property/e7f57064-e361-4863-8684-b49a234dd0b7</loc>
     <lastmod>2026-08-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -944,12 +938,6 @@
   </url>
   <url>
     <loc>https://arendacity.com/property/c788fe27-cabd-4fa1-9616-d3642b6d3859</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/5f0f020f-4de0-45e0-9ce7-cc2d68745f20</loc>
     <lastmod>2026-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -1237,19 +1225,127 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://arendacity.com/property/d5267b7c-6965-4f8e-a4ae-1073b7f5440e</loc>
+    <loc>https://arendacity.com/property/aa39b35e-173b-48f7-aaa4-4489433acc44</loc>
     <lastmod>2026-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://arendacity.com/property/a4dd1009-2c12-4c8c-a0cd-9e176da780a3</loc>
+    <loc>https://arendacity.com/property/61ee3d08-a111-4dd9-883d-426220403303</loc>
     <lastmod>2026-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://arendacity.com/property/d1000000-0000-4000-8000-000000000002</loc>
+    <loc>https://arendacity.com/property/6280e4be-3f60-4e68-8747-3a6b250a2667</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/5f538f99-f88b-4524-a5e0-401f9c025f8e</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/6425b50c-1034-4592-8f32-b2c275958501</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/60398f90-2fba-48c1-a5db-1bc0eba6c6c3</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/79641eeb-0962-44e6-b684-540de43297a8</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/51827fa6-c007-4987-9b45-042de8ac84db</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/689508c0-851d-4d79-8fcd-b530325c2582</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/367d8e94-1b46-4343-a1a0-48b416cc579c</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/5993fb8c-f918-48b8-8753-b293a7264ddd</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/96816075-3500-4ff0-bbd7-59f40fcda631</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/6a5e353f-096e-4e2b-895d-0d3863435868</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/a2331fb9-e7e3-48f3-b842-04dae2707e76</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/e9fd5e7f-3120-48ef-b048-60ea46362f93</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/e8056cdf-3e7a-4f00-9938-7fc8ec8f7c15</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/522fa18c-8c69-47a2-862b-d26d431c598b</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/d8b93fba-2799-4ed4-8912-7c3002cb3406</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/3a396d7c-d6fa-499f-8605-5a9da29669dd</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/7af5359d-d2bb-4c29-b121-cd94bdd8babf</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/77e7865f-ec15-4697-99d4-1a53cdd36cd2</loc>
     <lastmod>2026-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -1261,97 +1357,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://arendacity.com/property/4d5e6f7a-8b9c-40d1-e2f3-a4b5c6d7e8f9</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/67844cd6-3bd7-42e8-bcc8-9607ddd5a317</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/4c5d6e7f-8a9b-40c1-d2e3-f4a5b6c7d8e9</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://arendacity.com/property/07656d64-9042-40dd-ad8d-ce618215a50c</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/1c2d3e4f-5a6b-47c8-d9e0-f1a2b3c4d5e6</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/e8d7c6b5-a4f3-42e1-d0c9-b8a7f6e5d4c3</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/2c1b0a9f-8e7d-46c5-b4a3-d2f1e0d9c8b7</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/7b6a5f4e-3d2c-41b0-a9e8-d7c6b5a4f3e2</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/8e7d6c5b-4a3f-42e1-d0c9-b8a7f6e5d4c3</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/65de3738-8466-4622-b5f1-11743d4f9e83</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/f92d8e7c-6b5a-4f4e-8d8c-7b6a5f4e3d2c</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/d9c8b7a6-f5e4-43d2-c1b0-a9e8f7d6c5b4</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/9e32ff88-72ce-4142-b599-f4241bcdc1fe</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/1a2b3c4d-5e6f-40a1-8b2c-3d4e5f6a1b2c</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/e5d4c3b2-a10f-4e9d-8c7b-6a5f4e3d2c1b</loc>
-    <lastmod>2026-08-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://arendacity.com/property/a1b2c3d4-e5f6-40a1-b2c3-d4e5f6a1b2c3</loc>
     <lastmod>2026-08-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -1363,7 +1369,55 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://arendacity.com/property/e5d4c3b2-a10f-4e9d-8c7b-6a5f4e3d2c1b</loc>
+    <lastmod>2026-08-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://arendacity.com/property/a9b8c7d6-e5f4-43a2-b1c0-d9e8f7a6b5c4</loc>
+    <lastmod>2026-08-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/4d5e6f7a-8b9c-40d1-e2f3-a4b5c6d7e8f9</loc>
+    <lastmod>2026-08-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/4c5d6e7f-8a9b-40c1-d2e3-f4a5b6c7d8e9</loc>
+    <lastmod>2026-08-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/7b6a5f4e-3d2c-41b0-a9e8-d7c6b5a4f3e2</loc>
+    <lastmod>2026-08-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/1a2b3c4d-5e6f-40a1-8b2c-3d4e5f6a1b2c</loc>
+    <lastmod>2026-08-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/8e7d6c5b-4a3f-42e1-d0c9-b8a7f6e5d4c3</loc>
+    <lastmod>2026-08-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/2c1b0a9f-8e7d-46c5-b4a3-d2f1e0d9c8b7</loc>
+    <lastmod>2026-08-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://arendacity.com/property/d9c8b7a6-f5e4-43d2-c1b0-a9e8f7d6c5b4</loc>
     <lastmod>2026-08-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

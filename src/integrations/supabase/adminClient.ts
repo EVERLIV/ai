@@ -3,8 +3,8 @@ export const SERVICE_ROLE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3Nzg4NDI5NDAsImV4cCI6MTkzNjUyMjk0MH0.3cy9jvXONpIRoTDA2YOvo13LdBCTZzWTPs-J6_1RhKg";
 
 /**
- * На localhost upload идёт через Vite proxy `/storage` → api.arendacity.com,
- * чтобы обойти CORS Storage. Публичные URL для <img> всегда абсолютные.
+ * На localhost upload идёт через Vite middleware `/storage` → api.arendacity.com
+ * (обход CORS). Публичные URL для <img> всегда абсолютные.
  */
 function storageRequestBase(): string {
   if (typeof window !== "undefined") {
@@ -137,7 +137,6 @@ export const supabaseAdmin = {
       const clean = path.replace(/^\/+/, "");
       const base = storageRequestBase();
       const bytes = await file.arrayBuffer();
-      // PUT + x-upsert надёжнее на self-hosted, чем POST
       const res = await fetch(`${base}/storage/v1/object/${bucket}/${clean}`, {
         method: "PUT",
         headers: {
@@ -184,7 +183,6 @@ export const supabaseAdmin = {
     },
     getPublicUrl(bucket: string, path: string): string {
       const clean = path.replace(/^\/+/, "");
-      // Всегда абсолютный public URL для <img> (не через proxy)
       return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${clean}`;
     },
   },

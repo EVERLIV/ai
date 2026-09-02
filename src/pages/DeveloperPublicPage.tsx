@@ -121,7 +121,7 @@ export default function DeveloperPublicPage() {
         title={`${developer.name} — застройщик`}
         description={
           developer.about?.slice(0, 160) ||
-          `Проекты застройщика ${developer.name} на АрендаСити`
+          `Проекты застройщика ${developer.name} на ДАДАТУТ`
         }
       />
       <SiteHeader />

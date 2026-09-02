@@ -1,15 +1,15 @@
 /** Публичный URL сайта — для canonical, OG, sitemap, RSS */
-export const SITE_URL = "https://arendacity.com";
+export const SITE_URL = "https://dadatut.ru";
 
 export const SITE = {
-  name: "АрендаСити",
+  name: "ДАДАТУТ",
   title:
-    "АрендаСити — Аренда и продажа коммерческой и жилой недвижимости в Иркутске",
+    "ДАДАТУТ — Аренда и продажа коммерческой и жилой недвижимости в Иркутске",
   description:
-    "Аренда и продажа коммерческой и жилой недвижимости в Иркутске и Иркутской области. Офисы, торговые площади, склады, квартиры, дома и комнаты. Профессиональный подбор от агентства АрендаСити.",
+    "Аренда и продажа коммерческой и жилой недвижимости в Иркутске и Иркутской области. Офисы, торговые площади, склады, квартиры, дома и комнаты. Профессиональный подбор от ДАДАТУТ.",
   ogImage: `${SITE_URL}/og-default.jpg`,
   locale: "ru_RU",
-  twitterSite: "@ArendaCity",
+  twitterSite: "@Dadatut",
 } as const;
 
 export function absoluteUrl(path: string): string {

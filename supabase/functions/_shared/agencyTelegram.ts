@@ -18,7 +18,7 @@ export function botToken() {
 }
 
 export function siteUrl() {
-  return (Deno.env.get("SITE_URL") || "https://arendacity.com").replace(
+  return (Deno.env.get("SITE_URL") || "https://dadatut.ru").replace(
     /\/$/,
     "",
   );

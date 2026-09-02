@@ -4,6 +4,7 @@ import {
   supabaseAdmin,
 } from "@/integrations/supabase/adminClient";
 import { publicStorageUrl, toPublicStorageUrl } from "@/lib/storageUrl";
+import { prepareLogoUploadFile } from "@/lib/compressImage";
 import { supabase } from "@/integrations/supabase/client";
 
 const headers = {
@@ -712,12 +713,13 @@ export async function uploadAgencyAssetApi(
   file: File,
   kind: "logo" | "manager",
 ) {
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const prepared = await prepareLogoUploadFile(file);
+  const ext = prepared.name.split(".").pop()?.toLowerCase() || "jpg";
   const path = `${agencyId}/${kind}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabaseAdmin.storage.upload(
     "agency-assets",
     path,
-    file,
+    prepared,
   );
   if (error)
     throw new Error(

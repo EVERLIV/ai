@@ -4,7 +4,7 @@ export default function RoomsPage() {
   return (
     <ResidentialCategoryPage
       title="Комнаты в Иркутске"
-      description="Комнаты в аренду и продажу в Иркутске и области. Отдельный раздел жилой недвижимости на ArendaCity."
+      description="Комнаты в аренду и продажу в Иркутске и области. Отдельный раздел жилой недвижимости на ДАДАТУТ."
       badge="Комнаты"
       type="Комната"
       pageUrl="/zhilaya/komnaty"

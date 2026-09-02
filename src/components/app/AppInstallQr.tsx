@@ -22,7 +22,7 @@ export default function AppInstallQr() {
           </h2>
           <p className="mt-2 text-sm text-muted-foreground max-w-md">
             Наведите камеру — откроется эта страница с инструкцией по
-            установке приложения АрендаСити.
+            установке приложения ДАДАТУТ.
           </p>
           <p className="mt-3 text-xs font-medium text-foreground/70 break-all">
             {url}

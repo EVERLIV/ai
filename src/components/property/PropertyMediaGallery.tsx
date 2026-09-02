@@ -361,7 +361,7 @@ export default function PropertyMediaGallery({
             </div>
 
             <Link
-              to="/contacts"
+              to="/support"
               onClick={() => onOpenChange(false)}
               className="block rounded-md border border-dashed border-border bg-muted/40 hover:bg-muted/70 transition-colors min-h-[120px] px-4 py-10 flex items-center justify-center text-center"
             >

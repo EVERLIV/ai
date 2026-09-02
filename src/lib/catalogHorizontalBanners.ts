@@ -13,9 +13,9 @@ export type CatalogBannerSlot = {
 const COMMERCIAL_PLACEHOLDER_BANNER: CatalogHorizontalBannerItem = {
   id: "commercial-placeholder-1",
   placeholder: true,
-  href: "/contacts",
+  href: "/support",
   image: ctaRentOutBg,
-  brand: "АрендаСити",
+  brand: "ДАДАТУТ",
   title: "Место доступно для размещения рекламы",
   subtitle: "Офисы, склады, торговля — коммерческий каталог",
   cta: "Разместить рекламу",

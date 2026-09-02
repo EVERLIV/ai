@@ -1,4 +1,4 @@
-import { ArrowRight, Phone, Sparkles } from "lucide-react";
+import { ArrowRight, Mail, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import ctaRentOutBg from "@/assets/cta-rent-out.jpg";
 import { CONTACTS } from "@/config/company";
@@ -66,10 +66,10 @@ export default function NewsSidebar() {
           </p>
 
           <a
-            href={`tel:${CONTACTS.phoneTel}`}
+            href={`mailto:${CONTACTS.email}`}
             className="flex items-center justify-center gap-2 w-full h-9 bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity mt-auto"
           >
-            <Phone className="w-3.5 h-3.5" /> Узнать подробнее
+            <Mail className="w-3.5 h-3.5" /> Узнать подробнее
           </a>
           <p className="text-[9px] text-background/30 text-center mt-2 uppercase tracking-widest">
             Рекламный блок

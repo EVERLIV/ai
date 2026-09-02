@@ -152,7 +152,7 @@ export default function TasksPage() {
     <div className="flex min-h-screen bg-gray-50">
       <SeoHead
         title="Задачи"
-        description="Внутренняя доска задач АрендаСити."
+        description="Внутренняя доска задач ДАДАТУТ."
         noindex
       />
       <TasksSidebar />

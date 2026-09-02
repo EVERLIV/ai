@@ -30,7 +30,7 @@ import AdsCatalog from "./pages/AdsCatalog.tsx";
 import AgencyPublicPage from "./pages/AgencyPublicPage.tsx";
 import Auth from "./pages/Auth.tsx";
 import Catalog from "./pages/Catalog.tsx";
-import ContactsPage from "./pages/ContactsPage.tsx";
+import SupportPage from "./pages/SupportPage.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import DocsHandbookPage from "./pages/DocsHandbookPage.tsx";
 import HelpCenterPage from "./pages/HelpCenterPage.tsx";
@@ -144,7 +144,8 @@ const App = () => {
                       path="/agentstvo/:id"
                       element={<AgencyPublicPage />}
                     />
-                    <Route path="/contacts" element={<ContactsPage />} />
+                    <Route path="/support" element={<SupportPage />} />
+                    <Route path="/contacts" element={<Navigate to="/support" replace />} />
                     <Route
                       path="/privacy"
                       element={<LegalDocPage kind="privacy" />}

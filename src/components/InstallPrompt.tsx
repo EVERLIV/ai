@@ -59,7 +59,7 @@ export default function InstallPrompt() {
 
         {/* Текст */}
         <p className="text-xs flex-1 min-w-0 truncate">
-          <span className="font-semibold">АрендаСити</span>
+          <span className="font-semibold">ДАДАТУТ</span>
           <span className="text-background/60 ml-2 hidden sm:inline">
             — установите приложение для быстрого доступа к каталогу
           </span>

@@ -1,11 +1,11 @@
 # SMTP Timeweb на VPS (self-hosted Auth)
 
 Письма шлёт контейнер **GoTrue / auth** на сервере, не cloud Dashboard.
-Нужен почтовый ящик Timeweb: `noreply@arendacity.com` и его пароль.
+Нужен почтовый ящик Timeweb: `noreply@dadatut.ru` и его пароль.
 
 ## 0. На Timeweb
 
-Панель Timeweb → Почта → ящик `noreply@arendacity.com` существует, пароль известен.
+Панель Timeweb → Почта → ящик `noreply@dadatut.ru` существует, пароль известен.
 Исходящая почта: `smtp.timeweb.ru`, порт **587** (STARTTLS) или **465** (SSL).
 
 В панели Timeweb Cloud у VPS исходящие порты **587 и 465 не должны быть закрыты**.
@@ -56,7 +56,7 @@ SMTP_PORT=465 SMTP_PASS='ПАРОЛЬ' bash /root/setup-gottrue-smtp.sh
 
 - делает бэкап `.env`
 - прописывает `GOTRUE_SMTP_*` и русские темы писем
-- указывает шаблоны `https://arendacity.com/email/*.html` (после деплоя фронта)
+- указывает шаблоны `https://dadatut.ru/email/*.html` (после деплоя фронта)
 - перезапускает контейнер auth/gotrue
 
 ## 4. Руками (если без скрипта)

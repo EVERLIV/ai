@@ -53,7 +53,7 @@ export default function AboutSection() {
           <div className="lg:col-span-7 relative overflow-hidden bg-foreground min-h-[440px]">
             <img
               src={managerPhoto}
-              alt="Менеджер АрендаСити"
+              alt="Менеджер ДАДАТУТ"
               loading="lazy"
               className="absolute inset-0 w-full h-full object-cover opacity-95"
             />
@@ -69,7 +69,7 @@ export default function AboutSection() {
                 <div className="w-10 h-px bg-primary" />
                 <div>
                   <div className="text-sm font-semibold">
-                    Команда АрендаСити
+                    Команда ДАДАТУТ
                   </div>
                   <div className="text-xs text-background/70">
                     Иркутск и область

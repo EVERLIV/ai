@@ -4,12 +4,23 @@
  * Секреты (Cloud Dashboard → Edge Functions → Secrets):
  *   SMTP_HOST          smtp.timeweb.ru
  *   SMTP_PORT          587 (STARTTLS) или 465 (SSL)
- *   SMTP_USER          noreply@arendacity.com
+ *   SMTP_USER          noreply@dadatut.ru
  *   SMTP_PASS          пароль ящика
- *   SMTP_FROM          noreply@arendacity.com
- *   SMTP_FROM_NAME     АрендаСити
+ *   SMTP_FROM          noreply@dadatut.ru
+ *   SMTP_FROM_NAME     ДАДАТУТ
  *   NOTIFY_EMAIL_SECRET  (необязательно) — заголовок x-notify-secret
  */
+
+import {
+  EMAIL_BRAND,
+  EMAIL_COLORS,
+  emailButton,
+  emailFromDefaults,
+  emailLayout,
+  emailSmtpDomain,
+  emailSiteUrl,
+  escapeHtml,
+} from "../_shared/emailTheme.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,7 +29,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const SITE_URL = "https://arendacity.com";
+const SITE_URL = emailSiteUrl();
+const BRAND = EMAIL_BRAND.name;
 
 type PropertyPayload = {
   id?: string | null;
@@ -55,13 +67,6 @@ function json(body: unknown, status = 200) {
   });
 }
 
-function escapeHtml(s: string) {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 function utf8ToB64(s: string) {
   const bytes = new TextEncoder().encode(s);
@@ -85,7 +90,7 @@ function row(label: string, value: string | number | null | undefined) {
   if (value === null || value === undefined) return "";
   const text = String(value).trim();
   if (!text) return "";
-  return `<span style="color:#8a847c;">${escapeHtml(label)}:</span> ${escapeHtml(text)}<br />`;
+  return `<span style="color:${EMAIL_COLORS.textMuted};">${escapeHtml(label)}:</span> ${escapeHtml(text)}<br />`;
 }
 
 function propertyCard(p: PropertyPayload) {
@@ -100,9 +105,9 @@ function propertyCard(p: PropertyPayload) {
   const descShort = desc.length > 400 ? `${desc.slice(0, 400)}…` : desc;
 
   return `
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#faf7f1;border:1px solid #e6e0d4;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${EMAIL_COLORS.bgMuted};border:1px solid ${EMAIL_COLORS.border};">
       <tr>
-        <td style="padding:16px 18px;font-size:14px;line-height:1.65;color:#333;">
+        <td style="padding:16px 18px;font-size:14px;line-height:1.65;color:${EMAIL_COLORS.textBody};">
           <strong style="font-size:15px;">Карточка объекта</strong><br />
           ${row("ID", p.public_id || (p.id ? p.id.slice(0, 8).toUpperCase() : ""))}
           ${row("Адрес", p.address)}
@@ -115,91 +120,10 @@ function propertyCard(p: PropertyPayload) {
           ${row("Залог", p.deposit)}
           ${row("Срок договора", p.contract_term)}
           ${row("Тип заявки", requestLabel)}
-          ${descShort ? `<span style="color:#8a847c;">Описание:</span> ${escapeHtml(descShort)}` : ""}
+          ${descShort ? `<span style="color:${EMAIL_COLORS.textMuted};">Описание:</span> ${escapeHtml(descShort)}` : ""}
         </td>
       </tr>
     </table>`;
-}
-
-function layout(title: string, inner: string) {
-  return `<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${escapeHtml(title)}</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f1ea;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f1ea;padding:32px 12px;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;width:100%;background:#ffffff;border:1px solid #e6e0d4;">
-          <tr>
-            <td style="padding:24px 32px 16px;border-bottom:3px solid #c4a35a;">
-              <table role="presentation" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td style="vertical-align:middle;padding-right:12px;">
-                    <img src="${SITE_URL}/favicon.png" width="36" height="36" alt="АрендаСити" style="display:block;border:0;" />
-                  </td>
-                  <td style="vertical-align:middle;">
-                    <p style="margin:0;font-size:18px;font-weight:700;letter-spacing:0.04em;">
-                      АРЕНДА<span style="color:#c4a35a;">СИТИ</span>
-                    </p>
-                    <p style="margin:4px 0 0;font-size:12px;color:#6b6560;">Коммерческая недвижимость</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:16px 32px 0;font-size:13px;line-height:1.55;color:#6b6560;">
-              Подбор и размещение офисов, складов и торговых площадей в Ангарске и Иркутской области.
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:24px 32px 8px;">
-              ${inner}
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:20px 32px 12px;border-top:1px solid #efe8da;font-size:13px;line-height:1.7;color:#6b6560;">
-              <strong style="color:#1a1a1a;">Контакты</strong><br />
-              Телефон: <a href="tel:+79086581919" style="color:#8a6d2f;text-decoration:none;">+7 (908) 658-19-19</a><br />
-              Почта: <a href="mailto:info@arendacity.ru" style="color:#8a6d2f;text-decoration:none;">info@arendacity.ru</a><br />
-              Офис: Ангарск, 17 микрорайон, 4а<br />
-              Часы работы: Пн–Пт 9:00–19:00, Сб 10:00–15:00
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:0 32px 20px;">
-              <a href="${SITE_URL}" style="color:#8a6d2f;font-size:14px;font-weight:700;text-decoration:underline;">Перейти на сайт АрендаСити</a>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:0 32px 28px;font-size:11px;color:#8a847c;line-height:1.5;">
-              ИП Кореневский А. О. · ИНН 380121133702 · ОГРНИП 304380112000142<br />
-              665830, Иркутская область, г. Ангарск, 17 микрорайон, 4а
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-}
-
-function button(href: string, label: string) {
-  return `<table role="presentation" cellspacing="0" cellpadding="0">
-    <tr>
-      <td style="background:#1a1a1a;">
-        <a href="${escapeHtml(href)}"
-          style="display:inline-block;padding:13px 22px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;">
-          ${escapeHtml(label)}
-        </a>
-      </td>
-    </tr>
-  </table>`;
 }
 
 function buildEmail(
@@ -211,61 +135,63 @@ function buildEmail(
   const card = propertyCard(p);
   const cabinet = `${SITE_URL}/account`;
   const objectUrl = p.id ? `${SITE_URL}/property/${p.id}` : cabinet;
+  const bodyColor = `color:${EMAIL_COLORS.textBody}`;
+  const linkColor = `color:${EMAIL_COLORS.link}`;
 
   if (event === "subscription_match") {
-    const title = "Новый объект по вашей подписке — АрендаСити";
+    const title = `Новый объект по вашей подписке — ${BRAND}`;
     const inner = `
       <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">Новый объект по вашей подписке</h1>
-      <p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#333;">
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.55;${bodyColor};">
         ${hello} В каталоге появилось объявление, которое подходит под параметры вашего поиска.
       </p>
       ${card}
-      <p style="margin:20px 0 16px;font-size:14px;line-height:1.55;color:#333;">
+      <p style="margin:20px 0 16px;font-size:14px;line-height:1.55;${bodyColor};">
         Откройте карточку, чтобы посмотреть детали и связаться с собственником.
       </p>
-      ${button(objectUrl, "Смотреть объект")}
+      ${emailButton(objectUrl, "Смотреть объект")}
       <p style="margin:16px 0 0;">
-        <a href="${SITE_URL}/catalog" style="color:#8a6d2f;font-size:14px;font-weight:700;">Открыть каталог</a>
+        <a href="${SITE_URL}/catalog" style="${linkColor};font-size:14px;font-weight:700;">Открыть каталог</a>
       </p>
     `;
-    return { subject: title, html: layout(title, inner) };
+    return { subject: title, html: emailLayout(title, inner) };
   }
 
   if (event === "submitted") {
-    const title = "Объект отправлен на проверку — АрендаСити";
+    const title = `Объект отправлен на проверку — ${BRAND}`;
     const inner = `
       <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">Объект отправлен на проверку</h1>
-      <p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#333;">
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.55;${bodyColor};">
         ${hello} Мы получили вашу заявку. Объект появится в публичном каталоге после модерации.
         Обычно проверка занимает один рабочий день.
       </p>
       ${card}
-      <p style="margin:20px 0 16px;font-size:14px;line-height:1.55;color:#333;">
+      <p style="margin:20px 0 16px;font-size:14px;line-height:1.55;${bodyColor};">
         Статус заявки можно смотреть в личном кабинете.
       </p>
-      ${button(cabinet, "Открыть кабинет")}
+      ${emailButton(cabinet, "Открыть кабинет")}
     `;
-    return { subject: title, html: layout(title, inner) };
+    return { subject: title, html: emailLayout(title, inner) };
   }
 
   const isManagement = p.request_type === "management";
-  const title = "Поздравляем: объект одобрен — АрендаСити";
+  const title = `Поздравляем: объект одобрен — ${BRAND}`;
   const lead = isManagement
     ? `${hello} Заявка на управление объектом одобрена. Мы берём объект в работу и свяжемся с вами по дальнейшим шагам.`
-    : `${hello} Ваш объект прошёл проверку и опубликован в каталоге АрендаСити. Клиенты уже могут увидеть объявление и оставить заявку.`;
+    : `${hello} Ваш объект прошёл проверку и опубликован в каталоге ${BRAND}. Клиенты уже могут увидеть объявление и оставить заявку.`;
   const inner = `
     <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">Поздравляем: объект одобрен</h1>
-    <p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#333;">${lead}</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.55;${bodyColor};">${lead}</p>
     ${card}
-    <p style="margin:20px 0 16px;font-size:14px;line-height:1.55;color:#333;">
+    <p style="margin:20px 0 16px;font-size:14px;line-height:1.55;${bodyColor};">
       Откройте карточку объекта или кабинет, чтобы следить за откликами.
     </p>
-    ${button(objectUrl, "Смотреть объект")}
+    ${emailButton(objectUrl, "Смотреть объект")}
     <p style="margin:16px 0 0;">
-      <a href="${cabinet}" style="color:#8a6d2f;font-size:14px;font-weight:700;">Открыть кабинет</a>
+      <a href="${cabinet}" style="${linkColor};font-size:14px;font-weight:700;">Открыть кабинет</a>
     </p>
   `;
-  return { subject: title, html: layout(title, inner) };
+  return { subject: title, html: emailLayout(title, inner) };
 }
 
 const encoder = new TextEncoder();
@@ -363,13 +289,14 @@ async function sendSmtp(opts: {
     const greet = await smtp.readReply();
     if (greet.code !== 220) throw new Error(`SMTP greeting: ${greet.text}`);
 
-    await smtp.cmd(`EHLO arendacity.com`, 250);
+    const ehlo = emailSmtpDomain();
+    await smtp.cmd(`EHLO ${ehlo}`, 250);
 
     if (!implicitTls) {
       await smtp.cmd("STARTTLS", 220);
       raw = await Deno.startTls(raw, { hostname: opts.hostname });
       smtp = new SmtpConn(raw);
-      await smtp.cmd(`EHLO arendacity.com`, 250);
+      await smtp.cmd(`EHLO ${ehlo}`, 250);
     }
 
     await smtp.cmd("AUTH LOGIN", 334);
@@ -435,8 +362,7 @@ Deno.serve(async (req) => {
     const port = Number(Deno.env.get("SMTP_PORT") || "587");
     const username = Deno.env.get("SMTP_USER") || "";
     const password = Deno.env.get("SMTP_PASS") || "";
-    const from = Deno.env.get("SMTP_FROM") || username;
-    const fromName = Deno.env.get("SMTP_FROM_NAME") || "АрендаСити";
+    const { from, fromName } = emailFromDefaults();
 
     if (!username || !password) {
       throw new Error("SMTP_USER или SMTP_PASS не заданы");

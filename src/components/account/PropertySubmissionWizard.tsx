@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import PropertyQrBlock from "@/components/property/PropertyQrBlock";
 import {
   Bath,
   Building2,
@@ -15,6 +15,7 @@ import {
   Megaphone,
   ScrollText,
   Send,
+  QrCode,
   Settings2,
   Shield,
   SlidersHorizontal,
@@ -29,6 +30,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
@@ -952,6 +954,15 @@ export default function PropertySubmissionWizard({
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3.5 pb-6">
+          {editId && (
+            <WizardSection icon={QrCode} title="QR-код объекта">
+              <PropertyQrBlock
+                propertyId={editId}
+                publicId={editProperty?.public_id}
+              />
+            </WizardSection>
+          )}
+
           {step === "basic" && (
             <>
               <WizardSection
@@ -2719,7 +2730,7 @@ export default function PropertySubmissionWizard({
                         Передать в управление
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
-                        АрендаСити возьмёт объект на полное управление
+                        ДАДАТУТ возьмёт объект на полное управление
                       </div>
                     </div>
                   </div>

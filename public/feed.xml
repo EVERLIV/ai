@@ -1,11 +1,82 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
-    <title>АрендаСити — новые объекты</title>
+    <title>ДАДАТУТ — новые объекты</title>
     <link>https://arendacity.com</link>
     <description>Новые объявления коммерческой недвижимости в Иркутске и области</description>
     <language>ru</language>
-    <lastBuildDate>Thu, 27 Aug 2026 07:43:07 GMT</lastBuildDate>
+    <lastBuildDate>Wed, 02 Sep 2026 10:42:51 GMT</lastBuildDate>
+    <item>
+      <title>Продажа — помещение — Свирск — ул. Добролюбова, 14 — 5.2 млн ₽</title>
+      <link>https://arendacity.com/property/6c0f6ed6-63cc-414f-9ef4-7ac01dbfabd9</link>
+      <guid isPermaLink="true">https://arendacity.com/property/6c0f6ed6-63cc-414f-9ef4-7ac01dbfabd9</guid>
+      <description>помещение · 238.9 м² · 5.2 млн ₽ · Свирск. 🏢 Продаётся коммерческое помещение в центре Свирска — 238,9 м² 📍 Иркутская область, г. Свирск, ул. Добролюбова, 14 Об объекте: Площадь помещения — 238,9 м², первый этаж жилого дома 4 входа: 2 со стороны дороги и 2 со стороны двора — удобно разделить на независимые отделы Сделан частичный ремонт: п</description>
+      <pubDate>Fri, 28 Aug 2026 04:09:25 GMT</pubDate>
+      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/6c0f6ed6-63cc-414f-9ef4-7ac01dbfabd9/172aa2af-eb55-4c13-964e-2e2d2c632664.jpg" type="image/jpeg" />
+    </item>
+    <item>
+      <title>Аренда — помещение — пос. Мегет — Школьный пер., 3А — 100 тыс ₽/мес</title>
+      <link>https://arendacity.com/property/c78c4607-3143-4004-bd9f-f74810e87cd3</link>
+      <guid isPermaLink="true">https://arendacity.com/property/c78c4607-3143-4004-bd9f-f74810e87cd3</guid>
+      <description>помещение · 150 м² · 100 тыс ₽/мес · Мегет. 🏢 Сдаётся в аренду помещение в ТЦ «Авеню» — 150 м² 📍 Иркутская область, Ангарский городской округ, пос. Мегет, Школьный пер., 3А Об объекте: Площадь помещения — 150 м² Идеально под магазин или склад Рядом парковка 🚗 Имеется отопление Локация и окружение: ТЦ «Авеню» расположен в локации с хорошим </description>
+      <pubDate>Fri, 28 Aug 2026 03:32:51 GMT</pubDate>
+      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/c78c4607-3143-4004-bd9f-f74810e87cd3/0c90441e-af37-4813-bada-0d3d1ceac5ce.jpg" type="image/jpeg" />
+    </item>
+    <item>
+      <title>Аренда — помещение — пос. Мегет — Школьный пер., 3А — 50 тыс ₽/мес</title>
+      <link>https://arendacity.com/property/7528e692-044c-4bda-a966-f217de253bf6</link>
+      <guid isPermaLink="true">https://arendacity.com/property/7528e692-044c-4bda-a966-f217de253bf6</guid>
+      <description>помещение · 60 м² · 50 тыс ₽/мес · Мегет. 🏢 Сдаётся в аренду помещение в ТЦ «Авеню» — 60 м² 📍 Иркутская область, Ангарский городской округ, пос. Мегет, Школьный пер., 3А Об объекте: Площадь помещения — 60 м² Ранее здесь располагался пункт выдачи Wildberries — имеется оборудование 📦 Идеально под новый ПВЗ, магазин или сферу услуг Рядом па</description>
+      <pubDate>Fri, 28 Aug 2026 03:24:36 GMT</pubDate>
+      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/7528e692-044c-4bda-a966-f217de253bf6/762516ff-4dae-4c95-97b9-bd85964605a2.jpg" type="image/jpeg" />
+    </item>
+    <item>
+      <title>Аренда — помещение — р.п. Маркова, Иркутск — мкр. Берёзовый, д. 235, пом. 4 — 40 тыс ₽/мес</title>
+      <link>https://arendacity.com/property/47427cd9-95d2-429c-aada-72d89db82a99</link>
+      <guid isPermaLink="true">https://arendacity.com/property/47427cd9-95d2-429c-aada-72d89db82a99</guid>
+      <description>помещение · 78.7 м² · 40 тыс ₽/мес · Иркутск. 🏢 Сдаётся в аренду помещение в р.п. Маркова — 78,7 м² 📍 Иркутская область, Иркутский район, р.п. Маркова, мкр. Берёзовый, 235, пом. 4 Об объекте: Площадь помещения — 78,7 м² Качественная отделка: керамогранит на полу, стены окрашенный гипсокартон Большая входная группа, удобно размещать рекламу на</description>
+      <pubDate>Fri, 28 Aug 2026 03:09:21 GMT</pubDate>
+      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/47427cd9-95d2-429c-aada-72d89db82a99/a72960ee-e75f-4112-a884-824b01f17c3a.jpg" type="image/jpeg" />
+    </item>
+    <item>
+      <title>Аренда — павильон — Ангарск — ул. Энгельса, 18 — 21 тыс ₽/мес</title>
+      <link>https://arendacity.com/property/055b873d-f21d-4669-8b5d-67328f619186</link>
+      <guid isPermaLink="true">https://arendacity.com/property/055b873d-f21d-4669-8b5d-67328f619186</guid>
+      <description>павильон · 25 м² · 21 тыс ₽/мес · Ангарск. 🏪 Сдаётся в аренду торговый павильон в Ангарске — 25 м² 📍 г. Ангарск, ул. Энгельса, 18 (207/210-й квартал, остановка «Ермак») Об объекте: Площадь павильона — 25 м² Расположен прямо на автобусной остановке «Ермак» 🚌 Локация с хорошим трафиком Формат под торговую точку, кофе с собой, услуги Локация</description>
+      <pubDate>Fri, 28 Aug 2026 02:43:58 GMT</pubDate>
+      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/055b873d-f21d-4669-8b5d-67328f619186/05949763-1988-4058-9746-f93811fcecff.jpg" type="image/jpeg" />
+    </item>
+    <item>
+      <title>Аренда — павильон — Иркутск, 130-й квартал — ул. Седова, 10 — 100 тыс ₽/мес</title>
+      <link>https://arendacity.com/property/3845504b-5df4-4938-8f99-1d76b43ac56f</link>
+      <guid isPermaLink="true">https://arendacity.com/property/3845504b-5df4-4938-8f99-1d76b43ac56f</guid>
+      <description>павильон · 12 м² · 100 тыс ₽/мес · 130-й квартал. ☕ Сдаётся в аренду павильон в историческом центре Иркутска — 12 м² 📍 г. Иркутск, ул. Седова, 10 Об объекте: Павильон 12 м² с панорамным окном Отдельный вход Готов к немедленному запуску операций Прямая аренда без дополнительных платежей Идеален под торговлю и деятельность общепита Локация и окружен</description>
+      <pubDate>Thu, 27 Aug 2026 09:27:01 GMT</pubDate>
+      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/3845504b-5df4-4938-8f99-1d76b43ac56f/7f0918bb-bc0a-4d3f-a1a9-b8a500e13001.jpg" type="image/jpeg" />
+    </item>
+    <item>
+      <title>Аренда — павильон — Иркутск, 130-й квартал — ул. 3 июля — 30 тыс ₽/мес</title>
+      <link>https://arendacity.com/property/9bc5019b-0a62-4cb4-9f18-f145bdd5671f</link>
+      <guid isPermaLink="true">https://arendacity.com/property/9bc5019b-0a62-4cb4-9f18-f145bdd5671f</guid>
+      <description>павильон · 2 м² · 30 тыс ₽/мес · 130-й квартал. ☕ Сдаётся в аренду павильон-стакан в «130 квартале» Иркутска — 2 м² 📍 г. Иркутск, ул. 3 Июля (территория «130 квартал») Об объекте: Павильон-стакан 2 м² Рядом с «Центром зрения» и павильоном «СибБренд» Идеален под кофе с собой, мороженое, снеки или сувениры Локация и окружение: ТОПовая локация горо</description>
+      <pubDate>Thu, 27 Aug 2026 08:59:09 GMT</pubDate>
+      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/9bc5019b-0a62-4cb4-9f18-f145bdd5671f/b5e15b96-81f0-4895-94af-9ea542ee6487.jpg" type="image/jpeg" />
+    </item>
+    <item>
+      <title>Аренда — помещение — Иркутск — ул. Октябрьской Революции, 9 — 150 тыс ₽/мес</title>
+      <link>https://arendacity.com/property/3c73c29d-7dcb-406e-a585-646a576b596e</link>
+      <guid isPermaLink="true">https://arendacity.com/property/3c73c29d-7dcb-406e-a585-646a576b596e</guid>
+      <description>помещение · 100 м² · 150 тыс ₽/мес · Иркутск. 🏢 Сдаётся в аренду помещение на Автовокзале Иркутска — 100 м² 📍 г. Иркутск, ул. Октябрьской Революции, 9 (территория Автовокзала) Об объекте: Площадь помещения — 100 м² Первая линия в самом центре города В помещении расположена касса на междугородние перевозки — дополнительный поток людей прямо вн</description>
+      <pubDate>Thu, 27 Aug 2026 08:53:29 GMT</pubDate>
+      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/3c73c29d-7dcb-406e-a585-646a576b596e/17997087-c62b-4c01-a293-2990d9d7c955.jpg" type="image/jpeg" />
+    </item>
+    <item>
+      <title>Аренда — помещение — Ангарск — 17 микрорайон лагуна — 60 тыс ₽/мес</title>
+      <link>https://arendacity.com/property/881feea9-7adf-4754-9e50-d9233c62aca1</link>
+      <guid isPermaLink="true">https://arendacity.com/property/881feea9-7adf-4754-9e50-d9233c62aca1</guid>
+      <description>помещение · 71 м² · 60 тыс ₽/мес · Ангарск. 📍г. Ангарск, 17-й микрорайон, помещение у магазина «Лагуна» Об объекте: Площадь помещения — 71 м² Панорамное остекление — отличная витрина и много света 🪟 Отдельный вход Есть санузел Подготовленные стены, на полу керамогранит — помещение готово к работе Формат под магазин, салон, пункт выдачи зака</description>
+      <pubDate>Thu, 27 Aug 2026 07:43:44 GMT</pubDate>
+    </item>
     <item>
       <title>Аренда — помещение — г. Ангарск — мкр-н Китой, ул. Советская, 2А — 15 тыс ₽/мес</title>
       <link>https://arendacity.com/property/092618ed-1d90-4b9e-be8b-ef290c784b57</link>
@@ -20,7 +91,7 @@
       <guid isPermaLink="true">https://arendacity.com/property/53fe78a8-be40-49c9-afb1-7189e85f417d</guid>
       <description>офис · 15 м² · 7 тыс ₽/мес · Мегет. 🏢 Сдаётся в аренду офис в пос. Мегет — 15 м² 📍 Иркутская область, Ангарский городской округ, пос. Мегет, Школьный пер., 3А Об объекте: Площадь помещения — 15 м², второй этаж Подходит для консультационной деятельности, услуг или розничных операций Водоснабжение и санузел Парковка у здания 🚗 Локаци</description>
       <pubDate>Wed, 26 Aug 2026 08:03:09 GMT</pubDate>
-      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/53fe78a8-be40-49c9-afb1-7189e85f417d/404b9d79-2a47-445c-8d20-6e8f8801b990.jpg" type="image/jpeg" />
+      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/53fe78a8-be40-49c9-afb1-7189e85f417d/cc2fe7e9-05c7-4e32-8603-69ed70cc8039.jpg" type="image/jpeg" />
     </item>
     <item>
       <title>Продажа — дом на заказ — Слюдянский район / ваш участок — сруб «Ангара», Слюдянка — 6.5 млн ₽</title>
@@ -55,20 +126,12 @@
       <enclosure url="https://arendacity.com/mock/wooden-houses/01-karkas-baikal.jpg" type="image/jpeg" />
     </item>
     <item>
-      <title>Продажа — квартира — г. Иркутск, Свердловский — ул. Байкальская, 280к1, кв. 64 — 12 млн ₽</title>
-      <link>https://arendacity.com/property/d1000000-0000-4000-8000-000000000005</link>
-      <guid isPermaLink="true">https://arendacity.com/property/d1000000-0000-4000-8000-000000000005</guid>
-      <description>квартира · 92 м² · 12 млн ₽ · Свердловский. Трёхкомнатная семейная квартира 92 м²: мастер-спальня с гардеробом, две детские/кабинеты, кухня-гостиная, два санузла. Оптимально для семьи с двумя детьми. Во дворе — безопасная площадка и зоны отдыха без машин. Рядом школа и детский сад. Застройщик сопровождает сделку до получения ключей, помогает </description>
+      <title>Продажа — квартира — г. Иркутск, Свердловский — ул. Байкальская, 280к1, кв. 47 — 6 млн ₽</title>
+      <link>https://arendacity.com/property/d1000000-0000-4000-8000-000000000002</link>
+      <guid isPermaLink="true">https://arendacity.com/property/d1000000-0000-4000-8000-000000000002</guid>
+      <description>квартира · 41 м² · 6 млн ₽ · Свердловский. Однокомнатная квартира 41 м² с отдельной спальней и просторной кухней-гостиной. Планировка удобна для молодой семьи или инвестора под сдачу. В комплекте чистовая отделка, тёплый пол в санузле, место под стиральную машину. Ориентация окон — на восток, утреннее солнце. Этаж 7, два лифта, закрытая терр</description>
       <pubDate>Tue, 25 Aug 2026 08:51:32 GMT</pubDate>
-      <enclosure url="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&amp;fit=crop&amp;w=1600&amp;q=80" type="image/jpeg" />
-    </item>
-    <item>
-      <title>Продажа — квартира — г. Иркутск, Свердловский — ул. Байкальская, 280к1, кв. 12 — 4.5 млн ₽</title>
-      <link>https://arendacity.com/property/d1000000-0000-4000-8000-000000000001</link>
-      <guid isPermaLink="true">https://arendacity.com/property/d1000000-0000-4000-8000-000000000001</guid>
-      <description>квартира · 29.5 м² · 4.5 млн ₽ · Свердловский. Компактная студия 29,5 м² в ЖК «Байкальский берег». Светлая планировка с кухней-гостиной, местом под спальню и санузлом. Чистовая отделка «под ключ»: ламинат, плитка в санузле, покраска стен, розетки и выключатели установлены. Окна на спокойный двор, этаж 4 из 16. В доме закрытый двор без машин, вид</description>
-      <pubDate>Tue, 25 Aug 2026 08:51:32 GMT</pubDate>
-      <enclosure url="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&amp;fit=crop&amp;w=1600&amp;q=80" type="image/jpeg" />
+      <enclosure url="https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&amp;fit=crop&amp;w=1600&amp;q=80" type="image/jpeg" />
     </item>
     <item>
       <title>Продажа — квартира — г. Иркутск, Свердловский — ул. Байкальская, 280к1, кв. 88 — 8.4 млн ₽</title>
@@ -79,14 +142,6 @@
       <enclosure url="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&amp;fit=crop&amp;w=1600&amp;q=80" type="image/jpeg" />
     </item>
     <item>
-      <title>Продажа — квартира — г. Иркутск, Свердловский — ул. Байкальская, 280к1, кв. 158 — 16 млн ₽</title>
-      <link>https://arendacity.com/property/d1000000-0000-4000-8000-000000000006</link>
-      <guid isPermaLink="true">https://arendacity.com/property/d1000000-0000-4000-8000-000000000006</guid>
-      <description>квартира · 108 м² · 16 млн ₽ · Свердловский. Премиальная трёхкомнатная квартира 108 м² на 15 этаже с видом на город. Высокие потолки 2,9 м, мастер-спальня с собственной ванной, кухня-гостиная 28 м², постирочная. В цену входит одно машиноместо в подземном паркинге. Отделка премиум-класса: инженерная доска, скрытые двери, подготовленные выводы п</description>
-      <pubDate>Tue, 25 Aug 2026 08:51:32 GMT</pubDate>
-      <enclosure url="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&amp;fit=crop&amp;w=1600&amp;q=80" type="image/jpeg" />
-    </item>
-    <item>
       <title>Продажа — квартира — г. Иркутск, Свердловский — ул. Байкальская, 280к1, кв. 112 — 10 млн ₽</title>
       <link>https://arendacity.com/property/d1000000-0000-4000-8000-000000000004</link>
       <guid isPermaLink="true">https://arendacity.com/property/d1000000-0000-4000-8000-000000000004</guid>
@@ -95,12 +150,28 @@
       <enclosure url="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&amp;fit=crop&amp;w=1600&amp;q=80" type="image/jpeg" />
     </item>
     <item>
-      <title>Продажа — квартира — г. Иркутск, Свердловский — ул. Байкальская, 280к1, кв. 47 — 6 млн ₽</title>
-      <link>https://arendacity.com/property/d1000000-0000-4000-8000-000000000002</link>
-      <guid isPermaLink="true">https://arendacity.com/property/d1000000-0000-4000-8000-000000000002</guid>
-      <description>квартира · 41 м² · 6 млн ₽ · Свердловский. Однокомнатная квартира 41 м² с отдельной спальней и просторной кухней-гостиной. Планировка удобна для молодой семьи или инвестора под сдачу. В комплекте чистовая отделка, тёплый пол в санузле, место под стиральную машину. Ориентация окон — на восток, утреннее солнце. Этаж 7, два лифта, закрытая терр</description>
+      <title>Продажа — квартира — г. Иркутск, Свердловский — ул. Байкальская, 280к1, кв. 64 — 12 млн ₽</title>
+      <link>https://arendacity.com/property/d1000000-0000-4000-8000-000000000005</link>
+      <guid isPermaLink="true">https://arendacity.com/property/d1000000-0000-4000-8000-000000000005</guid>
+      <description>квартира · 92 м² · 12 млн ₽ · Свердловский. Трёхкомнатная семейная квартира 92 м²: мастер-спальня с гардеробом, две детские/кабинеты, кухня-гостиная, два санузла. Оптимально для семьи с двумя детьми. Во дворе — безопасная площадка и зоны отдыха без машин. Рядом школа и детский сад. Застройщик сопровождает сделку до получения ключей, помогает </description>
       <pubDate>Tue, 25 Aug 2026 08:51:32 GMT</pubDate>
-      <enclosure url="https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&amp;fit=crop&amp;w=1600&amp;q=80" type="image/jpeg" />
+      <enclosure url="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&amp;fit=crop&amp;w=1600&amp;q=80" type="image/jpeg" />
+    </item>
+    <item>
+      <title>Продажа — квартира — г. Иркутск, Свердловский — ул. Байкальская, 280к1, кв. 158 — 16 млн ₽</title>
+      <link>https://arendacity.com/property/d1000000-0000-4000-8000-000000000006</link>
+      <guid isPermaLink="true">https://arendacity.com/property/d1000000-0000-4000-8000-000000000006</guid>
+      <description>квартира · 108 м² · 16 млн ₽ · Свердловский. Премиальная трёхкомнатная квартира 108 м² на 15 этаже с видом на город. Высокие потолки 2,9 м, мастер-спальня с собственной ванной, кухня-гостиная 28 м², постирочная. В цену входит одно машиноместо в подземном паркинге. Отделка премиум-класса: инженерная доска, скрытые двери, подготовленные выводы п</description>
+      <pubDate>Tue, 25 Aug 2026 08:51:32 GMT</pubDate>
+      <enclosure url="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&amp;fit=crop&amp;w=1600&amp;q=80" type="image/jpeg" />
+    </item>
+    <item>
+      <title>Продажа — квартира — г. Иркутск, Свердловский — ул. Байкальская, 280к1, кв. 12 — 4.5 млн ₽</title>
+      <link>https://arendacity.com/property/d1000000-0000-4000-8000-000000000001</link>
+      <guid isPermaLink="true">https://arendacity.com/property/d1000000-0000-4000-8000-000000000001</guid>
+      <description>квартира · 29.5 м² · 4.5 млн ₽ · Свердловский. Компактная студия 29,5 м² в ЖК «Байкальский берег». Светлая планировка с кухней-гостиной, местом под спальню и санузлом. Чистовая отделка «под ключ»: ламинат, плитка в санузле, покраска стен, розетки и выключатели установлены. Окна на спокойный двор, этаж 4 из 16. В доме закрытый двор без машин, вид</description>
+      <pubDate>Tue, 25 Aug 2026 08:51:32 GMT</pubDate>
+      <enclosure url="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&amp;fit=crop&amp;w=1600&amp;q=80" type="image/jpeg" />
     </item>
     <item>
       <title>Аренда — квартира — г. Иркутск, Кировский — ул. Карла Маркса, 35 — 42 тыс ₽/мес</title>
@@ -333,78 +404,6 @@
       <description>земельный участок · 328 м² · 300 тыс ₽. &quot;🏡 Участок 3,3 сотки под ЛПХ | ул. Почтовая, с. Воскресенское, Дубенский р-н, Тульская обл. Продаётся земельный участок площадью 328 м² (3,28 сотки) на улице Почтовая в селе Воскресенское, Воскресенское сельское поселение, Дубенский муниципальный район, Тульская область. Категория земель — земли на</description>
       <pubDate>Thu, 23 Jul 2026 07:06:29 GMT</pubDate>
       <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/dbfd6da1-9f6b-4223-9f57-230038f6c74a/1e391485-a858-4769-8505-05c10a37c7d9.jpg" type="image/jpeg" />
-    </item>
-    <item>
-      <title>Продажа — земельный участок — Курганская обл. — Далматовский р-н., г. Далматово, ул. Ленина, д.42 — 200 тыс ₽</title>
-      <link>https://arendacity.com/property/385348c9-78c3-4e02-b9d6-cd4fb6aacc7a</link>
-      <guid isPermaLink="true">https://arendacity.com/property/385348c9-78c3-4e02-b9d6-cd4fb6aacc7a</guid>
-      <description>земельный участок · 82 м² · 200 тыс ₽. &quot;🏞️ Участок 82 м² под благоустройство | ул. Ленина, д. 42, г. Далматово, Далматовский р-н, Курганская обл. Продаётся земельный участок площадью 82 м² на улице Ленина, дом 42, в городе Далматово, Далматовский муниципальный район, Курганская область. Категория земель — земли населённых пунктов, разре</description>
-      <pubDate>Thu, 23 Jul 2026 07:01:34 GMT</pubDate>
-      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/385348c9-78c3-4e02-b9d6-cd4fb6aacc7a/ae19d76f-5250-46c3-aa9a-769b62b0f3ea.jpg" type="image/jpeg" />
-    </item>
-    <item>
-      <title>Продажа — земельный участок — обл Новгородская — м.р-н Новгородский, с.п. Савинское, д Савино, ул Садовая,… — 150 тыс ₽</title>
-      <link>https://arendacity.com/property/0678c9ac-7d65-40e6-ae74-e2304f16f471</link>
-      <guid isPermaLink="true">https://arendacity.com/property/0678c9ac-7d65-40e6-ae74-e2304f16f471</guid>
-      <description>земельный участок · 81 м² · 150 тыс ₽. &quot;🏞️ Участок 81 м² под благоустройство | ул. Садовая, з/у 2А, д. Савино, Новгородский р-н, Новгородская обл. Продаётся земельный участок площадью 81 м² на улице Садовая, з/у 2А, в деревне Савино, Савинское сельское поселение, Новгородский муниципальный район, Новгородская область. Категория земель —</description>
-      <pubDate>Thu, 23 Jul 2026 06:58:53 GMT</pubDate>
-      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/0678c9ac-7d65-40e6-ae74-e2304f16f471/d6572c5b-a328-4ec6-b1d4-576b3b7f25e7.jpg" type="image/jpeg" />
-    </item>
-    <item>
-      <title>Продажа — земельный участок — обл. Пезенская — г. Пенза, ул. Ульяновская — 1.2 млн ₽</title>
-      <link>https://arendacity.com/property/7af5359d-d2bb-4c29-b121-cd94bdd8babf</link>
-      <guid isPermaLink="true">https://arendacity.com/property/7af5359d-d2bb-4c29-b121-cd94bdd8babf</guid>
-      <description>земельный участок · 81 м² · 1.2 млн ₽. &quot;🚗 Участок 81 м² под стоянку транспорта | ул. Ульяновская, г. Пенза, Пензенская обл. Продаётся земельный участок площадью 81 м² на улице Ульяновская в городе Пенза, Пензенская область. Категория земель — земли населённых пунктов, разрешённое использование: для размещения стоянки транспортных средст</description>
-      <pubDate>Thu, 23 Jul 2026 06:53:32 GMT</pubDate>
-      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/7af5359d-d2bb-4c29-b121-cd94bdd8babf/062e61dc-6d9a-4165-aedb-8949902060a9.jpg" type="image/jpeg" />
-    </item>
-    <item>
-      <title>Продажа — земельный участок — Красноярский край — г. Енисейск, ул. Калинина, 58 — 150 тыс ₽</title>
-      <link>https://arendacity.com/property/3a4402a9-0e98-45f7-bfc1-8fe5f3b2573c</link>
-      <guid isPermaLink="true">https://arendacity.com/property/3a4402a9-0e98-45f7-bfc1-8fe5f3b2573c</guid>
-      <description>земельный участок · 161.7 м² · 150 тыс ₽. &quot;🏡 Участок 1,6 сотки под огородничество | ул. Калинина, 58, г. Енисейск, Красноярский край Продаётся земельный участок площадью 161,7 м² (1,62 сотки) на улице Калинина, 58, в городе Енисейск, Красноярский край. Категория земель — земли населённых пунктов, разрешённое использование: для ведения огор</description>
-      <pubDate>Thu, 23 Jul 2026 06:48:58 GMT</pubDate>
-      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/3a4402a9-0e98-45f7-bfc1-8fe5f3b2573c/bcab1fc3-4502-4f9c-be56-b76954a8c93d.jpg" type="image/jpeg" />
-    </item>
-    <item>
-      <title>Продажа — земельный участок — Красноярский край г. Енисейск — ул. Рабоче-Крестьянская, 62/г — 150 тыс ₽</title>
-      <link>https://arendacity.com/property/779f6231-4570-47d7-8b68-6acd0f515aed</link>
-      <guid isPermaLink="true">https://arendacity.com/property/779f6231-4570-47d7-8b68-6acd0f515aed</guid>
-      <description>земельный участок · 104 м² · 150 тыс ₽. &quot;🏡 Участок 1 сотка под ЛПХ | ул. Рабоче-Крестьянская, 62/г, г. Енисейск, Красноярский край Продаётся земельный участок площадью 104 м² (1,04 сотки) на улице Рабоче-Крестьянская, 62/г, в городе Енисейск, Красноярский край. Категория земель — земли населённых пунктов, разрешённое использование: для в</description>
-      <pubDate>Thu, 23 Jul 2026 06:45:40 GMT</pubDate>
-      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/779f6231-4570-47d7-8b68-6acd0f515aed/f8ce5d44-4900-4f6c-b4ba-9641f4e76717.jpg" type="image/jpeg" />
-    </item>
-    <item>
-      <title>Продажа — земельный участок — &quot;обл Челябинская Челябинская область — р-н Нагайбакский, с Фершампенуаз, ул. Блюхера, &quot; — 200 тыс ₽</title>
-      <link>https://arendacity.com/property/bbc3dbb5-15e3-4da4-8efb-9f478b60f364</link>
-      <guid isPermaLink="true">https://arendacity.com/property/bbc3dbb5-15e3-4da4-8efb-9f478b60f364</guid>
-      <description>земельный участок · 173 м² · 200 тыс ₽. &quot;🚗 Участок 173 м² под временные гаражи и подсобные сооружения | ул. Блюхера, с. Фершампенуаз, Нагайбакский р-н, Челябинская обл. Продаётся земельный участок площадью 173 м² (1,73 сотки) на улице Блюхера в селе Фершампенуаз, Нагайбакский муниципальный район, Челябинская область. Категория земель — з</description>
-      <pubDate>Thu, 23 Jul 2026 06:42:50 GMT</pubDate>
-      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/bbc3dbb5-15e3-4da4-8efb-9f478b60f364/1106d696-6856-43fb-9971-2327b3239db2.jpg" type="image/jpeg" />
-    </item>
-    <item>
-      <title>Продажа — земельный участок — &quot;край Алтайский — м.р-н Егорьевский, с.п. Новоегорьевский сельсовет, с Ново… — 300 тыс ₽</title>
-      <link>https://arendacity.com/property/eb4e7ffa-0bdf-4aac-8633-a18191b1572c</link>
-      <guid isPermaLink="true">https://arendacity.com/property/eb4e7ffa-0bdf-4aac-8633-a18191b1572c</guid>
-      <description>земельный участок · 2820 м² · 300 тыс ₽. &quot;🏭 Участок 28,2 сотки под хранение и переработку сельхозпродукции | ул. Боровая, 1/6, с. Новоегорьевское, Егорьевский р-н, Алтайский край Продаётся земельный участок площадью 2820 м² (28,2 сотки) на улице Боровая, 1/6, в селе Новоегорьевское, Новоегорьевский сельсовет, Егорьевский муниципальный рай</description>
-      <pubDate>Thu, 23 Jul 2026 06:06:22 GMT</pubDate>
-      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/eb4e7ffa-0bdf-4aac-8633-a18191b1572c/482846dc-f29c-47f9-82a4-ba509828b6c8.jpg" type="image/jpeg" />
-    </item>
-    <item>
-      <title>Продажа — земельный участок — &quot;край Хабаровский Хабаровский край — район имени Лазо, 69 м на северо-запад от д. 69 ул. Авиат… — 150 тыс ₽</title>
-      <link>https://arendacity.com/property/0c361184-0879-4c4f-ad9f-e085b7daae27</link>
-      <guid isPermaLink="true">https://arendacity.com/property/0c361184-0879-4c4f-ad9f-e085b7daae27</guid>
-      <description>земельный участок · 21 м² · 150 тыс ₽. &quot;🚗 Участок 21 м² под хранение автотранспорта | рп. Переяславка, район им. Лазо, Хабаровский край Продаётся земельный участок площадью 21 м², расположенный в 69 м на северо-запад от дома 69 по улице Авиаторов, в рабочем посёлке Переяславка, район имени Лазо, Хабаровский край. Категория земель — земл</description>
-      <pubDate>Thu, 23 Jul 2026 06:03:27 GMT</pubDate>
-      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/0c361184-0879-4c4f-ad9f-e085b7daae27/02b8644f-07b7-4920-bfb8-67f06cf12d8d.jpg" type="image/jpeg" />
-    </item>
-    <item>
-      <title>Продажа — земельный участок — &quot;Республика Мордовия — Инсарский район, г.Инсар, ул.Московская  &quot; — 120 тыс ₽</title>
-      <link>https://arendacity.com/property/8d395955-a16b-4027-bc76-b756ef05f2aa</link>
-      <guid isPermaLink="true">https://arendacity.com/property/8d395955-a16b-4027-bc76-b756ef05f2aa</guid>
-      <description>земельный участок · 34 м² · 120 тыс ₽. &quot;🚗 Участок 34 м² под гараж | ул. Московская, г. Инсар, Инсарский р-н, Республика Мордовия Продаётся земельный участок площадью 34 м² на улице Московская в городе Инсар, Инсарский муниципальный район, Республика Мордовия. Категория земель — земли населённых пунктов, разрешённое использование: для ра</description>
-      <pubDate>Thu, 23 Jul 2026 06:00:19 GMT</pubDate>
-      <enclosure url="https://api.arendacity.com/storage/v1/object/public/property-photos/8d395955-a16b-4027-bc76-b756ef05f2aa/19235398-c861-44d4-a9af-0a1e32dcde04.jpg" type="image/jpeg" />
     </item>
     <item>
       <title>Ввод торговой недвижимости в России резко замедлился</title>

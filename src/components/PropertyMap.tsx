@@ -84,8 +84,7 @@ export default function PropertyMap({
 
         mapRef.current = map;
       })
-      .catch((e) => {
-        console.error("Yandex Maps load failed:", e);
+      .catch(() => {
         if (!cancelled) setMapFailed(true);
       });
 

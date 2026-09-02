@@ -14,7 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const BOT_USERNAME =
-  import.meta.env.VITE_AGENCY_BOT_USERNAME || "ArendaCityAgencyBot";
+  import.meta.env.VITE_AGENCY_BOT_USERNAME || "ДАДАТУТAgencyBot";
 
 export default function AgencyTelegramTab() {
   const { toast } = useToast();

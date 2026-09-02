@@ -1,8 +1,9 @@
 import { createPortal } from "react-dom";
 import ProtectedImage from "@/components/ProtectedImage";
 import BrandMark from "@/components/BrandMark";
+import { PropertyQrPrint } from "@/components/property/PropertyQrBlock";
 import { DEFAULT_AGENT } from "@/config/defaultAgent";
-import { SITE, SITE_URL, absoluteUrl } from "@/config/site";
+import { SITE_URL, absoluteUrl } from "@/config/site";
 import { ACCOUNT_TYPE_LABELS } from "@/hooks/useProfile";
 import {
   isAgencyListing,
@@ -178,17 +179,7 @@ export default function PropertyPrintSheet({ property, pageUrl }: Props) {
       aria-hidden
     >
       <header className="flex items-center justify-between gap-4 pb-5 mb-5">
-        <div className="flex items-center gap-3 min-w-0">
-          <BrandMark className="h-10 w-10" />
-          <div className="min-w-0">
-            <div className="font-bold text-lg tracking-tight leading-none">
-              АРЕНДА<span className="text-[#8B0015]">СИТИ</span>
-            </div>
-            <div className="text-[11px] text-neutral-600 mt-1">
-              {SITE.name} · недвижимость в Иркутске
-            </div>
-          </div>
-        </div>
+        <BrandMark className="h-10" />
         <div className="text-right text-[11px] text-neutral-600 shrink-0">
           <div className="font-medium text-neutral-800">{host}</div>
           <div>Объявление для печати</div>
@@ -296,14 +287,19 @@ export default function PropertyPrintSheet({ property, pageUrl }: Props) {
         </section>
       )}
 
-      <footer className="pt-4 mt-auto text-[11px] text-neutral-600 flex flex-wrap justify-between gap-2">
-        <div>
-          <div className="font-medium text-neutral-800">{url}</div>
-          <div>Распечатано: {printedAt}</div>
+      <footer className="pt-4 mt-auto text-[11px] text-neutral-600 flex flex-wrap justify-between gap-4 items-end">
+        <div className="flex items-end gap-3 min-w-0">
+          <div className="shrink-0 rounded border border-neutral-200 bg-white p-1">
+            <PropertyQrPrint propertyId={property.id} size={80} />
+          </div>
+          <div className="min-w-0">
+            <div className="font-medium text-neutral-800 break-all">{url}</div>
+            <div>Распечатано: {printedAt}</div>
+          </div>
         </div>
-        <div className="text-right">
-          <div className="font-semibold text-[#8B0015]">{SITE.name}</div>
-          <div>{host}</div>
+        <div className="text-right shrink-0">
+          <BrandMark className="h-8 ml-auto" />
+          <div className="mt-1">{host}</div>
         </div>
       </footer>
     </div>

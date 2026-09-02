@@ -9,7 +9,6 @@ import {
   Mail,
   MapPin,
   MapPinned,
-  Phone,
   Quote,
   ShieldCheck,
   Star,
@@ -87,7 +86,7 @@ const timeline = [
   { year: "2022", text: "Направление рекламных конструкций и вывесок." },
   {
     year: "2025",
-    text: "Запуск портала АрендаСити: бесплатный каталог для жителей региона.",
+    text: "Запуск портала ДАДАТУТ: бесплатный каталог для жителей региона.",
   },
 ];
 
@@ -106,8 +105,8 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
       <SeoHead
-        title="О компании АрендаСити"
-        description="АрендаСити — портал аренды и недвижимости, созданный агентством в Иркутске и области. Бесплатный доступ без переплат на агрегаторах и лишних комиссий."
+        title="О компании ДАДАТУТ"
+        description="ДАДАТУТ — портал аренды и недвижимости, созданный агентством в Иркутске и области. Бесплатный доступ без переплат на агрегаторах и лишних комиссий."
         url={absoluteUrl("/about")}
       />
       <SiteHeader />
@@ -127,7 +126,7 @@ export default function AboutPage() {
           <div className="relative h-[340px] overflow-hidden">
             <img
               src={heroImg}
-              alt="АрендаСити"
+              alt="ДАДАТУТ"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-foreground/65" />
@@ -180,7 +179,7 @@ export default function AboutPage() {
                   <div className="space-y-3 text-sm text-muted-foreground leading-relaxed max-w-3xl">
                     <p>
                       <span className="text-foreground font-medium">
-                        АрендаСити
+                        ДАДАТУТ
                       </span>{" "}
                       — это онлайн-портал. Его запустило агентство недвижимости,
                       которое знает рынок Иркутска и области изнутри: ставки,
@@ -226,7 +225,7 @@ export default function AboutPage() {
                   <div className="lg:w-1/2 shrink-0">
                     <img
                       src={managerPhoto}
-                      alt="Команда АрендаСити"
+                      alt="Команда ДАДАТУТ"
                       className="w-full h-72 lg:h-full object-cover object-top"
                     />
                   </div>
@@ -242,7 +241,7 @@ export default function AboutPage() {
                         <div className="w-8 h-px bg-primary" />
                         <div>
                           <div className="text-sm font-semibold">
-                            Команда АрендаСити
+                            Команда ДАДАТУТ
                           </div>
                           <div className="text-xs text-background/50">
                             Иркутск и область
@@ -342,30 +341,18 @@ export default function AboutPage() {
                   </div>
                 </div>
 
-                <div id="contacts" className="bg-muted/40 p-8">
+                <div id="support" className="bg-muted/40 p-8">
                   <h2 className="font-display text-2xl font-bold text-foreground mb-6">
-                    Контакты
+                    Поддержка
                   </h2>
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       {[
                         {
-                          icon: Phone,
-                          label: "Телефон",
-                          value: CONTACTS.phone,
-                          href: `tel:${CONTACTS.phoneTel}`,
-                        },
-                        {
                           icon: Mail,
                           label: "Email",
                           value: CONTACTS.email,
                           href: `mailto:${CONTACTS.email}`,
-                        },
-                        {
-                          icon: MapPin,
-                          label: "Адрес",
-                          value: COMPANY.officeAddress,
-                          href: "#",
                         },
                         {
                           icon: Clock,
@@ -401,20 +388,20 @@ export default function AboutPage() {
                     <div className="space-y-3">
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         Вопросы по сотрудничеству, размещению объектов и работе
-                        с застройщиками — на странице контактов или по телефону.
+                        с застройщиками — на странице поддержки или по email.
                       </p>
                       <a
-                        href={`tel:${CONTACTS.phoneTel}`}
+                        href={`mailto:${CONTACTS.email}`}
                         className="inline-flex items-center gap-2 h-10 px-5 bg-foreground text-background text-sm font-semibold hover:opacity-90 transition-opacity"
                       >
-                        <Phone className="w-4 h-4" /> Позвонить нам
+                        <Mail className="w-4 h-4" /> Написать нам
                       </a>
                       <div className="pt-1 flex flex-wrap gap-x-4 gap-y-2">
                         <Link
-                          to="/contacts"
+                          to="/support"
                           className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                         >
-                          Все контакты <ArrowRight className="w-3.5 h-3.5" />
+                          Поддержка <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
                         <Link
                           to="/list-property?mode=rent"

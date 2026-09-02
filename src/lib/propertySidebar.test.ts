@@ -40,7 +40,7 @@ describe("getListingAgentDisplay", () => {
   test("exposes agency and manager ids for public links", () => {
     const agent = getListingAgentDisplay({
       agent_name: "Анастасия Романова",
-      agent_company: "АрендаСити",
+      agent_company: "ДАДАТУТ",
       agency_id: "a0000000-0000-4000-8000-000000000001",
       listing_manager_id: "a0000000-0000-4000-8000-000000000002",
       agent_account_type: "agency",

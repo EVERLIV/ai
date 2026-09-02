@@ -72,17 +72,14 @@ export default function ResetPassword() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <SeoHead
         title="Сброс пароля"
-        description="Восстановление доступа к личному кабинету АрендаСити."
+        description="Восстановление доступа к личному кабинету ДАДАТУТ."
         noindex
       />
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex items-center justify-between mb-10">
-          <Link to="/" className="flex items-center gap-2">
-            <BrandMark className="h-8 w-8" />
-            <span className="font-display text-lg font-bold text-foreground">
-              АРЕНДА<span className="text-primary">СИТИ</span>
-            </span>
+          <Link to="/" className="flex items-center" aria-label="DADATYT">
+            <BrandMark className="h-9" />
           </Link>
           <Link
             to="/auth"

@@ -726,20 +726,12 @@ export default function SmartListingPage({
         <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 h-12 sm:h-14 flex items-center justify-between gap-2 sm:gap-3">
           <Link
             to="/"
-            className="flex items-center gap-2 sm:gap-2.5 min-w-0 shrink-0"
-            aria-label="АрендаСити"
+            className="flex items-center gap-2 min-w-0 shrink-0"
+            aria-label="DADATYT"
           >
-            <BrandMark className="hidden md:block h-7 w-7" />
-            <span className="flex flex-col leading-none min-w-0">
-              <span className="font-display text-[13px] sm:text-[14px] font-bold tracking-tight text-foreground md:hidden">
-                АРЕНДА<span className="text-primary">СИТИ</span>
-              </span>
-              <span className="hidden md:inline font-display text-sm font-semibold text-foreground truncate">
-                Умный ассистент
-              </span>
-              <span className="text-[10px] text-muted-foreground md:hidden">
-                Ассистент
-              </span>
+            <BrandMark className="h-8" />
+            <span className="hidden md:inline font-display text-sm font-semibold text-foreground truncate">
+              Умный ассистент
             </span>
             <span className="shrink-0 text-[10px] sm:text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30">
               Бета-тест

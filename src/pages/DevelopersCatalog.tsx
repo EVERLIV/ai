@@ -82,7 +82,7 @@ export default function DevelopersCatalog() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SeoHead
-        title="Застройщики — АрендаСити"
+        title="Застройщики — ДАДАТУТ"
         description="Каталог застройщиков: ЖК и деревянные дома в Иркутске и области"
       />
       <SiteHeader />

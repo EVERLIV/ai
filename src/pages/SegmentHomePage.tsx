@@ -29,22 +29,14 @@ export default function SegmentHomePage() {
 
       <header className="relative z-10 border-b border-border/50 bg-card/70 backdrop-blur-md">
         <div className="container mx-auto px-4 lg:px-8 h-14 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <BrandMark className="h-7 w-7 shrink-0" />
-            <div className="leading-none min-w-0">
-              <div className="font-sans text-[16px] font-bold tracking-tight text-foreground">
-                АРЕНДА<span className="text-primary">СИТИ</span>
-              </div>
-              <div className="text-[9px] font-medium tracking-wide text-muted-foreground mt-0.5 uppercase hidden sm:block">
-                Недвижимость в Иркутске
-              </div>
-            </div>
+          <div className="flex items-center min-w-0">
+            <BrandMark className="h-8 shrink-0" />
           </div>
           <a
-            href={`tel:${CONTACTS.phoneTel}`}
-            className="text-xs sm:text-sm font-medium text-foreground hover:text-primary transition-colors shrink-0"
+            href={`mailto:${CONTACTS.email}`}
+            className="text-xs sm:text-sm font-medium text-foreground hover:text-primary transition-colors shrink-0 break-all"
           >
-            {CONTACTS.phone}
+            {CONTACTS.email}
           </a>
         </div>
       </header>
@@ -52,7 +44,7 @@ export default function SegmentHomePage() {
       <main className="relative z-10 flex-1 container mx-auto px-4 lg:px-8 py-10 sm:py-14 lg:py-16">
         <div className="max-w-6xl mx-auto">
           <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight text-center">
-            АрендаСити
+            ДАДАТУТ
           </h1>
           <p className="mt-3 text-center text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
             Выберите раздел — и перейдите к нужным объектам. Сменить раздел

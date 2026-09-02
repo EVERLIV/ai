@@ -81,7 +81,7 @@ export default function AgencyPublicPage() {
         title={`${agency.name} — агентство недвижимости`}
         description={
           agency.about?.slice(0, 160) ||
-          `Объекты агентства ${agency.name} на АрендаСити`
+          `Объекты агентства ${agency.name} на ДАДАТУТ`
         }
       />
       <SiteHeader />

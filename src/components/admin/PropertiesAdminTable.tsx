@@ -1,5 +1,5 @@
-import { Edit, Trash2 } from "lucide-react";
-import { useMemo } from "react";
+import { Edit, QrCode, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import {
   AdminDataTable,
   AdminTableEmptyRow,
@@ -13,6 +13,12 @@ import {
 } from "@/components/admin/AdminDataTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import PropertyQrBlock from "@/components/property/PropertyQrBlock";
 import type { AdminColumnDef } from "@/hooks/useAdminTableState";
 import { useAdminTableState } from "@/hooks/useAdminTableState";
 import {
@@ -525,6 +531,27 @@ export default function PropertiesAdminTable({
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex justify-end gap-0.5">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              title="QR-код"
+                            >
+                              <QrCode className="w-3.5 h-3.5" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="w-[min(100vw-2rem,360px)]"
+                            align="end"
+                          >
+                            <PropertyQrBlock
+                              propertyId={p.id}
+                              compact
+                            />
+                          </PopoverContent>
+                        </Popover>
                         <Button
                           variant="ghost"
                           size="icon"

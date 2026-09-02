@@ -112,7 +112,7 @@ export default function ResidentialHomePage() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <SeoHead
         title="Снять, сдать и купить жильё в Иркутске и области"
-        description="Квартиры, дома и комнаты в Иркутске и области. Снимайте, покупайте и размещайте жильё в каталоге ArendaCity. Для собственников размещение бесплатно."
+        description="Квартиры, дома и комнаты в Иркутске и области. Снимайте, покупайте и размещайте жильё в каталоге ДАДАТУТ. Для собственников размещение бесплатно."
         url={absoluteUrl("/zhilaya")}
       />
       <SiteHeader />
@@ -132,7 +132,7 @@ export default function ResidentialHomePage() {
             <div className="max-w-3xl space-y-6 text-white">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm font-semibold backdrop-blur">
                 <Home className="w-4 h-4" />
-                Жилая недвижимость ArendaCity
+                Жилая недвижимость ДАДАТУТ
               </span>
               <h1 className="text-3xl sm:text-4xl lg:text-6xl font-display font-bold leading-tight text-balance">
                 Снять, сдать и купить жильё в Иркутске и области
@@ -347,7 +347,7 @@ export default function ResidentialHomePage() {
               </Link>
 
               <Link
-                to="/contacts"
+                to="/support"
                 className="group block overflow-hidden rounded-2xl border border-dashed border-primary/35 bg-card"
               >
                 <div className="relative h-56 overflow-hidden">
@@ -404,7 +404,7 @@ export default function ResidentialHomePage() {
         <div className="container mx-auto px-4 lg:px-8">
           <div className="grid gap-4 md:grid-cols-2">
             <Link
-              to="/contacts"
+              to="/support"
               className="group relative overflow-hidden rounded-2xl border border-border bg-card min-h-[180px]"
             >
               <img
@@ -422,7 +422,7 @@ export default function ResidentialHomePage() {
               </div>
             </Link>
             <Link
-              to="/contacts"
+              to="/support"
               className="group relative overflow-hidden rounded-2xl border border-border bg-card min-h-[180px]"
             >
               <img

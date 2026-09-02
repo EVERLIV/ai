@@ -14,7 +14,7 @@ export default function OrganizationJsonLd() {
           legalName: COMPANY.legalName,
           url: SITE_URL,
           logo: SITE.ogImage,
-          telephone: CONTACTS.phoneTel,
+          ...(CONTACTS.phoneTel ? { telephone: CONTACTS.phoneTel } : {}),
           email: CONTACTS.email,
           address: {
             "@type": "PostalAddress",

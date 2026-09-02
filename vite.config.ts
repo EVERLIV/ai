@@ -1,36 +1,121 @@
 import path from "node:path";
+import type { IncomingMessage, ServerResponse } from "node:http";
+import type { Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
+
+const STORAGE_API = "https://api.arendacity.com";
+
+/**
+ * Надёжный прокси Storage для localhost (обход CORS).
+ * Стандартный Vite http-proxy рвал PUT с телом (ERR_CONNECTION_RESET).
+ */
+function storageDevProxy(): Plugin {
+  return {
+    name: "storage-dev-proxy",
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (!req.url?.startsWith("/storage/")) {
+          next();
+          return;
+        }
+        try {
+          await forwardStorage(req, res);
+        } catch (err) {
+          console.error("[storage-dev-proxy]", err);
+          if (!res.headersSent) {
+            res.statusCode = 502;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: "Storage proxy failed" }));
+          }
+        }
+      });
+    },
+  };
+}
+
+async function readBody(req: IncomingMessage): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}
+
+async function forwardStorage(req: IncomingMessage, res: ServerResponse) {
+  const targetUrl = `${STORAGE_API}${req.url}`;
+  const method = (req.method || "GET").toUpperCase();
+  const headers: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (value == null) continue;
+    const lower = key.toLowerCase();
+    if (
+      lower === "host" ||
+      lower === "connection" ||
+      lower === "origin" ||
+      lower === "referer" ||
+      lower === "content-length"
+    ) {
+      continue;
+    }
+    headers[key] = Array.isArray(value) ? value.join(",") : value;
+  }
+
+  const hasBody = !["GET", "HEAD"].includes(method);
+  const body = hasBody ? await readBody(req) : undefined;
+  if (body && body.length > 0) {
+    headers["content-length"] = String(body.length);
+  }
+
+  const upstream = await fetch(targetUrl, {
+    method,
+    headers,
+    body: body && body.length > 0 ? body : undefined,
+    // @ts-expect-error Node fetch duplex
+    duplex: body && body.length > 0 ? "half" : undefined,
+  });
+
+  res.statusCode = upstream.status;
+  upstream.headers.forEach((value, key) => {
+    const lower = key.toLowerCase();
+    if (
+      lower === "transfer-encoding" ||
+      lower === "content-encoding" ||
+      lower === "content-length"
+    ) {
+      return;
+    }
+    res.setHeader(key, value);
+  });
+
+  const out = Buffer.from(await upstream.arrayBuffer());
+  res.setHeader("Content-Length", String(out.length));
+  res.end(out);
+}
 
 export default defineConfig(() => ({
   server: {
     host: "::",
     port: 8080,
     hmr: { overlay: false },
-    // Локальная разработка: /api/chat уходит на чат-бэкенд,
-    // как это делает Caddy в продакшене.
     proxy: {
       "/api/chat": {
         target: process.env.CHAT_BACKEND_URL || "http://127.0.0.1:8787",
         changeOrigin: true,
       },
-      // Storage upload с localhost иначе ловит CORS (нет ACAO на 401/ошибках)
-      "/storage": {
-        target: "https://api.arendacity.com",
-        changeOrigin: true,
-        secure: true,
-      },
     },
   },
   plugins: [
+    storageDevProxy(),
     react(),
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.png", "icons/*.png"],
       manifest: {
-        name: "АрендаСити — Коммерческая недвижимость",
-        short_name: "АрендаСити",
+        name: "ДАДАТУТ — Коммерческая недвижимость",
+        short_name: "ДАДАТУТ",
         description: "Аренда офисов, складов и торговых площадей в Иркутске",
         theme_color: "#8B0015",
         background_color: "#ffffff",

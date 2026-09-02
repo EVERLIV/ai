@@ -50,7 +50,7 @@ export const ANDROID_STEPS: InstallStep[] = [
 export const IOS_TIP: InstallTip = {
   title: "iPhone может удалять неиспользуемые приложения",
   description:
-    "Чтобы иконка АрендаСити не пропала: Настройки → App Store → отключите «Выгрузка неиспользуемых приложений».",
+    "Чтобы иконка ДАДАТУТ не пропала: Настройки → App Store → отключите «Выгрузка неиспользуемых приложений».",
 };
 
 export const ANDROID_NOTE =

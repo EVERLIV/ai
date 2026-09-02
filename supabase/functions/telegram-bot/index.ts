@@ -11,7 +11,7 @@
  *   ANTHROPIC_API_KEY      — Claude
  *   CATALOG_URL            — https://api.arendacity.com
  *   CATALOG_ANON_KEY       — anon key каталога
- *   SITE_URL               — https://arendacity.com
+ *   SITE_URL               — https://dadatut.ru
  *   TELEGRAM_WEBHOOK_SECRET — произвольная строка для ?secret= (защита webhook)
  *
  *   GOOGLE_SERVICE_ACCOUNT_JSON — JSON ключа Google service account
@@ -38,7 +38,7 @@ import {
 const MODEL = "claude-haiku-4-5";
 const CATALOG_URL = Deno.env.get("CATALOG_URL") || "https://api.arendacity.com";
 const CATALOG_ANON_KEY = Deno.env.get("CATALOG_ANON_KEY") || "";
-const SITE_URL = (Deno.env.get("SITE_URL") || "https://arendacity.com").replace(
+const SITE_URL = (Deno.env.get("SITE_URL") || "https://dadatut.ru").replace(
   /\/$/,
   "",
 );

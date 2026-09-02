@@ -55,7 +55,7 @@ export default function OfficesPage() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <SeoHead
         title="Аренда и продажа офисов в Иркутске"
-        description="Офисы класса A, B+, B и C в Иркутске и Иркутской области. Площади от 15 до 5 000 м². Подбор от АрендаСити."
+        description="Офисы класса A, B+, B и C в Иркутске и Иркутской области. Площади от 15 до 5 000 м². Подбор от ДАДАТУТ."
         url={absoluteUrl("/offices")}
       />
       <SiteHeader />

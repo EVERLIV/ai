@@ -3,7 +3,7 @@ import {
   CheckCircle2,
   Clock3,
   Loader2,
-  Phone,
+  Mail,
   Send,
   Star,
   X,
@@ -14,8 +14,7 @@ import { CONTACTS } from "@/config/company";
 import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import { submitLead } from "@/lib/submitLead";
 
-const PHONE = CONTACTS.phoneTel;
-const PHONE_DISPLAY = CONTACTS.phone;
+const EMAIL = CONTACTS.email;
 
 export default function ConsultationWidget() {
   const [open, setOpen] = useState(false);
@@ -69,7 +68,7 @@ export default function ConsultationWidget() {
       setError(
         err instanceof BotGuardError
           ? err.message
-          : "Не удалось отправить. Позвоните нам.",
+          : "Не удалось отправить. Напишите нам на email.",
       );
     } finally {
       setLoading(false);
@@ -104,9 +103,9 @@ export default function ConsultationWidget() {
               1
             </span>
           </div>
-          {/* Phone icon only */}
+          {/* Email icon only */}
           <div className="flex items-center justify-center w-8 h-5 bg-card border border-border shadow-sm">
-            <Phone className="w-3 h-3 text-muted-foreground" />
+            <Mail className="w-3 h-3 text-muted-foreground" />
           </div>
         </button>
       </div>
@@ -230,11 +229,11 @@ export default function ConsultationWidget() {
           </div>
 
           <a
-            href={`tel:${PHONE}`}
+            href={`mailto:${EMAIL}`}
             className="flex items-center justify-center gap-2 h-8 border border-border text-xs font-medium text-foreground hover:bg-muted transition-colors"
           >
-            <Phone className="w-3 h-3 text-primary" />
-            {PHONE_DISPLAY}
+            <Mail className="w-3 h-3 text-primary" />
+            {EMAIL}
           </a>
         </div>
       </div>

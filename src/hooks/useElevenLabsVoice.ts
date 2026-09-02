@@ -186,13 +186,13 @@ export function useElevenLabsVoice() {
           },
           dynamicVariables: {
             catalog_summary: data.catalog?.summary || "",
-            site_url: data.site_url || "https://arendacity.com",
+            site_url: data.site_url || "https://dadatut.ru",
             property_address: opts.propertyAddress || "",
           },
         } as Parameters<typeof conversation.startSession>[0]);
 
         const catalogBlock = [
-          "Актуальный каталог АрендаСити. Называй только эти объекты, не выдумывай.",
+          "Актуальный каталог ДАДАТУТ. Называй только эти объекты, не выдумывай.",
           data.catalog?.summary || "",
           data.catalog?.text || "",
           "Голосом: адрес, площадь, цена. Ссылки не читай. На просмотр переведи на Марию через transfer_to_number.",

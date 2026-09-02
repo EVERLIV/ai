@@ -3,46 +3,44 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Подтвердите email — АрендаСити</title>
+  <title>Подтвердите email — ДАДАТУТ</title>
 </head>
-<body style="margin:0;padding:0;background:#f4f1ea;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f1ea;padding:32px 12px;">
+<body style="margin:0;padding:0;background:#FBFAF7;font-family:Arial,Helvetica,sans-serif;color:#131720;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#FBFAF7;padding:32px 12px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;width:100%;background:#ffffff;border:1px solid #e6e0d4;">
+        <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;width:100%;background:#ffffff;border:1px solid #F0EDE8;">
           <tr>
-            <td style="padding:24px 32px 16px;border-bottom:3px solid #c4a35a;">
+            <td style="padding:24px 32px 16px;border-bottom:3px solid #8B0015;">
               <table role="presentation" cellspacing="0" cellpadding="0">
                 <tr>
                   <td style="vertical-align:middle;padding-right:12px;">
-                    <img src="https://arendacity.com/favicon.png" width="36" height="36" alt="АрендаСити" style="display:block;border:0;" />
+                    <img src="https://dadatut.ru/favicon.png" width="36" height="36" alt="ДАДАТУТ" style="display:block;border:0;" />
                   </td>
                   <td style="vertical-align:middle;">
-                    <p style="margin:0;font-size:18px;font-weight:700;letter-spacing:0.04em;">
-                      АРЕНДА<span style="color:#c4a35a;">СИТИ</span>
-                    </p>
-                    <p style="margin:4px 0 0;font-size:12px;color:#6b6560;">Коммерческая недвижимость</p>
+                    <p style="margin:0;font-size:18px;font-weight:700;letter-spacing:0.06em;color:#8B0015;">ДАДАТУТ</p>
+                    <p style="margin:4px 0 0;font-size:12px;color:#676E79;">Аренда и продажа недвижимости</p>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
           <tr>
-            <td style="padding:16px 32px 0;font-size:13px;line-height:1.55;color:#6b6560;">
-              Подбор и размещение офисов, складов и торговых площадей в Ангарске и Иркутской области.
+            <td style="padding:16px 32px 0;font-size:13px;line-height:1.55;color:#676E79;">
+              Подбор и размещение офисов, складов, жилой и коммерческой недвижимости в Ангарске и Иркутской области.
             </td>
           </tr>
           <tr>
             <td style="padding:24px 32px 8px;">
               <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">Подтвердите адрес почты</h1>
-              <p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#333;">
-                Здравствуйте! Вы зарегистрировались на сайте <strong>АрендаСити</strong>.
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#2A3140;">
+                Здравствуйте! Вы зарегистрировались на сайте <strong>ДАДАТУТ</strong>.
                 Чтобы активировать личный кабинет, подтвердите адрес
                 <strong>{{ .Email }}</strong>.
               </p>
               <table role="presentation" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td style="background:#1a1a1a;">
+                  <td style="background:#8B0015;">
                     <a href="{{ .ConfirmationURL }}"
                       style="display:inline-block;padding:13px 22px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;">
                       Подтвердить адрес почты
@@ -50,35 +48,34 @@
                   </td>
                 </tr>
               </table>
-              <p style="margin:24px 0 8px;font-size:14px;line-height:1.5;color:#333;">
+              <p style="margin:24px 0 8px;font-size:14px;line-height:1.5;color:#2A3140;">
                 Либо введите код подтверждения:
               </p>
-              <p style="margin:0 0 8px;font-size:28px;letter-spacing:0.18em;font-weight:700;color:#1a1a1a;">{{ .Token }}</p>
-              <p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#6b6560;">
+              <p style="margin:0 0 8px;font-size:28px;letter-spacing:0.18em;font-weight:700;color:#131720;">{{ .Token }}</p>
+              <p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#676E79;">
                 Если кнопка не открывается, скопируйте ссылку в браузер:<br />
-                <a href="{{ .ConfirmationURL }}" style="color:#8a6d2f;word-break:break-all;">{{ .ConfirmationURL }}</a>
+                <a href="{{ .ConfirmationURL }}" style="color:#8B0015;word-break:break-all;">{{ .ConfirmationURL }}</a>
               </p>
-              <p style="margin:20px 0 0;font-size:13px;line-height:1.5;color:#6b6560;">
+              <p style="margin:20px 0 0;font-size:13px;line-height:1.5;color:#676E79;">
                 Если вы не регистрировались — просто проигнорируйте это письмо.
               </p>
-            </td>
+</td>
           </tr>
           <tr>
-            <td style="padding:20px 32px 12px;border-top:1px solid #efe8da;font-size:13px;line-height:1.7;color:#6b6560;">
-              <strong style="color:#1a1a1a;">Контакты</strong><br />
-              Телефон: <a href="tel:+79086581919" style="color:#8a6d2f;text-decoration:none;">+7 (908) 658-19-19</a><br />
-              Почта: <a href="mailto:info@arendacity.ru" style="color:#8a6d2f;text-decoration:none;">info@arendacity.ru</a><br />
+            <td style="padding:20px 32px 12px;border-top:1px solid #F0EDE8;font-size:13px;line-height:1.7;color:#676E79;">
+              <strong style="color:#131720;">Поддержка</strong><br />
+              Почта: <a href="mailto:support@dadatut.ru" style="color:#8B0015;text-decoration:none;">support@dadatut.ru</a><br />
               Офис: Ангарск, 17 микрорайон, 4а<br />
               Часы работы: Пн–Пт 9:00–19:00, Сб 10:00–15:00
             </td>
           </tr>
           <tr>
             <td style="padding:0 32px 20px;">
-              <a href="https://arendacity.com" style="color:#8a6d2f;font-size:14px;font-weight:700;text-decoration:underline;">Перейти на сайт АрендаСити</a>
+              <a href="https://dadatut.ru" style="color:#8B0015;font-size:14px;font-weight:700;text-decoration:underline;">Перейти на сайт ДАДАТУТ</a>
             </td>
           </tr>
           <tr>
-            <td style="padding:0 32px 28px;font-size:11px;color:#8a847c;line-height:1.5;">
+            <td style="padding:0 32px 28px;font-size:11px;color:#676E79;line-height:1.5;">
               ИП Кореневский А. О. · ИНН 380121133702 · ОГРНИП 304380112000142<br />
               665830, Иркутская область, г. Ангарск, 17 микрорайон, 4а
             </td>

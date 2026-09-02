@@ -77,9 +77,9 @@ export const properties: Property[] = [
     publishedDate: "2 дня назад",
     views: 187,
     agent: {
-      name: "Аренда Сити",
+      name: "ДАДАТУТ",
       company: "ИП Кореневский А. О.",
-      phone: "+7 (908) 658-19-19",
+      phone: "",
     },
   },
   {
@@ -119,9 +119,9 @@ export const properties: Property[] = [
     publishedDate: "1 день назад",
     views: 312,
     agent: {
-      name: "Аренда Сити",
+      name: "ДАДАТУТ",
       company: "ИП Кореневский А. О.",
-      phone: "+7 (908) 658-19-19",
+      phone: "",
     },
   },
   {
@@ -161,9 +161,9 @@ export const properties: Property[] = [
     publishedDate: "3 дня назад",
     views: 98,
     agent: {
-      name: "Аренда Сити",
+      name: "ДАДАТУТ",
       company: "ИП Кореневский А. О.",
-      phone: "+7 (908) 658-19-19",
+      phone: "",
     },
   },
   {
@@ -202,9 +202,9 @@ export const properties: Property[] = [
     publishedDate: "5 дней назад",
     views: 134,
     agent: {
-      name: "Аренда Сити",
+      name: "ДАДАТУТ",
       company: "ИП Кореневский А. О.",
-      phone: "+7 (908) 658-19-19",
+      phone: "",
     },
   },
   {
@@ -242,9 +242,9 @@ export const properties: Property[] = [
     publishedDate: "неделю назад",
     views: 76,
     agent: {
-      name: "Аренда Сити",
+      name: "ДАДАТУТ",
       company: "ИП Кореневский А. О.",
-      phone: "+7 (908) 658-19-19",
+      phone: "",
     },
   },
   {
@@ -284,9 +284,9 @@ export const properties: Property[] = [
     publishedDate: "сегодня",
     views: 45,
     agent: {
-      name: "Аренда Сити",
+      name: "ДАДАТУТ",
       company: "ИП Кореневский А. О.",
-      phone: "+7 (908) 658-19-19",
+      phone: "",
     },
   },
 ];

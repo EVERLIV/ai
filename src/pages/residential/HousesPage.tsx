@@ -4,7 +4,7 @@ export default function HousesPage() {
   return (
     <ResidentialCategoryPage
       title="Дома и коттеджи в Иркутске"
-      description="Дома, коттеджи и таунхаусы в аренду и продажу в Иркутске и области. Жилой каталог ArendaCity для частных домов."
+      description="Дома, коттеджи и таунхаусы в аренду и продажу в Иркутске и области. Жилой каталог ДАДАТУТ для частных домов."
       badge="Дома и коттеджи"
       type="Дом"
       pageUrl="/zhilaya/doma"

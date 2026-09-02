@@ -32,7 +32,7 @@ export const FALLBACK_NEWS_POSTS: NewsPost[] = [
     category: "Рынок",
     tags: ["офисы", "Москва", "аренда", "Ricci"],
     status: "published",
-    author_name: "Редакция АрендаСити",
+    author_name: "Редакция ДАДАТУТ",
     views: 0,
   },
   {
@@ -66,7 +66,7 @@ export const FALLBACK_NEWS_POSTS: NewsPost[] = [
     category: "Рынок",
     tags: ["склады", "логистика", "вакантность", "IBC Real Estate"],
     status: "published",
-    author_name: "Редакция АрендаСити",
+    author_name: "Редакция ДАДАТУТ",
     views: 0,
   },
   {
@@ -99,7 +99,7 @@ export const FALLBACK_NEWS_POSTS: NewsPost[] = [
     category: "Рынок",
     tags: ["рынок", "офисы", "склады", "торговля"],
     status: "published",
-    author_name: "Редакция АрендаСити",
+    author_name: "Редакция ДАДАТУТ",
     views: 0,
   },
   {
@@ -132,7 +132,7 @@ export const FALLBACK_NEWS_POSTS: NewsPost[] = [
     category: "Рынок",
     tags: ["торговля", "ТЦ", "девелопмент", "ритейл"],
     status: "published",
-    author_name: "Редакция АрендаСити",
+    author_name: "Редакция ДАДАТУТ",
     views: 0,
   },
   {
@@ -162,7 +162,7 @@ IBC также отмечает дальнейший рост e-commerce: объ
     category: "Рынок",
     tags: ["торговля", "вакантность", "ТЦ", "IBC Real Estate"],
     status: "published",
-    author_name: "Редакция АрендаСити",
+    author_name: "Редакция ДАДАТУТ",
     views: 0,
   },
 ];

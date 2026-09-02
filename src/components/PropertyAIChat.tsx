@@ -82,7 +82,7 @@ function buildChatLeadMessage(msgs: Msg[], propertyAddress?: string): string {
 /** Ответ, когда ИИ недоступен: не оставляем человека без реакции. */
 const FALLBACK_REPLY =
   `Извините, не получается ответить прямо сейчас — сбой на нашей стороне.\n\n` +
-  `Позвоните нам, поможем сразу: ${CONTACTS.phone}`;
+  `Напишите нам на ${CONTACTS.email} — поможем сразу.`;
 
 interface Props {
   propertyId?: string;
@@ -620,7 +620,7 @@ export default function PropertyAIChat({
                     Говорите — консультант слушает
                   </p>
                   <p className="text-xs mt-1">
-                    Агент видит актуальный каталог объектов АрендаСити
+                    Агент видит актуальный каталог объектов ДАДАТУТ
                   </p>
                 </div>
               )}
@@ -656,10 +656,10 @@ export default function PropertyAIChat({
                 Завершить звонок
               </button>
               <a
-                href={`tel:${CONTACTS.phoneTel}`}
+                href={`mailto:${CONTACTS.email}`}
                 className="text-[11px] text-muted-foreground hover:text-foreground"
               >
-                Или на номер {CONTACTS.phone}
+                Или напишите на {CONTACTS.email}
               </a>
             </div>
           </div>

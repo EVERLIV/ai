@@ -49,6 +49,6 @@ describe("buildPropertySeoIntro", () => {
     expect(intro).toMatch(/Аренда/i);
     expect(intro).toMatch(/склад/i);
     expect(intro).toMatch(/200/);
-    expect(intro).toMatch(/АрендаСити/);
+    expect(intro).toMatch(/ДАДАТУТ/);
   });
 });

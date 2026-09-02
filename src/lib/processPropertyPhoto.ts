@@ -1,4 +1,4 @@
-import watermarkSrc from "@/assets/watermark-arendacity.png";
+import watermarkSrc from "@/assets/watermark-dadatut.png";
 import { WATERMARK_CONFIG } from "@/lib/watermarkConfig";
 
 let watermarkImage: HTMLImageElement | null = null;

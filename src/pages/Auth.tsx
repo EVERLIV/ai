@@ -141,7 +141,7 @@ export default function Auth() {
     if (hash.includes("type=signup") || hash.includes("type=email_change")) {
       toast({
         title: "Email подтверждён",
-        description: "Добро пожаловать в АрендаСити!",
+        description: "Добро пожаловать в ДАДАТУТ!",
       });
       window.history.replaceState(
         null,
@@ -309,18 +309,15 @@ export default function Auth() {
     <div className="min-h-screen bg-background flex">
       <SeoHead
         title="Вход"
-        description="Вход и регистрация в личном кабинете АрендаСити."
+        description="Вход и регистрация в личном кабинете ДАДАТУТ."
         noindex
       />
       {/* Left: form */}
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-12 max-w-lg mx-auto w-full">
         {/* Logo + back */}
         <div className="flex items-center justify-between mb-10">
-          <Link to="/" className="flex items-center gap-2">
-            <BrandMark className="h-8 w-8" />
-            <span className="font-display text-lg font-bold text-foreground">
-              АРЕНДА<span className="text-primary">СИТИ</span>
-            </span>
+          <Link to="/" className="flex items-center" aria-label="DADATYT">
+            <BrandMark className="h-9" />
           </Link>
           <Link
             to="/"
@@ -366,7 +363,7 @@ export default function Auth() {
               Добро пожаловать
             </h1>
             <p className="text-sm text-muted-foreground mb-7">
-              Войдите в свой аккаунт АрендаСити
+              Войдите в свой аккаунт ДАДАТУТ
             </p>
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
@@ -707,7 +704,7 @@ export default function Auth() {
             <h2 className="font-display text-3xl font-bold leading-tight mb-3">
               Личный кабинет
               <br />
-              АрендаСити
+              ДАДАТУТ
             </h2>
             <p className="text-background/60 text-sm leading-relaxed max-w-sm">
               Управляйте избранными объектами, отслеживайте заявки и получайте

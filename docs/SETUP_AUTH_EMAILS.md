@@ -25,7 +25,7 @@ grep -E 'GOTRUE_SMTP_|GOTRUE_MAILER_' /opt/supabase/.env
 ```
 Регистрация (/auth?tab=register)
   → supabase.auth.signUp({ email, password, data: { full_name, phone, account_type… } })
-  → emailRedirectTo = https://arendacity.com/auth
+  → emailRedirectTo = https://dadatut.ru/auth
   → GoTrue создаёт пользователя (email_confirmed_at = null)
   → GoTrue пытается отправить Confirm signup (SMTP, если задан)
   → экран «Почти готово! Проверьте почту»
@@ -61,12 +61,12 @@ grep -E 'GOTRUE_SMTP_|GOTRUE_MAILER_' /opt/supabase/.env
 
 | Файл | Шаблон в Dashboard / GoTrue | Тема письма |
 |------|-----------------------------|-------------|
-| `confirm.html` | Confirm signup | Подтвердите email — АрендаСити |
-| `recovery.html` | Reset password | Сброс пароля — АрендаСити |
-| `magic_link.html` | Magic Link | Вход в кабинет — АрендаСити |
-| `invite.html` | Invite user | Приглашение в АрендаСити |
-| `email_change.html` | Change email address | Подтвердите новый email — АрендаСити |
-| `reauthentication.html` | Reauthentication | Код подтверждения — АрендаСити |
+| `confirm.html` | Confirm signup | Подтвердите email — ДАДАТУТ |
+| `recovery.html` | Reset password | Сброс пароля — ДАДАТУТ |
+| `magic_link.html` | Magic Link | Вход в кабинет — ДАДАТУТ |
+| `invite.html` | Invite user | Приглашение — ДАДАТУТ |
+| `email_change.html` | Change email address | Подтвердите новый email — ДАДАТУТ |
+| `reauthentication.html` | Reauthentication | Код подтверждения — ДАДАТУТ |
 
 Переменные GoTrue: `{{ .ConfirmationURL }}`, `{{ .Email }}`, `{{ .NewEmail }}`, `{{ .Token }}`.
 

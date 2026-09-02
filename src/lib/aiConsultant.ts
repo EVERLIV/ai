@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ARENDACITY_AGENCY_ID } from "@/config/defaultAgent";
+import { ДАДАТУТ_AGENCY_ID } from "@/config/defaultAgent";
 import { supabasePublic } from "@/integrations/supabase/client";
 import { getPropertyAgencyId } from "@/lib/listingSource";
 
@@ -58,7 +58,7 @@ export function consultantAvatarForListing(
     return e.agent_avatar_url.trim();
   }
   const agencyId = getPropertyAgencyId(property);
-  if (agencyId === ARENDACITY_AGENCY_ID) return fallback;
+  if (agencyId === ДАДАТУТ_AGENCY_ID) return fallback;
   return fallback;
 }
 
@@ -75,14 +75,14 @@ export async function fetchAiConsultantAccess(): Promise<AiConsultantAccess> {
   ]);
 
   // Колонка может ещё не быть на сервере — не валим каталог;
-  // до миграции оставляем АрендаСити как единственного с услугой.
+  // до миграции оставляем ДАДАТУТ как единственного с услугой.
   const agencyIds = new Set<string>();
   if (!agenciesRes.error && Array.isArray(agenciesRes.data)) {
     for (const row of agenciesRes.data) {
       if (row?.id) agencyIds.add(row.id);
     }
   } else if (agenciesRes.error) {
-    agencyIds.add(ARENDACITY_AGENCY_ID);
+    agencyIds.add(ДАДАТУТ_AGENCY_ID);
   }
 
   const profileIds = new Set<string>();

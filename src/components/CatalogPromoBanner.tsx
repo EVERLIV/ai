@@ -43,7 +43,7 @@ export function getCatalogPromos(
         ? "Квартира, дом или комната — в каталоге без оплаты"
         : "Офис, склад или торговля — объявление в каталоге бесплатно",
     cta: "Разместить",
-    footer: "АрендаСити · для собственников",
+    footer: "ДАДАТУТ · для собственников",
   };
 
   const listingManage: CatalogPromoItem = {
@@ -54,7 +54,7 @@ export function getCatalogPromos(
     title: "Сдайте объект за 14 дней",
     subtitle: "Презентация, показы и сделка с проверенными арендаторами",
     cta: "Оставить заявку",
-    footer: "АрендаСити · управление",
+    footer: "ДАДАТУТ · управление",
   };
 
   const partnerDomnd: CatalogPromoItem = {
@@ -87,7 +87,7 @@ export function pickCatalogPromo(
       image: residentialBannerFree,
       badge: "Бесплатно",
       title: "Разместите объявление за 0 ₽",
-      subtitle: "В каталоге АрендаСити",
+      subtitle: "В каталоге ДАДАТУТ",
       cta: "Разместить",
     };
   }

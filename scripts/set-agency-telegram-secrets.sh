@@ -59,7 +59,7 @@ upsert_env "AGENCY_NOTIFY_INTERNAL_SECRET" "$notify_secret"
 
 # Часто нужны для agency-функций; не перезаписываем, если уже есть
 grep -q '^SUPABASE_URL=' "$ENV_FILE" || upsert_env "SUPABASE_URL" "https://api.arendacity.com"
-grep -q '^SITE_URL=' "$ENV_FILE" || upsert_env "SITE_URL" "https://arendacity.com"
+grep -q '^SITE_URL=' "$ENV_FILE" || upsert_env "SITE_URL" "https://dadatut.ru"
 
 chmod 600 "$ENV_FILE"
 

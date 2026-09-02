@@ -55,7 +55,7 @@ export default function RetailPage() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <SeoHead
         title="Аренда и продажа торговых площадей в Иркутске"
-        description="Торговые помещения, street retail и помещения в ТЦ. Иркутск и область — подбор от АрендаСити."
+        description="Торговые помещения, street retail и помещения в ТЦ. Иркутск и область — подбор от ДАДАТУТ."
         url={absoluteUrl("/retail")}
       />
       <SiteHeader />
@@ -111,7 +111,7 @@ export default function RetailPage() {
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground text-center mb-12">
-            Преимущества аренды через АрендаСити
+            Преимущества аренды через ДАДАТУТ
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {benefits.map((b) => (
@@ -157,7 +157,7 @@ export default function RetailPage() {
                     помещения с вытяжкой, водоснабжением и отдельным входом.
                   </p>
                   <p>
-                    АрендаСити предоставляет полный анализ локации: пешеходный
+                    ДАДАТУТ предоставляет полный анализ локации: пешеходный
                     трафик, конкурентное окружение, потенциальную выручку.
                   </p>
                 </div>

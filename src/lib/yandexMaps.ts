@@ -5,9 +5,13 @@ let loadPromise: Promise<any> | null = null;
 
 export function getYandexMapsApiKey(): string {
   return (
-    (import.meta.env.VITE_YANDEX_MAPS_API_KEY as string | undefined) ||
-    "2dc2b4a9-a9d1-46df-b148-e19a985512ac"
+    (import.meta.env.VITE_YANDEX_MAPS_API_KEY as string | undefined)?.trim() ??
+    ""
   );
+}
+
+export function hasYandexMapsApiKey(): boolean {
+  return getYandexMapsApiKey().length > 0;
 }
 
 function configureYandexApiKeys(ymaps3: any) {
@@ -32,13 +36,17 @@ async function resolveYmaps3(): Promise<any> {
 
 export function loadYandexMaps(): Promise<any> {
   if (typeof window === "undefined") return Promise.reject(new Error("SSR"));
+  const apiKey = getYandexMapsApiKey();
+  if (!apiKey) {
+    return Promise.reject(
+      new Error("VITE_YANDEX_MAPS_API_KEY is not configured"),
+    );
+  }
   // @ts-expect-error
   if ((window as any).ymaps3) {
     return resolveYmaps3();
   }
   if (loadPromise) return loadPromise;
-
-  const apiKey = getYandexMapsApiKey();
 
   loadPromise = new Promise((resolve, reject) => {
     const fail = (err: Error) => {

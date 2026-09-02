@@ -7,6 +7,7 @@ import {
   Heart,
   Home,
   Landmark,
+  LifeBuoy,
   LogOut,
   MapPin,
   Maximize2,
@@ -28,6 +29,7 @@ import MyLeadsTab from "@/components/account/MyLeadsTab";
 import MyPropertiesTab from "@/components/account/MyPropertiesTab";
 import MyReviewsTab from "@/components/account/MyReviewsTab";
 import ProfileTab from "@/components/account/ProfileTab";
+import SupportTab from "@/components/account/SupportTab";
 import StatsTab from "@/components/account/StatsTab";
 import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
@@ -45,6 +47,12 @@ import {
 } from "@/hooks/useProfile";
 import { useProperties } from "@/hooks/useProperties";
 import { parsePropertySegment } from "@/config/propertySegments";
+
+const SUPPORT_TAB = {
+  key: "support",
+  label: "Поддержка",
+  icon: LifeBuoy,
+} as const;
 
 const OWNER_TABS = [
   { key: "favorites", label: "Избранное", icon: Heart },
@@ -75,13 +83,25 @@ const DEVELOPER_TABS = [
 type Tab =
   | (typeof OWNER_TABS)[number]["key"]
   | (typeof AGENCY_EXTRA_TABS)[number]["key"]
-  | (typeof DEVELOPER_TABS)[number]["key"];
+  | (typeof DEVELOPER_TABS)[number]["key"]
+  | (typeof SUPPORT_TAB)["key"];
 
 const VALID_TABS = new Set<string>([
   ...OWNER_TABS.map((t) => t.key),
   ...AGENCY_EXTRA_TABS.map((t) => t.key),
   ...DEVELOPER_TABS.map((t) => t.key),
+  SUPPORT_TAB.key,
 ]);
+
+function withSupportTab<T extends { key: string }>(tabs: readonly T[]): T[] {
+  const profileIdx = tabs.findIndex((t) => t.key === "profile");
+  if (profileIdx === -1) return [...tabs, SUPPORT_TAB as T];
+  return [
+    ...tabs.slice(0, profileIdx),
+    SUPPORT_TAB as T,
+    ...tabs.slice(profileIdx),
+  ];
+}
 
 export default function AccountPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -100,27 +120,27 @@ export default function AccountPage() {
   const isRealtorAccount = profile?.account_type === "realtor";
   const isSeeker = profile?.account_type === "seeker";
   const realtorReviewTab = AGENCY_EXTRA_TABS.filter((t) => t.key === "reviews");
-  const tabs = isDeveloperAccount
-    ? [...DEVELOPER_TABS]
-    : isAgencyAccount
-      ? [
-          ...OWNER_TABS.slice(0, 4),
-          ...AGENCY_EXTRA_TABS,
-          {
-            key: "profile" as const,
-            label: "Профиль",
-            icon: Landmark,
-          },
-        ]
-      : isRealtorAccount
+  const tabs = withSupportTab(
+    isDeveloperAccount
+      ? [...DEVELOPER_TABS]
+      : isAgencyAccount
         ? [
             ...OWNER_TABS.slice(0, 4),
-            ...realtorReviewTab,
-            OWNER_TABS[4],
+            ...AGENCY_EXTRA_TABS,
+            {
+              key: "profile" as const,
+              label: "Профиль",
+              icon: Landmark,
+            },
           ]
-        : isSeeker
-          ? OWNER_TABS.filter((t) => t.key !== "properties" && t.key !== "stats")
-          : [...OWNER_TABS];
+        : isRealtorAccount
+          ? [...OWNER_TABS.slice(0, 4), ...realtorReviewTab, OWNER_TABS[4]]
+          : isSeeker
+            ? OWNER_TABS.filter(
+                (t) => t.key !== "properties" && t.key !== "stats",
+              )
+            : [...OWNER_TABS],
+  );
   const searchParams = new URLSearchParams(location.search);
   const requestedSegment = parsePropertySegment(searchParams.get("segment"));
   const requestTypeParam = searchParams.get("request_type");
@@ -208,7 +228,7 @@ export default function AccountPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <SeoHead
         title="Личный кабинет"
-        description="Избранное, заявки и профиль пользователя АрендаСити."
+        description="Избранное, заявки и профиль пользователя ДАДАТУТ."
         noindex
       />
       <SiteHeader />
@@ -421,6 +441,8 @@ export default function AccountPage() {
             {tab === "managers" && <AgencyManagersTab />}
 
             {tab === "telegram" && <AgencyTelegramTab />}
+
+            {tab === "support" && <SupportTab />}
 
             {tab === "profile" && <ProfileTab />}
           </div>

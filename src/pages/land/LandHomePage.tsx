@@ -12,7 +12,7 @@ export default function LandHomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SeoHead
-        title="Земля и участки — АрендаСити"
+        title="Земля и участки — ДАДАТУТ"
         description="Каталог земли и участков в Иркутске: ИЖС, жилая и коммерческая земля. Аренда и продажа."
         url={absoluteUrl(SEGMENT_ROUTES.land.home)}
       />

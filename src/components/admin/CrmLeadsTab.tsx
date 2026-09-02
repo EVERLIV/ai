@@ -27,7 +27,8 @@ type CrmLead = {
 };
 
 const SOURCE_LABELS: Record<string, string> = {
-  contacts_page: "Контакты",
+  contacts_page: "Контакты (архив)",
+  support_page: "Поддержка",
   price_offer: "Предложение цены",
   owner_message: "Вопрос по объекту",
   property_contact: "Форма на объекте",

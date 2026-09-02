@@ -9,7 +9,7 @@ export const COMPANY = {
   /** Сокращенное наименование */
   shortName: "ИП Кореневский А. О.",
   /** Бренд для маркетинговых блоков */
-  brand: "АрендаСити",
+  brand: "ДАДАТУТ",
   inn: "380121133702",
   ogrn: "304380112000142",
   /** Юридический адрес */
@@ -25,14 +25,22 @@ export const COMPANY = {
 } as const;
 
 export const CONTACTS = {
-  phone: "+7 (908) 658-19-19",
-  /** Формат для tel: и wa.me */
-  phoneTel: "+79086581919",
-  phoneDigits: "79086581919",
-  email: "info@arendacity.ru",
+  /**
+   * Публичный телефон отключён — на сайте только email.
+   * Поля оставлены пустыми для совместимости со старым кодом.
+   */
+  phone: "",
+  phoneTel: "",
+  phoneDigits: "",
+  email: "support@dadatut.ru",
+  /** Исходящая почта (noreply) */
+  noreplyEmail: "noreply@dadatut.ru",
   hours: "Пн–Пт: 9:00–19:00",
   hoursWeekend: "Сб: 10:00–15:00",
 } as const;
+
+/** Есть ли публичный телефон компании (для условного UI). */
+export const HAS_PUBLIC_PHONE = Boolean(CONTACTS.phoneTel);
 
 /** Строка реквизитов одной строкой — для футера и юридических блоков. */
 export const REQUISITES_LINE = `${COMPANY.shortName} · ИНН ${COMPANY.inn} · ОГРНИП ${COMPANY.ogrn}`;

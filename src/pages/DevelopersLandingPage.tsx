@@ -26,8 +26,8 @@ export default function DevelopersLandingPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SeoHead
-        title="Застройщикам — АрендаСити"
-        description="Разместите проекты и планировки на АрендаСити: кабинет, верификация, заявки."
+        title="Застройщикам — ДАДАТУТ"
+        description="Разместите проекты и планировки на ДАДАТУТ: кабинет, верификация, заявки."
       />
       <SiteHeader />
 
@@ -38,7 +38,7 @@ export default function DevelopersLandingPage() {
               B2B
             </p>
             <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground leading-tight">
-              АрендаСити для застройщиков
+              ДАДАТУТ для застройщиков
             </h1>
             <p className="mt-4 text-base text-muted-foreground leading-relaxed">
               Публикуйте ЖК и серии домов, принимайте заявки и показывайте ход

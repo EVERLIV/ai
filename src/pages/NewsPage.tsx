@@ -148,7 +148,7 @@ export default function NewsPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <SeoHead
         title="Новости коммерческой недвижимости"
-        description="Аналитика рынка, советы арендаторам и события АрендаСити в Иркутске."
+        description="Аналитика рынка, советы арендаторам и события ДАДАТУТ в Иркутске."
         url={absoluteUrl("/news")}
       />
       <SiteHeader />

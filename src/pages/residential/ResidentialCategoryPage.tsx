@@ -105,7 +105,7 @@ export default function ResidentialCategoryPage({
                 Иркутск и область
               </div>
               <p className="text-sm text-muted-foreground">
-                Отдельный жилой раздел внутри ArendaCity без запуска второго
+                Отдельный жилой раздел внутри ДАДАТУТ без запуска второго
                 домена.
               </p>
             </div>

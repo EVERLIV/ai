@@ -2,54 +2,47 @@
 
 ## Где настраивать
 
-Supabase Dashboard → Project Settings → Auth → **SMTP Settings**
+Self-hosted VPS: `/opt/supabase/.env` (GoTrue) и секреты Edge Functions.
 
 ## Данные SMTP от Timeweb
 
-Войдите в панель Timeweb → Почта → Создайте почтовый ящик (например: noreply@arendacity.com)
+Timeweb → Почта → ящик **`noreply@dadatut.ru`**
 
-Затем используйте следующие настройки:
+| Параметр         | Значение                 |
+|------------------|--------------------------|
+| **Host**         | `smtp.timeweb.ru`        |
+| **Port**         | `465` (SSL) или `587`    |
+| **Username**     | `noreply@dadatut.ru`     |
+| **Password**     | пароль ящика             |
+| **Sender name**  | `ДАДАТУТ`                |
+| **Sender email** | `noreply@dadatut.ru`     |
 
-| Параметр         | Значение                        |
-|------------------|---------------------------------|
-| **Host**         | `smtp.timeweb.ru`               |
-| **Port**         | `465` (SSL) или `587` (TLS)     |
-| **Username**     | `noreply@arendacity.com`        |
-| **Password**     | пароль от почтового ящика       |
-| **Sender name**  | `АрендаСити`                    |
-| **Sender email** | `noreply@arendacity.com`        |
+## VPS (GoTrue)
 
-## Шаги
-
-1. Откройте [Supabase Dashboard](https://supabase.com/dashboard)
-2. Выберите проект arendacity
-3. Перейдите: **Settings → Auth**
-4. Прокрутите до раздела **SMTP Settings**
-5. Включите тумблер **Enable Custom SMTP**
-6. Заполните поля согласно таблице выше
-7. Нажмите **Save**
-
-## Проверка
-
-После сохранения нажмите **Test SMTP** — Supabase отправит тестовое письмо.
-
-## Шаблоны писем
-
-Supabase Dashboard → Auth → **Email Templates**:
-- **Confirm signup** — письмо при регистрации
-- **Reset password** — ссылка сброса пароля (используется в /reset-password)
-- **Magic Link** — вход по ссылке
-
-Пример шаблона для сброса пароля (уже работает с `/reset-password`):
-```html
-<h2>Сброс пароля — АрендаСити</h2>
-<p>Нажмите на кнопку ниже, чтобы задать новый пароль:</p>
-<a href="{{ .ConfirmationURL }}">Сбросить пароль</a>
-<p>Ссылка действует 1 час.</p>
+```bash
+SMTP_PASS='пароль' bash scripts/setup-gotrue-smtp.sh
 ```
 
-## Для сброса пароля через суперадмин панель
+Шаблоны: `https://dadatut.ru/email/*.html` (папка `public/email/` после деплоя).
 
-В `/super-admin` кнопка "Сбросить пароль" вызывает `supabase.auth.resetPasswordForEmail(email)`.
-Письмо отправляется через настроенный SMTP на указанный email пользователя.
-Пользователь переходит по ссылке → попадает на `/reset-password` → вводит новый пароль.
+## Edge Functions
+
+Секреты для `send-agency-invite` и `notify-property-email`:
+
+- `SMTP_HOST=smtp.timeweb.ru`
+- `SMTP_PORT=587`
+- `SMTP_USER=noreply@dadatut.ru`
+- `SMTP_PASS=…`
+- `SMTP_FROM=noreply@dadatut.ru`
+- `SMTP_FROM_NAME=ДАДАТУТ`
+- `SITE_URL=https://dadatut.ru` (ссылки в письмах)
+
+## Шаблоны
+
+HTML в `public/email/` и `supabase/email-templates/`. Обновление:
+
+```bash
+node scripts/sync-email-templates.mjs
+```
+
+Палитра: бордовый `#8B0015`, фон `#FBFAF7` — как на сайте ДАДАТУТ.

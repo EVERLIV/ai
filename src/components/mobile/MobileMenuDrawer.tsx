@@ -18,6 +18,7 @@ import {
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import BrandMark from "@/components/BrandMark";
 import { CONTACTS } from "@/config/company";
 import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 import { getMainNavMegaMenus } from "@/lib/catalogMegaMenu";
@@ -128,7 +129,7 @@ export default function MobileMenuDrawer({
     { label: "Избранное", href: "/account#favorites", icon: Heart },
     { label: "Поиск по каталогу", href: "/catalog", icon: Search },
     { label: "О нас", href: "/about", icon: Info },
-    { label: "Контакты", href: "/contacts", icon: BookOpen },
+    { label: "Поддержка", href: "/support", icon: BookOpen },
     { label: "Приложение", href: "/app", icon: Smartphone },
     { label: "Новости", href: "/news", icon: Newspaper },
     ...(onOpenWizard
@@ -162,9 +163,10 @@ export default function MobileMenuDrawer({
           <button
             type="button"
             onClick={() => go("/")}
-            className="font-display text-[14px] font-bold tracking-tight text-foreground leading-none text-left"
+            className="text-left"
+            aria-label="DADATYT"
           >
-            АРЕНДА<span className="text-primary">СИТИ</span>
+            <BrandMark className="h-7" />
           </button>
           <button
             type="button"

@@ -39,5 +39,5 @@ export function buildPropertySeoIntro(p: PropertySeoIntroInput): string {
 
   const extras = floorParts.length ? ` ${floorParts.join(", ")}.` : "";
 
-  return `${deal} — ${type.toLowerCase()}${area ? ` ${area}` : ""} в ${place}. Цена: ${price}.${extras} Подробности, фото и заявка — на АрендаСити.`;
+  return `${deal} — ${type.toLowerCase()}${area ? ` ${area}` : ""} в ${place}. Цена: ${price}.${extras} Подробности, фото и заявка — на ДАДАТУТ.`;
 }

@@ -28,7 +28,7 @@ export default function AppInstallHero({ onSelectPlatform }: Props) {
           Приложение
         </p>
         <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight">
-          Как пользоваться приложением АрендаСити
+          Как пользоваться приложением ДАДАТУТ
         </h1>
         <p className="mt-4 text-sm sm:text-base text-background/80 max-w-xl leading-relaxed">
           Установите на телефон — каталог, избранное и заявки всегда под рукой.

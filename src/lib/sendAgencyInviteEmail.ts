@@ -72,7 +72,7 @@ export function buildAgencyInviteLink(
   token: string,
   origin = typeof window !== "undefined"
     ? window.location.origin
-    : "https://arendacity.com",
+    : "https://dadatut.ru",
 ) {
   return `${origin}/auth?tab=register&invite=${encodeURIComponent(token)}`;
 }

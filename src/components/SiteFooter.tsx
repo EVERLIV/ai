@@ -17,11 +17,11 @@ const FOOTER_COLUMNS: FooterLink[][] = [
     { label: "Приложение", href: "/app" },
     { label: "Документация", href: "/docs" },
     { label: "Тарифы и цены", href: "/list-property" },
-    { label: "Карьера в АрендаСити", href: "/vacancies" },
+    { label: "Карьера в ДАДАТУТ", href: "/vacancies" },
   ],
   [
     { label: "Юридические документы", href: "/privacy" },
-    { label: "Реклама на сайте", href: "/contacts" },
+    { label: "Реклама на сайте", href: "/support" },
     { label: "О компании", href: "/about" },
   ],
   [
@@ -33,7 +33,7 @@ const FOOTER_COLUMNS: FooterLink[][] = [
     { label: "Агентства", href: "/rieltory?tab=agentstva" },
     { label: "Застройщики", href: "/zastroyshchiki" },
     { label: "Застройщикам", href: "/zastroyshchikam" },
-    { label: "Помощь", href: "/contacts" },
+    { label: "Поддержка", href: "/support" },
   ],
   [
     { label: "Коммерческая недвижимость", href: buildCatalogUrl() },
@@ -178,13 +178,10 @@ export default function SiteFooter() {
         <div className="container mx-auto px-4 lg:px-8 py-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
           <Link
             to="/"
-            className="flex items-center gap-2 shrink-0"
-            aria-label={COMPANY.brand}
+            className="flex items-center shrink-0"
+            aria-label="DADATYT"
           >
-            <BrandMark className="h-7 w-7" />
-            <span className="font-display text-[15px] font-bold tracking-tight text-foreground">
-              АРЕНДА<span className="text-primary">СИТИ</span>
-            </span>
+            <BrandMark className="h-8" />
           </Link>
         </div>
 

@@ -6,7 +6,8 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const SITE_URL = "https://arendacity.com";
+const SITE_URL = "https://dadatut.ru";
+const SITE_NAME = "ДАДАТУТ";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, "..");
 const publicDir = join(rootDir, "public");
@@ -79,7 +80,7 @@ const STATIC_PATHS = [
   "/zemlya",
   "/zemlya/catalog",
   "/about",
-  "/contacts",
+  "/support",
   "/vacancies",
   "/news",
   "/list-property",
@@ -279,7 +280,7 @@ Disallow: /account
 Disallow: /reset-password
 Disallow: /tasks
 
-Host: arendacity.com
+Host: dadatut.ru
 Sitemap: ${SITE_URL}/sitemap.xml
 `;
   writeFileSync(join(publicDir, "robots.txt"), content, "utf8");
@@ -391,7 +392,7 @@ function writeFeed(properties, newsPosts) {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
-    <title>АрендаСити — новые объекты</title>
+    <title>${SITE_NAME} — новые объекты</title>
     <link>${SITE_URL}</link>
     <description>Новые объявления коммерческой недвижимости в Иркутске и области</description>
     <language>ru</language>
@@ -522,14 +523,14 @@ function writePropertyOgPages(properties) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${escapeXml(title)} — АрендаСити</title>
+  <title>${escapeXml(title)} — ${SITE_NAME}</title>
   <meta name="description" content="${escapeXml(description.slice(0, 300))}" />
   <link rel="canonical" href="${escapeXml(url)}" />
   <meta property="og:title" content="${escapeXml(title)}" />
   <meta property="og:description" content="${escapeXml(description.slice(0, 300))}" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="${escapeXml(url)}" />
-  <meta property="og:site_name" content="АрендаСити" />
+  <meta property="og:site_name" content="${SITE_NAME}" />
   <meta property="og:locale" content="ru_RU" />
   <meta property="og:image" content="${escapeXml(image)}" />
   <meta property="og:image:secure_url" content="${escapeXml(image)}" />
@@ -558,7 +559,7 @@ function writePropertyOgPages(properties) {
 ${factsHtml}
   </dl>
   ${descText ? `<section><h2>Описание</h2><p>${escapeXml(descText)}</p></section>` : ""}
-  <p><a href="${escapeXml(url)}">Открыть объявление на АрендаСити</a> · <a href="${escapeXml(catalogUrl)}">Все объекты</a></p>
+  <p><a href="${escapeXml(url)}">Открыть объявление на ${SITE_NAME}</a> · <a href="${escapeXml(catalogUrl)}">Все объекты</a></p>
 </body>
 </html>
 `;

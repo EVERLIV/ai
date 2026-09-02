@@ -1,7 +1,7 @@
 import {
   ArrowRight,
   Award,
-  Phone,
+  Mail,
   ShieldCheck,
   TrendingUp,
   Users,
@@ -22,7 +22,7 @@ export default function CompanyStatsSidebar() {
     <aside className="w-full space-y-5 min-w-0">
       <div className="bg-card border border-border p-5">
         <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-4">
-          АрендаСити в цифрах
+          ДАДАТУТ в цифрах
         </p>
         <div className="grid grid-cols-2 gap-3">
           {stats.map((s) => {
@@ -73,7 +73,7 @@ export default function CompanyStatsSidebar() {
             Рекламный блок
           </p>
           <h4 className="font-display text-base font-bold text-background mb-1">
-            Сдайте объект с АрендаСити
+            Сдайте объект с ДАДАТУТ
           </h4>
           <p className="text-[11px] text-background/75 leading-relaxed mb-4">
             Профессиональный маркетинг, проверенные арендаторы и юридическая
@@ -93,19 +93,13 @@ export default function CompanyStatsSidebar() {
           Отклик на вакансию
         </p>
         <p className="text-sm font-medium leading-snug mb-3">
-          Отправьте резюме или позвоните — мы ответим в рабочее время.
+          Отправьте резюме или напишите на email — мы ответим в рабочее время.
         </p>
         <a
-          href={`tel:${CONTACTS.phoneTel}`}
+          href={`mailto:${CONTACTS.email}?subject=Отклик на вакансию`}
           className="flex items-center justify-center gap-2 w-full h-9 bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity"
         >
-          <Phone className="w-3.5 h-3.5" /> {CONTACTS.phone}
-        </a>
-        <a
-          href={`mailto:${CONTACTS.email}?subject=Отклик на вакансию`}
-          className="block text-center text-[11px] text-background/60 hover:text-background mt-2 transition-colors"
-        >
-          {CONTACTS.email}
+          <Mail className="w-3.5 h-3.5" /> {CONTACTS.email}
         </a>
       </div>
     </aside>

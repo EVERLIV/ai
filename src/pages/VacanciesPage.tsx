@@ -114,7 +114,7 @@ export default function VacanciesPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
       <SeoHead
-        title="Вакансии АрендаСити"
+        title="Вакансии ДАДАТУТ"
         description="Работа в агентстве коммерческой недвижимости в Ангарске и Иркутске: менеджер по аренде, юрист."
         url={absoluteUrl("/vacancies")}
       />
@@ -216,7 +216,13 @@ export default function VacanciesPage() {
                       </h2>
                       <p className="text-sm text-muted-foreground max-w-md mx-auto">
                         Мы свяжемся с вами в рабочее время. Можно также
-                        позвонить: {CONTACTS.phone}
+                        написать на{" "}
+                        <a
+                          href={`mailto:${CONTACTS.email}`}
+                          className="text-primary hover:underline"
+                        >
+                          {CONTACTS.email}
+                        </a>
                       </p>
                       <button
                         type="button"

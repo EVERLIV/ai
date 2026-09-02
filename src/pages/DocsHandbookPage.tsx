@@ -178,7 +178,14 @@ function BugReportForm() {
         <h3 className="font-semibold text-foreground">Спасибо, заявка принята</h3>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
           Мы разберём описание бага и свяжемся при необходимости. Срочные
-          вопросы — {CONTACTS.phone}.
+          вопросы —{" "}
+          <a
+            href={`mailto:${CONTACTS.email}`}
+            className="text-primary font-medium hover:underline"
+          >
+            {CONTACTS.email}
+          </a>
+          .
         </p>
         <Button variant="outline" size="sm" onClick={() => setSent(false)}>
           Отправить ещё одно сообщение
@@ -200,7 +207,8 @@ function BugReportForm() {
           <h3 className="font-semibold text-foreground">Я нашёл баг</h3>
           <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
             Опишите, что сломалось, на какой странице и что ожидали увидеть.
-            Заявка попадёт в CRM админки.
+            Если вы вошли в аккаунт — удобнее через{" "}
+            <DocLink to="/account#support">личный кабинет → Поддержка</DocLink>.
           </p>
         </div>
       </div>
@@ -976,7 +984,7 @@ export default function DocsHandbookPage() {
                     <span className="text-muted-foreground">
                       {" "}
                       — баннеры и спецразмещения, заявки через{" "}
-                      <DocLink to="/contacts">контакты</DocLink> или{" "}
+                      <DocLink to="/support">поддержку</DocLink> или{" "}
                       <DocLink to="/ads">каталог рекламы</DocLink>.
                     </span>
                   </li>
@@ -1044,23 +1052,19 @@ export default function DocsHandbookPage() {
                   Поддержка
                 </h2>
                 <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                  Телефон{" "}
-                  <a
-                    href={`tel:${CONTACTS.phoneTel}`}
-                    className="text-primary font-medium hover:underline"
-                  >
-                    {CONTACTS.phone}
-                  </a>
-                  , почта{" "}
+                  Email{" "}
                   <a
                     href={`mailto:${CONTACTS.email}`}
                     className="text-primary font-medium hover:underline"
                   >
                     {CONTACTS.email}
                   </a>
-                  . Часы: {CONTACTS.hours}, {CONTACTS.hoursWeekend}. Общие
-                  вопросы — <DocLink to="/contacts">форма на контактах</DocLink>
-                  . Ниже — отдельная форма, если нашли ошибку на сайте.
+                  . Часы: {CONTACTS.hours}, {CONTACTS.hoursWeekend}. Для
+                  зарегистрированных пользователей —{" "}
+                  <DocLink to="/account#support">
+                    личный кабинет → Поддержка
+                  </DocLink>
+                  . Ниже — форма для гостей, если нашли ошибку на сайте.
                 </p>
                 <BugReportForm />
               </section>
@@ -1068,7 +1072,7 @@ export default function DocsHandbookPage() {
               <div className="pt-6 border-t border-border flex flex-wrap gap-3 text-sm">
                 <DocLink to="/help">← Справочный центр</DocLink>
                 <span className="text-border">·</span>
-                <DocLink to="/contacts">Контакты</DocLink>
+                <DocLink to="/support">Поддержка</DocLink>
                 <span className="text-border">·</span>
                 <DocLink to="/privacy">Конфиденциальность</DocLink>
               </div>

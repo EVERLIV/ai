@@ -35,8 +35,8 @@ export default function AppInstallPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SeoHead
-        title="Приложение АрендаСити — установка на iPhone и Android"
-        description="Как установить АрендаСити на домашний экран: пошаговая инструкция для iPhone (Safari) и Android (Chrome). QR-код для быстрого доступа."
+        title="Приложение ДАДАТУТ — установка на iPhone и Android"
+        description="Как установить ДАДАТУТ на домашний экран: пошаговая инструкция для iPhone (Safari) и Android (Chrome). QR-код для быстрого доступа."
         url={absoluteUrl("/app")}
       />
       <SiteHeader />

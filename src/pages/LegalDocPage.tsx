@@ -35,8 +35,7 @@ function PrivacyBody() {
       <p>
         Оператором персональных данных является {COMPANY.legalName}.{" "}
         {REQUISITES_LINE}. Контакт:{" "}
-        <a href={`mailto:${CONTACTS.email}`}>{CONTACTS.email}</a>,{" "}
-        <a href={`tel:${CONTACTS.phoneTel}`}>{CONTACTS.phone}</a>.
+        <a href={`mailto:${CONTACTS.email}`}>{CONTACTS.email}</a>.
       </p>
       <h2>2. Какие данные мы обрабатываем</h2>
       <p>
@@ -127,11 +126,10 @@ function TermsBody() {
         не является стороной сделок между пользователями, если иное прямо не
         указано.
       </p>
-      <h2>6. Контакты</h2>
+      <h2>6. Поддержка</h2>
       <p>
         {COMPANY.legalName}. Email:{" "}
-        <a href={`mailto:${CONTACTS.email}`}>{CONTACTS.email}</a>. Телефон:{" "}
-        <a href={`tel:${CONTACTS.phoneTel}`}>{CONTACTS.phone}</a>.
+        <a href={`mailto:${CONTACTS.email}`}>{CONTACTS.email}</a>.
       </p>
     </>
   );

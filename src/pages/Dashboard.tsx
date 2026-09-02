@@ -13,6 +13,7 @@ import {
   Home,
   ImageIcon,
   Inbox,
+  LifeBuoy,
   LogOut,
   MapPin,
   Megaphone,
@@ -36,6 +37,7 @@ import AddressAutocomplete from "@/components/AddressAutocomplete";
 import AdPlacementsManager from "@/components/admin/AdPlacementsManager";
 import AdPlacementsTab from "@/components/admin/AdPlacementsTab";
 import CrmLeadsTab from "@/components/admin/CrmLeadsTab";
+import SupportTicketsTab from "@/components/admin/SupportTicketsTab";
 import SeekersCatalogTab from "@/components/admin/SeekersCatalogTab";
 import AdminSiteAnalyticsTab from "@/components/admin/AdminSiteAnalyticsTab";
 import PropertiesAdminTable from "@/components/admin/PropertiesAdminTable";
@@ -45,6 +47,7 @@ import DictionariesTab from "@/components/admin/DictionariesTab";
 import ModerationQueue from "@/components/admin/ModerationQueue";
 import AgencyReviewsModeration from "@/components/admin/AgencyReviewsModeration";
 import PropertyUnitsManager from "@/components/admin/PropertyUnitsManager";
+import PropertyQrBlock from "@/components/property/PropertyQrBlock";
 import VerificationUsersTab from "@/components/admin/VerificationUsersTab";
 import DevelopersAdminTab from "@/components/admin/DevelopersAdminTab";
 import WoodenHouseConfigFields from "@/components/admin/WoodenHouseConfigFields";
@@ -296,6 +299,7 @@ function buildAdminNav(isAdmin: boolean): {
             icon: UserCircle,
           },
           { value: "leads", label: "Заявки", icon: Inbox },
+          { value: "support", label: "Тикеты", icon: LifeBuoy },
           { value: "seekers", label: "Ищут недвижимость", icon: Search },
           ...(isAdmin
             ? [{ value: "tasks", label: "Задачи", icon: CheckSquare }]
@@ -929,7 +933,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background flex flex-col">
       <SeoHead
         title="Панель управления"
-        description="Административная панель АрендаСити."
+        description="Административная панель ДАДАТУТ."
         noindex
       />
       <header className="border-b bg-card sticky top-0 z-30">
@@ -2666,6 +2670,17 @@ export default function Dashboard() {
                       </div>
                     </fieldset>
 
+                    {editId && (
+                      <fieldset
+                        className={`${propertyFormSection} bg-sky-500/10`}
+                      >
+                        <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">
+                          QR-код объекта
+                        </legend>
+                        <PropertyQrBlock propertyId={editId} />
+                      </fieldset>
+                    )}
+
                     {/* Section: Помещения внутри объекта */}
                     {editId && (
                       <fieldset
@@ -2706,6 +2721,10 @@ export default function Dashboard() {
 
           <TabsContent value="leads" className="space-y-4">
             <CrmLeadsTab />
+          </TabsContent>
+
+          <TabsContent value="support" className="space-y-4">
+            <SupportTicketsTab />
           </TabsContent>
 
           <TabsContent value="seekers" className="space-y-4">

@@ -47,7 +47,7 @@ const articles = [
     href: "/app",
     icon: Smartphone,
     title: "Приложение на телефон",
-    desc: "Как установить АрендаСити на iPhone (Safari) и Android (Chrome). QR-код для быстрого доступа.",
+    desc: "Как установить ДАДАТУТ на iPhone (Safari) и Android (Chrome). QR-код для быстрого доступа.",
   },
   {
     href: "/about",
@@ -56,10 +56,10 @@ const articles = [
     desc: `Кто стоит за ${COMPANY.brand} и как мы работаем с объектами.`,
   },
   {
-    href: "/contacts",
+    href: "/support",
     icon: HelpCircle,
-    title: "Помощь и контакты",
-    desc: "Телефон, почта и адрес офиса — если не нашли ответ в справочнике.",
+    title: "Поддержка",
+    desc: "Email или обращение через личный кабинет, если не нашли ответ в справочнике.",
   },
 ];
 

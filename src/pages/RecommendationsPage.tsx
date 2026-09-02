@@ -53,7 +53,7 @@ export default function RecommendationsPage() {
 
           <p>
             1. {COMPANY.legalName}, {REQUISITES_LINE} (далее — «
-            {COMPANY.brand}») является владельцем сайта arendacity.ru (далее —
+            {COMPANY.brand}») является владельцем сайта arendacity.com (далее —
             «Сайт»), на котором применяются технологии предоставления
             пользователю Сайта информации на основе сбора, систематизации и
             анализа сведений, относящихся к предпочтениям пользователей сети

@@ -22,7 +22,7 @@ export function describeAuthError(error: AuthLikeError | null | undefined): {
     return {
       title: "Email ещё не подтверждён",
       description:
-        "Откройте письмо от АрендаСити и перейдите по ссылке. Проверьте папку «Спам».",
+        "Откройте письмо от ДАДАТУТ и перейдите по ссылке. Проверьте папку «Спам».",
       kind: "unconfirmed",
     };
   }
@@ -65,7 +65,7 @@ export function describeAuthError(error: AuthLikeError | null | undefined): {
   if (code === "user_banned") {
     return {
       title: "Вход недоступен",
-      description: "Аккаунт заблокирован. Напишите нам: info@arendacity.ru",
+      description: "Аккаунт заблокирован. Напишите нам: support@dadatut.ru",
       kind: "other",
     };
   }

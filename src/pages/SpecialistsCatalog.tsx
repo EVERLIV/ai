@@ -173,7 +173,7 @@ export default function SpecialistsCatalog() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SeoHead
-        title="Риелторы и агентства недвижимости — АрендаСити"
+        title="Риелторы и агентства недвижимости — ДАДАТУТ"
         description="Каталог проверенных риелторов и агентств в Иркутске. Подберём специалиста под ваш запрос."
         url={absoluteUrl("/rieltory")}
         noindex={catalogHasFilterQuery(params)}

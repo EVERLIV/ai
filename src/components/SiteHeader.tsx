@@ -43,7 +43,7 @@ type SubItem = {
 const COMPANY_SUBMENU: SubItem[] = [
   {
     label: "О нас",
-    desc: "История, команда и ценности АрендаСити",
+    desc: "История, команда и ценности ДАДАТУТ",
     href: "/about",
     icon: Info,
   },
@@ -54,9 +54,9 @@ const COMPANY_SUBMENU: SubItem[] = [
     icon: Newspaper,
   },
   {
-    label: "Контакты",
-    desc: "Адрес, телефон, режим работы",
-    href: "/contacts",
+    label: "Поддержка",
+    desc: "Email и форма обратной связи",
+    href: "/support",
     icon: BookOpen,
   },
   {
@@ -197,7 +197,7 @@ export default function SiteHeader({
   const isCompanyActive =
     pathname === "/about" ||
     pathname.startsWith("/news") ||
-    pathname.startsWith("/contacts") ||
+    pathname.startsWith("/support") ||
     pathname.startsWith("/vacancies");
   const isRealtorsActive =
     pathname.startsWith("/rieltory") ||
@@ -241,17 +241,10 @@ export default function SiteHeader({
 
           <Link
             to="/"
-            className="group flex items-center gap-2 shrink-0 min-w-0"
+            className="group flex items-center shrink-0 min-w-0"
+            aria-label="DADATYT"
           >
-            <BrandMark className="hidden lg:block h-7 w-7" />
-            <span className="flex flex-col leading-none min-w-0">
-              <span className="font-display text-[14px] sm:text-[15px] font-bold tracking-tight text-foreground">
-                АРЕНДА<span className="text-primary">СИТИ</span>
-              </span>
-              <span className="text-[9px] font-medium tracking-wide text-muted-foreground mt-0.5 uppercase hidden sm:block">
-                Недвижимость
-              </span>
-            </span>
+            <BrandMark className="h-8 sm:h-9" />
           </Link>
 
           <div className="flex-1" />

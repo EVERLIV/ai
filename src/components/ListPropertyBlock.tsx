@@ -9,7 +9,7 @@ import {
   Clock3,
   FileText,
   Megaphone,
-  Phone as PhoneIcon,
+  Mail,
   Settings2,
   ShieldCheck,
   Star,
@@ -187,7 +187,7 @@ export default function ListPropertyBlock({
               </button>
             )}
             <p className="text-muted-foreground text-xs font-semibold uppercase tracking-widest mb-3">
-              {isResidential ? "Жильё на АрендаСити" : "Сдайте на АрендаСити"}
+              {isResidential ? "Жильё на ДАДАТУТ" : "Сдайте на ДАДАТУТ"}
             </p>
             <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight text-foreground mb-4">
               {!mode &&
@@ -203,8 +203,8 @@ export default function ListPropertyBlock({
             <p className="text-muted-foreground text-base leading-relaxed mb-8 max-w-xl">
               {!mode &&
                 (isResidential
-                  ? "Выберите: опубликовать самостоятельно в каталоге за 0 ₽ или передать АрендаСити полное сопровождение."
-                  : "Выберите: опубликовать самостоятельно в каталоге за 0 ₽ или передать АрендаСити поиск арендаторов и документы.")}
+                  ? "Выберите: опубликовать самостоятельно в каталоге за 0 ₽ или передать ДАДАТУТ полное сопровождение."
+                  : "Выберите: опубликовать самостоятельно в каталоге за 0 ₽ или передать ДАДАТУТ поиск арендаторов и документы.")}
               {mode === "rent" &&
                 (isResidential
                   ? "Сами заполняете карточку в кабинете — после модерации жильё появляется в каталоге и получает отклики."
@@ -590,11 +590,11 @@ function ManagementContent({
               </div>
 
               <a
-                href={`tel:${CONTACTS.phoneTel}`}
+                href={`mailto:${CONTACTS.email}`}
                 className="inline-flex items-center gap-2 px-5 py-3 border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors"
               >
-                <PhoneIcon className="w-4 h-4" />
-                {CONTACTS.phone}
+                <Mail className="w-4 h-4" />
+                {CONTACTS.email}
               </a>
             </div>
 
@@ -738,7 +738,7 @@ function StepVisual({ n }: { n: string }) {
             Охват объявления
           </div>
           {[
-            { label: "Каталог АрендаСити", w: "w-full", v: "1 840" },
+            { label: "Каталог ДАДАТУТ", w: "w-full", v: "1 840" },
             { label: "SEO-страницы", w: "w-4/5", v: "920" },
             { label: "Партнёрские сайты", w: "w-3/5", v: "430" },
           ].map((r) => (
