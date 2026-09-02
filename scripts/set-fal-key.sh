@@ -30,7 +30,7 @@ touch "$PRIMARY_ENV"
 grep -v "^${KEY_NAME}=" "$PRIMARY_ENV" > /tmp/fn.env || true
 echo "${KEY_NAME}=${key}" >> /tmp/fn.env
 grep -v '^FAL_CHAT_MODEL=' /tmp/fn.env > /tmp/fn2.env || true
-echo 'FAL_CHAT_MODEL=google/gemini-2.0-flash-lite' >> /tmp/fn2.env
+echo 'FAL_CHAT_MODEL=google/gemini-2.5-flash-lite' >> /tmp/fn2.env
 mv /tmp/fn2.env "$PRIMARY_ENV"
 chmod 600 "$PRIMARY_ENV"
 

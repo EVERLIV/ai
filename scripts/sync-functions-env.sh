@@ -40,7 +40,7 @@ grep -vE '^(SUPABASE_URL|SUPABASE_SERVICE_ROLE_KEY|CATALOG_URL|CATALOG_ANON_KEY|
   [ -n "$ANON" ] && echo "CATALOG_ANON_KEY=$ANON"
   [ -n "$ANTH" ] && echo "ANTHROPIC_API_KEY=$ANTH"
   [ -n "$FAL" ] && echo "FAL_KEY=$FAL"
-  echo 'FAL_CHAT_MODEL=google/gemini-2.0-flash-lite'
+  echo 'FAL_CHAT_MODEL=google/gemini-2.5-flash-lite'
 } >> /tmp/fn.env
 mv /tmp/fn.env "$FN"
 chmod 600 "$FN"

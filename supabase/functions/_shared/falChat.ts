@@ -9,7 +9,7 @@ const FAL_CHAT_URL =
   "https://fal.run/openrouter/router/openai/v1/chat/completions";
 
 /** Дешёвая модель для консультанта на сайте (русский, короткие ответы). */
-export const DEFAULT_FAL_CHAT_MODEL = "google/gemini-2.0-flash-lite";
+export const DEFAULT_FAL_CHAT_MODEL = "google/gemini-2.5-flash-lite";
 
 export function falChatModel(): string {
   return Deno.env.get("FAL_CHAT_MODEL")?.trim() || DEFAULT_FAL_CHAT_MODEL;

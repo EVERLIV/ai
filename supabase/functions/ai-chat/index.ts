@@ -5,7 +5,7 @@
  *
  * Переменные окружения:
  *   FAL_KEY            — ключ fal.ai
- *   FAL_CHAT_MODEL     — по умолчанию google/gemini-2.0-flash-lite
+ *   FAL_CHAT_MODEL     — по умолчанию google/gemini-2.5-flash-lite
  *   CATALOG_URL        — по умолчанию https://api.arendacity.com
  *   CATALOG_ANON_KEY   — anon-ключ базы с объектами
  */
