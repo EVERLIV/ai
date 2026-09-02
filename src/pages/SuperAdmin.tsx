@@ -49,7 +49,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabaseAdmin } from "@/integrations/supabase/adminClient";
-import { supabase } from "@/integrations/supabase/client";
 
 type AppRole = "admin" | "manager" | "client";
 
@@ -142,12 +141,14 @@ export default function SuperAdmin() {
       if (authError) throw authError;
 
       // Получаем profiles и роли
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, phone");
-      const { data: rolesData } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
+      const { data: profiles } = await supabaseAdmin.db.select(
+        "profiles",
+        "select=id,full_name,phone",
+      );
+      const { data: rolesData } = await supabaseAdmin.db.select(
+        "user_roles",
+        "select=user_id,role",
+      );
 
       const profileMap: Record<
         string,
@@ -178,8 +179,7 @@ export default function SuperAdmin() {
 
   const setRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
-      await supabase.from("user_roles").delete().eq("user_id", userId);
-      await supabase.from("user_roles").insert({ user_id: userId, role });
+      await supabaseAdmin.roles.set(userId, role);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["super-admin-users"] });

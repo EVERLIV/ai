@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/adminClient";
 
 type CrmLead = {
   id: string;
@@ -36,6 +36,7 @@ const SOURCE_LABELS: Record<string, string> = {
   management_request: "Передача в управление",
   docs_bug_report: "Баг из документации",
   website: "Сайт",
+  "ai-chat": "ИИ-чат",
 };
 
 const STATUS_OPTIONS = [
@@ -57,12 +58,17 @@ export default function CrmLeadsTab() {
   } = useQuery({
     queryKey: ["admin-crm-leads"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("crm_leads")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(200);
-      if (error) throw error;
+      const { data, error } = await supabaseAdmin.db.select(
+        "crm_leads",
+        "select=*&order=created_at.desc&limit=200",
+      );
+      if (error) {
+        throw new Error(
+          typeof error === "object" && error && "message" in error
+            ? String((error as { message: string }).message)
+            : "Ошибка загрузки заявок",
+        );
+      }
       return (data || []) as CrmLead[];
     },
     refetchInterval: 30_000,
@@ -70,11 +76,18 @@ export default function CrmLeadsTab() {
 
   const statusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase
-        .from("crm_leads")
-        .update({ status })
-        .eq("id", id);
-      if (error) throw error;
+      const { error } = await supabaseAdmin.db.update(
+        "crm_leads",
+        `id=eq.${id}`,
+        { status },
+      );
+      if (error) {
+        throw new Error(
+          typeof error === "object" && error && "message" in error
+            ? String((error as { message: string }).message)
+            : "Ошибка обновления",
+        );
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-crm-leads"] });

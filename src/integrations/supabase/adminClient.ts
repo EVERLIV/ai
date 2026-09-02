@@ -245,17 +245,40 @@ export const supabaseAdmin = {
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
+          if (res.status === 403) {
+            const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc(
+              "admin_create_user",
+              {
+                p_email: attrs.email,
+                p_password: attrs.password,
+                p_full_name: attrs.full_name || null,
+              },
+            );
+            if (rpcError) {
+              return {
+                data: null,
+                error: {
+                  message: `Auth Admin 403. Нужен RPC admin_create_user (self_hosted_admin_user_rpc.sql). ${rpcError.message}`,
+                },
+              };
+            }
+            const row =
+              typeof rpcData === "object" && rpcData
+                ? (rpcData as { id?: string; email?: string })
+                : {};
+            return {
+              data: { id: row.id, email: row.email ?? attrs.email },
+              error: null,
+            };
+          }
           return {
             data: null,
             error: {
-              message:
-                res.status === 403
-                  ? "Auth Admin API закрыт (403). Создание пользователей через /auth/v1/admin недоступно — откройте маршрут в Kong или создайте юзера через регистрацию."
-                  : String(
-                      (data as any)?.msg ||
-                        (data as any)?.message ||
-                        `HTTP ${res.status}`,
-                    ),
+              message: String(
+                (data as any)?.msg ||
+                  (data as any)?.message ||
+                  `HTTP ${res.status}`,
+              ),
               ...((typeof data === "object" && data) || {}),
             },
           };

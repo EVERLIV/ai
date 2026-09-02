@@ -128,3 +128,94 @@ GRANT EXECUTE ON FUNCTION public.admin_confirm_user(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_set_user_password(UUID, TEXT) TO authenticated;
 
 COMMENT ON FUNCTION public.admin_list_users() IS 'List auth.users for admin UI when /auth/v1/admin is blocked (403)';
+
+CREATE OR REPLACE FUNCTION public.admin_create_user(
+  p_email TEXT,
+  p_password TEXT,
+  p_full_name TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO auth, extensions, public
+AS $fn$
+DECLARE
+  v_email TEXT := lower(trim(p_email));
+  v_id UUID := gen_random_uuid();
+BEGIN
+  IF coalesce(auth.role(), '') <> 'service_role'
+     AND NOT public.has_role(auth.uid(), 'admin')
+     AND NOT public.has_role(auth.uid(), 'manager') THEN
+    RAISE EXCEPTION 'forbidden' USING ERRCODE = '42501';
+  END IF;
+
+  IF v_email IS NULL OR v_email NOT LIKE '%@%' THEN
+    RAISE EXCEPTION 'invalid email';
+  END IF;
+  IF p_password IS NULL OR length(p_password) < 6 THEN
+    RAISE EXCEPTION 'password too short';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM auth.users u WHERE lower(u.email) = v_email) THEN
+    RAISE EXCEPTION 'user already exists';
+  END IF;
+
+  INSERT INTO auth.users (
+    instance_id,
+    id,
+    aud,
+    role,
+    email,
+    encrypted_password,
+    email_confirmed_at,
+    raw_app_meta_data,
+    raw_user_meta_data,
+    created_at,
+    updated_at
+  ) VALUES (
+    '00000000-0000-0000-0000-000000000000',
+    v_id,
+    'authenticated',
+    'authenticated',
+    v_email,
+    crypt(p_password, gen_salt('bf')),
+    now(),
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    CASE
+      WHEN p_full_name IS NOT NULL AND trim(p_full_name) <> '' THEN
+        jsonb_build_object('full_name', trim(p_full_name))
+      ELSE '{}'::jsonb
+    END,
+    now(),
+    now()
+  );
+
+  INSERT INTO auth.identities (
+    provider_id,
+    user_id,
+    identity_data,
+    provider,
+    last_sign_in_at,
+    created_at,
+    updated_at
+  ) VALUES (
+    v_email,
+    v_id,
+    jsonb_build_object(
+      'sub', v_id::text,
+      'email', v_email,
+      'email_verified', true
+    ),
+    'email',
+    now(),
+    now(),
+    now()
+  );
+
+  RETURN jsonb_build_object('id', v_id, 'email', v_email);
+END;
+$fn$;
+
+REVOKE ALL ON FUNCTION public.admin_create_user(TEXT, TEXT, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_create_user(TEXT, TEXT, TEXT) TO service_role;
+GRANT EXECUTE ON FUNCTION public.admin_create_user(TEXT, TEXT, TEXT) TO authenticated;

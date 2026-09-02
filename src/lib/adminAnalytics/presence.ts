@@ -1,4 +1,3 @@
-import { supabasePublic } from "@/integrations/supabase/client";
 import {
   SERVICE_ROLE_KEY,
   SUPABASE_URL,
@@ -41,11 +40,7 @@ export async function upsertPresence(opts?: {
       },
     );
     if (res.ok || res.status === 200 || res.status === 201) return;
-    // fallback anon upsert
-    const { error } = await supabasePublic
-      .from("site_presence" as never)
-      .upsert(row as never, { onConflict: "session_id" });
-    if (error) console.warn("presence upsert failed", error.message);
+    console.warn("presence upsert failed", res.status, await res.text().catch(() => ""));
   } catch (e) {
     console.warn("presence upsert failed", e);
   }

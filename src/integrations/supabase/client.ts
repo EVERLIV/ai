@@ -5,15 +5,26 @@ const SUPABASE_URL = "https://api.arendacity.com";
 const SUPABASE_PUBLISHABLE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4ODQyOTQwLCJleHAiOjE5MzY1MjI5NDB9.uK1BksB1rl0vNAlUc2nVpkqECeiWD9CKx0rIfHUlyWA";
 
-/** REST GET: если user JWT даёт 401 — повторить с anon. Запись (PATCH/POST) не трогаем. */
+/** REST GET: если user JWT даёт 401 — повторить с anon; сбросить устаревшую сессию. */
 const restWithAnonFallback: typeof fetch = async (input, init) => {
   const res = await fetch(input, init);
   const url = String(input);
   const method = (init?.method || "GET").toUpperCase();
-  if (res.status !== 401 || !url.includes("/rest/") || method !== "GET")
-    return res;
+  if (res.status !== 401 || !url.includes("/rest/")) return res;
 
   const headers = new Headers(init?.headers);
+  const auth = headers.get("Authorization") || "";
+  const token = auth.replace(/^Bearer\s+/i, "");
+  if (
+    token &&
+    token !== SUPABASE_PUBLISHABLE_KEY &&
+    !token.includes("service_role")
+  ) {
+    void supabase.auth.signOut({ scope: "local" });
+  }
+
+  if (method !== "GET") return res;
+
   headers.set("apikey", SUPABASE_PUBLISHABLE_KEY);
   headers.set("Authorization", `Bearer ${SUPABASE_PUBLISHABLE_KEY}`);
   return fetch(input, { ...init, headers });
