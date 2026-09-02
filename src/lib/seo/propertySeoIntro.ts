@@ -1,5 +1,6 @@
 import { formatPriceShort } from "@/lib/seo/propertySeoTitle";
 import { getPrimaryPropertyType } from "@/lib/propertyTypes";
+import { SITE } from "@/config/site";
 
 export type PropertySeoIntroInput = {
   deal_type?: string | null;
@@ -39,5 +40,5 @@ export function buildPropertySeoIntro(p: PropertySeoIntroInput): string {
 
   const extras = floorParts.length ? ` ${floorParts.join(", ")}.` : "";
 
-  return `${deal} — ${type.toLowerCase()}${area ? ` ${area}` : ""} в ${place}. Цена: ${price}.${extras} Подробности, фото и заявка — на ДАДАТУТ.`;
+  return `${deal} — ${type.toLowerCase()}${area ? ` ${area}` : ""} в ${place}. Цена: ${price}.${extras} ${SITE.tagline} Объявление на ДАДА ТУТ!`;
 }

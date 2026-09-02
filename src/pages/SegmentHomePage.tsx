@@ -14,8 +14,8 @@ export default function SegmentHomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
       <SeoHead
-        title={`${SITE.name} — коммерческая, жилая недвижимость и земля`}
-        description="Аренда и продажа коммерческой и жилой недвижимости, а также земельных участков в Иркутске и области."
+        title={SITE.title}
+        description={SITE.description}
         url={absoluteUrl("/")}
       />
 

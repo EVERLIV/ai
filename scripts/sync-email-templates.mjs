@@ -13,6 +13,7 @@ const root = path.join(__dirname, "..");
 const SITE = "https://dadatut.ru";
 const BRAND = "ДАДАТУТ";
 const SUPPORT = "support@dadatut.ru";
+const TAGLINE = "У вас вся недвижимость региона? Дада, тут!";
 
 const C = {
   bgPage: "#FBFAF7",
@@ -48,7 +49,7 @@ const HEADER = `<!DOCTYPE html>
                   </td>
                   <td style="vertical-align:middle;">
                     <p style="margin:0;font-size:18px;font-weight:700;letter-spacing:0.06em;color:${C.primary};">${BRAND}</p>
-                    <p style="margin:4px 0 0;font-size:12px;color:${C.textMuted};">Аренда и продажа недвижимости</p>
+                    <p style="margin:4px 0 0;font-size:12px;color:${C.textMuted};">${TAGLINE}</p>
                   </td>
                 </tr>
               </table>

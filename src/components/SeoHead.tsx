@@ -44,9 +44,10 @@ export default function SeoHead({
     const pageUrl = url || window.location.href;
     const canonical = pageUrl.split("#")[0].split("?")[0];
     const ogImage = absoluteUrl(image || SITE.ogImage);
-    const fullTitle = title.includes(SITE.name)
+    const brand = SITE.seoBrand;
+    const fullTitle = title.includes(brand) || title.includes(SITE.name)
       ? title
-      : `${title} — ${SITE.name}`;
+      : `${title} — ${brand}`;
     const desc = description.slice(0, 300);
 
     const prevTitle = document.title;
@@ -62,7 +63,7 @@ export default function SeoHead({
     setMeta("property", "og:image:alt", title);
     setMeta("property", "og:url", canonical);
     setMeta("property", "og:type", type);
-    setMeta("property", "og:site_name", SITE.name);
+    setMeta("property", "og:site_name", brand);
     setMeta("property", "og:locale", SITE.locale);
 
     setMeta("name", "twitter:card", "summary_large_image");

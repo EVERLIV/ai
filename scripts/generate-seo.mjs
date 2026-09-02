@@ -8,6 +8,9 @@ import { fileURLToPath } from "node:url";
 
 const SITE_URL = "https://dadatut.ru";
 const SITE_NAME = "ДАДАТУТ";
+const SITE_SEO_BRAND = "ДАДА ТУТ!";
+const SITE_TAGLINE = "У вас вся недвижимость региона? Дада, тут!";
+const SEO_DESC_SUFFIX = ` ${SITE_SEO_BRAND} — ${SITE_TAGLINE}`;
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, "..");
 const publicDir = join(rootDir, "public");
@@ -193,6 +196,18 @@ function buildPropertySeoTitle(p) {
   return parts.join(" — ");
 }
 
+function appendSeoSuffix(text, maxLen = 300) {
+  const trimmed = String(text || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const room = maxLen - SEO_DESC_SUFFIX.length;
+  if (trimmed.length <= room) return `${trimmed}${SEO_DESC_SUFFIX}`;
+  let cut = trimmed.slice(0, room - 1).trimEnd();
+  const lastSpace = cut.lastIndexOf(" ");
+  if (lastSpace > room * 0.55) cut = cut.slice(0, lastSpace);
+  return `${cut}…${SEO_DESC_SUFFIX}`;
+}
+
 function buildPropertySeoDescription(p) {
   const typeLabel = typeSeoLabel(getPrimaryPropertyType(p));
   const area = Number(p.area) > 0 ? `${p.area} м²` : "";
@@ -200,12 +215,12 @@ function buildPropertySeoDescription(p) {
   const district = p.district?.trim() ? `, ${p.district.trim()}` : "";
   const desc = String(p.description || "")
     .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 300);
+    .trim();
   const base = [typeLabel, area, price, district.replace(/^, /, "")]
     .filter(Boolean)
     .join(" · ");
-  return desc ? `${base}. ${desc}` : base;
+  const body = desc ? `${base}. ${desc}` : base;
+  return appendSeoSuffix(body);
 }
 
 function absoluteUrl(path) {
@@ -392,9 +407,9 @@ function writeFeed(properties, newsPosts) {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
-    <title>${SITE_NAME} — новые объекты</title>
+    <title>${SITE_SEO_BRAND} — новые объекты</title>
     <link>${SITE_URL}</link>
-    <description>Новые объявления коммерческой недвижимости в Иркутске и области</description>
+    <description>${SITE_TAGLINE} Новые объявления недвижимости в Иркутске и области — ${SITE_NAME}.</description>
     <language>ru</language>
     <lastBuildDate>${formatRssDate(new Date())}</lastBuildDate>
 ${items.join("\n")}
@@ -523,14 +538,14 @@ function writePropertyOgPages(properties) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${escapeXml(title)} — ${SITE_NAME}</title>
+    <title>${escapeXml(title)} — ${SITE_SEO_BRAND}</title>
   <meta name="description" content="${escapeXml(description.slice(0, 300))}" />
   <link rel="canonical" href="${escapeXml(url)}" />
   <meta property="og:title" content="${escapeXml(title)}" />
   <meta property="og:description" content="${escapeXml(description.slice(0, 300))}" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="${escapeXml(url)}" />
-  <meta property="og:site_name" content="${SITE_NAME}" />
+  <meta property="og:site_name" content="${SITE_SEO_BRAND}" />
   <meta property="og:locale" content="ru_RU" />
   <meta property="og:image" content="${escapeXml(image)}" />
   <meta property="og:image:secure_url" content="${escapeXml(image)}" />

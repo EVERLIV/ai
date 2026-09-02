@@ -31,7 +31,7 @@ export default function OrganizationJsonLd() {
         {
           "@type": "WebSite",
           "@id": `${SITE_URL}/#website`,
-          name: SITE.name,
+          name: SITE.seoBrand,
           url: SITE_URL,
           publisher: { "@id": `${SITE_URL}/#organization` },
           inLanguage: "ru-RU",

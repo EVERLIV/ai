@@ -1,5 +1,19 @@
 import { isSaleDeal } from "@/lib/propertyDeal";
 import { getPrimaryPropertyType } from "@/lib/propertyTypes";
+import { SITE } from "@/config/site";
+
+/** Суффикс для meta description объектов (укладывается в лимит ~300 символов). */
+const SEO_DESC_SUFFIX = ` ДАДА ТУТ! — ${SITE.tagline}`;
+
+function appendSeoSuffix(text: string, maxLen = 300): string {
+  const trimmed = text.replace(/\s+/g, " ").trim();
+  const room = maxLen - SEO_DESC_SUFFIX.length;
+  if (trimmed.length <= room) return `${trimmed}${SEO_DESC_SUFFIX}`;
+  let cut = trimmed.slice(0, room - 1).trimEnd();
+  const lastSpace = cut.lastIndexOf(" ");
+  if (lastSpace > room * 0.55) cut = cut.slice(0, lastSpace);
+  return `${cut}…${SEO_DESC_SUFFIX}`;
+}
 
 export type PropertySeoInput = {
   deal_type?: string | null;
@@ -117,9 +131,10 @@ export function buildPropertySeoDescription(p: PropertySeoInput): string {
   const area = Number(p.area) > 0 ? `${p.area} м²` : "";
   const price = formatPriceShort(Number(p.price) || null, p.deal_type);
   const district = p.district?.trim() ? `, ${p.district.trim()}` : "";
-  const desc = (p.description || "").replace(/\s+/g, " ").trim().slice(0, 200);
+  const desc = (p.description || "").replace(/\s+/g, " ").trim();
   const base = [typeLabel, area, price, district.replace(/^, /, "")]
     .filter(Boolean)
     .join(" · ");
-  return desc ? `${base}. ${desc}` : base;
+  const body = desc ? `${base}. ${desc}` : base;
+  return appendSeoSuffix(body);
 }

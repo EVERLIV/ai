@@ -24,7 +24,7 @@ import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import { COMPANY, CONTACTS } from "@/config/company";
-import { absoluteUrl } from "@/config/site";
+import { absoluteUrl, SITE } from "@/config/site";
 
 const stats = [
   { icon: ShieldCheck, value: "2013", label: "год основания агентства" },
@@ -105,8 +105,8 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
       <SeoHead
-        title="О компании ДАДАТУТ"
-        description="ДАДАТУТ — портал аренды и недвижимости, созданный агентством в Иркутске и области. Бесплатный доступ без переплат на агрегаторах и лишних комиссий."
+        title={`О компании ${COMPANY.brand}`}
+        description={`${SITE.tagline} ${COMPANY.brand} — бесплатный каталог жилой и коммерческой недвижимости Иркутска и области.`}
         url={absoluteUrl("/about")}
       />
       <SiteHeader />
@@ -135,13 +135,17 @@ export default function AboutPage() {
                 <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-3">
                   О компании
                 </p>
-                <h1 className="font-display text-4xl lg:text-5xl font-bold text-background leading-tight mb-4">
-                  АРЕНДА<span className="text-primary">СИТИ</span>
+                <h1 className="font-display text-4xl lg:text-5xl font-bold text-background leading-tight mb-3">
+                  {COMPANY.brand}
                 </h1>
+                <p className="text-lg lg:text-xl font-display font-semibold text-background mb-3 max-w-2xl">
+                  У вас вся недвижимость региона?{" "}
+                  <span className="text-primary">Дада, тут!</span>
+                </p>
                 <p className="text-background/80 text-base max-w-2xl leading-relaxed">
-                  Портал аренды и недвижимости, созданный агентством в Иркутске
-                  и области — чтобы жители региона находили объекты бесплатно,
-                  без переплат на агрегаторах и без лишних комиссий.
+                  Портал от агентства в Иркутске и области — бесплатный каталог
+                  жилой и коммерческой недвижимости без переплат на агрегаторах
+                  и лишних комиссий.
                 </p>
               </div>
             </div>

@@ -14,7 +14,7 @@ export type InstallTip = {
 export const IOS_STEPS: InstallStep[] = [
   {
     title: "Откройте Safari",
-    description: "Перейдите на arendacity.com в браузере Safari на iPhone.",
+    description: "Перейдите на dadatut.ru в браузере Safari на iPhone.",
     hint: "PWA устанавливается только через Safari, не через Chrome.",
   },
   {
@@ -32,7 +32,7 @@ export const IOS_STEPS: InstallStep[] = [
 export const ANDROID_STEPS: InstallStep[] = [
   {
     title: "Откройте Chrome",
-    description: "Перейдите на arendacity.com в Google Chrome на Android.",
+    description: "Перейдите на dadatut.ru в Google Chrome на Android.",
     hint: "Установка через Chrome работает надёжнее всего.",
   },
   {

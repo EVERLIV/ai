@@ -3,7 +3,7 @@
  */
 export const EMAIL_BRAND = {
   name: "ДАДАТУТ",
-  tagline: "Аренда и продажа недвижимости",
+  tagline: "У вас вся недвижимость региона? Дада, тут!",
   siteUrl: "https://dadatut.ru",
   supportEmail: "support@dadatut.ru",
   noreplyEmail: "noreply@dadatut.ru",

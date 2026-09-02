@@ -1,6 +1,7 @@
 import { Ban, Handshake, MapPinned, Quote, Unlock } from "lucide-react";
 import { Link } from "react-router-dom";
 import managerPhoto from "@/assets/manager-arenda-city.jpg";
+import { COMPANY } from "@/config/company";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 const reasons = [
@@ -39,8 +40,7 @@ export default function AboutSection() {
             О портале
           </span>
           <h2 className="font-display text-4xl lg:text-5xl font-bold text-foreground leading-tight tracking-[0.015em]">
-            АРЕНДА<span className="text-primary">СИТИ</span> — портал аренды и
-            недвижимости региона
+            {COMPANY.brand} — портал недвижимости региона
           </h2>
           <p className="mt-4 text-base text-muted-foreground leading-relaxed max-w-2xl">
             Площадку создало агентство недвижимости в Иркутске и области, чтобы

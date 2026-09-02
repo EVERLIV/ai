@@ -13,7 +13,7 @@ export default function BrandMark({
   return (
     <img
       src={logoDadatut}
-      alt="DADATYT"
+      alt="ДАДАТУТ"
       width={180}
       height={40}
       draggable={false}

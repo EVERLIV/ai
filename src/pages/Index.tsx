@@ -21,7 +21,7 @@ import SearchFilters, {
 import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
-import { absoluteUrl } from "@/config/site";
+import { absoluteUrl, SITE } from "@/config/site";
 
 export default function Index() {
   const [filters, setFilters] = useState<PropertyFilters>(defaultFilters);
@@ -29,8 +29,8 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       <SeoHead
-        title="Аренда и продажа недвижимости в Иркутске — ДАДАТУТ"
-        description="Единый портал жилой и коммерческой недвижимости в Иркутске и области. Бесплатный каталог без переплат на агрегаторах и лишних комиссий."
+        title={SITE.title}
+        description={SITE.description}
         url={absoluteUrl("/")}
       />
       <OrganizationJsonLd />
