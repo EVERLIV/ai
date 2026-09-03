@@ -16,7 +16,6 @@ import {
   ScrollText,
   Send,
   QrCode,
-  Settings2,
   Shield,
   SlidersHorizontal,
   Sofa,
@@ -2687,54 +2686,22 @@ export default function PropertySubmissionWizard({
               {managerSection}
               <WizardSection icon={Send} title="Способ размещения">
                 <p className="text-sm text-muted-foreground">
-                  Выберите, как вы хотите разместить объект:
+                  Объект появится в публичном каталоге после модерации.
+                  Размещение бесплатное.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => update("request_type", "free_listing")}
-                  className={`w-full text-left p-4 border rounded-lg transition-all bg-background ${
-                    form.request_type === "free_listing"
-                      ? "border-primary bg-primary/5 ring-1 ring-primary"
-                      : "border-border hover:border-primary/40"
-                  }`}
-                >
+                <div className="w-full text-left p-4 border rounded-lg border-primary bg-primary/5 ring-1 ring-primary">
                   <div className="flex items-start gap-3">
-                    <Megaphone
-                      className={`w-5 h-5 mt-0.5 ${form.request_type === "free_listing" ? "text-primary" : "text-muted-foreground"}`}
-                    />
+                    <Megaphone className="w-5 h-5 mt-0.5 text-primary" />
                     <div>
                       <div className="text-sm font-semibold text-foreground">
                         Разместить бесплатно
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
-                        Объект появится в публичном каталоге после модерации
+                        Заявки приходят в личный кабинет
                       </div>
                     </div>
                   </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => update("request_type", "management")}
-                  className={`w-full text-left p-4 border rounded-lg transition-all bg-background ${
-                    form.request_type === "management"
-                      ? "border-primary bg-primary/5 ring-1 ring-primary"
-                      : "border-border hover:border-primary/40"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <Settings2
-                      className={`w-5 h-5 mt-0.5 ${form.request_type === "management" ? "text-primary" : "text-muted-foreground"}`}
-                    />
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">
-                        Передать в управление
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        ДАДАТУТ возьмёт объект на полное управление
-                      </div>
-                    </div>
-                  </div>
-                </button>
+                </div>
               </WizardSection>
             </div>
           )}

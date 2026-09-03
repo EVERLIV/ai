@@ -698,7 +698,7 @@ export default function DocsHandbookPage() {
                     </Step>
                     <Step n={2}>
                       <DocLink to="/list-property">Разместить объект</DocLink> →
-                      бесплатно в каталог или передать в управление.
+                      бесплатно в каталог.
                     </Step>
                     <Step n={3}>
                       Заполнить визард: адрес, тип, фото, цена, описание →
@@ -818,9 +818,8 @@ export default function DocsHandbookPage() {
                     Откройте нужный путь размещения под ваш сегмент.
                   </Step>
                   <Step n={2}>
-                    Выберите <strong>бесплатное размещение</strong> (сами
-                    ведёте объявление) или <strong>управление</strong> (
-                    {COMPANY.brand} помогает со сдачей).
+                    Выберите <strong>бесплатное размещение</strong> и заполните
+                    карточку объявления.
                   </Step>
                   <Step n={3}>
                     Если не авторизованы — регистрация / вход с возвратом в
@@ -1035,13 +1034,13 @@ export default function DocsHandbookPage() {
                   </div>
                   <div>
                     <dt className="font-semibold text-foreground mb-1">
-                      Чем «бесплатное размещение» отличается от управления?
+                      Как разместить объявление?
                     </dt>
                     <dd className="text-muted-foreground leading-relaxed">
-                      Бесплатно вы сами заполняете и ведёте объявление.
-                      Управление — заявка команде {COMPANY.brand} помочь со
-                      сдачей или продажей (отдельный процесс через{" "}
-                      <DocLink to="/list-property">list-property</DocLink>).
+                      Через{" "}
+                      <DocLink to="/list-property">list-property</DocLink> или
+                      кабинет: заполните карточку, отправьте на модерацию —
+                      после одобрения объект появится в каталоге.
                     </dd>
                   </div>
                 </dl>

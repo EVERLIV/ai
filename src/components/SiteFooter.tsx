@@ -22,7 +22,7 @@ const FOOTER_COLUMNS: FooterLink[][] = [
   [
     { label: "Юридические документы", href: "/privacy" },
     { label: "Реклама на сайте", href: "/support" },
-    { label: "О компании", href: "/about" },
+    { label: "О нас", href: "/about" },
   ],
   [
     { label: "Поиск на карте", href: "/catalog" },

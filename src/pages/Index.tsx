@@ -4,15 +4,15 @@ import { Link } from "react-router-dom";
 import AboutSection from "@/components/AboutSection";
 import FeaturesSection from "@/components/FeaturesSection";
 import HeroSection from "@/components/HeroSection";
-import ListPropertyBlock from "@/components/ListPropertyBlock";
+import HomesGallerySection from "@/components/HomesGallerySection";
 import MapSection from "@/components/MapSection";
 import MobileHomeSearch from "@/components/mobile/MobileHomeSearch";
 import NewsSection from "@/components/NewsSection";
 import OrganizationJsonLd from "@/components/OrganizationJsonLd";
-import OwnerSection from "@/components/OwnerSection";
 import PopularPropertiesSlider from "@/components/PopularPropertiesSlider";
 import PropertyAIChat from "@/components/PropertyAIChat";
 import PropertyGrid from "@/components/PropertyGrid";
+import RealtorsGallerySection from "@/components/RealtorsGallerySection";
 import RentSection from "@/components/RentSection";
 import SearchFilters, {
   defaultFilters,
@@ -120,8 +120,8 @@ export default function Index() {
       <MapSection />
       <FeaturesSection />
       <AboutSection />
-      <OwnerSection />
-      <ListPropertyBlock />
+      <HomesGallerySection />
+      <RealtorsGallerySection />
       <NewsSection />
       <SiteFooter />
       <PropertyAIChat showFab={false} />

@@ -109,13 +109,14 @@ export default function AboutSection() {
             </div>
             <div className="bg-foreground text-background p-7 shadow-card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <p className="text-base font-medium leading-relaxed">
-                Нужны детали о компании или условия размещения — напишите нам.
+                Хотите узнать о проекте или предложить сотрудничество — напишите
+                нам.
               </p>
               <Link
                 to="/about"
                 className="ui-btn-primary shrink-0"
               >
-                О компании
+                О нас
               </Link>
             </div>
           </div>

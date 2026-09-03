@@ -298,7 +298,7 @@ function FadeIn({
 
 // ─── Нижний CTA-баннер «Сдайте объект за 14 дней» ───
 function CtaBanner({ segment = "commercial" }: { segment?: PropertySegment }) {
-  const listHref = listPropertyPath(segment, "management");
+  const listHref = listPropertyPath(segment, "rent");
   return (
     <div className="px-6 lg:px-12 xl:px-20 pb-10">
       <motion.div
@@ -328,19 +328,19 @@ function CtaBanner({ segment = "commercial" }: { segment?: PropertySegment }) {
               Для собственников
             </p>
             <h2 className="font-display text-xl md:text-2xl font-bold mb-2">
-              Сдайте объект за 14 дней
+              Разместите объект бесплатно
             </h2>
             <p className="text-xs text-white/60 leading-relaxed max-w-sm">
-              Создадим эффективную презентацию, качественный показ и быстрый
-              выход на сделку с проверенными арендаторами.
+              Опубликуйте объявление в каталоге за 0 ₽ — заявки приходят в
+              личный кабинет.
             </p>
           </div>
           <ul className="space-y-2">
             {[
-              "Выведем объект на рынок за 14 дней",
-              "Проверенные арендаторы",
-              "Сопровождение сделки под ключ",
-              "Юридическая чистота договора",
+              "Размещение в каталоге бесплатно",
+              "Заявки в личный кабинет",
+              "Редактирование в любой момент",
+              "Помощь менеджера при необходимости",
             ].map((t) => (
               <li
                 key={t}

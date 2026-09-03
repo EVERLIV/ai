@@ -42,13 +42,13 @@ export default function CompanyStatsSidebar() {
         </div>
         <p className="text-[11px] text-muted-foreground leading-relaxed mt-4">
           Работаем в Иркутске, Ангарске и Шелехове. Полный цикл: подбор
-          арендаторов, юридическое сопровождение и управление объектами.
+          арендаторов и юридическое сопровождение.
         </p>
         <Link
           to="/about"
           className="inline-flex items-center gap-1 mt-3 text-xs font-medium text-primary hover:underline"
         >
-          О компании <ArrowRight className="w-3 h-3" />
+          О нас <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
 
@@ -80,7 +80,7 @@ export default function CompanyStatsSidebar() {
             поддержка — без комиссии для собственников.
           </p>
           <Link
-            to="/list-property?mode=management"
+            to="/list-property?mode=rent"
             className="flex items-center justify-center gap-1.5 h-9 w-full bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity mt-auto"
           >
             Разместить объект <ArrowRight className="w-3 h-3" />

@@ -13,7 +13,6 @@ import RoomsSheet, { roomsDisplayLabel } from "@/components/mobile/RoomsSheet";
 import type { PropertySegment } from "@/config/propertySegments";
 import { buildCatalogUrl } from "@/lib/catalogLinks";
 import { cn } from "@/lib/utils";
-import { COMPANY } from "@/config/company";
 
 const ROOM_FILTER_TYPES = new Set([
   "Квартира",
@@ -90,13 +89,11 @@ export default function MobileHomeSearch() {
   return (
     <section className="lg:hidden bg-[#E8F4FF] dark:bg-primary/10 px-4 pt-[4.5rem] pb-4">
       <div className="mb-3 text-center">
-        <h1 className="font-display text-2xl font-bold text-foreground tracking-tight">
-          {COMPANY.brand}
+        <h1 className="font-display text-2xl font-bold text-foreground tracking-tight leading-snug">
+          <span className="text-primary">Жилая и коммерческая</span>{" "}
+          недвижимость в Иркутске и области
         </h1>
-        <p className="mt-1 text-sm font-medium text-foreground/90">
-          У вас вся недвижимость региона?{" "}
-          <span className="text-primary font-semibold">Дада, тут!</span>
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">Здесь есть все.</p>
       </div>
       <div className="rounded-xl bg-card shadow-sm p-3 space-y-2">
         <div className="flex items-center justify-between gap-2">

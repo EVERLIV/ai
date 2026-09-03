@@ -101,7 +101,7 @@ export function getMainNavMegaMenus(
   ).filter((t) => t !== "Земля" && t !== "Участок");
 
   const listRent = placementCtaPath("residential", "rent", isLoggedIn);
-  const listSale = placementCtaPath("residential", "sale", isLoggedIn);
+  const listSale = placementCtaPath("residential", "rent", isLoggedIn);
   const listCommercial = placementCtaPath("commercial", "rent", isLoggedIn);
   const listLand = placementCtaPath("land", "rent", isLoggedIn);
 
@@ -160,14 +160,6 @@ export function getMainNavMegaMenus(
               title: "Сдать",
               links: [
                 { label: "Сдать квартиру или дом", href: listRent },
-                {
-                  label: "Передать в управление",
-                  href: placementCtaPath(
-                    "residential",
-                    "management",
-                    isLoggedIn,
-                  ),
-                },
               ],
             },
           ],
@@ -245,14 +237,6 @@ export function getMainNavMegaMenus(
               title: "Продать",
               links: [
                 { label: "Продать жильё", href: listSale },
-                {
-                  label: "Передать в управление",
-                  href: placementCtaPath(
-                    "residential",
-                    "management",
-                    isLoggedIn,
-                  ),
-                },
               ],
             },
           ],

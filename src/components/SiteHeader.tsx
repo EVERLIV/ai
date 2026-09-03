@@ -43,7 +43,7 @@ type SubItem = {
 const COMPANY_SUBMENU: SubItem[] = [
   {
     label: "О нас",
-    desc: "История, команда и ценности ДАДАТУТ",
+    desc: "Зачем мы делаем каталог для жителей и малого бизнеса региона",
     href: "/about",
     icon: Info,
   },

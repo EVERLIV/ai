@@ -4,7 +4,6 @@ import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import heroImg from "@/assets/hero-warehouses.jpg";
 import LocationPickerModal from "@/components/LocationPickerModal";
-import { COMPANY } from "@/config/company";
 import type { PropertySegment } from "@/config/propertySegments";
 import { useCountUp } from "@/hooks/useCountUp";
 import { useProperties } from "@/hooks/useProperties";
@@ -175,16 +174,13 @@ export default function HeroSection() {
           className={`max-w-2xl mx-auto text-center ${isVisible ? "animate-fade-in-up" : "opacity-0"}`}
         >
           <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight tracking-[0.015em] mb-4">
-            {COMPANY.brand}
-          </h1>
-          <p className="text-lg sm:text-xl font-display font-semibold text-foreground mb-3 max-w-lg mx-auto leading-snug">
-            У вас вся недвижимость региона?
+            <span className="text-primary">Жилая и коммерческая</span>{" "}
+            недвижимость
             <br />
-            <span className="text-primary">Дада, тут!</span>
-          </p>
+            в Иркутске и области
+          </h1>
           <p className="text-sm sm:text-base text-muted-foreground mb-8 max-w-lg mx-auto leading-relaxed">
-            Жилая и коммерческая недвижимость Иркутска и области — бесплатный
-            каталог без переплат на агрегаторах
+            Здесь есть все.
           </p>
 
           <div

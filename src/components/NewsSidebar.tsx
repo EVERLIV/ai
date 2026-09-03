@@ -99,14 +99,13 @@ export default function NewsSidebar() {
             Для собственников
           </p>
           <h4 className="font-display text-base font-bold text-background mb-1">
-            Сдайте объект за 14 дней
+            Разместите объект бесплатно
           </h4>
           <p className="text-[11px] text-background/75 leading-relaxed mb-4">
-            Профессиональный маркетинг, проверенные арендаторы, юридическое
-            сопровождение — всё включено.
+            Объявление в каталоге за 0 ₽ — заявки приходят в личный кабинет.
           </p>
           <Link
-            to="/list-property?mode=management"
+            to="/list-property?mode=rent"
             className="flex items-center justify-center gap-1.5 h-9 w-full bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity mt-auto"
           >
             Разместить объект <ArrowRight className="w-3 h-3" />

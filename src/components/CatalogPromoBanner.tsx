@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import ctaRentOutBg from "@/assets/cta-rent-out.jpg";
 import residentialBannerDomnd from "@/assets/residential-banner-domnd.png";
 import residentialBannerFree from "@/assets/residential-banner-free.jpg";
 import type { PropertySegment } from "@/config/propertySegments";
@@ -25,7 +24,6 @@ export function getCatalogPromos(
   const isResidential = segment === "residential";
   const isLand = segment === "land";
   const listFree = listPropertyPath(segment, "rent");
-  const listManage = listPropertyPath(segment, "management");
 
   const listingFree: CatalogPromoItem = {
     id: "list-free",
@@ -46,17 +44,6 @@ export function getCatalogPromos(
     footer: "ДАДАТУТ · для собственников",
   };
 
-  const listingManage: CatalogPromoItem = {
-    id: "list-manage",
-    href: listManage,
-    image: ctaRentOutBg,
-    badge: "Управление",
-    title: "Сдайте объект за 14 дней",
-    subtitle: "Презентация, показы и сделка с проверенными арендаторами",
-    cta: "Оставить заявку",
-    footer: "ДАДАТУТ · управление",
-  };
-
   const partnerDomnd: CatalogPromoItem = {
     id: "partner-domnd",
     href: "https://domnd.ru/",
@@ -70,9 +57,9 @@ export function getCatalogPromos(
   };
 
   if (isResidential) {
-    return [listingFree, partnerDomnd, listingManage];
+    return [listingFree, partnerDomnd];
   }
-  return [listingFree, listingManage, partnerDomnd];
+  return [listingFree, partnerDomnd];
 }
 
 /** Стабильный выбор промо по индексу слота и дню — без «прыжков» при каждом рендере. */

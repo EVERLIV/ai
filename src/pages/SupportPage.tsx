@@ -56,7 +56,7 @@ const SIDEBAR_SECTIONS: { title: string; links: SidebarLink[] }[] = [
         label: `Рекомендации (${RECOMMENDATION_TECH_NAME})`,
         icon: Sparkles,
       },
-      { href: "/about", label: "О компании", icon: BookOpen },
+      { href: "/about", label: "О нас", icon: BookOpen },
     ],
   },
 ];

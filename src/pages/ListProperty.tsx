@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ListPropertyBlock from "@/components/ListPropertyBlock";
 import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
@@ -20,10 +20,8 @@ export default function ListProperty({
   segment = "commercial",
 }: ListPropertyProps) {
   const navigate = useNavigate();
-  const { search } = useLocation();
   const { user } = useAuth();
   const { data: profile } = useProfile();
-  const mode = new URLSearchParams(search).get("mode");
   const isResidential = segment === "residential";
   const isLand = segment === "land";
   const segmentHome = SEGMENT_ROUTES[segment].home;
@@ -34,12 +32,7 @@ export default function ListProperty({
     navigate("/account#properties", { replace: true });
   }, [user, profile?.account_type, navigate]);
 
-  const modeLabel =
-    mode === "rent"
-      ? "Сдать бесплатно"
-      : mode === "management"
-        ? "Передать в управление"
-        : "Выберите способ";
+  const modeLabel = "Сдать бесплатно";
 
   const basePath = listPropertyPath(segment);
   const placeLabel = isLand

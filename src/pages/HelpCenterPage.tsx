@@ -52,8 +52,8 @@ const articles = [
   {
     href: "/about",
     icon: BookOpen,
-    title: "О компании",
-    desc: `Кто стоит за ${COMPANY.brand} и как мы работаем с объектами.`,
+    title: "О нас",
+    desc: `Зачем ${COMPANY.brand} делает каталог жилья и помещений для региона.`,
   },
   {
     href: "/support",

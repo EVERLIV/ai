@@ -9,7 +9,8 @@ export function listPropertyPath(
   mode?: ListPropertyMode,
 ): string {
   const base = SEGMENT_ROUTES[segment].listProperty;
-  return mode ? `${base}?mode=${mode}` : base;
+  // management больше не используется — всегда ведём на бесплатное размещение
+  return mode ? `${base}?mode=rent` : base;
 }
 
 /** Полноэкранный ИИ-чат создания объявления */
@@ -21,8 +22,8 @@ export function loginToSmartListingPath(segment: PropertySegment): string {
   return `/auth?redirect=${encodeURIComponent(listPropertyAiPath(segment))}`;
 }
 
-export function modeToRequestType(mode: ListPropertyMode): RequestType {
-  return mode === "rent" ? "free_listing" : "management";
+export function modeToRequestType(_mode: ListPropertyMode): RequestType {
+  return "free_listing";
 }
 
 export function accountPropertiesPath(
