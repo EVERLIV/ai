@@ -156,10 +156,10 @@ export default function CatalogMiniMap({
 
   return (
     <div className="rounded-lg border border-border overflow-hidden bg-muted">
-      <div className="px-3 py-2 border-b border-border/60 text-[11px] text-muted-foreground">
+      <div className="px-2 py-1.5 border-b border-border/60 text-[10px] text-muted-foreground">
         <strong className="text-foreground">{withCoords.length}</strong> на карте
       </div>
-      <div className="relative h-[240px]">
+      <div className="relative h-[140px] 2xl:h-[160px]">
         <div ref={containerRef} className="absolute inset-0" />
         {mapFailed && (
           <YandexMapFallback

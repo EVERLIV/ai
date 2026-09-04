@@ -757,7 +757,7 @@ export default function PropertyAIChat({
               </div>
             )}
 
-            {/* Turnstile остаётся смонтированным после intro — для заявки из чата */}
+            {/* reCAPTCHA v3: honeypot смонтирован для заявки из чата */}
             <div className="hidden" aria-hidden>
               <BotGuard />
             </div>

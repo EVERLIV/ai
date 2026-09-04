@@ -7,7 +7,7 @@ import {
   sendOpsTelegram,
   type LeadPayload,
 } from "../_shared/leadOps.ts";
-import { verifyTurnstileToken } from "../_shared/turnstile.ts";
+import { verifyRecaptchaToken } from "../_shared/recaptcha.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
       return json({ ok: true, skipped: "bot" });
     }
 
-    const captcha = await verifyTurnstileToken(
+    const captcha = await verifyRecaptchaToken(
       body.captcha_token,
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
         req.headers.get("cf-connecting-ip"),

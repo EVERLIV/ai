@@ -39,7 +39,7 @@ export default function CatalogResultsSidebar({
   return (
     <aside
       className={cn(
-        "hidden lg:flex flex-col gap-3 w-[280px] xl:w-[300px] shrink-0 sticky top-[148px] self-start max-h-[calc(100vh-160px)] overflow-y-auto pb-4",
+        "hidden xl:flex flex-col gap-2.5 w-[180px] 2xl:w-[200px] shrink-0 sticky top-[116px] self-start pb-4",
         className,
       )}
     >
@@ -52,16 +52,16 @@ export default function CatalogResultsSidebar({
 
       {topDistricts.length > 0 && (
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            Районы в выдаче
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+            Районы
           </p>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1">
             {topDistricts.map((d) => (
               <button
                 key={d}
                 type="button"
                 onClick={() => onDistrictSelect(d)}
-                className="px-2 py-0.5 rounded text-[11px] font-medium border border-border/80 bg-background text-foreground hover:border-foreground/30 transition-colors"
+                className="px-1.5 py-0.5 rounded text-[10px] font-medium border border-border/80 bg-background text-foreground hover:border-foreground/30 transition-colors max-w-full truncate"
               >
                 {d}
               </button>
@@ -73,10 +73,10 @@ export default function CatalogResultsSidebar({
       <button
         type="button"
         onClick={onNotifyClick}
-        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors text-left pt-1"
+        className="inline-flex items-start gap-1.5 text-[10px] leading-snug text-muted-foreground hover:text-foreground transition-colors text-left pt-0.5"
       >
-        <Bell className="w-3.5 h-3.5 shrink-0" />
-        Уведомить о новых объектах
+        <Bell className="w-3 h-3 shrink-0 mt-0.5" />
+        Уведомить о новых
       </button>
     </aside>
   );

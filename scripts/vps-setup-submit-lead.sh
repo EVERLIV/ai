@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Полная настройка submit-lead + Turnstile на VPS.
+# Полная настройка submit-lead + Google reCAPTCHA v3 на VPS.
 # Запуск из любой папки (обычно вы уже в /opt/supabase):
 #
 #   curl -fsSL https://raw.githubusercontent.com/EVERLIV/ai/main/scripts/vps-setup-submit-lead.sh | bash
@@ -8,8 +8,8 @@
 # Или после git clone:
 #   bash /opt/arendacity-ai/scripts/vps-setup-submit-lead.sh
 #
-# С ключом Turnstile сразу:
-#   TURNSTILE_SECRET_KEY='0x4AAAAAA...' bash vps-setup-submit-lead.sh
+# С ключом reCAPTCHA сразу:
+#   RECAPTCHA_SECRET_KEY='6L...' bash vps-setup-submit-lead.sh
 #
 set -euo pipefail
 
@@ -18,7 +18,7 @@ REPO_DIR="${REPO_DIR:-/opt/arendacity-ai}"
 REPO_URL="${REPO_URL:-https://github.com/EVERLIV/ai.git}"
 BRANCH="${BRANCH:-main}"
 
-echo "=== ArendaCity: submit-lead + Turnstile ==="
+echo "=== ArendaCity: submit-lead + reCAPTCHA v3 ==="
 echo "Supabase: $SUPABASE_DIR"
 echo "Repo:     $REPO_DIR"
 echo
@@ -34,12 +34,12 @@ else
   git -C "$REPO_DIR" pull origin "$BRANCH"
 fi
 
-# 2. Turnstile secret
-KEY="${TURNSTILE_SECRET_KEY:-}"
+# 2. reCAPTCHA secret
+KEY="${RECAPTCHA_SECRET_KEY:-}"
 if [ -z "$KEY" ]; then
   echo
-  echo "Вставьте Turnstile Secret Key (0x4AAAAAA...) и Enter:"
-  read -rsp "TURNSTILE_SECRET_KEY: " KEY
+  echo "Вставьте Google reCAPTCHA Secret Key и Enter:"
+  read -rsp "RECAPTCHA_SECRET_KEY: " KEY
   echo
 fi
 
@@ -48,7 +48,7 @@ if [ -z "$KEY" ]; then
   exit 1
 fi
 
-bash "$REPO_DIR/scripts/set-turnstile-secret.sh" "$KEY"
+bash "$REPO_DIR/scripts/set-recaptcha-secret.sh" "$KEY"
 
 # 3. Копируем все edge-функции в volumes
 echo
@@ -58,12 +58,5 @@ SRC_DIR="$REPO_DIR/supabase/functions" \
   bash "$REPO_DIR/scripts/deploy-functions.sh"
 
 echo
-echo "=== Готово ==="
-echo
-echo "Проверка (должен быть JSON с error «Укажите имя», не 404/500):"
-echo "  curl -s -X POST https://api.arendacity.com/functions/v1/submit-lead \\"
-echo "    -H 'Content-Type: application/json' \\"
-echo "    -d '{\"name\":\"T\",\"phone\":\"+7900\",\"source\":\"website\"}'"
-echo
-echo "Логи функций:"
-echo "  cd $SUPABASE_DIR && docker compose logs --tail=30 functions"
+echo "Готово. Фронт: VITE_RECAPTCHA_SITE_KEY в .env + rebuild."
+echo "Cloudflare Bot Fight: docs/SETUP_CLOUDFLARE_BOTS.md"

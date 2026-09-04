@@ -100,7 +100,7 @@ const App = () => {
                       path="/kommercheskaya"
                       element={<Navigate to="/" replace />}
                     />
-                    <Route path="/catalog" element={<Catalog />} />
+                    <Route path="/catalog" element={<Catalog showSuggestions />} />
                     <Route path="/property/:id" element={<PropertyDetail />} />
                     <Route path="/compare" element={<ComparePage />} />
                     <Route path="/auth" element={<Auth />} />

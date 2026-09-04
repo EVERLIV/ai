@@ -1,10 +1,10 @@
 /**
- * Приём заявок с сайта: honeypot + Turnstile → crm_leads → Telegram.
+ * Приём заявок с сайта: honeypot + Google reCAPTCHA v3 → crm_leads → Telegram.
  *
  * Secrets (Supabase / VPS):
  *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  *   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
- *   TURNSTILE_SECRET_KEY — secret key Cloudflare Turnstile (если пусто — captcha не проверяется)
+ *   RECAPTCHA_SECRET_KEY — secret key Google reCAPTCHA v3 (если пусто — captcha не проверяется)
  */
 
 import {
@@ -14,7 +14,7 @@ import {
   sendOpsTelegram,
   type LeadPayload,
 } from "../_shared/leadOps.ts";
-import { verifyTurnstileToken } from "../_shared/turnstile.ts";
+import { verifyRecaptchaToken } from "../_shared/recaptcha.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       return json({ ok: true, skipped: "bot" });
     }
 
-    const captcha = await verifyTurnstileToken(
+    const captcha = await verifyRecaptchaToken(
       body.captcha_token,
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
         req.headers.get("cf-connecting-ip"),

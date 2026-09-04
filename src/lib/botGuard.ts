@@ -1,14 +1,20 @@
-/** Cloudflare Turnstile — публичный site key (в .env с префиксом VITE_) */
-export const TURNSTILE_SITE_KEY =
-  import.meta.env.VITE_TURNSTILE_SITE_KEY?.trim() || "";
+/** Google reCAPTCHA v3 — публичный site key (в .env с префиксом VITE_) */
+export const RECAPTCHA_SITE_KEY =
+  import.meta.env.VITE_RECAPTCHA_SITE_KEY?.trim() || "";
 
-export const isTurnstileEnabled = () => Boolean(TURNSTILE_SITE_KEY);
+export const isRecaptchaEnabled = () => Boolean(RECAPTCHA_SITE_KEY);
+
+/** @deprecated use isRecaptchaEnabled */
+export const isTurnstileEnabled = isRecaptchaEnabled;
 
 export type BotGuardPayload = {
   website: string;
   captchaToken: string | null;
 };
 
-export const TURNSTILE_SCRIPT_ID = "cf-turnstile-script";
-export const TURNSTILE_SCRIPT_SRC =
-  "https://challenges.cloudflare.com/turnstile/v0/api.js";
+export const RECAPTCHA_SCRIPT_ID = "google-recaptcha-v3-script";
+export const RECAPTCHA_ACTION = "submit_lead";
+
+export function recaptchaScriptSrc(siteKey: string): string {
+  return `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(siteKey)}`;
+}

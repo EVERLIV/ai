@@ -6,33 +6,36 @@ set -e
 cd /opt/supabase
 mkdir -p volumes/functions/submit-lead volumes/functions/_shared
 
-# --- Turnstile secret (НЕ коммитить в git; только env на сервере) ---
+# --- reCAPTCHA secret (НЕ коммитить в git; только env на сервере) ---
 ENV_FILE="volumes/functions/.env"
-KEY="${TURNSTILE_SECRET_KEY:-}"
+KEY="${RECAPTCHA_SECRET_KEY:-}"
 if [ -z "$KEY" ]; then
-  echo "Вставьте Turnstile Secret Key из Cloudflare и Enter:"
-  read -rsp "TURNSTILE_SECRET_KEY: " KEY
+  echo "Вставьте Google reCAPTCHA Secret Key и Enter:"
+  read -rsp "RECAPTCHA_SECRET_KEY: " KEY
   echo
 fi
 if [ -z "$KEY" ]; then
-  echo "Ошибка: пустой TURNSTILE_SECRET_KEY" >&2
+  echo "Ошибка: пустой RECAPTCHA_SECRET_KEY" >&2
   exit 1
 fi
 touch "$ENV_FILE"
-grep -v '^TURNSTILE_SECRET_KEY=' "$ENV_FILE" > /tmp/fn.env || true
-echo "TURNSTILE_SECRET_KEY=$KEY" >> /tmp/fn.env
+grep -v '^RECAPTCHA_SECRET_KEY=' "$ENV_FILE" | grep -v '^TURNSTILE_SECRET_KEY=' > /tmp/fn.env || true
+echo "RECAPTCHA_SECRET_KEY=$KEY" >> /tmp/fn.env
 mv /tmp/fn.env "$ENV_FILE"
 chmod 600 "$ENV_FILE"
-echo "OK: Turnstile key записан"
+echo "OK: reCAPTCHA key записан"
 
-# --- turnstile.ts ---
-cat > volumes/functions/_shared/turnstile.ts << 'ENDFILE'
-/** Cloudflare Turnstile — server-side verify */
-export async function verifyTurnstileToken(
+# --- recaptcha.ts ---
+cat > volumes/functions/_shared/recaptcha.ts << 'ENDFILE'
+/** Google reCAPTCHA v3 — server-side verify */
+const SCORE_THRESHOLD = 0.5;
+const EXPECTED_ACTION = "submit_lead";
+
+export async function verifyRecaptchaToken(
   token: string | null | undefined,
   remoteIp?: string | null,
 ): Promise<{ ok: boolean; error?: string }> {
-  const secret = Deno.env.get("TURNSTILE_SECRET_KEY")?.trim();
+  const secret = Deno.env.get("RECAPTCHA_SECRET_KEY")?.trim();
   if (!secret) {
     return { ok: true };
   }
@@ -41,33 +44,53 @@ export async function verifyTurnstileToken(
     return { ok: false, error: "Не пройдена проверка captcha" };
   }
 
-  const body: Record<string, string> = {
-    secret,
-    response: token.trim(),
-  };
-  if (remoteIp?.trim()) body.remoteip = remoteIp.trim();
+  const body = new URLSearchParams();
+  body.set("secret", secret);
+  body.set("response", token.trim());
+  if (remoteIp?.trim()) body.set("remoteip", remoteIp.trim());
 
-  const resp = await fetch(
-    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-  );
+  try {
+    const resp = await fetch(
+      "https://www.google.com/recaptcha/api/siteverify",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+        signal: AbortSignal.timeout(5_000),
+      },
+    );
 
-  const data = (await resp.json().catch(() => ({}))) as {
-    success?: boolean;
-    "error-codes"?: string[];
-  };
+    const data = (await resp.json().catch(() => ({}))) as {
+      success?: boolean;
+      score?: number;
+      action?: string;
+      "error-codes"?: string[];
+    };
 
-  if (!resp.ok || !data.success) {
-    const codes = data["error-codes"]?.join(", ") || `HTTP ${resp.status}`;
-    console.warn("turnstile verify failed:", codes);
-    return { ok: false, error: "Проверка captcha не пройдена" };
+    if (!resp.ok || !data.success) {
+      const codes = data["error-codes"]?.join(", ") || `HTTP ${resp.status}`;
+      console.warn("recaptcha verify failed:", codes);
+      return { ok: false, error: "Проверка captcha не пройдена" };
+    }
+
+    if (typeof data.score === "number" && data.score < SCORE_THRESHOLD) {
+      console.warn("recaptcha low score:", data.score);
+      return { ok: false, error: "Проверка captcha не пройдена" };
+    }
+
+    if (data.action && data.action !== EXPECTED_ACTION) {
+      console.warn("recaptcha unexpected action:", data.action);
+      return { ok: false, error: "Проверка captcha не пройдена" };
+    }
+
+    return { ok: true };
+  } catch (e) {
+    console.warn(
+      "recaptcha verify skipped (network):",
+      e instanceof Error ? e.message : e,
+    );
+    return { ok: true };
   }
-
-  return { ok: true };
 }
 ENDFILE
 
@@ -227,7 +250,7 @@ import {
   sendOpsTelegram,
   type LeadPayload,
 } from "../_shared/leadOps.ts";
-import { verifyTurnstileToken } from "../_shared/turnstile.ts";
+import { verifyRecaptchaToken } from "../_shared/recaptcha.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -259,7 +282,7 @@ Deno.serve(async (req) => {
       return json({ ok: true, skipped: "bot" });
     }
 
-    const captcha = await verifyTurnstileToken(
+    const captcha = await verifyRecaptchaToken(
       body.captcha_token,
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
         req.headers.get("cf-connecting-ip"),
@@ -328,7 +351,7 @@ ENDFILE
 
 echo "OK: файлы созданы"
 ls -la volumes/functions/submit-lead/
-ls -la volumes/functions/_shared/turnstile.ts volumes/functions/_shared/leadOps.ts
+ls -la volumes/functions/_shared/recaptcha.ts volumes/functions/_shared/leadOps.ts
 
 docker compose up -d functions --force-recreate
 sleep 4

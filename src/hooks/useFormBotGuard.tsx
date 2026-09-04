@@ -6,10 +6,11 @@ import {
   useRef,
 } from "react";
 import {
-  isTurnstileEnabled,
-  TURNSTILE_SCRIPT_ID,
-  TURNSTILE_SCRIPT_SRC,
-  TURNSTILE_SITE_KEY,
+  isRecaptchaEnabled,
+  RECAPTCHA_ACTION,
+  RECAPTCHA_SCRIPT_ID,
+  RECAPTCHA_SITE_KEY,
+  recaptchaScriptSrc,
   type BotGuardPayload,
 } from "@/lib/botGuard";
 
@@ -28,30 +29,34 @@ export type FormBotGuardHandle = {
 
 let scriptPromise: Promise<void> | null = null;
 
-function loadTurnstileScript(): Promise<void> {
+function loadRecaptchaScript(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
-  if (window.turnstile) return Promise.resolve();
+  if (!RECAPTCHA_SITE_KEY) return Promise.resolve();
+  if (window.grecaptcha?.execute) return Promise.resolve();
   if (scriptPromise) return scriptPromise;
 
   scriptPromise = new Promise((resolve, reject) => {
-    const existing = document.getElementById(TURNSTILE_SCRIPT_ID);
+    const existing = document.getElementById(RECAPTCHA_SCRIPT_ID);
     if (existing) {
       existing.addEventListener("load", () => resolve(), { once: true });
       existing.addEventListener(
         "error",
-        () => reject(new Error("Turnstile script failed")),
+        () => reject(new Error("reCAPTCHA script failed")),
         { once: true },
       );
+      if (window.grecaptcha?.execute) {
+        resolve();
+      }
       return;
     }
 
     const script = document.createElement("script");
-    script.id = TURNSTILE_SCRIPT_ID;
-    script.src = TURNSTILE_SCRIPT_SRC;
+    script.id = RECAPTCHA_SCRIPT_ID;
+    script.src = recaptchaScriptSrc(RECAPTCHA_SITE_KEY);
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Turnstile script failed"));
+    script.onerror = () => reject(new Error("reCAPTCHA script failed"));
     document.head.appendChild(script);
   }).catch((e) => {
     scriptPromise = null;
@@ -63,136 +68,82 @@ function loadTurnstileScript(): Promise<void> {
 
 const TOKEN_TIMEOUT_MS = 12_000;
 
+function executeRecaptcha(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error("reCAPTCHA timeout"));
+    }, TOKEN_TIMEOUT_MS);
+
+    const finish = (fn: () => void) => {
+      clearTimeout(timeout);
+      try {
+        fn();
+      } catch (e) {
+        reject(e instanceof Error ? e : new Error("reCAPTCHA failed"));
+      }
+    };
+
+    loadRecaptchaScript()
+      .then(() => {
+        if (!window.grecaptcha) {
+          finish(() => reject(new Error("reCAPTCHA unavailable")));
+          return;
+        }
+        window.grecaptcha.ready(() => {
+          window
+            .grecaptcha!.execute(RECAPTCHA_SITE_KEY, {
+              action: RECAPTCHA_ACTION,
+            })
+            .then((token) => {
+              finish(() => {
+                if (!token) reject(new Error("Empty reCAPTCHA token"));
+                else resolve(token);
+              });
+            })
+            .catch((e) => {
+              finish(() =>
+                reject(
+                  e instanceof Error ? e : new Error("reCAPTCHA execute failed"),
+                ),
+              );
+            });
+        });
+      })
+      .catch((e) => {
+        finish(() =>
+          reject(e instanceof Error ? e : new Error("reCAPTCHA load failed")),
+        );
+      });
+  });
+}
+
 const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
   function FormBotGuardInner(_props, ref) {
     const honeypotRef = useRef<HTMLInputElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const widgetIdRef = useRef<string | null>(null);
-    const tokenRef = useRef<string | null>(null);
-    const pendingRef = useRef<{
-      resolve: (token: string) => void;
-      reject: (error: Error) => void;
-    } | null>(null);
-    const captchaEnabled = isTurnstileEnabled();
-
-    const settleToken = useCallback((next: string) => {
-      tokenRef.current = next;
-      pendingRef.current?.resolve(next);
-      pendingRef.current = null;
-    }, []);
-
-    const clearToken = useCallback((message?: string) => {
-      tokenRef.current = null;
-      if (message && pendingRef.current) {
-        pendingRef.current.reject(new Error(message));
-        pendingRef.current = null;
-      }
-    }, []);
+    const captchaEnabled = isRecaptchaEnabled();
 
     useImperativeHandle(
       ref,
       () => ({
         getHoneypot: () => honeypotRef.current?.value?.trim() || "",
-        ensureToken: () => {
-          if (widgetIdRef.current && window.turnstile) {
-            try {
-              const live = window.turnstile.getResponse(widgetIdRef.current);
-              if (live) {
-                tokenRef.current = live;
-                return Promise.resolve(live);
-              }
-            } catch {
-              /* empty */
-            }
-          }
-
-          if (tokenRef.current) return Promise.resolve(tokenRef.current);
-          if (!widgetIdRef.current || !window.turnstile) {
-            return Promise.reject(new Error("Turnstile unavailable"));
-          }
-
-          return new Promise<string>((resolve, reject) => {
-            const timeout = setTimeout(() => {
-              pendingRef.current = null;
-              reject(new Error("Turnstile timeout"));
-            }, TOKEN_TIMEOUT_MS);
-
-            pendingRef.current = {
-              resolve: (token) => {
-                clearTimeout(timeout);
-                resolve(token);
-              },
-              reject: (error) => {
-                clearTimeout(timeout);
-                reject(error);
-              },
-            };
-
-            try {
-              window.turnstile!.reset(widgetIdRef.current!);
-            } catch (e) {
-              clearTimeout(timeout);
-              pendingRef.current = null;
-              reject(
-                e instanceof Error ? e : new Error("Turnstile reset failed"),
-              );
-            }
-          });
-        },
+        ensureToken: () => executeRecaptcha(),
         reset: () => {
           if (honeypotRef.current) honeypotRef.current.value = "";
-          tokenRef.current = null;
-          pendingRef.current = null;
-          if (widgetIdRef.current && window.turnstile) {
-            try {
-              window.turnstile.reset(widgetIdRef.current);
-            } catch {
-              /* empty */
-            }
-          }
         },
       }),
       [],
     );
 
     useEffect(() => {
-      if (!captchaEnabled || !containerRef.current) return;
+      if (!captchaEnabled) return;
       let cancelled = false;
-
-      loadTurnstileScript()
-        .then(() => {
-          if (cancelled || !containerRef.current || !window.turnstile) return;
-          if (widgetIdRef.current) {
-            try {
-              window.turnstile.remove(widgetIdRef.current);
-            } catch {
-              /* empty */
-            }
-          }
-
-          widgetIdRef.current = window.turnstile.render(containerRef.current, {
-            sitekey: TURNSTILE_SITE_KEY,
-            theme: "light",
-            size: "flexible",
-            callback: settleToken,
-            "expired-callback": () => clearToken("Turnstile expired"),
-            "error-callback": () => clearToken("Turnstile error"),
-          });
-        })
-        .catch((e) => console.warn("Turnstile load error:", e));
-
+      loadRecaptchaScript().catch((e) => {
+        if (!cancelled) console.warn("reCAPTCHA load error:", e);
+      });
       return () => {
         cancelled = true;
-        if (widgetIdRef.current && window.turnstile) {
-          try {
-            window.turnstile.remove(widgetIdRef.current);
-          } catch {
-            /* empty */
-          }
-          widgetIdRef.current = null;
-        }
       };
-    }, [captchaEnabled, settleToken, clearToken]);
+    }, [captchaEnabled]);
 
     return (
       <div className="space-y-2">
@@ -205,14 +156,6 @@ const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
           aria-hidden
           className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden opacity-0 pointer-events-none"
         />
-        {captchaEnabled ? (
-          <div className="rounded-md border border-input bg-muted/20 px-2 py-1.5">
-            <div
-              ref={containerRef}
-              className="flex min-h-[65px] w-full items-center justify-center overflow-hidden [&_iframe]:max-w-full"
-            />
-          </div>
-        ) : null}
       </div>
     );
   },
@@ -221,10 +164,7 @@ const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
 export function useFormBotGuard() {
   const ref = useRef<FormBotGuardHandle>(null);
 
-  const BotGuard = useCallback(
-    () => <FormBotGuardInner ref={ref} />,
-    [],
-  );
+  const BotGuard = useCallback(() => <FormBotGuardInner ref={ref} />, []);
 
   const ensureGuard = useCallback(async (): Promise<BotGuardPayload> => {
     const website = ref.current?.getHoneypot() ?? "";
@@ -232,16 +172,14 @@ export function useFormBotGuard() {
       throw new BotGuardError("bot");
     }
 
-    if (!isTurnstileEnabled()) {
+    if (!isRecaptchaEnabled()) {
       return { website: "", captchaToken: null };
     }
 
     try {
       const captchaToken = await ref.current!.ensureToken();
       if (!captchaToken) {
-        throw new BotGuardError(
-          "Подтвердите, что вы не робот",
-        );
+        throw new BotGuardError("Подтвердите, что вы не робот");
       }
       return { website: "", captchaToken };
     } catch (e) {

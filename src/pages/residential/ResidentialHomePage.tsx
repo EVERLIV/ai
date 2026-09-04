@@ -21,6 +21,7 @@ import ListPropertyBlock from "@/components/ListPropertyBlock";
 import PropertyGridCard, {
   PropertyGridCardSkeleton,
 } from "@/components/PropertyGridCard";
+import SegmentSuggestionTiles from "@/components/SegmentSuggestionTiles";
 import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
@@ -29,6 +30,7 @@ import { useProperties } from "@/hooks/useProperties";
 import { buildCatalogUrl } from "@/lib/catalogLinks";
 import { getResidentialMarket } from "@/lib/propertyResidential";
 import { getPropertySegment, propertyMatchesTypes } from "@/lib/propertyTypes";
+import { getResidentialSuggestions } from "@/lib/segmentSuggestions";
 
 const categories: {
   title: string;
@@ -213,6 +215,11 @@ export default function ResidentialHomePage() {
           </div>
         </div>
       </section>
+
+      <SegmentSuggestionTiles
+        title="Предложения"
+        items={getResidentialSuggestions()}
+      />
 
       <section className="bg-background py-10">
         <div className="container mx-auto px-4 lg:px-8">
