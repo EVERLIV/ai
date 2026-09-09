@@ -97,4 +97,4 @@ docker logs --tail 80 $(docker ps --format '{{.Names}}' | grep -iE 'auth|gotrue'
 1. `telnet smtp.timeweb.ru 587` — если не коннектится, откройте исходящий 587 в файрволе Timeweb.
 2. Неверный пароль ящика — GoTrue пишет `535` / `authentication failed` в логах.
 3. Шаблоны 404 — темы всё равно уйдут, тело может быть дефолтным, пока не задеплоен `public/email/`.
-4. Gmail иногда режет письма без SPF. В DNS домена `arendacity.com` добавьте SPF Timeweb (из панели почты).
+4. Gmail иногда режет письма без SPF. В DNS домена (Timeweb DNS, не Cloudflare) добавьте SPF Timeweb из панели почты. См. [SETUP_DNS_TIMEWEB.md](SETUP_DNS_TIMEWEB.md).

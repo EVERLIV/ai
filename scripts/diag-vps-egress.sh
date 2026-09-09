@@ -6,12 +6,12 @@ dig +short api.anthropic.com 2>/dev/null || nslookup api.anthropic.com 2>/dev/nu
 echo
 echo "== TCP 443 =="
 timeout 8 bash -c 'echo >/dev/tcp/api.anthropic.com/443' && echo TCP_OK || echo TCP_FAIL
-timeout 8 bash -c 'echo >/dev/tcp/1.1.1.1/443' && echo CF_TCP_OK || echo CF_TCP_FAIL
+timeout 8 bash -c 'echo >/dev/tcp/8.8.8.8/443' && echo GOOGLE_DNS_TCP_OK || echo GOOGLE_DNS_TCP_FAIL
 echo
-echo "== HTTPS HEAD google =="
+echo "== HTTPS HEAD =="
 python3 - <<'PY'
 import urllib.request, time
-for url in ["https://www.google.com","https://cloudflare.com","https://api.anthropic.com"]:
+for url in ["https://www.google.com","https://api.timeweb.cloud","https://api.anthropic.com"]:
   t0=time.time()
   try:
     urllib.request.urlopen(url, timeout=8)

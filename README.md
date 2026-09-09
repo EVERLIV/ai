@@ -39,3 +39,5 @@ npm test
 Do not use the **Frontend / React** app type. Timeweb's generated image runs `apt-get install curl` from `deb.debian.org`, which their builders often cannot reach.
 
 Use the repo `Dockerfile` (type **Dockerfile**, port 8080). Details: [docs/SETUP_TIMEWEB.md](docs/SETUP_TIMEWEB.md).
+
+DNS/TLS without Cloudflare (blocked in RF): [docs/SETUP_DNS_TIMEWEB.md](docs/SETUP_DNS_TIMEWEB.md). 152-FZ stack notes: [docs/FZ152_STACK.md](docs/FZ152_STACK.md).

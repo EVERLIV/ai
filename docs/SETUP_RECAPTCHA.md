@@ -5,7 +5,7 @@
 1. **Honeypot** — скрытое поле (боты заполняют, люди нет)
 2. **reCAPTCHA v3** — невидимая оценка Google (если задан secret key)
 
-Вход на сайт — отдельно через Cloudflare Bot Fight: [SETUP_CLOUDFLARE_BOTS.md](./SETUP_CLOUDFLARE_BOTS.md).
+Вход на сайт не требует отдельного WAF: DNS и TLS — Timeweb, см. [SETUP_DNS_TIMEWEB.md](./SETUP_DNS_TIMEWEB.md).
 
 ---
 

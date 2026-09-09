@@ -59,4 +59,4 @@ SRC_DIR="$REPO_DIR/supabase/functions" \
 
 echo
 echo "Готово. Фронт: VITE_RECAPTCHA_SITE_KEY в .env + rebuild."
-echo "Cloudflare Bot Fight: docs/SETUP_CLOUDFLARE_BOTS.md"
+echo "DNS/TLS: docs/SETUP_DNS_TIMEWEB.md"

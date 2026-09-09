@@ -33,7 +33,7 @@ Google reCAPTCHA v3 — запись secret key на VPS.
 После скрипта задеплойте функцию submit-lead:
   bash scripts/deploy-functions.sh
 
-См. docs/SETUP_RECAPTCHA.md и docs/SETUP_CLOUDFLARE_BOTS.md
+См. docs/SETUP_RECAPTCHA.md и docs/SETUP_DNS_TIMEWEB.md
 EOF
 }
 

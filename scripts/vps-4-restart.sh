@@ -41,8 +41,7 @@ Deno.serve(async (req) => {
 
     const captcha = await verifyRecaptchaToken(
       body.captcha_token,
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-        req.headers.get("cf-connecting-ip"),
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
     );
     if (!captcha.ok) {
       return json({ error: captcha.error || "Captcha failed" }, 400);

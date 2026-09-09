@@ -22,4 +22,6 @@ DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install
 4. Переменные `VITE_*` задавать не обязательно: публичные значения уже в `.env.production` и попадают в бандл на этапе `npm run build`.
 5. Привяжите домен к новому приложению и выключите автодеплой у старого Frontend-приложения.
 
+DNS и SSL **без Cloudflare** (NS Timeweb, Let's Encrypt): [SETUP_DNS_TIMEWEB.md](SETUP_DNS_TIMEWEB.md). Cloudflare в РФ блокируется — прокси на сайте оставлять нельзя.
+
 Порт контейнера — `8080` (`EXPOSE 8080`). Так ожидает App Platform, если в Dockerfile не указан другой `EXPOSE`.
