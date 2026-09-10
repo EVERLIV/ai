@@ -31,7 +31,7 @@ function ensureVkidConfig() {
 }
 
 /**
- * Виджет VK ID / OK / Mail.ru (OAuthList).
+ * VK ID One Tap («Продолжить как…»).
  * Документация: https://id.vk.ru/about/business/go/docs/en
  */
 export default function VkidOAuthList({
@@ -54,13 +54,12 @@ export default function VkidOAuthList({
     if (!isVkidEnabled() || !containerRef.current) return;
 
     ensureVkidConfig();
-    // redirectUrl может отличаться (localhost vs prod) — обновляем
     VKID.Config.update({ redirectUrl: getVkidRedirectUrl() });
 
     const container = containerRef.current;
     container.innerHTML = "";
 
-    const oAuth = new VKID.OAuthList();
+    const oneTap = new VKID.OneTap();
 
     const handleSuccess = async (payload: {
       code?: string;
@@ -102,11 +101,14 @@ export default function VkidOAuthList({
       }
     };
 
-    oAuth
+    oneTap
       .render({
         container,
-        oauthList: [VKID.OAuthName.VK, VKID.OAuthName.OK, VKID.OAuthName.MAIL],
-        styles: { height: 44, borderRadius: 4 },
+        showAlternativeLogin: true,
+        styles: {
+          height: 44,
+          borderRadius: 8,
+        },
         scheme: VKID.Scheme.LIGHT,
         lang: VKID.Languages.RUS,
       })
@@ -120,7 +122,7 @@ export default function VkidOAuthList({
             : "Ошибка виджета VK ID";
         onErrorRef.current?.(msg);
       })
-      .on(VKID.OAuthListInternalEvents.LOGIN_SUCCESS, handleSuccess);
+      .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, handleSuccess);
 
     setReady(true);
 
@@ -145,7 +147,9 @@ export default function VkidOAuthList({
       </div>
       <div
         ref={containerRef}
-        className={`min-h-[44px] ${busy ? "pointer-events-none opacity-60" : ""}`}
+        className={`mx-auto w-full max-w-[360px] min-h-[44px] ${
+          busy ? "pointer-events-none opacity-60" : ""
+        }`}
         aria-busy={busy}
       />
       {busy && (

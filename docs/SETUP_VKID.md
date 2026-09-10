@@ -87,8 +87,8 @@ curl -sS -X POST https://api.arendacity.com/functions/v1/auth-vkid \
 
 ## 4. Поток
 
-1. Пользователь жмёт VK / OK / Mail на `/auth`
-2. SDK (`OAuthList` + `exchangeCode`) → `access_token`
+1. Пользователь жмёт One Tap («Продолжить как…») на `/auth`
+2. SDK (`OneTap` + `exchangeCode`) → `access_token`
 3. `POST /functions/v1/auth-vkid` → проверка user_info → find/create user → `token_hash`
 4. Клиент: `supabase.auth.verifyOtp({ type: 'email', token_hash })` → сессия
 
