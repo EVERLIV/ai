@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { InvisibleSmartCaptcha } from "@yandex/smart-captcha";
+import { SmartCaptcha } from "@yandex/smart-captcha";
 import {
   isCaptchaEnabled,
   SMARTCAPTCHA_SITE_KEY,
@@ -25,27 +25,12 @@ export type FormBotGuardHandle = {
   reset: () => void;
 };
 
-const TOKEN_TIMEOUT_MS = 45_000;
-
 const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
   function FormBotGuardInner(_props, ref) {
     const honeypotRef = useRef<HTMLInputElement>(null);
     const captchaEnabled = isCaptchaEnabled();
-    const [visible, setVisible] = useState(false);
+    const [token, setToken] = useState("");
     const [resetKey, setResetKey] = useState(0);
-    const pendingRef = useRef<{
-      resolve: (token: string) => void;
-      reject: (err: Error) => void;
-      timer: ReturnType<typeof setTimeout>;
-    } | null>(null);
-
-    const clearPending = useCallback((err?: Error) => {
-      const pending = pendingRef.current;
-      if (!pending) return;
-      clearTimeout(pending.timer);
-      pendingRef.current = null;
-      if (err) pending.reject(err);
-    }, []);
 
     useImperativeHandle(
       ref,
@@ -55,56 +40,21 @@ const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
           if (!captchaEnabled || !SMARTCAPTCHA_SITE_KEY) {
             return Promise.reject(new Error("SmartCaptcha disabled"));
           }
-          return new Promise<string>((resolve, reject) => {
-            clearPending();
-            const timer = setTimeout(() => {
-              pendingRef.current = null;
-              setVisible(false);
-              reject(new Error("SmartCaptcha timeout"));
-            }, TOKEN_TIMEOUT_MS);
-            pendingRef.current = { resolve, reject, timer };
-            // remount + visible, чтобы InvisibleSmartCaptcha снова вызвал execute
-            setResetKey((k) => k + 1);
-            setVisible(true);
-          });
+          if (!token.trim()) {
+            return Promise.reject(
+              new Error("Подтвердите, что вы не робот"),
+            );
+          }
+          return Promise.resolve(token.trim());
         },
         reset: () => {
           if (honeypotRef.current) honeypotRef.current.value = "";
-          clearPending();
-          setVisible(false);
+          setToken("");
           setResetKey((k) => k + 1);
         },
       }),
-      [captchaEnabled, clearPending],
+      [captchaEnabled, token],
     );
-
-    const handleSuccess = useCallback(
-      (token: string) => {
-        const pending = pendingRef.current;
-        if (pending) {
-          clearTimeout(pending.timer);
-          pendingRef.current = null;
-          pending.resolve(token);
-        }
-        setVisible(false);
-      },
-      [],
-    );
-
-    const handleChallengeHidden = useCallback(() => {
-      setVisible(false);
-      clearPending(new Error("SmartCaptcha cancelled"));
-    }, [clearPending]);
-
-    const handleNetworkError = useCallback(() => {
-      setVisible(false);
-      clearPending(new Error("SmartCaptcha network error"));
-    }, [clearPending]);
-
-    const handleJavascriptError = useCallback(() => {
-      setVisible(false);
-      clearPending(new Error("SmartCaptcha error"));
-    }, [clearPending]);
 
     return (
       <div className="space-y-2">
@@ -118,17 +68,16 @@ const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
           className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden opacity-0 pointer-events-none"
         />
         {captchaEnabled && SMARTCAPTCHA_SITE_KEY ? (
-          <InvisibleSmartCaptcha
-            key={resetKey}
-            sitekey={SMARTCAPTCHA_SITE_KEY}
-            visible={visible}
-            onSuccess={handleSuccess}
-            onChallengeHidden={handleChallengeHidden}
-            onNetworkError={handleNetworkError}
-            onJavascriptError={handleJavascriptError}
-            language="ru"
-            hideShield={false}
-          />
+          <div className="pt-1">
+            <SmartCaptcha
+              key={resetKey}
+              sitekey={SMARTCAPTCHA_SITE_KEY}
+              language="ru"
+              onSuccess={setToken}
+              onTokenExpired={() => setToken("")}
+              onNetworkError={() => setToken("")}
+            />
+          </div>
         ) : null}
       </div>
     );
@@ -159,7 +108,9 @@ export function useFormBotGuard() {
     } catch (e) {
       if (e instanceof BotGuardError) throw e;
       throw new BotGuardError(
-        "Не удалось проверить защиту. Попробуйте ещё раз.",
+        e instanceof Error
+          ? e.message
+          : "Не удалось проверить защиту. Попробуйте ещё раз.",
       );
     }
   }, []);

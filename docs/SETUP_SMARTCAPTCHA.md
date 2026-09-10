@@ -57,8 +57,8 @@ SMARTCAPTCHA_SERVER_KEY='...' bash scripts/set-smartcaptcha-secret.sh
 
 ## 4. Как это работает
 
-- Пакет: `@yandex/smart-captcha` → компонент `InvisibleSmartCaptcha`
-- При отправке формы / Auth: `visible` → token → `captcha_token` / `verify-captcha`
+- Пакет: `@yandex/smart-captcha` → видимый компонент `SmartCaptcha` (чекбокс «Я не робот»)
+- Пользователь отмечает капчу → token → `captcha_token` / `verify-captcha`
 - Сервер: `POST https://smartcaptcha.yandexcloud.net/validate`
 - HTTP ≠ 200 от Яндекса → заявка **не блокируется** (рекомендация Yandex)
 
