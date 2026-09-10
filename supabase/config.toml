@@ -54,3 +54,9 @@ verify_jwt = false
 
 [functions.auth-vkid]
 verify_jwt = false
+
+[functions.verify-captcha]
+verify_jwt = false
+
+[functions.submit-lead]
+verify_jwt = false

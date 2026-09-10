@@ -18,6 +18,7 @@ import RegisterRoleWizard, {
 import VkidOAuthList from "@/components/auth/VkidOAuthList";
 import BrandMark from "@/components/BrandMark";
 import SeoHead from "@/components/SeoHead";
+import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import { useToast } from "@/hooks/use-toast";
 import {
   ACCOUNT_TYPE_LABELS,
@@ -25,6 +26,7 @@ import {
 } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { describeAuthError } from "@/lib/authErrors";
+import { assertCaptchaOk } from "@/lib/verifyCaptcha";
 import { isVkidEnabled } from "@/lib/vkid";
 
 type RegisterStep = RegisterWizardStep | "form";
@@ -108,6 +110,12 @@ export default function Auth() {
     kind: string;
   } | null>(null);
   const [resendBusy, setResendBusy] = useState(false);
+  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
+
+  const runAuthCaptcha = async () => {
+    const bot = await ensureGuard();
+    await assertCaptchaOk(bot.captchaToken, bot.website);
+  };
 
   const resetRegisterWizard = () => {
     setRegisterStep(initialRegisterStep(search, inviteToken));
@@ -158,45 +166,78 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     setLoginHint(null);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setLoading(false);
-    if (error) {
-      const hint = describeAuthError(error);
-      setLoginHint(hint);
-      toast({
-        title: hint.title,
-        description: hint.description,
-        variant: "destructive",
+    try {
+      await runAuthCaptcha();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-    } else {
-      navigate(redirectTo);
+      if (error) {
+        const hint = describeAuthError(error);
+        setLoginHint(hint);
+        toast({
+          title: hint.title,
+          description: hint.description,
+          variant: "destructive",
+        });
+      } else {
+        navigate(redirectTo);
+      }
+    } catch (err) {
+      if (err instanceof BotGuardError && err.message === "bot") return;
+      const message =
+        err instanceof BotGuardError || err instanceof Error
+          ? err.message
+          : "Не удалось проверить защиту. Попробуйте ещё раз.";
+      if (message !== "bot") {
+        toast({
+          title: "Ошибка входа",
+          description: message,
+          variant: "destructive",
+        });
+      }
+    } finally {
+      resetGuard();
+      setLoading(false);
     }
   };
 
   const handleResendConfirmation = async () => {
     if (!email.trim()) return;
     setResendBusy(true);
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email: email.trim(),
-    });
-    setResendBusy(false);
-    if (error) {
-      const hint = describeAuthError(error);
+    try {
+      await runAuthCaptcha();
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim(),
+      });
+      if (error) {
+        const hint = describeAuthError(error);
+        toast({
+          title: hint.title,
+          description: hint.description,
+          variant: "destructive",
+        });
+        return;
+      }
       toast({
-        title: hint.title,
-        description: hint.description,
+        title: "Письмо отправлено",
+        description: `Проверьте ${email.trim()} и папку «Спам».`,
+      });
+    } catch (err) {
+      if (err instanceof BotGuardError && err.message === "bot") return;
+      toast({
+        title: "Ошибка",
+        description:
+          err instanceof Error
+            ? err.message
+            : "Не удалось проверить защиту. Попробуйте ещё раз.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      resetGuard();
+      setResendBusy(false);
     }
-    toast({
-      title: "Письмо отправлено",
-      description: `Проверьте ${email.trim()} и папку «Спам».`,
-    });
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -205,6 +246,7 @@ export default function Auth() {
     if (!selectedType) return;
     setLoading(true);
     try {
+      await runAuthCaptcha();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -244,7 +286,6 @@ export default function Auth() {
             : error.message,
           variant: "destructive",
         });
-        setLoading(false);
         return;
       }
 
@@ -268,13 +309,23 @@ export default function Auth() {
 
       // Иначе — стандартный экран "проверьте почту"
       setRegistered(true);
-    } catch (_err: any) {
+    } catch (err) {
+      if (err instanceof BotGuardError && err.message === "bot") return;
+      if (err instanceof BotGuardError || (err instanceof Error && /робот|captcha|защит/i.test(err.message))) {
+        toast({
+          title: "Ошибка регистрации",
+          description: err.message,
+          variant: "destructive",
+        });
+        return;
+      }
       toast({
         title: "Ошибка соединения",
         description: "Не удалось подключиться к серверу. Попробуйте позже.",
         variant: "destructive",
       });
     } finally {
+      resetGuard();
       setLoading(false);
     }
   };
@@ -407,6 +458,7 @@ export default function Auth() {
                   </button>
                 </div>
               </div>
+              <BotGuard />
               <button
                 type="submit"
                 disabled={loading}
@@ -672,6 +724,7 @@ export default function Auth() {
                   </button>
                 </div>
               </div>
+              <BotGuard />
               <button
                 type="submit"
                 disabled={loading}

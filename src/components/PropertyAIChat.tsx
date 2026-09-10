@@ -757,7 +757,7 @@ export default function PropertyAIChat({
               </div>
             )}
 
-            {/* reCAPTCHA v3: honeypot смонтирован для заявки из чата */}
+            {/* SmartCaptcha / honeypot смонтирован для заявки из чата */}
             <div className="hidden" aria-hidden>
               <BotGuard />
             </div>

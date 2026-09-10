@@ -72,7 +72,7 @@ export default function SpecialistContactForm({
           : err instanceof Error
             ? err.message
             : "Не удалось отправить";
-      if (/captcha|робот|reCAPTCHA|recaptcha/i.test(message)) {
+      if (/captcha|робот|reCAPTCHA|recaptcha|smartcaptcha/i.test(message)) {
         resetGuard();
       }
       setError(message);

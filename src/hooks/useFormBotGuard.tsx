@@ -1,16 +1,14 @@
 import {
   forwardRef,
   useCallback,
-  useEffect,
   useImperativeHandle,
   useRef,
+  useState,
 } from "react";
+import { InvisibleSmartCaptcha } from "@yandex/smart-captcha";
 import {
-  isRecaptchaEnabled,
-  RECAPTCHA_ACTION,
-  RECAPTCHA_SCRIPT_ID,
-  RECAPTCHA_SITE_KEY,
-  recaptchaScriptSrc,
+  isCaptchaEnabled,
+  SMARTCAPTCHA_SITE_KEY,
   type BotGuardPayload,
 } from "@/lib/botGuard";
 
@@ -27,123 +25,86 @@ export type FormBotGuardHandle = {
   reset: () => void;
 };
 
-let scriptPromise: Promise<void> | null = null;
-
-function loadRecaptchaScript(): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-  if (!RECAPTCHA_SITE_KEY) return Promise.resolve();
-  if (window.grecaptcha?.execute) return Promise.resolve();
-  if (scriptPromise) return scriptPromise;
-
-  scriptPromise = new Promise((resolve, reject) => {
-    const existing = document.getElementById(RECAPTCHA_SCRIPT_ID);
-    if (existing) {
-      existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener(
-        "error",
-        () => reject(new Error("reCAPTCHA script failed")),
-        { once: true },
-      );
-      if (window.grecaptcha?.execute) {
-        resolve();
-      }
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.id = RECAPTCHA_SCRIPT_ID;
-    script.src = recaptchaScriptSrc(RECAPTCHA_SITE_KEY);
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("reCAPTCHA script failed"));
-    document.head.appendChild(script);
-  }).catch((e) => {
-    scriptPromise = null;
-    throw e;
-  });
-
-  return scriptPromise;
-}
-
-const TOKEN_TIMEOUT_MS = 12_000;
-
-function executeRecaptcha(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error("reCAPTCHA timeout"));
-    }, TOKEN_TIMEOUT_MS);
-
-    const finish = (fn: () => void) => {
-      clearTimeout(timeout);
-      try {
-        fn();
-      } catch (e) {
-        reject(e instanceof Error ? e : new Error("reCAPTCHA failed"));
-      }
-    };
-
-    loadRecaptchaScript()
-      .then(() => {
-        if (!window.grecaptcha) {
-          finish(() => reject(new Error("reCAPTCHA unavailable")));
-          return;
-        }
-        window.grecaptcha.ready(() => {
-          window
-            .grecaptcha!.execute(RECAPTCHA_SITE_KEY, {
-              action: RECAPTCHA_ACTION,
-            })
-            .then((token) => {
-              finish(() => {
-                if (!token) reject(new Error("Empty reCAPTCHA token"));
-                else resolve(token);
-              });
-            })
-            .catch((e) => {
-              finish(() =>
-                reject(
-                  e instanceof Error ? e : new Error("reCAPTCHA execute failed"),
-                ),
-              );
-            });
-        });
-      })
-      .catch((e) => {
-        finish(() =>
-          reject(e instanceof Error ? e : new Error("reCAPTCHA load failed")),
-        );
-      });
-  });
-}
+const TOKEN_TIMEOUT_MS = 45_000;
 
 const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
   function FormBotGuardInner(_props, ref) {
     const honeypotRef = useRef<HTMLInputElement>(null);
-    const captchaEnabled = isRecaptchaEnabled();
+    const captchaEnabled = isCaptchaEnabled();
+    const [visible, setVisible] = useState(false);
+    const [resetKey, setResetKey] = useState(0);
+    const pendingRef = useRef<{
+      resolve: (token: string) => void;
+      reject: (err: Error) => void;
+      timer: ReturnType<typeof setTimeout>;
+    } | null>(null);
+
+    const clearPending = useCallback((err?: Error) => {
+      const pending = pendingRef.current;
+      if (!pending) return;
+      clearTimeout(pending.timer);
+      pendingRef.current = null;
+      if (err) pending.reject(err);
+    }, []);
 
     useImperativeHandle(
       ref,
       () => ({
         getHoneypot: () => honeypotRef.current?.value?.trim() || "",
-        ensureToken: () => executeRecaptcha(),
+        ensureToken: () => {
+          if (!captchaEnabled || !SMARTCAPTCHA_SITE_KEY) {
+            return Promise.reject(new Error("SmartCaptcha disabled"));
+          }
+          return new Promise<string>((resolve, reject) => {
+            clearPending();
+            const timer = setTimeout(() => {
+              pendingRef.current = null;
+              setVisible(false);
+              reject(new Error("SmartCaptcha timeout"));
+            }, TOKEN_TIMEOUT_MS);
+            pendingRef.current = { resolve, reject, timer };
+            // remount + visible, чтобы InvisibleSmartCaptcha снова вызвал execute
+            setResetKey((k) => k + 1);
+            setVisible(true);
+          });
+        },
         reset: () => {
           if (honeypotRef.current) honeypotRef.current.value = "";
+          clearPending();
+          setVisible(false);
+          setResetKey((k) => k + 1);
         },
       }),
+      [captchaEnabled, clearPending],
+    );
+
+    const handleSuccess = useCallback(
+      (token: string) => {
+        const pending = pendingRef.current;
+        if (pending) {
+          clearTimeout(pending.timer);
+          pendingRef.current = null;
+          pending.resolve(token);
+        }
+        setVisible(false);
+      },
       [],
     );
 
-    useEffect(() => {
-      if (!captchaEnabled) return;
-      let cancelled = false;
-      loadRecaptchaScript().catch((e) => {
-        if (!cancelled) console.warn("reCAPTCHA load error:", e);
-      });
-      return () => {
-        cancelled = true;
-      };
-    }, [captchaEnabled]);
+    const handleChallengeHidden = useCallback(() => {
+      setVisible(false);
+      clearPending(new Error("SmartCaptcha cancelled"));
+    }, [clearPending]);
+
+    const handleNetworkError = useCallback(() => {
+      setVisible(false);
+      clearPending(new Error("SmartCaptcha network error"));
+    }, [clearPending]);
+
+    const handleJavascriptError = useCallback(() => {
+      setVisible(false);
+      clearPending(new Error("SmartCaptcha error"));
+    }, [clearPending]);
 
     return (
       <div className="space-y-2">
@@ -156,6 +117,19 @@ const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
           aria-hidden
           className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden opacity-0 pointer-events-none"
         />
+        {captchaEnabled && SMARTCAPTCHA_SITE_KEY ? (
+          <InvisibleSmartCaptcha
+            key={resetKey}
+            sitekey={SMARTCAPTCHA_SITE_KEY}
+            visible={visible}
+            onSuccess={handleSuccess}
+            onChallengeHidden={handleChallengeHidden}
+            onNetworkError={handleNetworkError}
+            onJavascriptError={handleJavascriptError}
+            language="ru"
+            hideShield={false}
+          />
+        ) : null}
       </div>
     );
   },
@@ -172,7 +146,7 @@ export function useFormBotGuard() {
       throw new BotGuardError("bot");
     }
 
-    if (!isRecaptchaEnabled()) {
+    if (!isCaptchaEnabled()) {
       return { website: "", captchaToken: null };
     }
 

@@ -1,12 +1,18 @@
-/** Google reCAPTCHA v3 — server-side verify */
-const SCORE_THRESHOLD = 0.5;
-const EXPECTED_ACTION = "submit_lead";
+/**
+ * Яндекс SmartCaptcha — server-side validate.
+ * Docs: https://yandex.cloud/docs/smartcaptcha/concepts/validation
+ *
+ * Secrets: SMARTCAPTCHA_SERVER_KEY (или устаревший RECAPTCHA_SECRET_KEY)
+ */
 
-export async function verifyRecaptchaToken(
+export async function verifySmartCaptchaToken(
   token: string | null | undefined,
   remoteIp?: string | null,
 ): Promise<{ ok: boolean; error?: string }> {
-  const secret = Deno.env.get("RECAPTCHA_SECRET_KEY")?.trim();
+  const secret =
+    Deno.env.get("SMARTCAPTCHA_SERVER_KEY")?.trim() ||
+    Deno.env.get("RECAPTCHA_SECRET_KEY")?.trim() ||
+    "";
   if (!secret) {
     return { ok: true };
   }
@@ -17,50 +23,43 @@ export async function verifyRecaptchaToken(
 
   const body = new URLSearchParams();
   body.set("secret", secret);
-  body.set("response", token.trim());
-  if (remoteIp?.trim()) body.set("remoteip", remoteIp.trim());
+  body.set("token", token.trim());
+  if (remoteIp?.trim()) body.set("ip", remoteIp.trim());
 
   try {
-    const resp = await fetch(
-      "https://www.google.com/recaptcha/api/siteverify",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-        signal: AbortSignal.timeout(5_000),
-      },
-    );
+    const resp = await fetch("https://smartcaptcha.yandexcloud.net/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      signal: AbortSignal.timeout(5_000),
+    });
+
+    // При сбое сервиса Яндекс рекомендует не блокировать пользователя
+    if (resp.status !== 200) {
+      console.warn("smartcaptcha HTTP", resp.status);
+      return { ok: true };
+    }
 
     const data = (await resp.json().catch(() => ({}))) as {
-      success?: boolean;
-      score?: number;
-      action?: string;
-      "error-codes"?: string[];
+      status?: string;
+      message?: string;
+      host?: string;
     };
 
-    if (!resp.ok || !data.success) {
-      const codes = data["error-codes"]?.join(", ") || `HTTP ${resp.status}`;
-      console.warn("recaptcha verify failed:", codes);
-      return { ok: false, error: "Проверка captcha не пройдена" };
+    if (data.status === "ok") {
+      return { ok: true };
     }
 
-    if (typeof data.score === "number" && data.score < SCORE_THRESHOLD) {
-      console.warn("recaptcha low score:", data.score);
-      return { ok: false, error: "Проверка captcha не пройдена" };
-    }
-
-    if (data.action && data.action !== EXPECTED_ACTION) {
-      console.warn("recaptcha unexpected action:", data.action);
-      return { ok: false, error: "Проверка captcha не пройдена" };
-    }
-
-    return { ok: true };
+    console.warn("smartcaptcha failed:", data.message || data.status);
+    return { ok: false, error: "Проверка captcha не пройдена" };
   } catch (e) {
-    // VPS может не иметь доступа к Google — клиент уже получил токен в браузере
     console.warn(
-      "recaptcha verify skipped (network):",
+      "smartcaptcha verify skipped (network):",
       e instanceof Error ? e.message : e,
     );
     return { ok: true };
   }
 }
+
+/** @deprecated use verifySmartCaptchaToken */
+export const verifyRecaptchaToken = verifySmartCaptchaToken;

@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import BrandMark from "@/components/BrandMark";
 import SeoHead from "@/components/SeoHead";
+import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { assertCaptchaOk } from "@/lib/verifyCaptcha";
 
 export default function ResetPassword() {
   const [step, setStep] = useState<"request" | "new-password">("request");
@@ -16,6 +18,7 @@ export default function ResetPassword() {
   const [sent, setSent] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
 
   useEffect(() => {
     // Supabase вставляет токен в хэш после перехода по ссылке сброса
@@ -28,18 +31,34 @@ export default function ResetPassword() {
   const handleRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setLoading(false);
-    if (error) {
+    try {
+      const bot = await ensureGuard();
+      await assertCaptchaOk(bot.captchaToken, bot.website);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) {
+        toast({
+          title: "Ошибка",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        setSent(true);
+      }
+    } catch (err) {
+      if (err instanceof BotGuardError && err.message === "bot") return;
       toast({
         title: "Ошибка",
-        description: error.message,
+        description:
+          err instanceof Error
+            ? err.message
+            : "Не удалось проверить защиту. Попробуйте ещё раз.",
         variant: "destructive",
       });
-    } else {
-      setSent(true);
+    } finally {
+      resetGuard();
+      setLoading(false);
     }
   };
 
@@ -132,6 +151,7 @@ export default function ResetPassword() {
                     className="w-full h-11 px-4 bg-muted border border-border text-sm focus:outline-none focus:border-primary transition-colors"
                   />
                 </div>
+                <BotGuard />
                 <button
                   type="submit"
                   disabled={loading}

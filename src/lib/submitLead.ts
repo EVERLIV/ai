@@ -1,4 +1,4 @@
-import { isRecaptchaEnabled } from "@/lib/botGuard";
+import { isCaptchaEnabled } from "@/lib/botGuard";
 import { getEdgeFunctionUrl } from "@/lib/edgeFunctions";
 
 export type LeadInput = {
@@ -15,7 +15,7 @@ export type LeadInput = {
   manager_id?: string | null;
   /** Honeypot — заполняют только боты */
   website?: string;
-  /** Google reCAPTCHA v3 token */
+  /** Яндекс SmartCaptcha token */
   captchaToken?: string | null;
 };
 
@@ -25,7 +25,7 @@ function getSubmitLeadUrl(): string {
 
 /**
  * Отправляет заявку через edge function submit-lead:
- * honeypot + reCAPTCHA v3 на сервере → crm_leads → Telegram.
+ * honeypot + Яндекс SmartCaptcha на сервере → crm_leads → Telegram.
  */
 export async function submitLead(
   input: LeadInput,
@@ -53,7 +53,7 @@ export async function submitLead(
     return { id: null };
   }
 
-  if (isRecaptchaEnabled() && !input.captchaToken?.trim()) {
+  if (isCaptchaEnabled() && !input.captchaToken?.trim()) {
     throw new Error("Подтвердите, что вы не робот");
   }
 

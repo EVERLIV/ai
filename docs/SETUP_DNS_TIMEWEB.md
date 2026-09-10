@@ -49,7 +49,7 @@ Cloudflare в РФ часто **не открывается**: посетите�
 ## 4. Cloudflare Dashboard (после cutover)
 
 1. Выключите proxy (если ещё включён) и удалите A/CNAME на Cloudflare, чтобы не путать.
-2. Bot Fight / WAF больше не используются. Заявки защищает reCAPTCHA: [SETUP_RECAPTCHA.md](SETUP_RECAPTCHA.md).
+2. Bot Fight / WAF больше не используются. Заявки защищает Яндекс SmartCaptcha: [SETUP_SMARTCAPTCHA.md](SETUP_SMARTCAPTCHA.md).
 
 ## 5. Проверка из РФ
 

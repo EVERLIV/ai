@@ -1,10 +1,11 @@
 /**
- * Приём заявок с сайта: honeypot + Google reCAPTCHA v3 → crm_leads → Telegram.
+ * Приём заявок с сайта: honeypot + Яндекс SmartCaptcha → crm_leads → Telegram.
  *
  * Secrets (Supabase / VPS):
  *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  *   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
- *   RECAPTCHA_SECRET_KEY — secret key Google reCAPTCHA v3 (если пусто — captcha не проверяется)
+ *   SMARTCAPTCHA_SERVER_KEY — server key Яндекс SmartCaptcha (если пусто — captcha не проверяется)
+ *   (алиас: RECAPTCHA_SECRET_KEY)
  */
 
 import {
