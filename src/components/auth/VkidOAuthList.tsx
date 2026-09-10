@@ -16,18 +16,74 @@ type Props = {
   className?: string;
 };
 
+type VkidWidgetError = {
+  code?: string | number;
+  text?: string;
+  error?: string;
+  error_description?: string;
+  details?: unknown;
+};
+
 let configReady = false;
 
+function randomPkceString(length = 64): string {
+  const alphabet =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+  const bytes = crypto.getRandomValues(new Uint8Array(length));
+  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
+}
+
 function ensureVkidConfig() {
-  if (configReady || !isVkidEnabled()) return;
-  VKID.Config.init({
-    app: VK_ID_APP_ID,
-    redirectUrl: getVkidRedirectUrl(),
-    responseMode: VKID.ConfigResponseMode.Callback,
-    source: VKID.ConfigSource.LOWCODE,
-    scope: "email phone",
-  });
-  configReady = true;
+  if (!isVkidEnabled()) return;
+  const redirectUrl = getVkidRedirectUrl();
+  if (!configReady) {
+    VKID.Config.init({
+      app: VK_ID_APP_ID,
+      redirectUrl,
+      responseMode: VKID.ConfigResponseMode.Callback,
+      source: VKID.ConfigSource.LOWCODE,
+      scope: "email phone",
+      state: randomPkceString(32),
+      codeVerifier: randomPkceString(64),
+    });
+    configReady = true;
+    return;
+  }
+  VKID.Config.update({ redirectUrl });
+}
+
+/** Ошибки, которые не нужно показывать пользователю (шум виджета / отмена). */
+function isBenignVkidError(error: VkidWidgetError): boolean {
+  const code = String(error.code ?? "").toLowerCase();
+  const text = String(
+    error.text || error.error || error.error_description || "",
+  ).toLowerCase();
+  const blob = `${code} ${text}`;
+
+  return (
+    code.includes("timeoutexceeded") ||
+    code.includes("timeout") ||
+    blob.includes("timeout") ||
+    blob.includes("not authorized") ||
+    blob.includes("not_authorized") ||
+    blob.includes("newtabhasbeenclosed") ||
+    blob.includes("closed") ||
+    blob.includes("abort") ||
+    blob.includes("cancel")
+  );
+}
+
+function formatVkidError(error: unknown): string {
+  if (!error || typeof error !== "object") {
+    return "Не удалось загрузить вход через VK";
+  }
+  const e = error as VkidWidgetError;
+  return (
+    e.text ||
+    e.error_description ||
+    e.error ||
+    (e.code != null ? `Ошибка VK ID (${e.code})` : "Ошибка виджета VK ID")
+  );
 }
 
 /**
@@ -53,18 +109,15 @@ export default function VkidOAuthList({
   useEffect(() => {
     if (!isVkidEnabled() || !containerRef.current) return;
 
-    ensureVkidConfig();
-    VKID.Config.update({ redirectUrl: getVkidRedirectUrl() });
-
+    let alive = true;
+    let oneTap: InstanceType<typeof VKID.OneTap> | null = null;
     const container = containerRef.current;
-    container.innerHTML = "";
-
-    const oneTap = new VKID.OneTap();
 
     const handleSuccess = async (payload: {
       code?: string;
       device_id?: string;
     }) => {
+      if (!alive) return;
       const code = payload.code;
       const deviceId = payload.device_id;
       if (!code || !deviceId) {
@@ -74,6 +127,7 @@ export default function VkidOAuthList({
       setBusy(true);
       try {
         const tokens = await VKID.Auth.exchangeCode(code, deviceId);
+        if (!alive) return;
         let fullName = "";
         let phone = "";
         try {
@@ -91,42 +145,73 @@ export default function VkidOAuthList({
           full_name: fullName || undefined,
           phone: phone || undefined,
         });
+        if (!alive) return;
         onSuccessRef.current();
       } catch (err) {
+        if (!alive) return;
         const msg =
           err instanceof Error ? err.message : "Не удалось войти через VK ID";
         onErrorRef.current?.(msg);
       } finally {
-        setBusy(false);
+        if (alive) setBusy(false);
       }
     };
 
-    oneTap
-      .render({
-        container,
-        showAlternativeLogin: true,
-        styles: {
-          height: 44,
-          borderRadius: 8,
-        },
-        scheme: VKID.Scheme.LIGHT,
-        lang: VKID.Languages.RUS,
-      })
-      .on(VKID.WidgetEvents.ERROR, (error: unknown) => {
-        const msg =
-          typeof error === "object" &&
-          error &&
-          "error" in error &&
-          typeof (error as { error: string }).error === "string"
-            ? (error as { error: string }).error
-            : "Ошибка виджета VK ID";
-        onErrorRef.current?.(msg);
-      })
-      .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, handleSuccess);
+    const mount = () => {
+      if (!alive || !containerRef.current) return;
+      ensureVkidConfig();
+      container.innerHTML = "";
 
-    setReady(true);
+      oneTap = new VKID.OneTap();
+      oneTap
+        .render({
+          container,
+          showAlternativeLogin: true,
+          styles: {
+            height: 44,
+            borderRadius: 8,
+          },
+          scheme: VKID.Scheme.LIGHT,
+          lang: VKID.Languages.RUS,
+        })
+        .on(VKID.WidgetEvents.LOAD, () => {
+          if (alive) setReady(true);
+        })
+        .on(VKID.WidgetEvents.ERROR, (error: unknown) => {
+          if (!alive) return;
+          const parsed = (error || {}) as VkidWidgetError;
+          // Таймаут / размонтирование / «не авторизован в VK» — не пугаем toast'ом
+          if (isBenignVkidError(parsed)) {
+            console.warn("[VK ID]", parsed.code, parsed.text || parsed.error);
+            setReady(true);
+            return;
+          }
+          onErrorRef.current?.(formatVkidError(error));
+        })
+        .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, handleSuccess)
+        .on(VKID.OneTapInternalEvents.NOT_AUTHORIZED, () => {
+          // Обычная ситуация: нет сессии VK — кнопка всё равно показывает полный вход
+          if (alive) setReady(true);
+        });
+
+      // Если LOAD не пришёл — всё равно убираем «Загрузка…»
+      window.setTimeout(() => {
+        if (alive) setReady(true);
+      }, 2500);
+    };
+
+    // Даём React Strict Mode завершить первый unmount, иначе iframe ловит TimeoutExceeded
+    const t = window.setTimeout(mount, 50);
 
     return () => {
+      alive = false;
+      window.clearTimeout(t);
+      try {
+        oneTap?.close?.();
+      } catch {
+        // ignore
+      }
+      oneTap = null;
       container.innerHTML = "";
     };
   }, []);
