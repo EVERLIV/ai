@@ -112,11 +112,11 @@ export default defineConfig(() => ({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.png", "icons/*.png"],
+      includeAssets: ["favicon.png", "apple-touch-icon.png", "icons/*.png"],
       manifest: {
-        name: "ДАДАТУТ — Коммерческая недвижимость",
+        name: "ДАДАТУТ — недвижимость",
         short_name: "ДАДАТУТ",
-        description: "Аренда офисов, складов и торговых площадей в Иркутске",
+        description: "Жилая и коммерческая недвижимость Иркутска и области",
         theme_color: "#8B0015",
         background_color: "#ffffff",
         display: "standalone",
@@ -126,7 +126,7 @@ export default defineConfig(() => ({
           { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
           {
-            src: "/icons/icon-512.png",
+            src: "/icons/icon-512-maskable.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
