@@ -32,7 +32,7 @@ function Segmented({
   return (
     <div
       className={cn(
-        "grid gap-1 rounded-xl bg-muted/70 p-1",
+        "grid gap-0.5 rounded-md bg-muted/70 p-0.5",
         options.length <= 3 ? "grid-cols-3" : "grid-cols-2",
       )}
     >
@@ -42,7 +42,7 @@ function Segmented({
           type="button"
           onClick={() => onChange(o.value)}
           className={cn(
-            "min-w-0 py-1.5 px-1 rounded-lg text-[10px] leading-tight font-medium transition-colors truncate",
+            "min-w-0 py-1.5 px-1 rounded-sm text-[10px] leading-tight font-medium transition-colors truncate",
             value === o.value
               ? "bg-foreground text-background shadow-sm"
               : "text-muted-foreground hover:text-foreground",
@@ -82,7 +82,11 @@ function FilterBlock({
           )}
         />
       </button>
-      {open && <div className="min-w-0 overflow-hidden">{children}</div>}
+      {open && (
+        <div className="min-w-0 overflow-visible px-0.5 -mx-0.5 py-0.5">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
@@ -94,7 +98,6 @@ export type CatalogFiltersSidebarProps = {
   types: string[];
   selectedTypes: string[];
   onToggleType: (t: string) => void;
-  onSetTypes: (types: string[]) => void;
   district: string;
   onOpenLocation: () => void;
   priceMin: number;
@@ -146,7 +149,6 @@ export default function CatalogFiltersSidebar({
   types,
   selectedTypes,
   onToggleType,
-  onSetTypes,
   district,
   onOpenLocation,
   priceMin,
@@ -193,12 +195,12 @@ export default function CatalogFiltersSidebar({
   return (
     <aside
       className={cn(
-        "w-full min-w-0 max-w-full overflow-x-hidden bg-card rounded-xl border border-border/60 p-3",
+        "w-full min-w-0 max-w-full overflow-visible bg-card rounded-md border border-border/60 p-3",
         className,
       )}
     >
-      {/* Верхние селекты как в примере */}
-      <div className="space-y-1.5 mb-3">
+      {/* Тип сделки */}
+      <div className="mb-3">
         <label className="sr-only" htmlFor="catalog-deal-select">
           Тип сделки
         </label>
@@ -207,31 +209,11 @@ export default function CatalogFiltersSidebar({
             id="catalog-deal-select"
             value={dealType}
             onChange={(e) => onDealType(e.target.value)}
-            className="w-full min-w-0 appearance-none h-9 rounded-lg bg-muted/70 border-0 px-2.5 pr-8 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 cursor-pointer"
+            className="w-full min-w-0 appearance-none h-9 rounded-md bg-muted/70 border border-transparent px-2.5 pr-8 text-xs font-medium text-foreground focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25 cursor-pointer"
           >
             {dealOptions.map((d) => (
               <option key={d} value={d}>
                 {d === "Все" ? "Любая сделка" : d}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-        </div>
-
-        <div className="relative min-w-0">
-          <select
-            aria-label="Тип объекта"
-            value={selectedTypes.length === 1 ? selectedTypes[0] : ""}
-            onChange={(e) => {
-              const v = e.target.value;
-              onSetTypes(v ? [v] : []);
-            }}
-            className="w-full min-w-0 appearance-none h-9 rounded-lg bg-muted/70 border-0 px-2.5 pr-8 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 cursor-pointer"
-          >
-            <option value="">Все типы</option>
-            {types.map((t) => (
-              <option key={t} value={t}>
-                {t}
               </option>
             ))}
           </select>
@@ -264,7 +246,7 @@ export default function CatalogFiltersSidebar({
         <button
           type="button"
           onClick={onOpenLocation}
-          className="w-full min-w-0 h-9 rounded-lg bg-muted/70 px-2.5 text-left text-xs truncate focus:outline-none focus:ring-2 focus:ring-primary/25"
+          className="w-full min-w-0 h-9 rounded-md bg-muted/70 border border-transparent px-2.5 text-left text-xs truncate focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25"
         >
           <span
             className={
@@ -288,7 +270,7 @@ export default function CatalogFiltersSidebar({
             onChange={(e) =>
               onPriceMin(e.target.value === "" ? 0 : Number(e.target.value))
             }
-            className="h-9 w-full min-w-0 rounded-lg border-0 bg-muted/70 px-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/25"
+            className="h-9 w-full min-w-0 rounded-md border border-transparent bg-muted/70 px-2 text-xs focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25"
           />
           <input
             type="number"
@@ -302,7 +284,7 @@ export default function CatalogFiltersSidebar({
                   : Number(e.target.value),
               )
             }
-            className="h-9 w-full min-w-0 rounded-lg border-0 bg-muted/70 px-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/25"
+            className="h-9 w-full min-w-0 rounded-md border border-transparent bg-muted/70 px-2 text-xs focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25"
           />
         </div>
       </FilterBlock>
@@ -317,7 +299,7 @@ export default function CatalogFiltersSidebar({
             onChange={(e) =>
               onAreaMin(e.target.value === "" ? 0 : Number(e.target.value))
             }
-            className="h-9 w-full min-w-0 rounded-lg border-0 bg-muted/70 px-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/25"
+            className="h-9 w-full min-w-0 rounded-md border border-transparent bg-muted/70 px-2 text-xs focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25"
           />
           <input
             type="number"
@@ -331,7 +313,7 @@ export default function CatalogFiltersSidebar({
                   : Number(e.target.value),
               )
             }
-            className="h-9 w-full min-w-0 rounded-lg border-0 bg-muted/70 px-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/25"
+            className="h-9 w-full min-w-0 rounded-md border border-transparent bg-muted/70 px-2 text-xs focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25"
           />
         </div>
       </FilterBlock>
@@ -549,7 +531,7 @@ export default function CatalogFiltersSidebar({
           value={searchQuery}
           onChange={(e) => onSearchQuery(e.target.value)}
           placeholder="Что важно"
-          className="w-full min-w-0 h-9 rounded-lg bg-muted/70 border-0 px-2.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
+          className="w-full min-w-0 h-9 rounded-md bg-muted/70 border border-transparent px-2.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25 focus:ring-offset-0"
         />
       </FilterBlock>
 
@@ -557,7 +539,7 @@ export default function CatalogFiltersSidebar({
         <button
           type="button"
           onClick={onReset}
-          className="mt-1 w-full h-9 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+          className="mt-1 w-full h-9 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
         >
           Сбросить фильтры
         </button>

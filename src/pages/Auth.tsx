@@ -15,6 +15,7 @@ import RegisterRoleWizard, {
   REGISTER_HEADINGS,
   type RegisterWizardStep,
 } from "@/components/auth/RegisterRoleWizard";
+import VkidOAuthList from "@/components/auth/VkidOAuthList";
 import BrandMark from "@/components/BrandMark";
 import SeoHead from "@/components/SeoHead";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +25,7 @@ import {
 } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { describeAuthError } from "@/lib/authErrors";
+import { isVkidEnabled } from "@/lib/vkid";
 
 type RegisterStep = RegisterWizardStep | "form";
 
@@ -447,6 +449,19 @@ export default function Auth() {
                 </Link>
               </div>
             </form>
+            {isVkidEnabled() && (
+              <VkidOAuthList
+                accountType="seeker"
+                onSuccess={() => navigate(redirectTo)}
+                onError={(message) =>
+                  toast({
+                    title: "Вход через VK",
+                    description: message,
+                    variant: "destructive",
+                  })
+                }
+              />
+            )}
             <p className="text-xs text-muted-foreground mt-6 text-center">
               Нет аккаунта?{" "}
               <button
@@ -677,6 +692,19 @@ export default function Auth() {
                 </a>
               </p>
             </form>
+            {isVkidEnabled() && !inviteToken && (
+              <VkidOAuthList
+                accountType={accountType ?? "seeker"}
+                onSuccess={() => navigate(redirectTo)}
+                onError={(message) =>
+                  toast({
+                    title: "Регистрация через VK",
+                    description: message,
+                    variant: "destructive",
+                  })
+                }
+              />
+            )}
             <p className="text-xs text-muted-foreground mt-6 text-center">
               Уже есть аккаунт?{" "}
               <button

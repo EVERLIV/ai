@@ -748,7 +748,6 @@ export default function Catalog({
     types: TYPES,
     selectedTypes,
     onToggleType: toggleType,
-    onSetTypes: setSelectedTypes,
     district,
     onOpenLocation: () => setLocationPickerOpen(true),
     priceMin,
