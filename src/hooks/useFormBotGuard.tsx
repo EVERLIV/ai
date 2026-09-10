@@ -68,7 +68,10 @@ const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
           className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden opacity-0 pointer-events-none"
         />
         {captchaEnabled && SMARTCAPTCHA_SITE_KEY ? (
-          <div className="pt-1">
+          <div className="pt-1 w-full max-w-[320px]">
+            <p className="text-[11px] text-muted-foreground mb-1.5">
+              Подтвердите, что вы не робот
+            </p>
             <SmartCaptcha
               key={resetKey}
               sitekey={SMARTCAPTCHA_SITE_KEY}
