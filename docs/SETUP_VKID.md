@@ -17,17 +17,20 @@
 
 ---
 
-## 2. Фронтенд (`.env`)
+## 2. Фронтенд
+
+Timeweb собирает сайт из **`.env.production`** (см. `Dockerfile`), не из локального `.env`.
 
 ```env
+# в .env.production (уже в репо) и локально в .env для dev:
 VITE_VK_ID_APP_ID=54763350
 # опционально:
 # VITE_AUTH_VKID_URL=https://api.arendacity.com/functions/v1/auth-vkid
 ```
 
-Без `VITE_VK_ID_APP_ID` кнопки VK на `/auth` не показываются.
+Без `VITE_VK_ID_APP_ID` в **продакшен-сборке** кнопки VK на `/auth` скрыты (`isVkidEnabled()`).
 
-Пересборка:
+После изменения `.env.production` — commit + push в `main` (автодеплой Timeweb) или локально:
 
 ```bash
 npm run build

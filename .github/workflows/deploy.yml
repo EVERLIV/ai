@@ -29,6 +29,8 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          # публичный App ID; Vite также читает .env.production из репо
+          VITE_VK_ID_APP_ID: "54763350"
         run: npm run build
 
       # Готовый сайт можно скачать из вкладки Actions и выложить на сервер.
