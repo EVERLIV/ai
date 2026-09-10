@@ -1,12 +1,20 @@
-import { Banknote, Briefcase, CheckCircle2, Clock, MapPin } from "lucide-react";
+import { Banknote, Briefcase, CheckCircle2, Clock, Mail, MapPin } from "lucide-react";
+import { CONTACTS } from "@/config/company";
 import type { Vacancy } from "@/data/vacancies";
 
 type Props = {
   vacancy: Vacancy;
-  onApply: (title: string) => void;
 };
 
-export default function VacancyCard({ vacancy, onApply }: Props) {
+function resumeMailto(title: string) {
+  const subject = encodeURIComponent(`Резюме: ${title} — ДАДАТУТ`);
+  const body = encodeURIComponent(
+    `Здравствуйте!\n\nОткликаюсь на вакансию «${title}».\n\nКратко о себе / ссылка на резюме:\n\n`,
+  );
+  return `mailto:${CONTACTS.email}?subject=${subject}&body=${body}`;
+}
+
+export default function VacancyCard({ vacancy }: Props) {
   return (
     <article className="bg-card border border-border overflow-hidden">
       <div className="p-6 sm:p-8 border-b border-border bg-muted/20">
@@ -23,13 +31,13 @@ export default function VacancyCard({ vacancy, onApply }: Props) {
               {vacancy.intro}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => onApply(vacancy.title)}
-            className="shrink-0 ui-btn-primary"
+          <a
+            href={resumeMailto(vacancy.title)}
+            className="shrink-0 ui-btn-primary inline-flex items-center gap-1.5"
           >
-            Откликнуться
-          </button>
+            <Mail className="w-4 h-4" />
+            Отправить резюме
+          </a>
         </div>
 
         <div className="flex flex-wrap gap-4 mt-5 text-xs text-muted-foreground">

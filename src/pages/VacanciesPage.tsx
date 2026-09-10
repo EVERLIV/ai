@@ -1,11 +1,4 @@
-import {
-  CheckCircle2,
-  Heart,
-  Loader2,
-  Send,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import { Heart, Mail, Sparkles, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import heroImg from "@/assets/hero-commercial.jpg";
@@ -17,34 +10,24 @@ import VacancyCard from "@/components/VacancyCard";
 import { COMPANY, CONTACTS } from "@/config/company";
 import { absoluteUrl } from "@/config/site";
 import { VACANCIES } from "@/data/vacancies";
-import { BotGuardError, useFormBotGuard } from "@/hooks/useFormBotGuard";
-import { submitLead } from "@/lib/submitLead";
 
 const perks = [
   {
     icon: Users,
-    text: "Команда без бюрократии — один менеджер ведёт сделку до конца",
+    text: "Небольшая продуктовая команда — решения принимаются быстро",
   },
-  { icon: Heart, text: "Уважение к людям и прозрачные условия работы" },
+  {
+    icon: Heart,
+    text: "Реальный региональный продукт, а не «витрина агентства»",
+  },
   {
     icon: Sparkles,
-    text: "Реальные объекты и сделки, не «виртуальный» каталог",
+    text: "Влияние на рост каталога, рекламы и партнёрств ДАДАТУТ",
   },
 ];
 
 export default function VacanciesPage() {
   const [scrollPct, setScrollPct] = useState(0);
-  const [selectedVacancy, setSelectedVacancy] = useState(
-    VACANCIES[0]?.title ?? "",
-  );
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { BotGuard, ensureGuard, resetGuard } = useFormBotGuard();
 
   useEffect(() => {
     const onScroll = () => {
@@ -55,67 +38,11 @@ export default function VacanciesPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleApplyClick = (title: string) => {
-    setSelectedVacancy(title);
-    setSent(false);
-    setError(null);
-    document
-      .getElementById("vacancy-apply")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmedName = name.trim();
-    const trimmedPhone = phone.trim();
-    if (trimmedName.length < 2 || trimmedPhone.length < 6) {
-      setError("Укажите имя и телефон для связи.");
-      return;
-    }
-
-    setError(null);
-    setLoading(true);
-    try {
-      const bot = await ensureGuard();
-      const resumeNote = message.trim()
-        ? `Резюме / комментарий: ${message.trim()}`
-        : null;
-      await submitLead({
-        name: trimmedName,
-        phone: trimmedPhone,
-        email: email.trim() || null,
-        message: resumeNote,
-        source: "vacancies_page",
-        business_category: `Вакансия: ${selectedVacancy}`,
-        website: bot.website,
-        captchaToken: bot.captchaToken,
-      });
-      resetGuard();
-      setSent(true);
-      setName("");
-      setPhone("");
-      setEmail("");
-      setMessage("");
-    } catch (err) {
-      if (err instanceof BotGuardError && err.message === "bot") return;
-      setError(
-        err instanceof BotGuardError
-          ? err.message
-          : "Не удалось отправить отклик. Позвоните нам или напишите на почту.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const inputClass =
-    "w-full h-11 px-3 bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary transition-colors";
-
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
       <SeoHead
         title="Вакансии ДАДАТУТ"
-        description="Работа в агентстве коммерческой недвижимости в Ангарске и Иркутске: менеджер по аренде, юрист."
+        description="Работа в команде ДАДАТУТ: sales-менеджер по продукту и маркетолог проекта. Открытый каталог недвижимости Иркутска и области."
         url={absoluteUrl("/vacancies")}
       />
       <SiteHeader />
@@ -155,9 +82,9 @@ export default function VacanciesPage() {
                   Вакансии в {COMPANY.brand}
                 </h1>
                 <p className="text-background/75 text-base max-w-2xl leading-relaxed">
-                  Развиваем рынок коммерческой недвижимости в Иркутской области.
-                  Открыты позиции менеджера по аренде и юриста — заработная
-                  плата обсуждается на собеседовании.
+                  Строим открытый каталог недвижимости Иркутска и области.
+                  Ищем sales-менеджера по продукту и маркетолога проекта —
+                  отклик только по email с резюме.
                 </p>
               </div>
             </div>
@@ -191,16 +118,17 @@ export default function VacanciesPage() {
                       Открытые позиции
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      {VACANCIES.length} вакансии · отклик через форму ниже или
-                      по телефону
+                      {VACANCIES.length} вакансии · резюме на{" "}
+                      <a
+                        href={`mailto:${CONTACTS.email}`}
+                        className="text-primary hover:underline"
+                      >
+                        {CONTACTS.email}
+                      </a>
                     </p>
                   </div>
                   {VACANCIES.map((vacancy) => (
-                    <VacancyCard
-                      key={vacancy.id}
-                      vacancy={vacancy}
-                      onApply={handleApplyClick}
-                    />
+                    <VacancyCard key={vacancy.id} vacancy={vacancy} />
                   ))}
                 </div>
 
@@ -208,111 +136,28 @@ export default function VacanciesPage() {
                   id="vacancy-apply"
                   className="bg-card border border-border p-6 sm:p-8 scroll-mt-28"
                 >
-                  {sent ? (
-                    <div className="text-center py-6 space-y-3">
-                      <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
-                      <h2 className="font-display text-xl font-bold text-foreground">
-                        Отклик отправлен
-                      </h2>
-                      <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                        Мы свяжемся с вами в рабочее время. Можно также
-                        написать на{" "}
-                        <a
-                          href={`mailto:${CONTACTS.email}`}
-                          className="text-primary hover:underline"
-                        >
-                          {CONTACTS.email}
-                        </a>
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => setSent(false)}
-                        className="text-sm text-primary hover:underline"
-                      >
-                        Отправить ещё один отклик
-                      </button>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+                    <div className="w-12 h-12 bg-primary/10 flex items-center justify-center shrink-0">
+                      <Mail className="w-6 h-6 text-primary" />
                     </div>
-                  ) : (
-                    <>
+                    <div className="min-w-0 flex-1">
                       <h2 className="font-display text-xl font-bold text-foreground mb-1">
-                        Отклик на вакансию
+                        Как откликнуться
                       </h2>
-                      <p className="text-sm text-muted-foreground mb-6">
-                        Оставьте контакты и коротко расскажите о себе — мы
-                        перезвоним или напишем.
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        Формы заявки нет — пришлите резюме (PDF/ссылка) на
+                        почту. В теме письма укажите название вакансии. Ответим
+                        в рабочие часы: {CONTACTS.hours}.
                       </p>
-                      <form
-                        onSubmit={handleSubmit}
-                        className="space-y-4 max-w-xl"
-                      >
-                        <div>
-                          <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">
-                            Вакансия
-                          </label>
-                          <select
-                            value={selectedVacancy}
-                            onChange={(e) => setSelectedVacancy(e.target.value)}
-                            className={inputClass}
-                          >
-                            {VACANCIES.map((v) => (
-                              <option key={v.id} value={v.title}>
-                                {v.title}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <input
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          placeholder="Ваше имя"
-                          required
-                          className={inputClass}
-                        />
-                        <input
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          type="tel"
-                          placeholder="+7 (___) ___-__-__"
-                          required
-                          className={inputClass}
-                        />
-                        <input
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          type="email"
-                          placeholder="Email (необязательно)"
-                          className={inputClass}
-                        />
-                        <textarea
-                          value={message}
-                          onChange={(e) => setMessage(e.target.value)}
-                          placeholder="Ссылка на резюме, опыт, ожидания по зарплате…"
-                          rows={4}
-                          className={`${inputClass} h-auto py-3 resize-none`}
-                        />
-                        <BotGuard />
-                        <button
-                          type="submit"
-                          disabled={loading}
-                          className="inline-flex items-center justify-center gap-2 h-11 px-6 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
-                        >
-                          {loading ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Send className="w-4 h-4" />
-                          )}
-                          {loading ? "Отправка…" : "Отправить отклик"}
-                        </button>
-                        {error && (
-                          <p className="text-sm text-destructive">{error}</p>
-                        )}
-                        <p className="text-[11px] text-muted-foreground">
-                          Нажимая кнопку, вы соглашаетеся с обработкой
-                          персональных данных.
-                        </p>
-                      </form>
-                    </>
-                  )}
+                    </div>
+                    <a
+                      href={`mailto:${CONTACTS.email}?subject=${encodeURIComponent("Резюме — вакансия ДАДАТУТ")}`}
+                      className="shrink-0 inline-flex items-center justify-center gap-2 h-11 px-5 bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+                    >
+                      <Mail className="w-4 h-4" />
+                      {CONTACTS.email}
+                    </a>
+                  </div>
                 </div>
               </div>
 
