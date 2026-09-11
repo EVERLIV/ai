@@ -98,7 +98,6 @@ export default function VkidOAuthList({
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
-  const [ready, setReady] = useState(false);
   const accountTypeRef = useRef(accountType);
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
@@ -174,9 +173,6 @@ export default function VkidOAuthList({
           scheme: VKID.Scheme.LIGHT,
           lang: VKID.Languages.RUS,
         })
-        .on(VKID.WidgetEvents.LOAD, () => {
-          if (alive) setReady(true);
-        })
         .on(VKID.WidgetEvents.ERROR, (error: unknown) => {
           if (!alive) return;
           const parsed = (error || {}) as VkidWidgetError;
@@ -220,19 +216,9 @@ export default function VkidOAuthList({
 
   return (
     <div className={className}>
-      <div className="relative my-5">
-        <div className="absolute inset-0 flex items-center" aria-hidden>
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-[11px] uppercase tracking-wide">
-          <span className="bg-background px-3 text-muted-foreground">
-            или через
-          </span>
-        </div>
-      </div>
       <div
         ref={containerRef}
-        className={`mx-auto w-full max-w-[360px] min-h-[44px] ${
+        className={`mx-auto mt-5 w-full max-w-[360px] min-h-[44px] ${
           busy ? "pointer-events-none opacity-60" : ""
         }`}
         aria-busy={busy}
@@ -240,11 +226,6 @@ export default function VkidOAuthList({
       {busy && (
         <p className="mt-2 text-center text-xs text-muted-foreground">
           Входим…
-        </p>
-      )}
-      {!ready && !busy && (
-        <p className="text-center text-xs text-muted-foreground">
-          Загрузка VK ID…
         </p>
       )}
     </div>

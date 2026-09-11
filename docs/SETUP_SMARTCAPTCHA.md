@@ -1,13 +1,23 @@
-# Яндекс SmartCaptcha — защита заявок (РФ)
+# Яндекс SmartCaptcha — защита заявок и Auth (РФ)
 
-Публичные формы заявок идут через edge function **`submit-lead`**:
+Публичные формы и вход/регистрация защищены так:
 
 1. **Honeypot** — скрытое поле (боты заполняют, люди нет)
-2. **Яндекс SmartCaptcha** (invisible) — проверка в Yandex Cloud (данные в РФ)
+2. **Яндекс SmartCaptcha Invisible** — при отправке формы; челлендж только если сервис заподозрит бота
 
-Замена Google reCAPTCHA v3 для локализации / 152-ФЗ.
+Замена Google reCAPTCHA для локализации / 152-ФЗ.
 
 Документация: https://yandex.cloud/docs/smartcaptcha/
+
+---
+
+## UX (как у большинства сервисов)
+
+- В форме **нет** чекбокса «Я не робот» и лишних пояснений про капчу.
+- Пользователь нажимает «Войти» / «Отправить» → виджет отрабатывает тихо.
+- При подозрении на бота Яндекс показывает модальный челлендж.
+
+Пакет: `@yandex/smart-captcha` → `InvisibleSmartCaptcha` в `useFormBotGuard`.
 
 ---
 
@@ -15,10 +25,12 @@
 
 1. [Yandex Cloud Console](https://console.yandex.cloud) → **SmartCaptcha** → создать капчу
 2. Домены: `dadatut.ru`, `www.dadatut.ru`, `localhost`
-3. Режим: **Invisible** (невидимая)
+3. Режим / вариант по умолчанию: **Invisible** (невидимая)
 4. Сохраните:
    - **Client key** → `VITE_SMARTCAPTCHA_SITE_KEY`
    - **Server key** → `SMARTCAPTCHA_SERVER_KEY`
+
+Если в консоли оставить Checkbox по умолчанию, UX снова может показывать чужой виджет.
 
 ---
 
@@ -45,31 +57,22 @@ SMARTCAPTCHA_SERVER_KEY=<server key>
 Если server key **не задан** — на сервере проверяется только honeypot.
 
 ```bash
-# на VPS
 bash scripts/set-smartcaptcha-secret.sh
 # или
 SMARTCAPTCHA_SERVER_KEY='...' bash scripts/set-smartcaptcha-secret.sh
 ```
 
-Затем: `bash scripts/deploy-functions.sh` (чтобы подтянуть `_shared/recaptcha.ts`).
+Затем: `bash scripts/deploy-functions.sh`.
 
 ---
 
 ## 4. Как это работает
 
-- Пакет: `@yandex/smart-captcha` → видимый компонент `SmartCaptcha` (чекбокс «Я не робот»)
-- Пользователь отмечает капчу → token → `captcha_token` / `verify-captcha`
+- При submit: `InvisibleSmartCaptcha` `visible=true` → token
+- Заявки: token → `submit-lead` → `validate`
+- Auth: token → edge **`verify-captcha`** → затем `signIn` / `signUp` / `resetPasswordForEmail`
 - Сервер: `POST https://smartcaptcha.yandexcloud.net/validate`
-- HTTP ≠ 200 от Яндекса → заявка **не блокируется** (рекомендация Yandex)
-
-### Auth (вход / регистрация / сброс пароля)
-
-Перед `signIn` / `signUp` / `resetPasswordForEmail` клиент:
-1. получает token SmartCaptcha;
-2. вызывает edge function **`verify-captcha`**;
-3. только при `ok` продолжает Auth.
-
-Деплой функции: `bash scripts/deploy-functions.sh` (нужен каталог `verify-captcha` на VPS).
+- HTTP ≠ 200 от Яндекса → пользователь **не блокируется** (рекомендация Yandex)
 
 ---
 
@@ -77,6 +80,7 @@ SMARTCAPTCHA_SERVER_KEY='...' bash scripts/set-smartcaptcha-secret.sh
 
 | Симптом | Что проверить |
 |---------|----------------|
-| «Подтвердите, что вы не робот» | Client key в сборке; домен в консоли SmartCaptcha |
+| «Не удалось пройти проверку» | Client key; домен в консоли; вариант Invisible |
 | Captcha failed на сервере | Server key; токен не старше 5 мин; одноразовость |
+| Снова виден чекбокс | В консоли SmartCaptcha смените default на Invisible |
 | Локально без captcha | Нормально, если ключи не заданы |

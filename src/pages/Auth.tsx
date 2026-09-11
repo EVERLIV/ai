@@ -740,7 +740,7 @@ export default function Auth() {
               </button>
               <p className="text-[11px] text-muted-foreground text-center">
                 Регистрируясь, вы принимаете{" "}
-                <a href="#" className="text-primary hover:underline">
+                <a href="/terms" className="text-primary hover:underline">
                   условия использования
                 </a>
               </p>
