@@ -1,4 +1,4 @@
-import { Building2, Home, TreePine } from "lucide-react";
+import { Home } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import AboutSection from "@/components/AboutSection";
@@ -23,6 +23,17 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import { absoluteUrl, SITE } from "@/config/site";
 
+const HOME_QUICK_LINKS = [
+  { label: "Квартиры", href: "/zhilaya/kvartiry" },
+  { label: "Дома", href: "/zhilaya/doma" },
+  { label: "Комнаты", href: "/zhilaya/komnaty" },
+  { label: "Земля", href: "/zemlya" },
+  { label: "Офисы", href: "/offices" },
+  { label: "Торговая", href: "/retail" },
+  { label: "Склады", href: "/warehouses" },
+  { label: "Посуточно", href: "/zhilaya/catalog?deal=%D0%9F%D0%BE%D1%81%D1%83%D1%82%D0%BE%D1%87%D0%BD%D0%BE" },
+] as const;
+
 export default function Index() {
   const [filters, setFilters] = useState<PropertyFilters>(defaultFilters);
 
@@ -40,42 +51,21 @@ export default function Index() {
 
       <section className="hidden lg:block border-b border-border/60 bg-muted/20">
         <div className="container mx-auto px-4 lg:px-8 py-4">
-          <div className="flex flex-wrap gap-2">
-            <Link
-              to="/zhilaya"
-              className="inline-flex items-center gap-1.5 h-7 px-[11px] rounded border border-border bg-card text-sm font-medium text-foreground hover:border-primary/40 transition-colors"
-            >
-              <Home className="w-4 h-4 text-primary" /> Жилая
-            </Link>
-            <Link
-              to="/catalog"
-              className="inline-flex items-center gap-1.5 h-7 px-[11px] rounded border border-border bg-card text-sm font-medium text-foreground hover:border-primary/40 transition-colors"
-            >
-              <Building2 className="w-4 h-4 text-primary" /> Коммерция
-            </Link>
-            <Link
-              to="/zemlya"
-              className="inline-flex items-center gap-1.5 h-7 px-[11px] rounded border border-border bg-card text-sm font-medium text-foreground hover:border-primary/40 transition-colors"
-            >
-              <TreePine className="w-4 h-4 text-primary" /> Земля
-            </Link>
-            <Link
-              to="/zhilaya/uchastki"
-              className="inline-flex items-center gap-1.5 h-7 px-[11px] rounded border border-border bg-card text-sm font-medium text-foreground hover:border-primary/40 transition-colors"
-            >
-              Участки
-            </Link>
+          <div className="flex flex-wrap gap-2 items-center">
+            {HOME_QUICK_LINKS.map((link) => (
+              <Link
+                key={link.href + link.label}
+                to={link.href}
+                className="inline-flex items-center h-8 px-3 rounded-lg border border-border bg-card text-sm font-medium text-foreground hover:border-primary/40 transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
             <Link
               to="/rieltory"
-              className="inline-flex items-center gap-1.5 h-7 px-[11px] text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="inline-flex items-center h-8 px-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Риелторы →
-            </Link>
-            <Link
-              to="/zhilaya/catalog"
-              className="inline-flex items-center gap-1.5 h-7 px-[11px] text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Каталог жилья →
             </Link>
           </div>
         </div>
@@ -87,21 +77,21 @@ export default function Index() {
             <div>
               <div className="inline-flex items-center gap-2 text-primary text-sm font-semibold mb-2">
                 <Home className="w-4 h-4" />
-                Жилая недвижимость
+                Весь каталог
               </div>
               <h2 className="font-display text-2xl font-bold text-foreground">
-                Квартиры, дома, комнаты и участки
+                Квартиры, дома, земля и коммерция
               </h2>
               <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
-                Снять, купить или сдать жильё в Иркутске и области. Размещение
-                для собственников — бесплатно.
+                Купить, снять надолго или посуточно в Иркутске и области.
+                Размещение для собственников — бесплатно.
               </p>
             </div>
             <Link
-              to="/zhilaya"
-              className="inline-flex items-center justify-center h-7 px-[11px] rounded bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity"
+              to="/zhilaya/catalog"
+              className="inline-flex items-center justify-center h-9 px-4 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity"
             >
-              Перейти в жилой каталог
+              Смотреть объявления
             </Link>
           </div>
         </div>

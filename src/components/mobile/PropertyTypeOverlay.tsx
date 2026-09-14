@@ -1,6 +1,10 @@
 import { Check } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import MobileFullScreenPicker from "@/components/mobile/MobileFullScreenPicker";
+import {
+  categoriesForDeal,
+  type HomeDealChoice,
+} from "@/config/homeSearchCategories";
 import type { PropertySegment } from "@/config/propertySegments";
 import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 import { cn } from "@/lib/utils";
@@ -25,7 +29,10 @@ const RESIDENTIAL_CATEGORIES: Category[] = [
 const COMMERCIAL_CATEGORIES: Category[] = [
   { title: "Офисы", items: ["Офис"] },
   { title: "Торговля", items: ["Торговая", "Павильон", "Общепит"] },
-  { title: "Склад и производство", items: ["Склад", "Производство", "Автосервис"] },
+  {
+    title: "Склад и производство",
+    items: ["Склад", "Производство", "Автосервис"],
+  },
   { title: "Свободного назначения", items: ["ПСН"] },
 ];
 
@@ -39,6 +46,8 @@ export function propertyTypeAccusative(type: string): string {
     Комната: "Комнату",
     Апартаменты: "Апартаменты",
     Доля: "Долю",
+    Земля: "Землю",
+    Участок: "Участок",
   };
   return map[type] ?? type;
 }
@@ -46,35 +55,47 @@ export function propertyTypeAccusative(type: string): string {
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  segment: PropertySegment;
   value: string;
   onChange: (value: string) => void;
+  /** Режим одного сегмента (старый) */
+  segment?: PropertySegment;
+  /**
+   * Все категории сайта, отфильтрованные по сделке
+   * (Купить / Снять / Посуточно на главной).
+   */
+  deal?: HomeDealChoice;
+  allCategories?: boolean;
 };
 
 export default function PropertyTypeOverlay({
   open,
   onOpenChange,
-  segment,
+  segment = "residential",
   value,
   onChange,
+  deal = "Аренда",
+  allCategories = false,
 }: Props) {
   const [draft, setDraft] = useState(value);
   const { propertyTypes } = useAllDictionaryValues();
   const segmentTypes = useMemo(
-    () => propertyTypes(segment),
-    [propertyTypes, segment],
+    () => (allCategories ? [] : propertyTypes(segment)),
+    [propertyTypes, segment, allCategories],
   );
 
   useEffect(() => {
     if (open) setDraft(value);
   }, [open, value]);
 
-  const categories =
-    segment === "residential"
+  const categories = useMemo(() => {
+    if (allCategories) return categoriesForDeal(deal);
+    return segment === "residential"
       ? RESIDENTIAL_CATEGORIES
       : segment === "land"
         ? LAND_CATEGORIES
         : COMMERCIAL_CATEGORIES;
+  }, [allCategories, deal, segment]);
+
   const known = new Set(categories.flatMap((c) => c.items));
   const extras = segmentTypes.filter((t) => !known.has(t));
   const displayCategories = extras.length
