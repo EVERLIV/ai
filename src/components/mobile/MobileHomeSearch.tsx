@@ -12,7 +12,7 @@ export default function MobileHomeSearch() {
           Купить, снять или посуточно — квартиры, дома, земля, офисы.
         </p>
       </div>
-      <RealtySearchPanel preferPageMapAnchor />
+      <RealtySearchPanel />
     </section>
   );
 }
