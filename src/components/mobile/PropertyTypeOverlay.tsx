@@ -57,11 +57,11 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   value: string;
   onChange: (value: string) => void;
-  /** Режим одного сегмента (старый) */
+  /** Режим одного сегмента (сырые типы объектов) */
   segment?: PropertySegment;
   /**
-   * Все категории сайта, отфильтрованные по сделке
-   * (Купить / Снять / Посуточно на главной).
+   * Основные категории сайта (id), отфильтрованные по сделке.
+   * Без подкатегорий — плоский короткий список.
    */
   deal?: HomeDealChoice;
   allCategories?: boolean;
@@ -87,15 +87,53 @@ export default function PropertyTypeOverlay({
     if (open) setDraft(value);
   }, [open, value]);
 
-  const categories = useMemo(() => {
-    if (allCategories) return categoriesForDeal(deal);
-    return segment === "residential"
+  if (allCategories) {
+    const mainCats = categoriesForDeal(deal);
+    return (
+      <MobileFullScreenPicker
+        open={open}
+        onClose={() => onOpenChange(false)}
+        title="Категория"
+        onApply={() => onChange(draft)}
+      >
+        <ul className="py-1">
+          {mainCats.map((cat) => {
+            const selected = draft === cat.id;
+            return (
+              <li key={cat.id} className="border-b border-border/40">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between px-4 py-3.5 text-sm text-foreground hover:bg-muted/40 transition-colors"
+                  onClick={() => setDraft(cat.id)}
+                >
+                  {cat.label}
+                  <span
+                    className={cn(
+                      "w-5 h-5 flex items-center justify-center shrink-0",
+                      selected
+                        ? "bg-primary text-primary-foreground"
+                        : "border border-border/80",
+                    )}
+                  >
+                    {selected && (
+                      <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                    )}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </MobileFullScreenPicker>
+    );
+  }
+
+  const categories =
+    segment === "residential"
       ? RESIDENTIAL_CATEGORIES
       : segment === "land"
         ? LAND_CATEGORIES
         : COMMERCIAL_CATEGORIES;
-  }, [allCategories, deal, segment]);
-
   const known = new Set(categories.flatMap((c) => c.items));
   const extras = segmentTypes.filter((t) => !known.has(t));
   const displayCategories = extras.length

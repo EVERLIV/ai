@@ -39,6 +39,7 @@ import LandPage from "./pages/LandPage.tsx";
 import LegalDocPage from "./pages/LegalDocPage.tsx";
 import ListProperty from "./pages/ListProperty.tsx";
 import SmartListingPage from "./pages/SmartListingPage.tsx";
+import NedvijimostPage from "./pages/NedvijimostPage.tsx";
 import NewsPage from "./pages/NewsPage.tsx";
 import NewsPostPage from "./pages/NewsPostPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -99,6 +100,11 @@ const App = () => {
                     <Route
                       path="/kommercheskaya"
                       element={<Navigate to="/" replace />}
+                    />
+                    <Route path="/nedvijimost" element={<NedvijimostPage />} />
+                    <Route
+                      path="/NEDVIJIMOST"
+                      element={<Navigate to="/nedvijimost" replace />}
                     />
                     <Route path="/catalog" element={<Catalog showSuggestions />} />
                     <Route path="/property/:id" element={<PropertyDetail />} />

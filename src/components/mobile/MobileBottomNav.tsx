@@ -15,9 +15,10 @@ const tabs = [
   {
     id: "catalog",
     label: "Каталог",
-    href: "/catalog",
+    href: "/nedvijimost",
     icon: Search,
     match: (p: string) =>
+      p.startsWith("/nedvijimost") ||
       p.startsWith("/catalog") ||
       p.startsWith("/zhilaya/catalog") ||
       p.startsWith("/zemlya") ||

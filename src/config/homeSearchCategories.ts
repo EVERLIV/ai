@@ -1,9 +1,4 @@
 import type { PropertySegment } from "@/config/propertySegments";
-import {
-  COMMERCIAL_PROPERTY_TYPES,
-  LAND_PROPERTY_TYPES,
-  RESIDENTIAL_PROPERTY_TYPES,
-} from "@/config/propertySegments";
 
 /** Значения сделки в каталоге / URL */
 export type HomeDealChoice = "Аренда" | "Продажа" | "Посуточно";
@@ -13,7 +8,7 @@ export type HomeDealTab = {
   value: HomeDealChoice;
 };
 
-/** Вкладки сделки на главной (как у Авито: Купить / Снять / Посуточно) */
+/** Вкладки сделки (Купить / Снять / Посуточно) */
 export const HOME_DEAL_TABS: readonly HomeDealTab[] = [
   { label: "Купить", value: "Продажа" },
   { label: "Снять", value: "Аренда" },
@@ -24,102 +19,128 @@ export function homeDealLabel(value: HomeDealChoice): string {
   return HOME_DEAL_TABS.find((t) => t.value === value)?.label ?? "Снять";
 }
 
-type CategoryGroup = {
-  title: string;
-  items: readonly string[];
-  /** Для каких сделок показывать группу (все items) */
+export type HomeMainCategory = {
+  id: string;
+  label: string;
+  segment: PropertySegment;
+  /** Типы объектов в каталоге (без подкатегорий в UI) */
+  types: readonly string[];
   deals: readonly HomeDealChoice[];
+  /** Показать фильтр «Комнаты» */
+  showRooms?: boolean;
 };
 
 /**
- * Все категории сайта для выпадающего списка на главной.
- * Посуточно — только жильё, которое реально сдают краткосрочно.
+ * Основные категории сайта — плоский список без подтипов.
+ * Клик передаёт группу types в buildCatalogUrl.
  */
-export const HOME_SEARCH_CATEGORY_GROUPS: readonly CategoryGroup[] = [
+export const HOME_MAIN_CATEGORIES: readonly HomeMainCategory[] = [
   {
-    title: "Квартиры и комнаты",
-    items: ["Квартира", "Комната", "Апартаменты", "Доля"],
+    id: "apartments",
+    label: "Квартиры",
+    segment: "residential",
+    types: ["Квартира", "Апартаменты"],
+    deals: ["Аренда", "Продажа", "Посуточно"],
+    showRooms: true,
+  },
+  {
+    id: "rooms",
+    label: "Комнаты",
+    segment: "residential",
+    types: ["Комната"],
     deals: ["Аренда", "Продажа", "Посуточно"],
   },
   {
-    title: "Дома",
-    items: ["Дом", "Дом на заказ", "Дача", "Коттедж", "Таунхаус"],
+    id: "houses",
+    label: "Дома",
+    segment: "residential",
+    types: ["Дом", "Коттедж", "Дача", "Таунхаус", "Дом на заказ"],
     deals: ["Аренда", "Продажа", "Посуточно"],
   },
   {
-    title: "Гаражи",
-    items: ["Гараж", "Машиноместо"],
+    id: "garages",
+    label: "Гаражи",
+    segment: "residential",
+    types: ["Гараж", "Машиноместо"],
     deals: ["Аренда", "Продажа"],
   },
   {
-    title: "Офисы",
-    items: ["Офис"],
+    id: "offices",
+    label: "Офисы",
+    segment: "commercial",
+    types: ["Офис"],
     deals: ["Аренда", "Продажа"],
   },
   {
-    title: "Торговля",
-    items: ["Торговая", "Павильон", "Общепит"],
+    id: "retail",
+    label: "Торговая",
+    segment: "commercial",
+    types: ["Торговая", "Павильон", "Общепит"],
     deals: ["Аренда", "Продажа"],
   },
   {
-    title: "Склад и производство",
-    items: ["Склад", "Производство", "Автосервис"],
+    id: "warehouses",
+    label: "Склады",
+    segment: "commercial",
+    types: ["Склад", "Производство", "Автосервис"],
     deals: ["Аренда", "Продажа"],
   },
   {
-    title: "Свободного назначения",
-    items: ["ПСН"],
-    deals: ["Аренда", "Продажа"],
-  },
-  {
-    title: "Участки",
-    items: ["Земля", "Участок"],
+    id: "land",
+    label: "Земля",
+    segment: "land",
+    types: ["Земля", "Участок"],
     deals: ["Аренда", "Продажа"],
   },
 ] as const;
 
-/** Типы, недоступные для посуточной аренды даже внутри «жилых» групп */
-const DAILY_EXCLUDED = new Set(["Доля", "Дом на заказ"]);
+/** Для посуточной аренды домов — без «Дом на заказ» */
+const DAILY_HOUSE_TYPES = ["Дом", "Коттедж", "Дача", "Таунхаус"] as const;
 
 export function categoriesForDeal(
   deal: HomeDealChoice,
-): { title: string; items: string[] }[] {
-  return HOME_SEARCH_CATEGORY_GROUPS.filter((g) =>
-    g.deals.includes(deal),
-  ).map((g) => ({
-    title: g.title,
-    items: g.items.filter((item) => {
-      if (deal === "Посуточно" && DAILY_EXCLUDED.has(item)) return false;
-      return true;
-    }),
-  })).filter((g) => g.items.length > 0);
+): HomeMainCategory[] {
+  return HOME_MAIN_CATEGORIES.filter((c) => c.deals.includes(deal)).map(
+    (c) => {
+      if (deal === "Посуточно" && c.id === "houses") {
+        return { ...c, types: [...DAILY_HOUSE_TYPES] };
+      }
+      return { ...c, types: [...c.types] };
+    },
+  );
 }
 
-export function typesAllowedForDeal(deal: HomeDealChoice): string[] {
-  return categoriesForDeal(deal).flatMap((g) => g.items);
+export function getCategoryById(
+  id: string | null | undefined,
+): HomeMainCategory | undefined {
+  if (!id) return undefined;
+  return HOME_MAIN_CATEGORIES.find((c) => c.id === id);
 }
 
-export function defaultTypeForDeal(deal: HomeDealChoice): string {
-  const types = typesAllowedForDeal(deal);
-  if (types.includes("Квартира")) return "Квартира";
-  return types[0] ?? "Квартира";
+export function defaultCategoryForDeal(deal: HomeDealChoice): HomeMainCategory {
+  const list = categoriesForDeal(deal);
+  return list.find((c) => c.id === "apartments") ?? list[0]!;
 }
 
-export function isTypeAllowedForDeal(
-  type: string,
+export function isCategoryAllowedForDeal(
+  categoryId: string,
   deal: HomeDealChoice,
 ): boolean {
-  return typesAllowedForDeal(deal).includes(type);
+  return categoriesForDeal(deal).some((c) => c.id === categoryId);
 }
 
+export function typesForCategoryDeal(
+  categoryId: string,
+  deal: HomeDealChoice,
+): string[] {
+  const cat = categoriesForDeal(deal).find((c) => c.id === categoryId);
+  return cat ? [...cat.types] : [];
+}
+
+/** @deprecated используйте getCategoryById / typesForCategoryDeal */
 export function segmentForPropertyType(type: string): PropertySegment {
-  if ((LAND_PROPERTY_TYPES as readonly string[]).includes(type)) return "land";
-  if ((RESIDENTIAL_PROPERTY_TYPES as readonly string[]).includes(type)) {
-    return "residential";
-  }
-  if ((COMMERCIAL_PROPERTY_TYPES as readonly string[]).includes(type)) {
-    return "commercial";
-  }
-  if (type === "Новостройка") return "residential";
-  return "commercial";
+  const found = HOME_MAIN_CATEGORIES.find((c) =>
+    c.types.includes(type),
+  );
+  return found?.segment ?? "commercial";
 }
