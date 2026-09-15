@@ -1,6 +1,5 @@
 import {
-  analyticsFetch,
-  analyticsHeaders,
+  analyticsPost,
   isBrowserOffline,
   isNetworkFetchError,
 } from "@/lib/adminAnalytics/fetch";
@@ -21,10 +20,9 @@ export async function insertAnalyticsEvent(
 
   const session_id = getAnalyticsSessionId();
   try {
-    const res = await analyticsFetch("/rest/v1/site_analytics_events", {
-      method: "POST",
-      headers: analyticsHeaders({ Prefer: "return=minimal" }),
-      body: JSON.stringify({
+    const res = await analyticsPost(
+      "/rest/v1/site_analytics_events",
+      {
         event_type: payload.event_type,
         path: payload.path ?? null,
         section: payload.section ?? null,
@@ -32,8 +30,9 @@ export async function insertAnalyticsEvent(
         user_id: payload.user_id ?? null,
         session_id,
         meta: payload.meta ?? {},
-      }),
-    });
+      },
+      "return=minimal",
+    );
     if (!res.ok && import.meta.env.DEV) {
       const text = await res.text().catch(() => "");
       console.warn("analytics insert failed", res.status, text);

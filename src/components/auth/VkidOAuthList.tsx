@@ -158,42 +158,41 @@ export default function VkidOAuthList({
 
     const mount = () => {
       if (!alive || !containerRef.current) return;
-      ensureVkidConfig();
+      try {
+        ensureVkidConfig();
+      } catch (err) {
+        console.warn("[VK ID] config failed", err);
+        return;
+      }
       container.innerHTML = "";
 
-      oneTap = new VKID.OneTap();
-      oneTap
-        .render({
-          container,
-          showAlternativeLogin: true,
-          styles: {
-            height: 44,
-            borderRadius: 8,
-          },
-          scheme: VKID.Scheme.LIGHT,
-          lang: VKID.Languages.RUS,
-        })
-        .on(VKID.WidgetEvents.ERROR, (error: unknown) => {
-          if (!alive) return;
-          const parsed = (error || {}) as VkidWidgetError;
-          // Таймаут / размонтирование / «не авторизован в VK» — не пугаем toast'ом
-          if (isBenignVkidError(parsed)) {
-            console.warn("[VK ID]", parsed.code, parsed.text || parsed.error);
-            setReady(true);
-            return;
-          }
-          onErrorRef.current?.(formatVkidError(error));
-        })
-        .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, handleSuccess)
-        .on(VKID.OneTapInternalEvents.NOT_AUTHORIZED, () => {
-          // Обычная ситуация: нет сессии VK — кнопка всё равно показывает полный вход
-          if (alive) setReady(true);
-        });
-
-      // Если LOAD не пришёл — всё равно убираем «Загрузка…»
-      window.setTimeout(() => {
-        if (alive) setReady(true);
-      }, 2500);
+      try {
+        oneTap = new VKID.OneTap();
+        oneTap
+          .render({
+            container,
+            showAlternativeLogin: true,
+            styles: {
+              height: 44,
+              borderRadius: 8,
+            },
+            scheme: VKID.Scheme.LIGHT,
+            lang: VKID.Languages.RUS,
+          })
+          .on(VKID.WidgetEvents.ERROR, (error: unknown) => {
+            if (!alive) return;
+            const parsed = (error || {}) as VkidWidgetError;
+            // Таймаут / размонтирование / «не авторизован в VK» — не пугаем toast'ом
+            if (isBenignVkidError(parsed)) {
+              console.warn("[VK ID]", parsed.code, parsed.text || parsed.error);
+              return;
+            }
+            onErrorRef.current?.(formatVkidError(error));
+          })
+          .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, handleSuccess);
+      } catch (err) {
+        console.warn("[VK ID] mount failed", err);
+      }
     };
 
     // Даём React Strict Mode завершить первый unmount, иначе iframe ловит TimeoutExceeded

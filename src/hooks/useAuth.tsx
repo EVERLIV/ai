@@ -55,33 +55,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<string[]>([]);
 
   useEffect(() => {
-    // Начальная сессия
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        const r = await fetchRolesForUser(session.user.id);
-        setRoles(r);
-      }
-      setLoading(false);
-    });
+    let cancelled = false;
 
-    // Слушаем изменения
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const applySession = async (session: Session | null) => {
+      if (cancelled) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
         const r = await fetchRolesForUser(session.user.id);
-        setRoles(r);
+        if (!cancelled) setRoles(r);
       } else {
         setRoles([]);
       }
       setLoading(false);
+    };
+
+    (async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (cancelled) return;
+
+      if (error) {
+        await supabase.auth.signOut({ scope: "local" });
+        await applySession(null);
+        return;
+      }
+
+      // Протухший refresh token в localStorage → иначе 400 в консоли на каждом заходе
+      if (data.session) {
+        const { error: userError } = await supabase.auth.getUser();
+        if (cancelled) return;
+        if (userError) {
+          await supabase.auth.signOut({ scope: "local" });
+          await applySession(null);
+          return;
+        }
+      }
+
+      await applySession(data.session);
+    })();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      await applySession(session);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const hasRole = (role: string) => roles.includes(role);

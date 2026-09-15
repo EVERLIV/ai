@@ -1,6 +1,5 @@
 import {
-  analyticsFetch,
-  analyticsHeaders,
+  analyticsPost,
   isBrowserOffline,
   isNetworkFetchError,
 } from "@/lib/adminAnalytics/fetch";
@@ -42,15 +41,10 @@ export async function upsertPresence(opts?: {
 
   inFlight = true;
   try {
-    const res = await analyticsFetch(
+    const res = await analyticsPost(
       "/rest/v1/site_presence?on_conflict=session_id",
-      {
-        method: "POST",
-        headers: analyticsHeaders({
-          Prefer: "resolution=merge-duplicates,return=minimal",
-        }),
-        body: JSON.stringify(row),
-      },
+      row,
+      "resolution=merge-duplicates,return=minimal",
     );
     if (res.ok || res.status === 200 || res.status === 201) {
       failStreak = 0;
@@ -70,12 +64,13 @@ export async function upsertPresence(opts?: {
   } catch (e) {
     failStreak += 1;
     nextAllowedAt = Date.now() + backoffMs(failStreak);
-    // Сеть/таймаут: не засоряем консоль на проде
     if (import.meta.env.DEV && !isNetworkFetchError(e)) {
       console.warn("presence upsert failed", e);
     } else if (import.meta.env.DEV && !warnedOffline) {
       warnedOffline = true;
-      console.warn("presence paused after network error; will retry with backoff");
+      console.warn(
+        "presence paused after network error; will retry with backoff",
+      );
     }
   } finally {
     inFlight = false;

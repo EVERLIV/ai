@@ -57,8 +57,7 @@ export default function CatalogMap({
         mapRef.current = map;
         setMapReady(true);
       })
-      .catch((e) => {
-        console.error("Yandex Maps load failed:", e);
+      .catch(() => {
         if (!cancelled) setMapFailed(true);
       });
 

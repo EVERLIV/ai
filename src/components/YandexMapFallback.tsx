@@ -40,7 +40,7 @@ export default function YandexMapFallback({
       <div className="absolute left-3 top-3 z-[4] max-w-[320px] border border-border bg-card/95 px-3 py-2 text-[11px] text-muted-foreground backdrop-blur">
         <div className="flex items-start gap-2">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-          <span>JS API Яндекс Карт не ответил, открыт резервный виджет.</span>
+          <span>Карта открыта в режиме виджета Яндекса.</span>
         </div>
       </div>
     </div>
