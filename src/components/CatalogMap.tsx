@@ -366,7 +366,7 @@ function MapListItem({
     >
       <div className="w-20 h-20 shrink-0 bg-muted overflow-hidden rounded-md">
         <ProtectedImage
-          src={getPropertyCover(p.cover_photo, p.type)}
+          src={getPropertyCover(p.cover_photo, p.type, p.photos)}
           alt={p.address}
           loading="lazy"
           className="w-full h-full object-cover"
@@ -423,7 +423,7 @@ function ActiveCard({
           className={`${compact ? "w-24 h-24" : "w-28 h-28"} shrink-0 bg-muted overflow-hidden rounded-l-lg`}
         >
           <ProtectedImage
-            src={getPropertyCover(p.cover_photo, p.type)}
+            src={getPropertyCover(p.cover_photo, p.type, p.photos)}
             alt={p.address}
             loading="lazy"
             className="w-full h-full object-cover"
@@ -490,7 +490,7 @@ function MobileCard({ p }: { p: DbProperty }) {
     <>
       <div className="h-28 bg-muted overflow-hidden rounded-t-lg">
         <ProtectedImage
-          src={getPropertyCover(p.cover_photo, p.type)}
+          src={getPropertyCover(p.cover_photo, p.type, p.photos)}
           alt={p.address}
           loading="lazy"
           className="w-full h-full object-cover"

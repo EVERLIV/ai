@@ -41,6 +41,8 @@ const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
     const honeypotRef = useRef<HTMLInputElement>(null);
     const captchaEnabled = isCaptchaEnabled();
     const [visible, setVisible] = useState(false);
+    /** Виджет Яндекса тянет свой React — не монтируем до первого ensureToken */
+    const [widgetMounted, setWidgetMounted] = useState(false);
     const [resetKey, setResetKey] = useState(0);
     const pendingRef = useRef<Pending | null>(null);
     const genRef = useRef(0);
@@ -54,6 +56,7 @@ const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
       clearTimeout(pending.timer);
       pendingRef.current = null;
       pending.reject(err);
+      setVisible(false);
     }, []);
 
     const settleResolve = useCallback((token: string, gen: number) => {
@@ -90,12 +93,12 @@ const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
                 new Error("Не удалось пройти проверку. Попробуйте ещё раз."),
                 gen,
               );
-              setVisible(false);
             }, TOKEN_TIMEOUT_MS);
 
             pendingRef.current = { resolve, reject, timer, settled: false, gen };
 
-            // Toggle visible to re-trigger InvisibleSmartCaptcha execute
+            // Монтируем виджет только по запросу (избегаем hydration spam на загрузке)
+            setWidgetMounted(true);
             setVisible(false);
             requestAnimationFrame(() => {
               if (pendingRef.current?.gen === gen) setVisible(true);
@@ -112,6 +115,7 @@ const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
           successGenRef.current = null;
           if (honeypotRef.current) honeypotRef.current.value = "";
           setVisible(false);
+          setWidgetMounted(false);
           setResetKey((k) => k + 1);
         },
       }),
@@ -169,7 +173,7 @@ const FormBotGuardInner = forwardRef<FormBotGuardHandle>(
           aria-hidden
           className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden opacity-0 pointer-events-none"
         />
-        {captchaEnabled && SMARTCAPTCHA_SITE_KEY ? (
+        {captchaEnabled && SMARTCAPTCHA_SITE_KEY && widgetMounted ? (
           <InvisibleSmartCaptcha
             key={resetKey}
             sitekey={SMARTCAPTCHA_SITE_KEY}

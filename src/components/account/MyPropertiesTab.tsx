@@ -20,6 +20,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import PropertySubmissionWizard from "@/components/account/PropertySubmissionWizard";
 import PropertyImage from "@/components/PropertyImage";
+import { resolvePropertyCoverSrc } from "@/lib/propertyImages";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -196,7 +197,7 @@ function PropertyCard({
       <div className="flex gap-0">
         <div className="relative w-[92px] sm:w-[140px] h-[92px] sm:h-auto sm:min-h-[124px] shrink-0 bg-muted">
           <PropertyImage
-            src={p.cover_photo || (p.photos?.[0] ?? null)}
+            src={resolvePropertyCoverSrc(p.cover_photo, p.photos)}
             alt={p.address}
             className="absolute inset-0"
             imgClassName="object-cover"

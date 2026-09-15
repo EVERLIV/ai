@@ -66,7 +66,29 @@ import LandHomePage from "./pages/land/LandHomePage.tsx";
 import VacanciesPage from "./pages/VacanciesPage.tsx";
 import WarehousesPage from "./pages/WarehousesPage.tsx";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        // Сеть/таймаут: не долбим API (иначе ERR_CONNECTION_TIMED_OUT × retries)
+        if (error instanceof TypeError) return false;
+        if (error instanceof Error) {
+          const m = error.message.toLowerCase();
+          if (
+            m.includes("failed to fetch") ||
+            m.includes("network") ||
+            m.includes("timeout") ||
+            m.includes("aborted")
+          ) {
+            return false;
+          }
+        }
+        return failureCount < 2;
+      },
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 /** Оболочка: скрывает нижнюю навигацию на fullscreen-страницах (ИИ-размещение, объект). */
 function MobileAppShell({ children }: { children: ReactNode }) {

@@ -22,6 +22,7 @@ import {
   propertyHasVideo,
 } from "@/lib/propertyNewbuildCard";
 import { cn } from "@/lib/utils";
+import { resolvePropertyCoverSrc } from "@/lib/propertyImages";
 
 interface Props {
   property: DbProperty;
@@ -63,7 +64,7 @@ const CatalogListCard = forwardRef<HTMLElement, Props>(function CatalogListCard(
       >
         <div className="relative hidden sm:block w-[200px] lg:w-[220px] shrink-0 aspect-[4/3] bg-muted overflow-hidden rounded-lg">
           <PropertyImage
-            src={p.cover_photo}
+            src={resolvePropertyCoverSrc(p.cover_photo, p.photos)}
             alt={title}
             variant="listing"
             imgClassName="transition-transform duration-500 group-hover:scale-[1.02] object-top"
@@ -109,7 +110,7 @@ const CatalogListCard = forwardRef<HTMLElement, Props>(function CatalogListCard(
             <div className="flex items-start gap-3 sm:hidden mb-2">
               <div className="relative w-24 aspect-[4/3] shrink-0 overflow-hidden rounded-lg bg-muted">
                 <PropertyImage
-                  src={p.cover_photo}
+                  src={resolvePropertyCoverSrc(p.cover_photo, p.photos)}
                   alt={title}
                   variant="listing"
                   imgClassName="object-top"

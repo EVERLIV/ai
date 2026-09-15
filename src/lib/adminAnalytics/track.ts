@@ -1,7 +1,9 @@
 import {
-  SERVICE_ROLE_KEY,
-  SUPABASE_URL,
-} from "@/integrations/supabase/adminClient";
+  analyticsFetch,
+  analyticsHeaders,
+  isBrowserOffline,
+  isNetworkFetchError,
+} from "@/lib/adminAnalytics/fetch";
 import {
   getAnalyticsSessionId,
   type TrackPayload,
@@ -14,16 +16,14 @@ let lastPageAt = 0;
 export async function insertAnalyticsEvent(
   payload: TrackPayload,
 ): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (isBrowserOffline()) return;
+
   const session_id = getAnalyticsSessionId();
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/site_analytics_events`, {
+    const res = await analyticsFetch("/rest/v1/site_analytics_events", {
       method: "POST",
-      headers: {
-        apikey: SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "return=minimal",
-      },
+      headers: analyticsHeaders({ Prefer: "return=minimal" }),
       body: JSON.stringify({
         event_type: payload.event_type,
         path: payload.path ?? null,
@@ -34,12 +34,14 @@ export async function insertAnalyticsEvent(
         meta: payload.meta ?? {},
       }),
     });
-    if (!res.ok) {
+    if (!res.ok && import.meta.env.DEV) {
       const text = await res.text().catch(() => "");
       console.warn("analytics insert failed", res.status, text);
     }
   } catch (e) {
-    console.warn("analytics insert failed", e);
+    if (import.meta.env.DEV && !isNetworkFetchError(e)) {
+      console.warn("analytics insert failed", e);
+    }
   }
 }
 
@@ -95,6 +97,7 @@ function inferSection(path: string): string {
   if (path.startsWith("/property/")) return "property";
   if (path.startsWith("/zhilaya")) return "residential";
   if (path.startsWith("/zemlya") || path.startsWith("/land")) return "land";
+  if (path.startsWith("/nedvijimost")) return "catalog";
   if (path.startsWith("/catalog") || path === "/") return "commercial";
   if (path.startsWith("/offices")) return "offices";
   if (path.startsWith("/retail")) return "retail";

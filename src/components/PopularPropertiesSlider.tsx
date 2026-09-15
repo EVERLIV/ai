@@ -108,7 +108,7 @@ export default function PopularPropertiesSlider() {
                 <div className="relative aspect-[4/3] bg-muted overflow-hidden rounded-t-lg">
                   <PropertyImage
                     src={
-                      p.cover_photo || getPropertyCover(p.cover_photo, p.type)
+                      p.cover_photo || getPropertyCover(p.cover_photo, p.type, p.photos)
                     }
                     alt={p.address}
                     imgClassName="group-hover:scale-105 transition-transform duration-500"

@@ -20,6 +20,7 @@ import {
   getNewbuildPhotoBadges,
   propertyHasVideo,
 } from "@/lib/propertyNewbuildCard";
+import { resolvePropertyCoverSrc } from "@/lib/propertyImages";
 
 interface PropertyGridCardProps {
   property: DbProperty;
@@ -45,7 +46,7 @@ export default function PropertyGridCard({
     >
       <div className="relative aspect-[16/10] sm:aspect-[4/3] bg-muted overflow-hidden shrink-0">
         <PropertyImage
-          src={p.cover_photo}
+          src={resolvePropertyCoverSrc(p.cover_photo, p.photos)}
           alt={title}
           imgClassName="transition-transform duration-500 group-hover:scale-[1.02]"
         />

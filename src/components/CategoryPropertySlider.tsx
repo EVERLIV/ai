@@ -117,7 +117,7 @@ export default function CategoryPropertySlider({
             >
               <div className="relative h-48 overflow-hidden bg-muted">
                 <ProtectedImage
-                  src={getPropertyCover(p.cover_photo, p.type)}
+                  src={getPropertyCover(p.cover_photo, p.type, p.photos)}
                   alt={p.address}
                   loading="lazy"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

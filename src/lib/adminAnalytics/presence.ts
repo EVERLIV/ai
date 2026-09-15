@@ -1,17 +1,33 @@
 import {
-  SERVICE_ROLE_KEY,
-  SUPABASE_URL,
-} from "@/integrations/supabase/adminClient";
+  analyticsFetch,
+  analyticsHeaders,
+  isBrowserOffline,
+  isNetworkFetchError,
+} from "@/lib/adminAnalytics/fetch";
 import { getAnalyticsSessionId } from "@/lib/adminAnalytics/session";
 
 const HEARTBEAT_MS = 30_000;
+const MAX_BACKOFF_MS = 5 * 60_000;
 
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+let inFlight = false;
+let failStreak = 0;
+let nextAllowedAt = 0;
+let warnedOffline = false;
+
+function backoffMs(streak: number): number {
+  return Math.min(HEARTBEAT_MS * 2 ** Math.max(0, streak - 1), MAX_BACKOFF_MS);
+}
 
 export async function upsertPresence(opts?: {
   path?: string | null;
   userId?: string | null;
 }): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (isBrowserOffline()) return;
+  if (inFlight) return;
+  if (Date.now() < nextAllowedAt) return;
+
   const session_id = getAnalyticsSessionId();
   const path =
     opts?.path ??
@@ -24,25 +40,45 @@ export async function upsertPresence(opts?: {
     path,
   };
 
-  // Raw REST upsert: избегаем 409 от insert + проблем onConflict в клиенте.
+  inFlight = true;
   try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/site_presence?on_conflict=session_id`,
+    const res = await analyticsFetch(
+      "/rest/v1/site_presence?on_conflict=session_id",
       {
         method: "POST",
-        headers: {
-          apikey: SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-          "Content-Type": "application/json",
+        headers: analyticsHeaders({
           Prefer: "resolution=merge-duplicates,return=minimal",
-        },
+        }),
         body: JSON.stringify(row),
       },
     );
-    if (res.ok || res.status === 200 || res.status === 201) return;
-    console.warn("presence upsert failed", res.status, await res.text().catch(() => ""));
+    if (res.ok || res.status === 200 || res.status === 201) {
+      failStreak = 0;
+      nextAllowedAt = 0;
+      warnedOffline = false;
+      return;
+    }
+    failStreak += 1;
+    nextAllowedAt = Date.now() + backoffMs(failStreak);
+    if (import.meta.env.DEV) {
+      console.warn(
+        "presence upsert failed",
+        res.status,
+        await res.text().catch(() => ""),
+      );
+    }
   } catch (e) {
-    console.warn("presence upsert failed", e);
+    failStreak += 1;
+    nextAllowedAt = Date.now() + backoffMs(failStreak);
+    // Сеть/таймаут: не засоряем консоль на проде
+    if (import.meta.env.DEV && !isNetworkFetchError(e)) {
+      console.warn("presence upsert failed", e);
+    } else if (import.meta.env.DEV && !warnedOffline) {
+      warnedOffline = true;
+      console.warn("presence paused after network error; will retry with backoff");
+    }
+  } finally {
+    inFlight = false;
   }
 }
 
@@ -50,17 +86,37 @@ export function startPresenceHeartbeat(getOpts: () => {
   path?: string | null;
   userId?: string | null;
 }): () => void {
-  void upsertPresence(getOpts());
-  if (heartbeatTimer) clearInterval(heartbeatTimer);
-  heartbeatTimer = setInterval(() => {
+  const tick = () => {
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+      return;
+    }
     void upsertPresence(getOpts());
-  }, HEARTBEAT_MS);
+  };
+
+  tick();
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
+  heartbeatTimer = setInterval(tick, HEARTBEAT_MS);
+
+  const onOnline = () => {
+    failStreak = 0;
+    nextAllowedAt = 0;
+    warnedOffline = false;
+    tick();
+  };
+  const onVisibility = () => {
+    if (document.visibilityState === "visible") tick();
+  };
+
+  window.addEventListener("online", onOnline);
+  document.addEventListener("visibilitychange", onVisibility);
 
   return () => {
     if (heartbeatTimer) {
       clearInterval(heartbeatTimer);
       heartbeatTimer = null;
     }
+    window.removeEventListener("online", onOnline);
+    document.removeEventListener("visibilitychange", onVisibility);
   };
 }
 

@@ -13,6 +13,7 @@ import {
   formatPropertyPrice,
 } from "@/lib/propertyCard";
 import { getResidentialRooms } from "@/lib/propertyResidential";
+import { resolvePropertyCoverSrc } from "@/lib/propertyImages";
 
 interface Props {
   property: DbProperty;
@@ -45,7 +46,7 @@ export default function PropertyGridCardCompact({ property: p }: Props) {
     >
       <div className="relative aspect-[16/10] bg-muted overflow-hidden">
         <PropertyImage
-          src={p.cover_photo}
+          src={resolvePropertyCoverSrc(p.cover_photo, p.photos)}
           alt={title}
           imgClassName="object-cover"
         />

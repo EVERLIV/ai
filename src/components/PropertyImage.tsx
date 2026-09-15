@@ -1,5 +1,7 @@
 import { ImageIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import ProtectedImage from "@/components/ProtectedImage";
+import { publicStorageUrl } from "@/lib/storageUrl";
 import { cn } from "@/lib/utils";
 
 interface PropertyImageProps {
@@ -26,7 +28,14 @@ export default function PropertyImage({
   placeholderLabel = "Фото скоро появится",
   variant = "default",
 }: PropertyImageProps) {
-  const hasImage = src && src.trim().length > 0;
+  const normalized = publicStorageUrl(src);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [normalized]);
+
+  const hasImage = Boolean(normalized) && !failed;
   const isListing = variant === "listing";
 
   return (
@@ -38,16 +47,14 @@ export default function PropertyImage({
     >
       {hasImage ? (
         <ProtectedImage
-          src={src as string}
+          src={normalized as string}
           alt={alt}
           loading="lazy"
           className={cn(
             "absolute inset-0 w-full h-full object-cover",
             imgClassName,
           )}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = "none";
-          }}
+          onError={() => setFailed(true)}
         />
       ) : (
         <div

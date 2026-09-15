@@ -3,6 +3,7 @@ import { Columns2, Plus, Trash2, X } from "lucide-react";
 import { Fragment } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import PropertyImage from "@/components/PropertyImage";
+import { resolvePropertyCoverSrc } from "@/lib/propertyImages";
 import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
@@ -85,7 +86,7 @@ function PropertyHeadCell({
         <div className="relative w-full h-[64px] sm:h-[72px] rounded-md overflow-hidden bg-muted shrink-0">
           <Link to={`/property/${property.id}`} className="block w-full h-full">
             <PropertyImage
-              src={property.cover_photo}
+              src={resolvePropertyCoverSrc(property.cover_photo, property.photos)}
               alt={titleOf(property)}
               className="w-full h-full"
               imgClassName="object-cover w-full h-full"

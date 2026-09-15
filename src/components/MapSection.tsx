@@ -288,7 +288,7 @@ export default function MapSection() {
                   >
                     <div className="w-16 h-16 rounded-md overflow-hidden bg-muted shrink-0">
                       <ProtectedImage
-                        src={getPropertyCover(p.cover_photo, p.type)}
+                        src={getPropertyCover(p.cover_photo, p.type, p.photos)}
                         alt={p.address}
                         className="w-full h-full object-cover"
                       />
@@ -470,7 +470,7 @@ function PropertyCard({
     <div className="bg-card rounded-xl shadow-card-hover overflow-hidden border border-border">
       <div className="relative h-32 bg-muted">
         <ProtectedImage
-          src={getPropertyCover(p.cover_photo, p.type)}
+          src={getPropertyCover(p.cover_photo, p.type, p.photos)}
           alt={p.address}
           className="w-full h-full object-cover"
         />
