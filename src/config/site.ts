@@ -9,7 +9,8 @@ export const SITE = {
   title: "ДАДА ТУТ! — вся недвижимость региона",
   description:
     "У вас вся недвижимость региона? Дада, тут! Жилая и коммерческая недвижимость Иркутска и области — бесплатный каталог ДАДАТУТ.",
-  ogImage: `${SITE_URL}/og-default.jpg`,
+  /** ?v= — сброс кэша превью в мессенджерах после смены картинки */
+  ogImage: `${SITE_URL}/og-default.jpg?v=3`,
   locale: "ru_RU",
   twitterSite: "@Dadatut",
 } as const;
