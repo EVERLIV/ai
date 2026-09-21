@@ -15,6 +15,7 @@ import {
   Inbox,
   LifeBuoy,
   LogOut,
+  Mail,
   MapPin,
   Megaphone,
   Menu,
@@ -38,6 +39,7 @@ import AdPlacementsManager from "@/components/admin/AdPlacementsManager";
 import AdPlacementsTab from "@/components/admin/AdPlacementsTab";
 import CrmLeadsTab from "@/components/admin/CrmLeadsTab";
 import SupportTicketsTab from "@/components/admin/SupportTicketsTab";
+import NewsletterTab from "@/components/admin/NewsletterTab";
 import SeekersCatalogTab from "@/components/admin/SeekersCatalogTab";
 import AdminSiteAnalyticsTab from "@/components/admin/AdminSiteAnalyticsTab";
 import PropertiesAdminTable from "@/components/admin/PropertiesAdminTable";
@@ -301,6 +303,7 @@ function buildAdminNav(isAdmin: boolean): {
           { value: "leads", label: "Заявки", icon: Inbox },
           { value: "support", label: "Тикеты", icon: LifeBuoy },
           { value: "seekers", label: "Ищут недвижимость", icon: Search },
+          { value: "newsletter", label: "Рассылки", icon: Mail },
           ...(isAdmin
             ? [{ value: "tasks", label: "Задачи", icon: CheckSquare }]
             : []),
@@ -2729,6 +2732,10 @@ export default function Dashboard() {
 
           <TabsContent value="seekers" className="space-y-4">
             <SeekersCatalogTab />
+          </TabsContent>
+
+          <TabsContent value="newsletter" className="space-y-4">
+            <NewsletterTab />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-4">

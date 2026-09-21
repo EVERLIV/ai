@@ -63,6 +63,7 @@ import ResidentialHomePage from "./pages/residential/ResidentialHomePage.tsx";
 import RoomsPage from "./pages/residential/RoomsPage.tsx";
 import LandCatalog from "./pages/land/LandCatalog.tsx";
 import LandHomePage from "./pages/land/LandHomePage.tsx";
+import UnsubscribePage from "./pages/UnsubscribePage.tsx";
 import VacanciesPage from "./pages/VacanciesPage.tsx";
 import WarehousesPage from "./pages/WarehousesPage.tsx";
 
@@ -182,6 +183,7 @@ const App = () => {
                       path="/terms"
                       element={<LegalDocPage kind="terms" />}
                     />
+                    <Route path="/unsubscribe" element={<UnsubscribePage />} />
                     <Route path="/help" element={<HelpCenterPage />} />
                     <Route path="/app" element={<AppInstallPage />} />
                     <Route path="/docs" element={<DocsHandbookPage />} />

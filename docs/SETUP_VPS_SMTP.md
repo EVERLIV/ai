@@ -98,3 +98,13 @@ docker logs --tail 80 $(docker ps --format '{{.Names}}' | grep -iE 'auth|gotrue'
 2. Неверный пароль ящика — GoTrue пишет `535` / `authentication failed` в логах.
 3. Шаблоны 404 — темы всё равно уйдут, тело может быть дефолтным, пока не задеплоен `public/email/`.
 4. Gmail иногда режет письма без SPF. В DNS домена (Timeweb DNS, не Cloudflare) добавьте SPF Timeweb из панели почты. См. [SETUP_DNS_TIMEWEB.md](SETUP_DNS_TIMEWEB.md).
+
+## Маркетинговые рассылки (админка)
+
+Тот же SMTP (`noreply@dadatut.ru`). Edge-функции:
+
+- `send-newsletter` — превью / тест / кампания (заголовок `x-notify-secret` = `NOTIFY_EMAIL_SECRET`)
+- `newsletter-unsubscribe` — публичная отписка по токену
+
+SQL: `supabase/migrations/20260921_newsletter.sql` (или `self_hosted_newsletter.sql` на VPS).
+В админке: CRM → «Рассылки». HTML-шаблон: `public/email/newsletter-campaign.html`, фото в `public/email/newsletter/`.
