@@ -168,7 +168,7 @@ export function buildNewsletterHtml(content: NewsletterContent): string {
           <!-- phone mockup -->
           <tr>
             <td align="center" style="padding:8px 0 0;">
-              <img src="${escapeHtml(phoneImg)}" width="600" alt="Приложение ДАДАТУТ" style="display:block;width:100%;max-width:600px;height:auto;border:0;" />
+              <img src="${escapeHtml(phoneImg)}" width="600" height="719" alt="Приложение ДАДАТУТ" style="display:block;width:100%;max-width:600px;height:auto;border:0;object-fit:contain;" />
             </td>
           </tr>
 
