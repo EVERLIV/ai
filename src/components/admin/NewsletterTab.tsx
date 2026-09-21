@@ -1,13 +1,40 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Mail, RefreshCw, Send, ListPlus } from "lucide-react";
+import {
+  Loader2,
+  Mail,
+  RefreshCw,
+  Send,
+  ListPlus,
+  Play,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/components/ui/toggle-group";
 import { useAuth } from "@/hooks/useAuth";
 import {
   SERVICE_ROLE_KEY,
@@ -25,6 +52,7 @@ import {
   type NewsletterPayload,
   type NewsletterTemplateKey,
 } from "@/lib/newsletterApi";
+import { cn } from "@/lib/utils";
 
 type Subscriber = {
   id: string;
@@ -78,6 +106,28 @@ async function serviceFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
+function statusBadge(status: string) {
+  const map: Record<
+    string,
+    { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+  > = {
+    queued: { label: "В очереди", variant: "secondary" },
+    sending: { label: "Отправка", variant: "default" },
+    sent: { label: "Отправлено", variant: "secondary" },
+    failed: { label: "Ошибка", variant: "destructive" },
+    partial: { label: "Частично", variant: "outline" },
+    draft: { label: "Черновик", variant: "outline" },
+    pending: { label: "Ожидает", variant: "secondary" },
+    processing: { label: "В работе", variant: "default" },
+  };
+  const item = map[status] || { label: status, variant: "outline" as const };
+  return <Badge variant={item.variant}>{item.label}</Badge>;
+}
+
+function templateLabel(key?: string | null) {
+  return NEWSLETTER_TEMPLATES.find((t) => t.key === key)?.label || "—";
+}
+
 export default function NewsletterTab() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -94,7 +144,7 @@ export default function NewsletterTab() {
     "Портал аренды и недвижимости в Иркутске и области — чтобы жители региона находили объекты бесплатно, без переплат на агрегаторах и без лишних комиссий.",
   );
   const [body, setBody] = useState(
-    "Тут текст из нескольких предложений а потом ссылка на скачивание КП. Отредактируйте текст перед отправкой кампании.",
+    "Кратко расскажите о предложении и пригласите скачать презентацию.",
   );
   const [ctaLabel, setCtaLabel] = useState("Скачать презентацию");
   const [ctaUrl, setCtaUrl] = useState("");
@@ -196,6 +246,15 @@ export default function NewsletterTab() {
   const pendingCount = queueStatusQ.data?.pending ?? 0;
   const processingCount = queueStatusQ.data?.processing ?? 0;
 
+  const refreshAll = () => {
+    subscribersQ.refetch();
+    activeCountQ.refetch();
+    campaignsQ.refetch();
+    queueStatusQ.refetch();
+    queueRowsQ.refetch();
+    settingsQ.refetch();
+  };
+
   const previewMut = useMutation({
     mutationFn: () => previewNewsletter(payload),
     onSuccess: (data) => {
@@ -214,9 +273,7 @@ export default function NewsletterTab() {
   const enqueueMut = useMutation({
     mutationFn: () => enqueueNewsletterCampaign(payload),
     onSuccess: (data) => {
-      toast.success(
-        `В очередь: ${data.queued ?? 0} писем. Включите автоотправку, чтобы cron начал слать.`,
-      );
+      toast.success(`Добавлено в очередь: ${data.queued ?? 0}`);
       qc.invalidateQueries({ queryKey: ["newsletter-campaigns"] });
       qc.invalidateQueries({ queryKey: ["newsletter-queue-status"] });
       qc.invalidateQueries({ queryKey: ["newsletter-queue-rows"] });
@@ -228,11 +285,7 @@ export default function NewsletterTab() {
     mutationFn: (enabled: boolean) =>
       setNewsletterSettings({ sendingEnabled: enabled }),
     onSuccess: (data) => {
-      toast.success(
-        data.sendingEnabled
-          ? "Автоотправка включена — cron шлёт из очереди"
-          : "Автоотправка выключена",
-      );
+      toast.success(data.sendingEnabled ? "Рассылка включена" : "Рассылка выключена");
       qc.invalidateQueries({ queryKey: ["newsletter-settings"] });
       qc.invalidateQueries({ queryKey: ["newsletter-queue-status"] });
     },
@@ -243,10 +296,10 @@ export default function NewsletterTab() {
     mutationFn: () => processNewsletterQueue(),
     onSuccess: (data) => {
       if (data.skipped === "disabled") {
-        toast.message("Автоотправка выключена — пачка не ушла");
+        toast.message("Сначала включите рассылку");
       } else {
         toast.success(
-          `Пачка: отправлено ${data.sent ?? 0}, ошибок ${data.failed ?? 0}`,
+          `Отправлено ${data.sent ?? 0}${data.failed ? `, ошибок ${data.failed}` : ""}`,
         );
       }
       qc.invalidateQueries({ queryKey: ["newsletter-campaigns"] });
@@ -258,26 +311,61 @@ export default function NewsletterTab() {
 
   const addSubMut = useMutation({
     mutationFn: async () => {
-      const email = newEmail.trim().toLowerCase();
-      if (!email || !email.includes("@")) {
-        throw new Error("Укажите корректный email");
+      const raw = newEmail.trim();
+      if (!raw) throw new Error("Добавьте хотя бы один email");
+
+      const parts = raw
+        .split(/[,;\n\r\t]+/)
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+
+      const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const unique: string[] = [];
+      const seen = new Set<string>();
+      const invalid: string[] = [];
+
+      for (const p of parts) {
+        if (!emailRe.test(p)) {
+          invalid.push(p);
+          continue;
+        }
+        if (seen.has(p)) continue;
+        seen.add(p);
+        unique.push(p);
       }
-      await serviceFetch("newsletter_subscribers?on_conflict=email", {
-        method: "POST",
-        headers: {
-          Prefer: "resolution=merge-duplicates,return=representation",
-        },
-        body: JSON.stringify({
-          email,
-          full_name: newName.trim(),
-          marketing_opt_in: true,
-          unsubscribed_at: null,
-          source: "admin",
-        }),
-      });
+
+      if (unique.length === 0) {
+        throw new Error("Нет корректных адресов");
+      }
+
+      const name = newName.trim();
+      const rows = unique.map((email) => ({
+        email,
+        full_name: unique.length === 1 ? name : name || "",
+        marketing_opt_in: true,
+        unsubscribed_at: null,
+        source: "admin",
+      }));
+
+      for (let i = 0; i < rows.length; i += 100) {
+        const chunk = rows.slice(i, i + 100);
+        await serviceFetch("newsletter_subscribers?on_conflict=email", {
+          method: "POST",
+          headers: {
+            Prefer: "resolution=merge-duplicates,return=minimal",
+          },
+          body: JSON.stringify(chunk),
+        });
+      }
+
+      return { added: unique.length, invalid: invalid.length };
     },
-    onSuccess: () => {
-      toast.success("Подписчик добавлен (opt-in)");
+    onSuccess: (data) => {
+      toast.success(
+        data.added === 1
+          ? "Адрес добавлен"
+          : `Добавлено адресов: ${data.added}`,
+      );
       setNewEmail("");
       setNewName("");
       qc.invalidateQueries({ queryKey: ["newsletter-subscribers"] });
@@ -287,60 +375,42 @@ export default function NewsletterTab() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Mail className="w-5 h-5 text-primary" />
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <Mail className="size-5 text-primary" />
             Рассылки
           </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Очередь + cron каждые 5 мин · opt-in: <strong>{activeCount}</strong>
-            {" · "}в очереди: <strong>{pendingCount}</strong>
-            {processingCount ? ` (в работе ${processingCount})` : ""}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">Получатели {activeCount}</Badge>
+            <Badge variant={pendingCount ? "default" : "outline"}>
+              Очередь {pendingCount}
+            </Badge>
+            {processingCount > 0 ? (
+              <Badge>В работе {processingCount}</Badge>
+            ) : null}
+            <Badge variant={sendingEnabled ? "default" : "outline"}>
+              {sendingEnabled ? "Отправка вкл." : "Отправка выкл."}
+            </Badge>
+          </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            subscribersQ.refetch();
-            activeCountQ.refetch();
-            campaignsQ.refetch();
-            queueStatusQ.refetch();
-            queueRowsQ.refetch();
-            settingsQ.refetch();
-          }}
-        >
-          <RefreshCw className="w-4 h-4 mr-1" /> Обновить
+        <Button variant="outline" size="sm" onClick={refreshAll}>
+          <RefreshCw data-icon="inline-start" />
+          Обновить
         </Button>
       </div>
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Автоотправка очереди</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-1">
-            <p className="text-sm">
-              Включается вручную. Пока выключено — письма лежат в очереди.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Cron на VPS:{" "}
-              <code className="text-[11px]">
-                */5 * * * * newsletter-queue-cron.sh
-              </code>
-            </p>
-          </div>
+        <CardContent className="flex flex-row items-center justify-between gap-4 py-4">
+          <CardTitle className="text-base">Автоотправка</CardTitle>
           <div className="flex items-center gap-3">
             <Switch
               checked={sendingEnabled}
               disabled={toggleMut.isPending || settingsQ.isLoading}
               onCheckedChange={(v) => toggleMut.mutate(v)}
+              aria-label="Автоотправка"
             />
-            <span className="text-sm font-medium">
-              {sendingEnabled ? "Включена" : "Выключена"}
-            </span>
             <Button
               type="button"
               size="sm"
@@ -349,9 +419,11 @@ export default function NewsletterTab() {
               onClick={() => drainMut.mutate()}
             >
               {drainMut.isPending ? (
-                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-              ) : null}
-              Слать пачку сейчас
+                <Loader2 className="animate-spin" data-icon="inline-start" />
+              ) : (
+                <Play data-icon="inline-start" />
+              )}
+              Отправить пачку
             </Button>
           </div>
         </CardContent>
@@ -359,38 +431,36 @@ export default function NewsletterTab() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader>
             <CardTitle className="text-base">Письмо</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-1.5">
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
               <Label>Шаблон</Label>
-              <div className="flex flex-wrap gap-2">
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                size="sm"
+                className="flex flex-wrap justify-start"
+                value={templateKey}
+                onValueChange={(v) => {
+                  if (!v) return;
+                  const key = v as NewsletterTemplateKey;
+                  setTemplateKey(key);
+                  if (key === "partner_kp") {
+                    setCtaLabel("Скачать презентацию");
+                  }
+                }}
+              >
                 {NEWSLETTER_TEMPLATES.map((t) => (
-                  <Button
-                    key={t.key}
-                    type="button"
-                    size="sm"
-                    variant={templateKey === t.key ? "default" : "outline"}
-                    onClick={() => {
-                      setTemplateKey(t.key);
-                      if (t.key === "partner_kp") {
-                        setCtaLabel("Скачать презентацию");
-                      }
-                    }}
-                  >
+                  <ToggleGroupItem key={t.key} value={t.key} className="px-3">
                     {t.label}
-                  </Button>
+                  </ToggleGroupItem>
                 ))}
-              </div>
-              <p className="text-[11px] text-muted-foreground">
-                {
-                  NEWSLETTER_TEMPLATES.find((t) => t.key === templateKey)
-                    ?.description
-                }
-              </p>
+              </ToggleGroup>
             </div>
-            <div className="space-y-1.5">
+
+            <div className="flex flex-col gap-2">
               <Label htmlFor="nl-subject">Тема</Label>
               <Input
                 id="nl-subject"
@@ -398,17 +468,18 @@ export default function NewsletterTab() {
                 onChange={(e) => setSubject(e.target.value)}
               />
             </div>
+
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="nl-headline-red">Заголовок (красная часть)</Label>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="nl-headline-red">Заголовок</Label>
                 <Input
                   id="nl-headline-red"
                   value={headlineRed}
                   onChange={(e) => setHeadlineRed(e.target.value)}
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="nl-headline">Заголовок (остаток)</Label>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="nl-headline">Продолжение</Label>
                 <Input
                   id="nl-headline"
                   value={headline}
@@ -416,7 +487,8 @@ export default function NewsletterTab() {
                 />
               </div>
             </div>
-            <div className="space-y-1.5">
+
+            <div className="flex flex-col gap-2">
               <Label htmlFor="nl-intro">Вступление</Label>
               <Textarea
                 id="nl-intro"
@@ -425,72 +497,64 @@ export default function NewsletterTab() {
                 onChange={(e) => setIntro(e.target.value)}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="nl-body">Текст после «Добрый день!»</Label>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="nl-body">Основной текст</Label>
               <Textarea
                 id="nl-body"
-                rows={5}
+                rows={4}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
               />
             </div>
+
             {offerType === "kp" ? (
-              <div className="space-y-1.5">
-                <Label htmlFor="nl-kp-url">Ссылка на файл КП</Label>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="nl-kp-url">Ссылка на презентацию</Label>
                 <Input
                   id="nl-kp-url"
-                  placeholder="https://… (файл добавите позже)"
+                  placeholder="https://"
                   value={ctaUrl}
                   onChange={(e) => setCtaUrl(e.target.value)}
                 />
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="nl-cta-label">Кнопка</Label>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="nl-cta-label">Текст кнопки</Label>
                   <Input
                     id="nl-cta-label"
                     value={ctaLabel}
                     onChange={(e) => setCtaLabel(e.target.value)}
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="flex flex-col gap-2">
                   <Label htmlFor="nl-cta-url">Ссылка кнопки</Label>
                   <Input
                     id="nl-cta-url"
+                    placeholder="https://"
                     value={ctaUrl}
                     onChange={(e) => setCtaUrl(e.target.value)}
                   />
                 </div>
               </div>
             )}
-            <div className="space-y-1.5">
-              <Label htmlFor="nl-hero">Картинка mockup (URL, опционально)</Label>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="nl-hero">Изображение (URL)</Label>
               <Input
                 id="nl-hero"
-                placeholder="По умолчанию /email/newsletter/phone-mockup.png"
+                placeholder="Необязательно"
                 value={heroImageUrl}
                 onChange={(e) => setHeroImageUrl(e.target.value)}
               />
             </div>
 
-            <div className="flex flex-wrap gap-2 pt-2">
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={previewMut.isPending}
-                onClick={() => previewMut.mutate()}
-              >
-                {previewMut.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                ) : null}
-                Превью
-              </Button>
-            </div>
+            <Separator />
 
-            <div className="flex flex-wrap items-end gap-2 pt-2 border-t">
-              <div className="space-y-1.5 flex-1 min-w-[180px]">
-                <Label htmlFor="nl-test">Тест на email</Label>
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="flex min-w-[180px] flex-1 flex-col gap-2">
+                <Label htmlFor="nl-test">Тестовый адрес</Label>
                 <Input
                   id="nl-test"
                   value={testTo}
@@ -504,14 +568,26 @@ export default function NewsletterTab() {
                 onClick={() => testMut.mutate()}
               >
                 {testMut.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                  <Loader2 className="animate-spin" data-icon="inline-start" />
                 ) : (
-                  <Send className="w-4 h-4 mr-1" />
+                  <Send data-icon="inline-start" />
                 )}
                 Тест
               </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={previewMut.isPending}
+                onClick={() => previewMut.mutate()}
+              >
+                {previewMut.isPending ? (
+                  <Loader2 className="animate-spin" data-icon="inline-start" />
+                ) : null}
+                Превью
+              </Button>
             </div>
-
+          </CardContent>
+          <CardFooter>
             <Button
               type="button"
               className="w-full"
@@ -519,7 +595,7 @@ export default function NewsletterTab() {
               onClick={() => {
                 if (
                   !confirm(
-                    `Поставить в очередь ${activeCount} писем? Отправка начнётся только при включённой автоотправке (или «Слать пачку сейчас»).`,
+                    `Добавить письмо в очередь для ${activeCount} получателей?`,
                   )
                 ) {
                   return;
@@ -528,192 +604,209 @@ export default function NewsletterTab() {
               }}
             >
               {enqueueMut.isPending ? (
-                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                <Loader2 className="animate-spin" data-icon="inline-start" />
               ) : (
-                <ListPlus className="w-4 h-4 mr-1" />
+                <ListPlus data-icon="inline-start" />
               )}
-              В очередь ({activeCount})
+              В очередь · {activeCount}
             </Button>
-          </CardContent>
+          </CardFooter>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Превью HTML</CardTitle>
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <CardTitle className="text-base">Превью</CardTitle>
           </CardHeader>
           <CardContent>
             {previewHtml ? (
               <iframe
                 title="newsletter-preview"
-                className="w-full h-[520px] rounded-md border bg-white"
+                className="h-[560px] w-full rounded-md border bg-background"
                 srcDoc={previewHtml}
               />
             ) : (
-              <p className="text-sm text-muted-foreground">
-                Нажмите «Превью», чтобы увидеть письмо.
-              </p>
+              <div
+                className={cn(
+                  "flex h-[560px] items-center justify-center rounded-md border border-dashed",
+                  "text-sm text-muted-foreground",
+                )}
+              >
+                Нажмите «Превью»
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">
-            Очередь отправки (pending / processing)
-          </CardTitle>
+        <CardHeader>
+          <CardTitle className="text-base">Получатели</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto rounded-md border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-left">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Email</th>
-                  <th className="px-3 py-2 font-medium">Статус</th>
-                  <th className="px-3 py-2 font-medium">В очереди с</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(queueRowsQ.data || []).map((r) => (
-                  <tr key={r.id} className="border-t">
-                    <td className="px-3 py-2">{r.email}</td>
-                    <td className="px-3 py-2">{r.status}</td>
-                    <td className="px-3 py-2">
-                      {new Date(r.created_at).toLocaleString("ru-RU")}
-                    </td>
-                  </tr>
-                ))}
-                {!queueRowsQ.data?.length && (
-                  <tr>
-                    <td
-                      colSpan={3}
-                      className="px-3 py-6 text-center text-muted-foreground"
-                    >
-                      Очередь пуста. Нажмите «В очередь».
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="nl-emails">Адреса</Label>
+            <Textarea
+              id="nl-emails"
+              rows={3}
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              placeholder="a@mail.ru, b@mail.ru"
+            />
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Подписчики (opt-in)</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-2 items-end">
-            <div className="space-y-1.5">
-              <Label>Email</Label>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex min-w-[160px] flex-col gap-2">
+              <Label htmlFor="nl-name">Имя</Label>
               <Input
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="client@example.com"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Имя</Label>
-              <Input
+                id="nl-name"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="Иван"
+                placeholder="Необязательно"
               />
             </div>
             <Button
               type="button"
-              disabled={addSubMut.isPending}
+              disabled={addSubMut.isPending || !newEmail.trim()}
               onClick={() => addSubMut.mutate()}
             >
-              Добавить с согласием
+              {addSubMut.isPending ? (
+                <Loader2 className="animate-spin" data-icon="inline-start" />
+              ) : null}
+              Добавить
             </Button>
           </div>
-          <div className="overflow-x-auto rounded-md border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-left">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Email</th>
-                  <th className="px-3 py-2 font-medium">Имя</th>
-                  <th className="px-3 py-2 font-medium">Статус</th>
-                </tr>
-              </thead>
-              <tbody>
+
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Имя</TableHead>
+                  <TableHead>Статус</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {(subscribersQ.data || []).slice(0, 50).map((s) => (
-                  <tr key={s.id} className="border-t">
-                    <td className="px-3 py-2">{s.email}</td>
-                    <td className="px-3 py-2">{s.full_name || "—"}</td>
-                    <td className="px-3 py-2">
-                      {s.unsubscribed_at
-                        ? "отписан"
-                        : s.marketing_opt_in
-                          ? "opt-in"
-                          : "без согласия"}
-                    </td>
-                  </tr>
+                  <TableRow key={s.id}>
+                    <TableCell>{s.email}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {s.full_name || "—"}
+                    </TableCell>
+                    <TableCell>
+                      {s.unsubscribed_at ? (
+                        <Badge variant="outline">Отписан</Badge>
+                      ) : s.marketing_opt_in ? (
+                        <Badge variant="secondary">Активен</Badge>
+                      ) : (
+                        <Badge variant="outline">Неактивен</Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
                 ))}
-                {!subscribersQ.data?.length && (
-                  <tr>
-                    <td
+                {!subscribersQ.data?.length ? (
+                  <TableRow>
+                    <TableCell
                       colSpan={3}
-                      className="px-3 py-6 text-center text-muted-foreground"
+                      className="py-8 text-center text-muted-foreground"
                     >
-                      Пока пусто. Добавьте email с согласием.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                      Список пуст
+                    </TableCell>
+                  </TableRow>
+                ) : null}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Последние кампании</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto rounded-md border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-left">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Тема</th>
-                  <th className="px-3 py-2 font-medium">Шаблон</th>
-                  <th className="px-3 py-2 font-medium">Статус</th>
-                  <th className="px-3 py-2 font-medium">Отправлено</th>
-                  <th className="px-3 py-2 font-medium">Дата</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(campaignsQ.data || []).map((c) => (
-                  <tr key={c.id} className="border-t">
-                    <td className="px-3 py-2">{c.subject}</td>
-                    <td className="px-3 py-2">{c.template_key || "—"}</td>
-                    <td className="px-3 py-2">{c.status}</td>
-                    <td className="px-3 py-2">
-                      {c.sent_count}/{c.recipient_count}
-                      {c.fail_count ? ` (−${c.fail_count})` : ""}
-                    </td>
-                    <td className="px-3 py-2">
-                      {new Date(c.created_at).toLocaleString("ru-RU")}
-                    </td>
-                  </tr>
-                ))}
-                {!campaignsQ.data?.length && (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="px-3 py-6 text-center text-muted-foreground"
-                    >
-                      Кампаний ещё не было.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Очередь</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Статус</TableHead>
+                    <TableHead>Дата</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(queueRowsQ.data || []).map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell>{r.email}</TableCell>
+                      <TableCell>{statusBadge(r.status)}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(r.created_at).toLocaleString("ru-RU")}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {!queueRowsQ.data?.length ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={3}
+                        className="py-8 text-center text-muted-foreground"
+                      >
+                        Очередь пуста
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">История</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Тема</TableHead>
+                    <TableHead>Статус</TableHead>
+                    <TableHead>Отправлено</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(campaignsQ.data || []).map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <span className="truncate font-medium">{c.subject}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {templateLabel(c.template_key)} ·{" "}
+                            {new Date(c.created_at).toLocaleString("ru-RU")}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{statusBadge(c.status)}</TableCell>
+                      <TableCell>
+                        {c.sent_count}/{c.recipient_count}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {!campaignsQ.data?.length ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={3}
+                        className="py-8 text-center text-muted-foreground"
+                      >
+                        Пока нет кампаний
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

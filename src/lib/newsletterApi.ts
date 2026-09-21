@@ -18,13 +18,11 @@ export type NewsletterPayload = {
 export const NEWSLETTER_TEMPLATES = [
   {
     key: "partner_kp",
-    label: "Партнёрам — КП / презентация",
-    description: "Макет Figma «Шаблон письма», кнопка «Скачать презентацию»",
+    label: "Презентация",
   },
   {
     key: "partner_custom",
-    label: "Партнёрам — своя кнопка",
-    description: "Тот же макет, произвольный текст кнопки и ссылка",
+    label: "Своя кнопка",
   },
 ] as const;
 
