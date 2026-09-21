@@ -141,7 +141,7 @@ export function buildNewsletterHtml(content: NewsletterContent): string {
           </tr>
 
           <tr>
-            <td style="padding:0 50px 4px;">
+            <td style="padding:0 50px 0;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                 <tr>
                   <td width="250" valign="top" style="width:250px;padding:0 0 22px;">
@@ -165,10 +165,9 @@ export function buildNewsletterHtml(content: NewsletterContent): string {
             </td>
           </tr>
 
-          <!-- phone mockup -->
           <tr>
-            <td align="center" style="padding:8px 0 0;">
-              <img src="${escapeHtml(phoneImg)}" width="600" height="719" alt="Приложение ДАДАТУТ" style="display:block;width:100%;max-width:600px;height:auto;border:0;object-fit:contain;" />
+            <td align="center" style="padding:24px 0 0;">
+              <img src="${escapeHtml(phoneImg)}" width="600" height="525" alt="Сайт и приложение ДАДАТУТ" style="display:block;width:100%;max-width:600px;height:auto;border:0;" />
             </td>
           </tr>
 
@@ -181,7 +180,6 @@ export function buildNewsletterHtml(content: NewsletterContent): string {
             </td>
           </tr>
 
-          <!-- CTA -->
           <tr>
             <td style="padding:24px 50px 36px;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-radius:20px;overflow:hidden;">
