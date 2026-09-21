@@ -19,21 +19,32 @@ if [ -f "$ENV_FILE" ]; then
   set +a
 fi
 
-# Fallback: pull secret from functions .env
-if [ -z "${NOTIFY_EMAIL_SECRET:-}" ] && [ -f /opt/supabase/volumes/functions/.env ]; then
-  NOTIFY_EMAIL_SECRET="$(grep -E '^NOTIFY_EMAIL_SECRET=' /opt/supabase/volumes/functions/.env | tail -1 | cut -d= -f2- | tr -d '\r\n\"')"
+# Fallbacks: functions env, then supabase root env
+pick_secret() {
+  local f="$1"
+  if [ -f "$f" ]; then
+    grep -E '^NOTIFY_EMAIL_SECRET=' "$f" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '\r\n"'
+  fi
+}
+
+if [ -z "${NOTIFY_EMAIL_SECRET:-}" ]; then
+  NOTIFY_EMAIL_SECRET="$(pick_secret /opt/supabase/volumes/functions/.env)"
+fi
+if [ -z "${NOTIFY_EMAIL_SECRET:-}" ]; then
+  NOTIFY_EMAIL_SECRET="$(pick_secret /opt/supabase/.env)"
 fi
 
 URL="${NEWSLETTER_FUNCTION_URL:-https://api.arendacity.com/functions/v1/send-newsletter}"
 
-if [ -z "${NOTIFY_EMAIL_SECRET:-}" ]; then
-  echo "$(date -Is) ERROR: NOTIFY_EMAIL_SECRET missing" >&2
-  exit 1
+HDRS=(-H "Content-Type: application/json")
+if [ -n "${NOTIFY_EMAIL_SECRET:-}" ]; then
+  HDRS+=(-H "x-notify-secret: ${NOTIFY_EMAIL_SECRET}")
+else
+  echo "$(date -Is) WARN: NOTIFY_EMAIL_SECRET missing — calling without header" >&2
 fi
 
 RESP="$(curl -sS --max-time 120 -X POST "$URL" \
-  -H "Content-Type: application/json" \
-  -H "x-notify-secret: ${NOTIFY_EMAIL_SECRET}" \
+  "${HDRS[@]}" \
   -d '{"mode":"process_queue"}')"
 
 echo "$(date -Is) $RESP"
