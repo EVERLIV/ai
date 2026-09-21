@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Mail, RefreshCw, Send } from "lucide-react";
+import { Loader2, Mail, RefreshCw, Send, ListPlus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -13,10 +14,16 @@ import {
   SUPABASE_URL,
 } from "@/integrations/supabase/adminClient";
 import {
+  NEWSLETTER_TEMPLATES,
+  enqueueNewsletterCampaign,
+  getNewsletterQueueStatus,
+  getNewsletterSettings,
   previewNewsletter,
-  sendNewsletterCampaign,
+  processNewsletterQueue,
   sendNewsletterTest,
+  setNewsletterSettings,
   type NewsletterPayload,
+  type NewsletterTemplateKey,
 } from "@/lib/newsletterApi";
 
 type Subscriber = {
@@ -32,11 +39,20 @@ type Campaign = {
   id: string;
   subject: string;
   status: string;
+  template_key?: string | null;
   recipient_count: number;
   sent_count: number;
   fail_count: number;
   created_at: string;
   finished_at: string | null;
+};
+
+type QueueRow = {
+  id: string;
+  email: string;
+  status: string;
+  created_at: string;
+  campaign_id: string;
 };
 
 const serviceHeaders = {
@@ -65,6 +81,8 @@ async function serviceFetch<T>(path: string, init?: RequestInit): Promise<T> {
 export default function NewsletterTab() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const [templateKey, setTemplateKey] =
+    useState<NewsletterTemplateKey>("partner_kp");
   const [subject, setSubject] = useState(
     "Ваши объекты — на новом агрегаторе ДАДАТУТ",
   );
@@ -80,13 +98,13 @@ export default function NewsletterTab() {
   );
   const [ctaLabel, setCtaLabel] = useState("Скачать презентацию");
   const [ctaUrl, setCtaUrl] = useState("");
-  /** КП предложение — CTA «Скачать презентацию» + ссылка на файл */
-  const [offerType, setOfferType] = useState<"kp" | "custom">("kp");
   const [heroImageUrl, setHeroImageUrl] = useState("");
   const [testTo, setTestTo] = useState(user?.email || "");
   const [previewHtml, setPreviewHtml] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
+
+  const offerType = templateKey === "partner_kp" ? "kp" : "custom";
 
   const payload: NewsletterPayload = useMemo(
     () => ({
@@ -99,6 +117,7 @@ export default function NewsletterTab() {
         offerType === "kp" ? "Скачать презентацию" : ctaLabel.trim(),
       ctaUrl: ctaUrl.trim() || "https://dadatut.ru/",
       heroImageUrl: heroImageUrl.trim() || null,
+      templateKey,
       createdBy: user?.id || null,
     }),
     [
@@ -111,6 +130,7 @@ export default function NewsletterTab() {
       ctaLabel,
       ctaUrl,
       heroImageUrl,
+      templateKey,
       user?.id,
     ],
   );
@@ -147,11 +167,34 @@ export default function NewsletterTab() {
     queryKey: ["newsletter-campaigns"],
     queryFn: () =>
       serviceFetch<Campaign[]>(
-        "newsletter_campaigns?select=id,subject,status,recipient_count,sent_count,fail_count,created_at,finished_at&order=created_at.desc&limit=20",
+        "newsletter_campaigns?select=id,subject,status,template_key,recipient_count,sent_count,fail_count,created_at,finished_at&order=created_at.desc&limit=20",
       ),
   });
 
+  const queueRowsQ = useQuery({
+    queryKey: ["newsletter-queue-rows"],
+    queryFn: () =>
+      serviceFetch<QueueRow[]>(
+        "newsletter_sends?select=id,email,status,created_at,campaign_id&status=in.(pending,processing)&order=created_at.asc&limit=50",
+      ),
+    refetchInterval: 30_000,
+  });
+
+  const settingsQ = useQuery({
+    queryKey: ["newsletter-settings"],
+    queryFn: getNewsletterSettings,
+  });
+
+  const queueStatusQ = useQuery({
+    queryKey: ["newsletter-queue-status"],
+    queryFn: getNewsletterQueueStatus,
+    refetchInterval: 30_000,
+  });
+
   const activeCount = activeCountQ.data ?? 0;
+  const sendingEnabled = Boolean(settingsQ.data?.sendingEnabled);
+  const pendingCount = queueStatusQ.data?.pending ?? 0;
+  const processingCount = queueStatusQ.data?.processing ?? 0;
 
   const previewMut = useMutation({
     mutationFn: () => previewNewsletter(payload),
@@ -168,13 +211,47 @@ export default function NewsletterTab() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const campaignMut = useMutation({
-    mutationFn: () => sendNewsletterCampaign(payload),
+  const enqueueMut = useMutation({
+    mutationFn: () => enqueueNewsletterCampaign(payload),
     onSuccess: (data) => {
       toast.success(
-        `Кампания: отправлено ${data.sent ?? 0}, ошибок ${data.failed ?? 0}`,
+        `В очередь: ${data.queued ?? 0} писем. Включите автоотправку, чтобы cron начал слать.`,
       );
       qc.invalidateQueries({ queryKey: ["newsletter-campaigns"] });
+      qc.invalidateQueries({ queryKey: ["newsletter-queue-status"] });
+      qc.invalidateQueries({ queryKey: ["newsletter-queue-rows"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const toggleMut = useMutation({
+    mutationFn: (enabled: boolean) =>
+      setNewsletterSettings({ sendingEnabled: enabled }),
+    onSuccess: (data) => {
+      toast.success(
+        data.sendingEnabled
+          ? "Автоотправка включена — cron шлёт из очереди"
+          : "Автоотправка выключена",
+      );
+      qc.invalidateQueries({ queryKey: ["newsletter-settings"] });
+      qc.invalidateQueries({ queryKey: ["newsletter-queue-status"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const drainMut = useMutation({
+    mutationFn: () => processNewsletterQueue(),
+    onSuccess: (data) => {
+      if (data.skipped === "disabled") {
+        toast.message("Автоотправка выключена — пачка не ушла");
+      } else {
+        toast.success(
+          `Пачка: отправлено ${data.sent ?? 0}, ошибок ${data.failed ?? 0}`,
+        );
+      }
+      qc.invalidateQueries({ queryKey: ["newsletter-campaigns"] });
+      qc.invalidateQueries({ queryKey: ["newsletter-queue-status"] });
+      qc.invalidateQueries({ queryKey: ["newsletter-queue-rows"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -185,22 +262,19 @@ export default function NewsletterTab() {
       if (!email || !email.includes("@")) {
         throw new Error("Укажите корректный email");
       }
-      await serviceFetch(
-        "newsletter_subscribers?on_conflict=email",
-        {
-          method: "POST",
-          headers: {
-            Prefer: "resolution=merge-duplicates,return=representation",
-          },
-          body: JSON.stringify({
-            email,
-            full_name: newName.trim(),
-            marketing_opt_in: true,
-            unsubscribed_at: null,
-            source: "admin",
-          }),
+      await serviceFetch("newsletter_subscribers?on_conflict=email", {
+        method: "POST",
+        headers: {
+          Prefer: "resolution=merge-duplicates,return=representation",
         },
-      );
+        body: JSON.stringify({
+          email,
+          full_name: newName.trim(),
+          marketing_opt_in: true,
+          unsubscribed_at: null,
+          source: "admin",
+        }),
+      });
     },
     onSuccess: () => {
       toast.success("Подписчик добавлен (opt-in)");
@@ -221,8 +295,9 @@ export default function NewsletterTab() {
             Рассылки
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            SMTP Timeweb · только подписчики с marketing_opt_in. Активных:{" "}
-            <strong>{activeCount}</strong>
+            Очередь + cron каждые 5 мин · opt-in: <strong>{activeCount}</strong>
+            {" · "}в очереди: <strong>{pendingCount}</strong>
+            {processingCount ? ` (в работе ${processingCount})` : ""}
           </p>
         </div>
         <Button
@@ -232,11 +307,55 @@ export default function NewsletterTab() {
             subscribersQ.refetch();
             activeCountQ.refetch();
             campaignsQ.refetch();
+            queueStatusQ.refetch();
+            queueRowsQ.refetch();
+            settingsQ.refetch();
           }}
         >
           <RefreshCw className="w-4 h-4 mr-1" /> Обновить
         </Button>
       </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Автоотправка очереди</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-sm">
+              Включается вручную. Пока выключено — письма лежат в очереди.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Cron на VPS:{" "}
+              <code className="text-[11px]">
+                */5 * * * * newsletter-queue-cron.sh
+              </code>
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={sendingEnabled}
+              disabled={toggleMut.isPending || settingsQ.isLoading}
+              onCheckedChange={(v) => toggleMut.mutate(v)}
+            />
+            <span className="text-sm font-medium">
+              {sendingEnabled ? "Включена" : "Выключена"}
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={drainMut.isPending}
+              onClick={() => drainMut.mutate()}
+            >
+              {drainMut.isPending ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : null}
+              Слать пачку сейчас
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -244,6 +363,33 @@ export default function NewsletterTab() {
             <CardTitle className="text-base">Письмо</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Шаблон</Label>
+              <div className="flex flex-wrap gap-2">
+                {NEWSLETTER_TEMPLATES.map((t) => (
+                  <Button
+                    key={t.key}
+                    type="button"
+                    size="sm"
+                    variant={templateKey === t.key ? "default" : "outline"}
+                    onClick={() => {
+                      setTemplateKey(t.key);
+                      if (t.key === "partner_kp") {
+                        setCtaLabel("Скачать презентацию");
+                      }
+                    }}
+                  >
+                    {t.label}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {
+                  NEWSLETTER_TEMPLATES.find((t) => t.key === templateKey)
+                    ?.description
+                }
+              </p>
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="nl-subject">Тема</Label>
               <Input
@@ -288,30 +434,6 @@ export default function NewsletterTab() {
                 onChange={(e) => setBody(e.target.value)}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label>Вложение / оффер</Label>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={offerType === "kp" ? "default" : "outline"}
-                  onClick={() => {
-                    setOfferType("kp");
-                    setCtaLabel("Скачать презентацию");
-                  }}
-                >
-                  КП предложение
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={offerType === "custom" ? "default" : "outline"}
-                  onClick={() => setOfferType("custom")}
-                >
-                  Своя кнопка
-                </Button>
-              </div>
-            </div>
             {offerType === "kp" ? (
               <div className="space-y-1.5">
                 <Label htmlFor="nl-kp-url">Ссылка на файл КП</Label>
@@ -321,10 +443,6 @@ export default function NewsletterTab() {
                   value={ctaUrl}
                   onChange={(e) => setCtaUrl(e.target.value)}
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  Кнопка в письме: «Скачать презентацию». URL можно вставить
-                  позже — до отправки.
-                </p>
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
@@ -347,16 +465,13 @@ export default function NewsletterTab() {
               </div>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="nl-hero">Mockup телефона (URL, опционально)</Label>
+              <Label htmlFor="nl-hero">Картинка mockup (URL, опционально)</Label>
               <Input
                 id="nl-hero"
                 placeholder="По умолчанию /email/newsletter/phone-mockup.png"
                 value={heroImageUrl}
                 onChange={(e) => setHeroImageUrl(e.target.value)}
               />
-              <p className="text-[11px] text-muted-foreground">
-                Макет Figma «Шаблон письма». Превью: /email/newsletter-campaign.html
-              </p>
             </div>
 
             <div className="flex flex-wrap gap-2 pt-2">
@@ -400,24 +515,24 @@ export default function NewsletterTab() {
             <Button
               type="button"
               className="w-full"
-              disabled={campaignMut.isPending || activeCount === 0}
+              disabled={enqueueMut.isPending || activeCount === 0}
               onClick={() => {
                 if (
                   !confirm(
-                    `Отправить кампанию ${activeCount} подписчикам с согласием?`,
+                    `Поставить в очередь ${activeCount} писем? Отправка начнётся только при включённой автоотправке (или «Слать пачку сейчас»).`,
                   )
                 ) {
                   return;
                 }
-                campaignMut.mutate();
+                enqueueMut.mutate();
               }}
             >
-              {campaignMut.isPending ? (
+              {enqueueMut.isPending ? (
                 <Loader2 className="w-4 h-4 mr-1 animate-spin" />
               ) : (
-                <Send className="w-4 h-4 mr-1" />
+                <ListPlus className="w-4 h-4 mr-1" />
               )}
-              Отправить кампанию ({activeCount})
+              В очередь ({activeCount})
             </Button>
           </CardContent>
         </Card>
@@ -441,6 +556,48 @@ export default function NewsletterTab() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">
+            Очередь отправки (pending / processing)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto rounded-md border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-left">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Email</th>
+                  <th className="px-3 py-2 font-medium">Статус</th>
+                  <th className="px-3 py-2 font-medium">В очереди с</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(queueRowsQ.data || []).map((r) => (
+                  <tr key={r.id} className="border-t">
+                    <td className="px-3 py-2">{r.email}</td>
+                    <td className="px-3 py-2">{r.status}</td>
+                    <td className="px-3 py-2">
+                      {new Date(r.created_at).toLocaleString("ru-RU")}
+                    </td>
+                  </tr>
+                ))}
+                {!queueRowsQ.data?.length && (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      className="px-3 py-6 text-center text-muted-foreground"
+                    >
+                      Очередь пуста. Нажмите «В очередь».
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="pb-3">
@@ -521,6 +678,7 @@ export default function NewsletterTab() {
               <thead className="bg-muted/50 text-left">
                 <tr>
                   <th className="px-3 py-2 font-medium">Тема</th>
+                  <th className="px-3 py-2 font-medium">Шаблон</th>
                   <th className="px-3 py-2 font-medium">Статус</th>
                   <th className="px-3 py-2 font-medium">Отправлено</th>
                   <th className="px-3 py-2 font-medium">Дата</th>
@@ -530,6 +688,7 @@ export default function NewsletterTab() {
                 {(campaignsQ.data || []).map((c) => (
                   <tr key={c.id} className="border-t">
                     <td className="px-3 py-2">{c.subject}</td>
+                    <td className="px-3 py-2">{c.template_key || "—"}</td>
                     <td className="px-3 py-2">{c.status}</td>
                     <td className="px-3 py-2">
                       {c.sent_count}/{c.recipient_count}
@@ -543,7 +702,7 @@ export default function NewsletterTab() {
                 {!campaignsQ.data?.length && (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       className="px-3 py-6 text-center text-muted-foreground"
                     >
                       Кампаний ещё не было.

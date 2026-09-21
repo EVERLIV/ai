@@ -11,8 +11,25 @@ export type NewsletterPayload = {
   ctaLabel?: string;
   ctaUrl?: string;
   heroImageUrl?: string | null;
+  templateKey?: string;
   createdBy?: string | null;
 };
+
+export const NEWSLETTER_TEMPLATES = [
+  {
+    key: "partner_kp",
+    label: "Партнёрам — КП / презентация",
+    description: "Макет Figma «Шаблон письма», кнопка «Скачать презентацию»",
+  },
+  {
+    key: "partner_custom",
+    label: "Партнёрам — своя кнопка",
+    description: "Тот же макет, произвольный текст кнопки и ссылка",
+  },
+] as const;
+
+export type NewsletterTemplateKey =
+  (typeof NEWSLETTER_TEMPLATES)[number]["key"];
 
 const SEND_URL = getEdgeFunctionUrl("send-newsletter", "VITE_SEND_NEWSLETTER_URL");
 const UNSUB_URL = getEdgeFunctionUrl(
@@ -58,8 +75,55 @@ export async function sendNewsletterTest(
   return postSend({ mode: "test", testTo, ...payload });
 }
 
+/** Put opt-in list into pending queue (cron drains when enabled). */
+export async function enqueueNewsletterCampaign(payload: NewsletterPayload) {
+  return postSend({ mode: "enqueue", ...payload });
+}
+
+/** Legacy sync send — prefer enqueue for large lists. */
 export async function sendNewsletterCampaign(payload: NewsletterPayload) {
   return postSend({ mode: "campaign", ...payload });
+}
+
+export async function processNewsletterQueue(limit?: number) {
+  return postSend({
+    mode: "process_queue",
+    ...(limit ? { limit } : {}),
+  });
+}
+
+export async function getNewsletterQueueStatus() {
+  return postSend({ mode: "queue_status" }) as Promise<{
+    ok?: boolean;
+    pending?: number;
+    processing?: number;
+    sendingEnabled?: boolean;
+    batchSize?: number;
+  }>;
+}
+
+export async function getNewsletterSettings() {
+  return postSend({ mode: "settings_get" }) as Promise<{
+    ok?: boolean;
+    sendingEnabled?: boolean;
+    batchSize?: number;
+    updatedAt?: string | null;
+  }>;
+}
+
+export async function setNewsletterSettings(opts: {
+  sendingEnabled: boolean;
+  batchSize?: number;
+}) {
+  return postSend({
+    mode: "settings_set",
+    sendingEnabled: opts.sendingEnabled,
+    batchSize: opts.batchSize,
+  }) as Promise<{
+    ok?: boolean;
+    sendingEnabled?: boolean;
+    batchSize?: number;
+  }>;
 }
 
 export async function unsubscribeNewsletter(token: string) {
