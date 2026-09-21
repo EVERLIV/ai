@@ -21,10 +21,12 @@ fi
 
 # Fallbacks: functions env, then supabase root env
 pick_secret() {
-  local f="$1"
+  local f="$1" val=""
   if [ -f "$f" ]; then
-    grep -E '^NOTIFY_EMAIL_SECRET=' "$f" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '\r\n"'
+    val="$(grep -E '^NOTIFY_EMAIL_SECRET=' "$f" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '\r\n"' || true)"
   fi
+  printf '%s' "$val"
+  return 0
 }
 
 if [ -z "${NOTIFY_EMAIL_SECRET:-}" ]; then
