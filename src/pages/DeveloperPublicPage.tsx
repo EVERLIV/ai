@@ -24,7 +24,7 @@ import {
 } from "@/hooks/useDeveloper";
 import { isProfileVerified } from "@/hooks/useProfile";
 import type { DbProperty } from "@/hooks/useProperties";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import { buildCatalogUrl } from "@/lib/catalogPaths";
 import {
   DEVELOPER_PROJECT_STATUS_LABELS,
   DEVELOPER_SUBTYPE_LABELS,

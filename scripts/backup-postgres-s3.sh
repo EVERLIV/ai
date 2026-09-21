@@ -20,6 +20,13 @@
 #   15 3 * * * . /root/backup-s3.env && /opt/arendacity/scripts/backup-postgres-s3.sh >> /var/log/pg-backup.log 2>&1
 set -euo pipefail
 
+if [[ -f /root/backup-s3.env ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source <(sed 's/\r$//' /root/backup-s3.env)
+  set +a
+fi
+
 CONTAINER="${CONTAINER:-supabase-db}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/postgres}"
 S3_PREFIX="${S3_PREFIX:-postgres}"
@@ -69,8 +76,57 @@ elif command -v s3cmd >/dev/null 2>&1; then
     --access_key="$S3_ACCESS_KEY" --secret_key="$S3_SECRET_KEY" \
     put "$ENC" "s3://${S3_BUCKET}/${S3_KEY}"
 else
-  echo "Нужен aws CLI или s3cmd." >&2
-  exit 1
+  export ENC S3_KEY
+  python3 - <<'PY'
+import datetime, hashlib, hmac, os, urllib.parse, urllib.request
+
+def sign(key: bytes, msg: str) -> bytes:
+    return hmac.new(key, msg.encode("utf-8"), hashlib.sha256).digest()
+
+payload = open(os.environ["ENC"], "rb").read()
+payload_hash = hashlib.sha256(payload).hexdigest()
+host = os.environ["S3_ENDPOINT"].removeprefix("https://").removeprefix("http://").split("/")[0]
+bucket = os.environ["S3_BUCKET"]
+key = os.environ["S3_KEY"]
+region = os.environ.get("S3_REGION", "ru-1")
+access = os.environ["S3_ACCESS_KEY"]
+secret = os.environ["S3_SECRET_KEY"]
+now = datetime.datetime.now(datetime.UTC)
+amzdate = now.strftime("%Y%m%dT%H%M%SZ")
+datestamp = now.strftime("%Y%m%d")
+canonical_uri = "/" + urllib.parse.quote(bucket, safe="") + "/" + urllib.parse.quote(key, safe="/")
+canonical_headers = f"host:{host}\nx-amz-content-sha256:{payload_hash}\nx-amz-date:{amzdate}\n"
+signed_headers = "host;x-amz-content-sha256;x-amz-date"
+canonical_request = "\n".join(
+    ["PUT", canonical_uri, "", canonical_headers, signed_headers, payload_hash]
+)
+scope = f"{datestamp}/{region}/s3/aws4_request"
+string_to_sign = "\n".join(
+    [
+        "AWS4-HMAC-SHA256",
+        amzdate,
+        scope,
+        hashlib.sha256(canonical_request.encode()).hexdigest(),
+    ]
+)
+signing_key = sign(("AWS4" + secret).encode(), datestamp)
+signing_key = hmac.new(signing_key, region.encode(), hashlib.sha256).digest()
+signing_key = hmac.new(signing_key, b"s3", hashlib.sha256).digest()
+signing_key = hmac.new(signing_key, b"aws4_request", hashlib.sha256).digest()
+signature = hmac.new(signing_key, string_to_sign.encode(), hashlib.sha256).hexdigest()
+auth = (
+    f"AWS4-HMAC-SHA256 Credential={access}/{scope}, "
+    f"SignedHeaders={signed_headers}, Signature={signature}"
+)
+req = urllib.request.Request(f"https://{host}{canonical_uri}", data=payload, method="PUT")
+req.add_header("Host", host)
+req.add_header("x-amz-content-sha256", payload_hash)
+req.add_header("x-amz-date", amzdate)
+req.add_header("Authorization", auth)
+req.add_header("Content-Type", "application/octet-stream")
+with urllib.request.urlopen(req, timeout=300) as resp:
+    print(f"python upload HTTP {resp.status}")
+PY
 fi
 
 rm -f "$ENC"

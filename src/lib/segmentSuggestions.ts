@@ -1,6 +1,6 @@
 import type { PropertySegment } from "@/config/propertySegments";
 import { SEGMENT_ROUTES } from "@/config/propertySegments";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import { buildCatalogUrl } from "@/lib/catalogPaths";
 import { commercialTypeMenuLabel } from "@/lib/catalogMegaMenu";
 
 export type SuggestionIconKey =

@@ -13,6 +13,7 @@
     "check:fix": "biome check --write .",
     "format": "biome format --write .",
     "preview": "vite preview",
+    "icons": "node scripts/generate-pwa-icons.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "news:sync": "node scripts/sync-news-fallback.mjs"

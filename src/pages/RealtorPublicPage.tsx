@@ -17,7 +17,7 @@ import { pluralObjects } from "@/components/specialists/specialistUtils";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useManagerPublic } from "@/hooks/useAgency";
 import { isProfileVerified } from "@/hooks/useProfile";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import { buildCatalogUrl } from "@/lib/catalogPaths";
 import { cn } from "@/lib/utils";
 
 function InfoRow({

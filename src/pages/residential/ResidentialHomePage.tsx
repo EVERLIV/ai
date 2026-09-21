@@ -27,7 +27,7 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import { absoluteUrl } from "@/config/site";
 import { useProperties } from "@/hooks/useProperties";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import { buildCatalogUrl } from "@/lib/catalogPaths";
 import { getResidentialMarket } from "@/lib/propertyResidential";
 import { getPropertySegment, propertyMatchesTypes } from "@/lib/propertyTypes";
 import { getResidentialSuggestions } from "@/lib/segmentSuggestions";

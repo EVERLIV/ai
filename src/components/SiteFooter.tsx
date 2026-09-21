@@ -6,7 +6,7 @@ import {
   footerCityLinks,
   footerResidentialLinks,
   footerSectionLinks,
-} from "@/lib/catalogLinks";
+} from "@/lib/catalogPaths";
 
 type FooterLink = { label: string; href: string; external?: boolean };
 
@@ -25,7 +25,7 @@ const FOOTER_COLUMNS: FooterLink[][] = [
     { label: "О нас", href: "/about" },
   ],
   [
-    { label: "Поиск на карте", href: "/catalog" },
+    { label: "Поиск на карте", href: "/snyat/kommercheskaya" },
     { label: "Разместить объявление", href: "/list-property" },
   ],
   [

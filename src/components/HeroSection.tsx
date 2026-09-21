@@ -8,7 +8,7 @@ import type { PropertySegment } from "@/config/propertySegments";
 import { useCountUp } from "@/hooks/useCountUp";
 import { useProperties } from "@/hooks/useProperties";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import { buildCatalogUrl } from "@/lib/catalogPaths";
 import { buildPropertyDisplayTitle } from "@/lib/propertyCard";
 import { getResidentialMarket } from "@/lib/propertyResidential";
 import { propertyMatchesTypes } from "@/lib/propertyTypes";

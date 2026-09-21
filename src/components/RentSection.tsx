@@ -11,7 +11,7 @@ import { Link, useNavigate } from "react-router-dom";
 import PropertyImage from "@/components/PropertyImage";
 import { useProperties } from "@/hooks/useProperties";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import { buildCatalogUrl } from "@/lib/catalogPaths";
 import {
   buildPropertyDisplayTitle,
   formatPropertyAddressShort,

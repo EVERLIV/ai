@@ -9,7 +9,7 @@ import { useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import PropertyImage from "@/components/PropertyImage";
 import { useProperties } from "@/hooks/useProperties";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import { buildCatalogUrl } from "@/lib/catalogPaths";
 import {
   buildPropertyDisplayTitle,
   formatPropertyAddressShort,

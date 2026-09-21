@@ -28,7 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 import type { DbProperty } from "@/hooks/useProperties";
 import { type AIResponse, invokePropertyPick } from "@/lib/aiPropertyPick";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import { buildCatalogUrl } from "@/lib/catalogPaths";
 import { isBroadLocation } from "@/lib/irkutskLocations";
 import {
   CONDITIONS,

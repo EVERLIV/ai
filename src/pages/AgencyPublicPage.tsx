@@ -25,7 +25,7 @@ import {
   useAgencyPublicProperties,
 } from "@/hooks/useAgency";
 import { isProfileVerified } from "@/hooks/useProfile";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import { buildCatalogUrl } from "@/lib/catalogPaths";
 
 export default function AgencyPublicPage() {
   const { id } = useParams<{ id: string }>();

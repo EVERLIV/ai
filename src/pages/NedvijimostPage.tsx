@@ -22,7 +22,7 @@ import {
 } from "@/config/homeSearchCategories";
 import { absoluteUrl } from "@/config/site";
 import { useProperties } from "@/hooks/useProperties";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import { buildCatalogUrl } from "@/lib/catalogPaths";
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   apartments: Home,

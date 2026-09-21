@@ -43,26 +43,57 @@ log "  - nginx по-прежнему proxy_pass http://localhost:8000"
 log "  - https://api.arendacity.com остаётся публичным (нужен фронту)"
 log "  - http://IP:8000 с интернета — закрыть"
 
-if ! grep -qE '8000:8000|8000:8000/tcp|"8000:8000"' "$COMPOSE_FILE"; then
+if ! grep -qE '8000:8000|8000:8000/tcp|"8000:8000"|KONG_HTTP_PORT' "$COMPOSE_FILE"; then
   log
-  log "Внимание: в compose нет строки 8000:8000 — проверьте ports у kong вручную."
+  log "Внимание: в compose нет 8000:8000 и KONG_HTTP_PORT — проверьте ports у kong вручную."
 fi
 
 rewrite_ports() {
   python3 - "$COMPOSE_FILE" <<'PY'
 import pathlib, sys, re, time
-p = pathlib.Path(sys.argv[1])
-text = p.read_text()
+stamp = time.strftime("%Y%m%d%H%M%S")
+compose = pathlib.Path(sys.argv[1])
+env_path = compose.parent / ".env"
+
+def backup_and_write(path, orig, text, label):
+    if text == orig:
+        print(f"{label}: без изменений (уже localhost или другой шаблон)")
+        return
+    bak = path.with_name(path.name + ".bak." + stamp)
+    bak.write_text(orig)
+    path.write_text(text)
+    print(f"{label}: обновлён, бэкап {bak}")
+
+text = compose.read_text()
 orig = text
 text = re.sub(r'0\.0\.0\.0:(8000|8443|8001):\1', r'127.0.0.1:\1:\1', text)
 text = re.sub(r'(?<!127\.0\.0\.1:)(?<!\d)(8000|8443|8001):\1\b', r'127.0.0.1:\1:\1', text)
-if text == orig:
-    print("compose: порты уже localhost или шаблон другой — проверьте kong.ports")
+backup_and_write(compose, orig, text, "compose")
+
+if env_path.is_file():
+    env = env_path.read_text()
+    orig_env = env
+    env = re.sub(
+        r'^(KONG_HTTP_PORT)=(?:0\.0\.0\.0:)?8000\s*$',
+        r'\1=127.0.0.1:8000',
+        env,
+        flags=re.M,
+    )
+    env = re.sub(
+        r'^(KONG_HTTPS_PORT)=(?:0\.0\.0\.0:)?8443\s*$',
+        r'\1=127.0.0.1:8443',
+        env,
+        flags=re.M,
+    )
+    env = re.sub(
+        r'^(KONG_ADMIN_PORT)=(?:0\.0\.0\.0:)?8001\s*$',
+        r'\1=127.0.0.1:8001',
+        env,
+        flags=re.M,
+    )
+    backup_and_write(env_path, orig_env, env, ".env")
 else:
-    bak = p.with_suffix(p.suffix + ".bak." + time.strftime("%Y%m%d%H%M%S"))
-    bak.write_text(orig)
-    p.write_text(text)
-    print(f"compose обновлён, бэкап {bak}")
+    print(".env не найден рядом с compose")
 PY
 }
 

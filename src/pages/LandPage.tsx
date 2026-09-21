@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { SEGMENT_ROUTES } from "@/config/propertySegments";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import { buildCatalogUrl } from "@/lib/catalogPaths";
 
 /** Старый /land → каталог земли */
 export default function LandPage() {

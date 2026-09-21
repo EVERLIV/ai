@@ -76,9 +76,10 @@ https://arendacity.com/feed.xml
 - `public/apple-touch-icon.png` — 180×180 для iOS.
 - `public/og-default.jpg` — брендовая OG-картинка.
 
-Пересоздать OG и apple-touch-icon:
+Пересоздать OG, favicon и иконки PWA:
 
 ```bash
+node scripts/generate-pwa-icons.mjs
 node scripts/generate-og-images.mjs
 ```
 
