@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import ctaRentOutBg from "@/assets/cta-rent-out.jpg";
 import CatalogFiltersSidebar, {
   CATALOG_AREA_MAX,
@@ -35,11 +35,18 @@ import PropertyGridCard, {
 import SegmentSuggestionTiles from "@/components/SegmentSuggestionTiles";
 import SeoHead from "@/components/SeoHead";
 import { absoluteUrl } from "@/config/site";
+import {
+  type CatalogCategoryId,
+  type CatalogDealSlug,
+  DEAL_PATHS,
+  filterSchemaHas,
+  getCategoryById,
+  isDealAllowedForCategory,
+} from "@/config/catalogTaxonomy";
 import { catalogHasFilterQuery } from "@/lib/seo/catalogIndexability";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import type { PropertySegment } from "@/config/propertySegments";
-import { LAND_DEAL_TYPES } from "@/config/propertySegments";
 import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 import { useProperties } from "@/hooks/useProperties";
 import { usePropertyDistricts } from "@/hooks/usePropertyDistricts";
@@ -50,7 +57,11 @@ import {
   sortCatalogProperties,
   type CatalogSortKey,
 } from "@/lib/catalogSort";
-import { readCatalogFiltersFromSearchParams, serializeCatalogSearchParams } from "@/lib/catalogLinks";
+import { readCatalogFiltersFromSearchParams } from "@/lib/catalogLinks";
+import {
+  buildCatalogPath,
+  serializeSoftCatalogSearchParams,
+} from "@/lib/catalogPaths";
 import {
   getHorizontalBannerFallbackSlots,
   getHorizontalBannersAfterPropertyIndex,
@@ -85,8 +96,6 @@ import {
 import { matchesBuildingTypeFilter } from "@/lib/woodenHouses";
 import { trackSearchPreference } from "@/lib/userPreferences";
 
-const DEALS = ["Все", "Аренда", "Продажа"];
-const RESIDENTIAL_DEALS = ["Все", "Аренда", "Продажа", "Посуточно"];
 const SELLER_OPTIONS: { value: ListingSellerFilter; label: string }[] = [
   { value: "Все", label: "Все" },
   { value: "owner", label: "Собственник" },
@@ -294,27 +303,48 @@ function CtaBanner({ segment = "commercial" }: { segment?: PropertySegment }) {
 // ─── Main Catalog ───
 interface CatalogProps {
   segment?: PropertySegment;
-  /** Плитки-предложения только на главном /catalog */
+  /** Плитки-предложения только на корне коммерции */
   showSuggestions?: boolean;
-  /** Предвыбранные типы для страниц категорий (квартиры и т.п.) */
+  /** @deprecated используйте pathTypes через CatalogByPath */
   initialTypes?: string[];
+  categoryId?: CatalogCategoryId;
+  dealSlug?: CatalogDealSlug;
+  pathTypes?: string[];
+  marketPreset?: string | null;
+  subtypeSlug?: string | null;
 }
 
 export default function Catalog({
   segment = "commercial",
   showSuggestions = false,
   initialTypes,
+  categoryId: categoryIdProp,
+  dealSlug: dealSlugProp,
+  pathTypes,
+  marketPreset = null,
+  subtypeSlug = null,
 }: CatalogProps) {
+  const navigate = useNavigate();
+  const categoryId =
+    categoryIdProp ??
+    (segment === "residential"
+      ? "kvartiry"
+      : segment === "land"
+        ? "zemlya"
+        : "kommercheskaya");
+  const dealSlug = dealSlugProp ?? "snyat";
+  const dealType = DEAL_PATHS[dealSlug].value;
+  const category = getCategoryById(categoryId)!;
   const isResidential = segment === "residential";
   const isLand = segment === "land";
   const isCommercial = segment === "commercial";
   const { propertyTypes } = useAllDictionaryValues();
-  const TYPES = propertyTypes(segment);
-  const dealOptions = isResidential
-    ? RESIDENTIAL_DEALS
-    : isLand
-      ? (["Все", ...LAND_DEAL_TYPES] as string[])
-      : DEALS;
+  const dictTypes = propertyTypes(segment);
+  const TYPES = pathTypes?.length
+    ? pathTypes
+    : dictTypes.length
+      ? dictTypes
+      : [...category.types];
   const { data: properties = [], isLoading } = useProperties({ segment });
   const { data: propertyDistricts = [] } = usePropertyDistricts();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -324,15 +354,25 @@ export default function Catalog({
   const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
   const [mobileFilters, setMobileFilters] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileFilters ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileFilters]);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [searchAlertOpen, setSearchAlertOpen] = useState(false);
   const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
-  const initialTypesSeededRef = useRef(false);
 
-  const [dealType, setDealType] = useState(initialFilters.dealType);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(
-    initialFilters.selectedTypes,
-  );
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(() => {
+    if (subtypeSlug && pathTypes?.length) return [...pathTypes];
+    if (initialFilters.selectedTypes.length) {
+      return initialFilters.selectedTypes.filter((t) =>
+        (pathTypes || TYPES).includes(t),
+      );
+    }
+    if (initialTypes?.length) return [...initialTypes];
+    return [];
+  });
   const [district, setDistrict] = useState(initialFilters.district);
   const [propertyClass, setPropertyClass] = useState(
     initialFilters.propertyClass,
@@ -363,25 +403,55 @@ export default function Catalog({
   const [selectedRooms, setSelectedRooms] = useState<string[]>(
     initialFilters.selectedRooms || [],
   );
-  const [selectedMarket, setSelectedMarket] = useState<string[]>(
-    initialFilters.selectedMarket || [],
-  );
+  const [selectedMarket, setSelectedMarket] = useState<string[]>(() => {
+    if (marketPreset) return [marketPreset];
+    return initialFilters.selectedMarket || [];
+  });
   const [selectedBuildingTypes, setSelectedBuildingTypes] = useState<string[]>(
     initialFilters.selectedBuildingTypes || [],
   );
   const [selectedFurniture, setSelectedFurniture] = useState<string[]>(
     initialFilters.selectedFurniture || [],
   );
+  const [trustedSeller, setTrustedSeller] = useState(
+    initialFilters.trustedSeller,
+  );
+  const [dealTransaction, setDealTransaction] = useState<string[]>(
+    initialFilters.dealTransaction || [],
+  );
+  const [withPhoto, setWithPhoto] = useState(initialFilters.withPhoto);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   const applyingUrlRef = useRef(false);
 
+  const navigateCatalog = useCallback(
+    (
+      nextDeal: CatalogDealSlug,
+      nextCategory: CatalogCategoryId,
+      nextSubtype?: string | null,
+      soft?: Parameters<typeof buildCatalogPath>[0]["filters"],
+    ) => {
+      let deal = nextDeal;
+      const cat = getCategoryById(nextCategory);
+      if (!cat) return;
+      if (!isDealAllowedForCategory(deal, cat)) {
+        deal = cat.allowedDeals[0]!;
+      }
+      const href = buildCatalogPath({
+        deal,
+        category: nextCategory,
+        subtype: nextSubtype,
+        filters: soft,
+      });
+      navigate(href);
+    },
+    [navigate],
+  );
+
   useEffect(() => {
     applyingUrlRef.current = true;
     const next = readCatalogFiltersFromSearchParams(searchParams);
-    setDealType(next.dealType);
-    setSelectedTypes(next.selectedTypes);
     setDistrict(next.district);
     setPropertyClass(next.propertyClass);
     setCondition(next.condition);
@@ -397,26 +467,55 @@ export default function Catalog({
     setParkingOnly(next.parkingOnly);
     setSelectedLayouts(next.selectedLayouts);
     setSelectedLandUses(next.selectedLandUses || []);
-    setSelectedRooms(next.selectedRooms || []);
-    setSelectedMarket(next.selectedMarket || []);
-    setSelectedBuildingTypes(next.selectedBuildingTypes || []);
-    setSelectedFurniture(next.selectedFurniture || []);
-  }, [searchParams]);
+    setSelectedRooms(
+      filterSchemaHas(categoryId, "rooms") ? next.selectedRooms || [] : [],
+    );
+    setSelectedMarket(
+      marketPreset
+        ? [marketPreset]
+        : filterSchemaHas(categoryId, "market")
+          ? next.selectedMarket || []
+          : [],
+    );
+    setSelectedBuildingTypes(
+      filterSchemaHas(categoryId, "buildingType")
+        ? next.selectedBuildingTypes || []
+        : [],
+    );
+    setSelectedFurniture(
+      filterSchemaHas(categoryId, "furniture")
+        ? next.selectedFurniture || []
+        : [],
+    );
+    setTrustedSeller(next.trustedSeller);
+    setDealTransaction(
+      filterSchemaHas(categoryId, "dealTransaction")
+        ? next.dealTransaction || []
+        : [],
+    );
+    setWithPhoto(next.withPhoto);
+    if (subtypeSlug && pathTypes?.length) {
+      setSelectedTypes([...pathTypes]);
+    } else if (next.selectedTypes.length && pathTypes?.length) {
+      setSelectedTypes(
+        next.selectedTypes.filter((t) => pathTypes.includes(t)),
+      );
+    }
+  }, [searchParams, categoryId, marketPreset, subtypeSlug, pathTypes]);
 
-  // Seed category pages (квартиры и т.п.) once when URL has no types
+  // Keep path types in sync when category/deal path changes
   useEffect(() => {
-    if (initialTypesSeededRef.current) return;
-    if (!initialTypes?.length) {
-      initialTypesSeededRef.current = true;
+    if (subtypeSlug && pathTypes?.length) {
+      setSelectedTypes([...pathTypes]);
       return;
     }
-    if (searchParams.has("types")) {
-      initialTypesSeededRef.current = true;
-      return;
+    if (pathTypes?.length) {
+      setSelectedTypes((prev) =>
+        prev.filter((t) => pathTypes.includes(t)),
+      );
     }
-    initialTypesSeededRef.current = true;
-    setSelectedTypes(initialTypes);
-  }, [initialTypes, searchParams]);
+    if (marketPreset) setSelectedMarket([marketPreset]);
+  }, [dealSlug, categoryId, subtypeSlug, pathTypes, marketPreset]);
 
   const conditions = useMemo(() => {
     if (isResidential) return ["Все", ...RESIDENTIAL_CONDITIONS];
@@ -427,7 +526,6 @@ export default function Catalog({
       ),
     ];
   }, [properties, isResidential]);
-  // Виды использования только по земельным объектам — фильтр доступен лишь для типа «Земля».
   const landUses = useMemo(
     () =>
       Array.from(
@@ -442,15 +540,55 @@ export default function Catalog({
     [properties],
   );
 
-  // Sync filters → URL (не перезаписывать, если адрес уже совпадает — иначе цикл Аренда↔Продажа)
-  useEffect(() => {
-    if (applyingUrlRef.current) {
-      applyingUrlRef.current = false;
-      return;
-    }
-    const next = serializeCatalogSearchParams({
-      dealType,
-      selectedTypes,
+  const softFiltersPayload = useMemo(
+    () => ({
+      dealType: "Все" as const,
+      selectedTypes: [] as string[],
+      selectedRooms: filterSchemaHas(categoryId, "rooms") ? selectedRooms : [],
+      selectedMarket:
+        marketPreset || !filterSchemaHas(categoryId, "market")
+          ? []
+          : selectedMarket,
+      selectedBuildingTypes: filterSchemaHas(categoryId, "buildingType")
+        ? selectedBuildingTypes
+        : [],
+      selectedFurniture: filterSchemaHas(categoryId, "furniture")
+        ? selectedFurniture
+        : [],
+      district,
+      propertyClass: filterSchemaHas(categoryId, "propertyClass")
+        ? propertyClass
+        : "Все",
+      condition: filterSchemaHas(categoryId, "condition") ? condition : "Все",
+      sort,
+      searchQuery: debouncedSearch,
+      priceMin,
+      priceMax,
+      areaMin,
+      areaMax,
+      ceilingMin: filterSchemaHas(categoryId, "ceilingParking")
+        ? ceilingMin
+        : 0,
+      parkingOnly: filterSchemaHas(categoryId, "ceilingParking")
+        ? parkingOnly
+        : false,
+      selectedLayouts: filterSchemaHas(categoryId, "layouts")
+        ? selectedLayouts
+        : [],
+      selectedLandUses: filterSchemaHas(categoryId, "landUse")
+        ? selectedLandUses
+        : [],
+      seller,
+      agencyId,
+      trustedSeller,
+      dealTransaction: filterSchemaHas(categoryId, "dealTransaction")
+        ? dealTransaction
+        : [],
+      withPhoto,
+    }),
+    [
+      categoryId,
+      marketPreset,
       selectedRooms,
       selectedMarket,
       selectedBuildingTypes,
@@ -459,7 +597,7 @@ export default function Catalog({
       propertyClass,
       condition,
       sort,
-      searchQuery: debouncedSearch,
+      debouncedSearch,
       priceMin,
       priceMax,
       areaMin,
@@ -470,31 +608,26 @@ export default function Catalog({
       selectedLandUses,
       seller,
       agencyId,
+      trustedSeller,
+      dealTransaction,
+      withPhoto,
+    ],
+  );
+
+  // Sync soft filters → query (path owns deal/types)
+  useEffect(() => {
+    if (applyingUrlRef.current) {
+      applyingUrlRef.current = false;
+      return;
+    }
+    const next = serializeSoftCatalogSearchParams(softFiltersPayload, {
+      omitMarket: Boolean(marketPreset),
     });
     if (next === searchParams.toString()) return;
     setSearchParams(next, { replace: true });
   }, [
-    dealType,
-    selectedTypes,
-    district,
-    propertyClass,
-    condition,
-    sort,
-    debouncedSearch,
-    priceMin,
-    priceMax,
-    areaMin,
-    areaMax,
-    ceilingMin,
-    parkingOnly,
-    selectedLayouts,
-    selectedLandUses,
-    selectedRooms,
-    selectedMarket,
-    selectedBuildingTypes,
-    selectedFurniture,
-    seller,
-    agencyId,
+    softFiltersPayload,
+    marketPreset,
     searchParams,
     setSearchParams,
   ]);
@@ -503,21 +636,42 @@ export default function Catalog({
     if (
       !debouncedSearch &&
       selectedTypes.length === 0 &&
-      district === "Все" &&
-      dealType === "Все"
+      district === "Все"
     ) {
       return;
     }
     trackSearchPreference({
       query: debouncedSearch,
-      types: selectedTypes,
+      types: selectedTypes.length ? selectedTypes : TYPES,
       district,
       dealType,
       segment,
     });
-  }, [debouncedSearch, selectedTypes, district, dealType, segment]);
+  }, [
+    debouncedSearch,
+    selectedTypes,
+    district,
+    dealType,
+    segment,
+    TYPES,
+  ]);
+
+  const effectiveTypes = useMemo(() => {
+    if (selectedTypes.length > 0) return selectedTypes;
+    return pathTypes?.length ? [...pathTypes] : TYPES;
+  }, [selectedTypes, pathTypes, TYPES]);
 
   const toggleType = (t: string) => {
+    if (subtypeSlug) {
+      const sub = category.subtypes?.find((s) => s.types.includes(t));
+      navigateCatalog(
+        dealSlug,
+        categoryId,
+        sub?.slug ?? null,
+        softFiltersPayload,
+      );
+      return;
+    }
     setSelectedTypes((prev) =>
       prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t],
     );
@@ -548,6 +702,17 @@ export default function Catalog({
     );
   };
 
+  const toggleLayout = (value: string) => {
+    setSelectedLayouts((prev) =>
+      prev.includes(value) ? prev.filter((x) => x !== value) : [...prev, value],
+    );
+  };
+  const toggleDealTransaction = (value: string) => {
+    setDealTransaction((prev) =>
+      prev.includes(value) ? prev.filter((x) => x !== value) : [...prev, value],
+    );
+  };
+
   const selectSeller = (value: ListingSellerFilter) => {
     setSeller(value);
     if (value !== "agency") setAgencyId("");
@@ -557,8 +722,7 @@ export default function Catalog({
   const isAreaFiltered = areaMin > 0 || areaMax < AREA_MAX_DEFAULT;
 
   const activeFiltersCount = [
-    dealType !== "Все",
-    selectedTypes.length > 0,
+    selectedTypes.length > 0 && !subtypeSlug,
     district !== "Все",
     propertyClass !== "Все",
     condition !== "Все",
@@ -570,16 +734,18 @@ export default function Catalog({
     selectedLayouts.length > 0,
     selectedLandUses.length > 0,
     selectedRooms.length > 0,
-    selectedMarket.length > 0,
+    selectedMarket.length > 0 && !marketPreset,
     selectedBuildingTypes.length > 0,
     selectedFurniture.length > 0,
     seller !== "Все",
     !!agencyId,
+    trustedSeller,
+    dealTransaction.length > 0,
+    withPhoto,
   ].filter(Boolean).length;
 
   const resetFilters = () => {
-    setDealType("Все");
-    setSelectedTypes([]);
+    setSelectedTypes(subtypeSlug && pathTypes ? [...pathTypes] : []);
     setDistrict("Все");
     setPropertyClass("Все");
     setCondition("Все");
@@ -593,11 +759,14 @@ export default function Catalog({
     setSelectedLayouts([]);
     setSelectedLandUses([]);
     setSelectedRooms([]);
-    setSelectedMarket([]);
+    setSelectedMarket(marketPreset ? [marketPreset] : []);
     setSelectedBuildingTypes([]);
     setSelectedFurniture([]);
     setSeller("Все");
     setAgencyId("");
+    setTrustedSeller(false);
+    setDealTransaction([]);
+    setWithPhoto(false);
   };
 
   const filtered = useMemo(() => {
@@ -607,29 +776,34 @@ export default function Catalog({
       const ranked = new Set(rankPropertyIdsByQuery(result, debouncedSearch));
       result = result.filter((p) => ranked.has(p.id));
     }
-    if (dealType !== "Все")
-      result = result.filter((p) => p.deal_type === dealType);
-    if (selectedTypes.length > 0)
-      result = result.filter((p) => propertyMatchesTypes(p, selectedTypes));
-    if (!isLand && selectedRooms.length > 0) {
+    result = result.filter((p) => p.deal_type === dealType);
+    if (effectiveTypes.length > 0)
+      result = result.filter((p) => propertyMatchesTypes(p, effectiveTypes));
+    if (filterSchemaHas(categoryId, "rooms") && selectedRooms.length > 0) {
       result = result.filter((p) => {
         const rooms = getResidentialRooms(p);
         return rooms ? selectedRooms.includes(rooms) : false;
       });
     }
-    if (!isLand && selectedMarket.length > 0) {
+    if (filterSchemaHas(categoryId, "market") && selectedMarket.length > 0) {
       result = result.filter((p) => {
         const market = getResidentialMarket(p);
         return market ? selectedMarket.includes(market) : false;
       });
     }
-    if (!isLand && selectedBuildingTypes.length > 0) {
+    if (
+      filterSchemaHas(categoryId, "buildingType") &&
+      selectedBuildingTypes.length > 0
+    ) {
       result = result.filter((p) => {
         const buildingType = getResidentialBuildingType(p);
         return matchesBuildingTypeFilter(buildingType, selectedBuildingTypes);
       });
     }
-    if (!isLand && selectedFurniture.length > 0) {
+    if (
+      filterSchemaHas(categoryId, "furniture") &&
+      selectedFurniture.length > 0
+    ) {
       result = result.filter((p) => {
         const furniture = getResidentialFurniture(p);
         return furniture ? selectedFurniture.includes(furniture) : false;
@@ -642,9 +816,12 @@ export default function Catalog({
     result = result.filter((p) =>
       listingMatchesSellerFilter(p, seller, agencyId || null),
     );
-    if (isCommercial && propertyClass !== "Все")
+    if (
+      filterSchemaHas(categoryId, "propertyClass") &&
+      propertyClass !== "Все"
+    )
       result = result.filter((p) => p.class === propertyClass);
-    if (!isLand && condition !== "Все")
+    if (filterSchemaHas(categoryId, "condition") && condition !== "Все")
       result = result.filter((p) => p.condition === condition);
     if (isPriceFiltered) {
       if (priceMin > 0)
@@ -659,13 +836,19 @@ export default function Catalog({
     if (areaMin > 0) result = result.filter((p) => Number(p.area) >= areaMin);
     if (areaMax < AREA_MAX_DEFAULT)
       result = result.filter((p) => Number(p.area) <= areaMax);
-    if (isCommercial && ceilingMin > 0)
+    if (
+      filterSchemaHas(categoryId, "ceilingParking") &&
+      ceilingMin > 0
+    )
       result = result.filter((p) => Number(p.ceiling_height) >= ceilingMin);
-    if (isCommercial && parkingOnly)
+    if (filterSchemaHas(categoryId, "ceilingParking") && parkingOnly)
       result = result.filter(
         (p) => p.parking && p.parking !== "Нет" && p.parking !== "-",
       );
-    if (isLand && selectedLandUses.length > 0) {
+    if (
+      filterSchemaHas(categoryId, "landUse") &&
+      selectedLandUses.length > 0
+    ) {
       result = result.filter((p) => {
         const landUse = getLandUse(p);
         return landUse ? selectedLandUses.includes(landUse) : false;
@@ -677,8 +860,10 @@ export default function Catalog({
     });
   }, [
     properties,
+    segment,
     dealType,
-    selectedTypes,
+    effectiveTypes,
+    categoryId,
     selectedRooms,
     selectedMarket,
     selectedBuildingTypes,
@@ -692,13 +877,10 @@ export default function Catalog({
     areaMax,
     sort,
     debouncedSearch,
+    isPriceFiltered,
     ceilingMin,
     parkingOnly,
     selectedLandUses,
-    isPriceFiltered,
-    segment,
-    isLand,
-    isCommercial,
     seller,
     agencyId,
   ]);
@@ -742,11 +924,14 @@ export default function Catalog({
   ]);
 
   const filtersSidebarProps = {
-    dealType,
-    dealOptions,
-    onDealType: setDealType,
+    categoryId,
+    dealSlug,
+    onDealSlug: (slug: CatalogDealSlug) =>
+      navigateCatalog(slug, categoryId, subtypeSlug, softFiltersPayload),
+    onCategoryId: (id: CatalogCategoryId) =>
+      navigateCatalog(dealSlug, id, null, softFiltersPayload),
     types: TYPES,
-    selectedTypes,
+    selectedTypes: selectedTypes.length ? selectedTypes : subtypeSlug ? TYPES : [],
     onToggleType: toggleType,
     district,
     onOpenLocation: () => setLocationPickerOpen(true),
@@ -763,9 +948,6 @@ export default function Catalog({
     sellerOptions: SELLER_OPTIONS,
     searchQuery,
     onSearchQuery: setSearchQuery,
-    isResidential,
-    isCommercial,
-    isLand,
     selectedRooms,
     onToggleRoom: toggleRoom,
     selectedMarket,
@@ -787,6 +969,14 @@ export default function Catalog({
     landUseOptions: landUseFilterOptions,
     selectedLandUses,
     onToggleLandUse: toggleLandUse,
+    selectedLayouts,
+    onToggleLayout: toggleLayout,
+    trustedSeller,
+    onTrustedSeller: setTrustedSeller,
+    dealTransaction,
+    onToggleDealTransaction: toggleDealTransaction,
+    withPhoto,
+    onWithPhoto: setWithPhoto,
     activeFiltersCount,
     onReset: resetFilters,
   } as const;
@@ -903,47 +1093,31 @@ export default function Catalog({
     return items;
   }, [filtered, highlightedId, segment]);
 
-  const catalogPath = isLand
-    ? "/zemlya/catalog"
-    : isResidential
-      ? "/zhilaya/catalog"
-      : "/catalog";
+  const catalogPath = buildCatalogPath({
+    deal: dealSlug,
+    category: categoryId,
+    subtype: subtypeSlug,
+  });
   const catalogFiltered = catalogHasFilterQuery(searchParams);
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
       <SeoHead
-        title={
-          isLand
-            ? "Каталог земли и участков"
-            : isResidential
-              ? "Каталог жилой недвижимости"
-              : "Каталог коммерческой недвижимости"
-        }
-        description={
-          isLand
-            ? "Земля и участки в Иркутске: ИЖС, жилая и коммерческая. Фильтры по типу, цене и площади."
-            : isResidential
-              ? "Квартиры, дома и комнаты в Иркутске и области. Фильтры по комнатам, цене, площади и району."
-              : "Офисы, торговые площади, склады и производство в Иркутске и области. Фильтры по цене, площади и району."
-        }
+        title={`${DEAL_PATHS[dealSlug].label} — ${category.label}`}
+        description={`${category.label}: ${DEAL_PATHS[dealSlug].label.toLowerCase()} в Иркутске и области. Фильтры по цене, площади и району.`}
         url={absoluteUrl(catalogPath)}
         noindex={catalogFiltered}
       />
       <SiteHeader contextSegment={segment} />
 
       <div className="pt-[100px] flex-1 flex flex-col">
-        {showSuggestions && !isLand && (
+        {showSuggestions && isCommercial && (
           <SegmentSuggestionTiles
             title="Предложения"
-            items={
-              isResidential
-                ? getResidentialSuggestions()
-                : getCommercialSuggestions(TYPES)
-            }
+            items={getCommercialSuggestions(TYPES)}
             isItemActive={(item) =>
               suggestionIsActive(item, {
-                types: selectedTypes,
+                types: effectiveTypes,
                 deal: dealType,
                 market: selectedMarket,
               })
@@ -955,15 +1129,43 @@ export default function Catalog({
               }
               const f = item.filter;
               if (!f) return;
-              setSelectedTypes(f.types ?? []);
-              if (f.deal) setDealType(f.deal);
-              if (f.market !== undefined) setSelectedMarket(f.market);
+              const nextTypes = f.types ?? [];
+              const sub =
+                nextTypes.length === 1
+                  ? category.subtypes?.find((s) =>
+                      s.types.includes(nextTypes[0]!),
+                    )?.slug
+                  : null;
+              navigateCatalog(
+                f.deal === "Продажа" ? "kupit" : dealSlug,
+                categoryId,
+                sub ?? null,
+                softFiltersPayload,
+              );
+            }}
+          />
+        )}
+        {showSuggestions && isResidential && (
+          <SegmentSuggestionTiles
+            title="Предложения"
+            items={getResidentialSuggestions()}
+            isItemActive={(item) =>
+              suggestionIsActive(item, {
+                types: effectiveTypes,
+                deal: dealType,
+                market: selectedMarket,
+              })
+            }
+            onSelect={(item) => {
+              if (item.href) {
+                window.location.assign(item.href);
+              }
             }}
           />
         )}
 
         {/* Slim toolbar: filters (mobile), count, alert, sort, view */}
-        <div className="sticky top-[100px] z-30 bg-background border-b border-border/40 overflow-x-hidden">
+        <div className="sticky top-[100px] z-30 bg-background border-b border-border/40">
           <div className="px-3 sm:px-4 lg:px-8 py-2.5 sm:py-3 flex flex-wrap items-center gap-x-2 gap-y-2 min-w-0">
             <button
               type="button"
@@ -1174,26 +1376,26 @@ export default function Catalog({
         <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
           {(isResidential
             ? [
-                { to: "/zhilaya/kvartiry", label: "Квартиры" },
-                { to: "/zhilaya/doma", label: "Дома" },
-                { to: "/zhilaya/komnaty", label: "Комнаты" },
-                { to: "/zhilaya/uchastki", label: "Участки" },
-                { to: "/catalog", label: "Коммерция" },
+                { to: "/snyat/kvartiry", label: "Квартиры" },
+                { to: "/snyat/doma", label: "Дома" },
+                { to: "/snyat/komnaty", label: "Комнаты" },
+                { to: "/snyat/zemlya", label: "Участки" },
+                { to: "/snyat/kommercheskaya", label: "Коммерция" },
                 { to: "/rieltory", label: "Риелторы" },
               ]
             : isLand
               ? [
-                  { to: "/zemlya", label: "Земля" },
-                  { to: "/zhilaya/uchastki", label: "Участки (жильё)" },
-                  { to: "/catalog", label: "Коммерция" },
-                  { to: "/zhilaya/catalog", label: "Жильё" },
+                  { to: "/snyat/zemlya", label: "Земля" },
+                  { to: "/snyat/kvartiry", label: "Квартиры" },
+                  { to: "/snyat/kommercheskaya", label: "Коммерция" },
+                  { to: "/snyat/doma", label: "Дома" },
                 ]
               : [
-                  { to: "/offices", label: "Офисы" },
-                  { to: "/retail", label: "Торговля" },
-                  { to: "/warehouses", label: "Склады" },
-                  { to: "/zemlya/catalog", label: "Земля" },
-                  { to: "/zhilaya/catalog", label: "Жильё" },
+                  { to: "/snyat/kommercheskaya/ofisy", label: "Офисы" },
+                  { to: "/snyat/kommercheskaya/torgovaya", label: "Торговля" },
+                  { to: "/snyat/kommercheskaya/sklady", label: "Склады" },
+                  { to: "/snyat/zemlya", label: "Земля" },
+                  { to: "/snyat/kvartiry", label: "Жильё" },
                   { to: "/rieltory", label: "Риелторы" },
                 ]
           ).map((item) => (

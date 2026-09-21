@@ -56,7 +56,7 @@ function SecondaryRow({
 }) {
   const Icon = item.icon;
   const className = cn(
-    "flex items-center gap-2.5 w-full px-4 py-[7px] text-[13px] leading-tight text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-left",
+    "flex items-center gap-2.5 w-full px-4 py-3 text-[13px] leading-tight text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-left",
   );
 
   if (item.onClick) {
@@ -189,7 +189,7 @@ export default function MobileMenuDrawer({
                 key={menu.id}
                 type="button"
                 onClick={() => go(menu.catalogHref)}
-                className="block w-full text-left px-4 py-[7px] text-[15px] font-medium leading-tight text-foreground hover:bg-muted/50"
+                className="block w-full text-left px-4 py-3 text-[15px] font-medium leading-tight text-foreground hover:bg-muted/50"
               >
                 {menu.triggerLabel}
               </button>

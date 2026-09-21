@@ -44,17 +44,17 @@ export const RESIDENTIAL_DEAL_TYPES = [
 export const SEGMENT_ROUTES = {
   commercial: {
     home: "/",
-    catalog: "/catalog",
+    catalog: "/snyat/kommercheskaya",
     listProperty: "/list-property",
   },
   residential: {
     home: "/zhilaya",
-    catalog: "/zhilaya/catalog",
+    catalog: "/snyat/kvartiry",
     listProperty: "/zhilaya/list-property",
   },
   land: {
     home: "/zemlya",
-    catalog: "/zemlya/catalog",
+    catalog: "/snyat/zemlya",
     listProperty: "/zemlya/list-property",
   },
 } as const;
@@ -69,32 +69,32 @@ export const SEGMENT_QUICK_LINKS = {
       {
         label: "Офисы",
         desc: "Кабинеты и open space для работы",
-        href: "/offices",
+        href: "/snyat/kommercheskaya/ofisy",
       },
       {
         label: "Торговая",
         desc: "Магазины и стрит-ритейл",
-        href: "/retail",
+        href: "/snyat/kommercheskaya/torgovaya",
       },
       {
         label: "Павильоны",
         desc: "Торговые павильоны и киоски",
-        href: "/catalog?types=%D0%9F%D0%B0%D0%B2%D0%B8%D0%BB%D1%8C%D0%BE%D0%BD",
+        href: "/snyat/kommercheskaya/pavilony",
       },
       {
         label: "Склады",
         desc: "Складские площади",
-        href: "/warehouses",
+        href: "/snyat/kommercheskaya/sklady",
       },
       {
         label: "Производство",
         desc: "Цехи и промышленные базы",
-        href: "/catalog?types=%D0%9F%D1%80%D0%BE%D0%B8%D0%B7%D0%B2%D0%BE%D0%B4%D1%81%D1%82%D0%B2%D0%BE",
+        href: "/snyat/kommercheskaya/proizvodstvo",
       },
       {
         label: "ПСН",
         desc: "Помещения свободного назначения",
-        href: "/catalog?types=%D0%9F%D0%A1%D0%9D",
+        href: "/snyat/kommercheskaya/psn",
       },
     ],
   },
@@ -106,22 +106,22 @@ export const SEGMENT_QUICK_LINKS = {
       {
         label: "Квартиры",
         desc: "Студии, 1–4 комнаты, новостройки",
-        href: "/zhilaya/kvartiry",
+        href: "/snyat/kvartiry",
       },
       {
         label: "Дома",
         desc: "Дома, коттеджи и таунхаусы",
-        href: "/zhilaya/doma",
+        href: "/snyat/doma",
       },
       {
         label: "Дом на заказ",
         desc: "Индивидуальная сборка — дома ещё нет, строят под вас",
-        href: "/zhilaya/catalog?types=%D0%94%D0%BE%D0%BC%2C%D0%9A%D0%BE%D1%82%D1%82%D0%B5%D0%B4%D0%B6%2C%D0%94%D0%B0%D1%87%D0%B0&market=%D0%9D%D0%B0+%D0%B7%D0%B0%D0%BA%D0%B0%D0%B7&deal=%D0%9F%D1%80%D0%BE%D0%B4%D0%B0%D0%B6%D0%B0",
+        href: "/kupit/doma?market=%D0%9D%D0%B0+%D0%B7%D0%B0%D0%BA%D0%B0%D0%B7",
       },
       {
         label: "Комнаты",
         desc: "Комнаты в квартирах и общежитиях",
-        href: "/zhilaya/komnaty",
+        href: "/snyat/komnaty",
       },
       {
         label: "Весь каталог жилья",

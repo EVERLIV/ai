@@ -1,6 +1,7 @@
-import { Check } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import CategoryBottomSheet from "@/components/mobile/CategoryBottomSheet";
 import MobileFullScreenPicker from "@/components/mobile/MobileFullScreenPicker";
+import { Check } from "lucide-react";
 import {
   categoriesForDeal,
   type HomeDealChoice,
@@ -52,11 +53,20 @@ export function propertyTypeAccusative(type: string): string {
   return map[type] ?? type;
 }
 
+/** Подкатегории квартир — чекбоксы в верхней части пикера для «Купить» */
+const APARTMENT_SUBCATEGORIES = [
+  { id: "novostroyki", label: "Новостройки", market: "Новостройка" },
+  { id: "vtorichka", label: "Вторичка", market: "Вторичка" },
+];
+
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   value: string;
   onChange: (value: string) => void;
+  /** Активные рыночные фильтры для квартир (Новостройка / Вторичка) */
+  market?: string[];
+  onChangeMarket?: (market: string[]) => void;
   /** Режим одного сегмента (сырые типы объектов) */
   segment?: PropertySegment;
   /**
@@ -73,10 +83,32 @@ export default function PropertyTypeOverlay({
   segment = "residential",
   value,
   onChange,
+  market = [],
+  onChangeMarket,
   deal = "Аренда",
   allCategories = false,
 }: Props) {
+  // market prop содержит значения ("Новостройка"), draftMarket хранит ids ("novostroyki")
+  const marketToIds = (m: string[]) =>
+    m.map(
+      (v) => APARTMENT_SUBCATEGORIES.find((s) => s.market === v)?.id ?? v,
+    );
+
+  const ALL_APARTMENT_SUB_IDS = APARTMENT_SUBCATEGORIES.map((s) => s.id);
+
+  const defaultMarket = (m: string[], d: HomeDealChoice, catId: string) => {
+    const ids = marketToIds(m);
+    // Когда открывают квартиры при Продажа и market не задан — выбираем оба по умолчанию
+    if (ids.length === 0 && d === "Продажа" && (catId === "apartments" || catId === "")) {
+      return ALL_APARTMENT_SUB_IDS;
+    }
+    return ids;
+  };
+
   const [draft, setDraft] = useState(value);
+  const [draftMarket, setDraftMarket] = useState<string[]>(() =>
+    defaultMarket(market, deal, value),
+  );
   const { propertyTypes } = useAllDictionaryValues();
   const segmentTypes = useMemo(
     () => (allCategories ? [] : propertyTypes(segment)),
@@ -84,47 +116,62 @@ export default function PropertyTypeOverlay({
   );
 
   useEffect(() => {
-    if (open) setDraft(value);
-  }, [open, value]);
+    if (open) {
+      setDraft(value);
+      setDraftMarket(defaultMarket(market, deal, value));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, value, market, deal]);
 
   if (allCategories) {
-    const mainCats = categoriesForDeal(deal);
+    const allCats = categoriesForDeal(deal);
+    // «apartments» показываем через чекбоксы Новостройки/Вторичка (только Продажа)
+    const showApartmentSubs = deal === "Продажа";
+    const radioItems = allCats
+      .filter((c) => !(showApartmentSubs && c.id === "apartments"))
+      .map((c) => ({ id: c.id, label: c.label }));
+
+    const toggleCheck = (id: string) => {
+      // При выборе подкатегории квартир — сбрасываем выбор радио
+      setDraft("apartments");
+      setDraftMarket((prev) =>
+        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+      );
+    };
+
+    const selectRadio = (id: string) => {
+      setDraft(id);
+    };
+
+    // Какой radio выбран — если apartments выбраны через чекбоксы, radio = ""
+    const radioSelected =
+      draft === "apartments" && draftMarket.length > 0 ? "" : draft;
+
     return (
-      <MobileFullScreenPicker
+      <CategoryBottomSheet
         open={open}
         onClose={() => onOpenChange(false)}
         title="Категория"
-        onApply={() => onChange(draft)}
-      >
-        <ul className="py-1">
-          {mainCats.map((cat) => {
-            const selected = draft === cat.id;
-            return (
-              <li key={cat.id} className="border-b border-border/40">
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-between px-4 py-3.5 text-sm text-foreground hover:bg-muted/40 transition-colors"
-                  onClick={() => setDraft(cat.id)}
-                >
-                  {cat.label}
-                  <span
-                    className={cn(
-                      "w-5 h-5 flex items-center justify-center shrink-0",
-                      selected
-                        ? "bg-primary text-primary-foreground"
-                        : "border border-border/80",
-                    )}
-                  >
-                    {selected && (
-                      <Check className="w-3.5 h-3.5" strokeWidth={3} />
-                    )}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </MobileFullScreenPicker>
+        checkItems={showApartmentSubs ? APARTMENT_SUBCATEGORIES : []}
+        checkedIds={draftMarket}
+        onToggleCheck={toggleCheck}
+        radioItems={radioItems}
+        selectedRadio={radioSelected}
+        onSelectRadio={selectRadio}
+        onApply={() => {
+          onChange(draft);
+          // Если выбраны все или ни одного — market не фильтруем (показываем всё)
+          const allChecked = draftMarket.length === ALL_APARTMENT_SUB_IDS.length;
+          onChangeMarket?.(
+            allChecked
+              ? []
+              : draftMarket.map(
+                  (id) =>
+                    APARTMENT_SUBCATEGORIES.find((s) => s.id === id)?.market ?? id,
+                ),
+          );
+        }}
+      />
     );
   }
 

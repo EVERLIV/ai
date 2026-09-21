@@ -15,7 +15,7 @@ import {
 } from "@/config/homeSearchCategories";
 import { useAllDictionaryValues } from "@/hooks/useDictionaries";
 import { useProperties } from "@/hooks/useProperties";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import { buildCatalogUrl } from "@/lib/catalogPaths";
 import { flattenLocationOptions } from "@/lib/locationPicker";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +37,7 @@ export default function RealtySearchPanel({
 
   const [deal, setDeal] = useState<HomeDealChoice>("Продажа");
   const [categoryId, setCategoryId] = useState("apartments");
+  const [market, setMarket] = useState<string[]>([]);
   const [typeOverlayOpen, setTypeOverlayOpen] = useState(false);
   const [roomsSheetOpen, setRoomsSheetOpen] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
@@ -88,6 +89,7 @@ export default function RealtySearchPanel({
 
   const switchDeal = (next: HomeDealChoice) => {
     setDeal(next);
+    if (next !== "Продажа") setMarket([]);
     if (!isCategoryAllowedForDeal(categoryId, next)) {
       const nextCat = defaultCategoryForDeal(next);
       setCategoryId(nextCat.id);
@@ -99,6 +101,10 @@ export default function RealtySearchPanel({
     setCategoryId(nextId);
     const next = getCategoryById(nextId);
     if (!next?.showRooms) setRooms("");
+  };
+
+  const handleMarketChange = (nextMarket: string[]) => {
+    setMarket(nextMarket);
   };
 
   const applyLocation = (name: string) => {
@@ -119,6 +125,7 @@ export default function RealtySearchPanel({
     segment: category.segment,
     deal,
     types,
+    market: market.length > 0 ? market : undefined,
     rooms:
       showRooms && rooms && rooms !== "Свободная планировка"
         ? rooms
@@ -150,6 +157,7 @@ export default function RealtySearchPanel({
           segment: category.segment,
           deal,
           types,
+          market: market.length > 0 ? market : undefined,
           rooms:
             showRooms && rooms && rooms !== "Свободная планировка"
               ? rooms
@@ -190,7 +198,11 @@ export default function RealtySearchPanel({
 
       <FilterPickerField
         label="Категория"
-        value={category.label}
+        value={
+          market.length > 0
+            ? market.join(" + ")
+            : category.label
+        }
         onClick={() => setTypeOverlayOpen(true)}
         className="h-9 rounded-md text-sm bg-background"
       />
@@ -315,6 +327,8 @@ export default function RealtySearchPanel({
         deal={deal}
         value={category.id}
         onChange={handleCategoryChange}
+        market={market}
+        onChangeMarket={handleMarketChange}
       />
 
       <RoomsSheet

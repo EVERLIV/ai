@@ -1,11 +1,9 @@
 import { describe, expect, test } from "vitest";
-import {
-  buildCatalogUrl,
-  readCatalogFiltersFromSearchParams,
-} from "./catalogLinks";
+import { readCatalogFiltersFromSearchParams } from "./catalogLinks";
+import { buildCatalogUrl } from "./catalogPaths";
 
 describe("buildCatalogUrl", () => {
-  test("uses residential base route and rooms", () => {
+  test("uses Avito path for residential apartments", () => {
     expect(
       buildCatalogUrl({
         segment: "residential",
@@ -13,20 +11,18 @@ describe("buildCatalogUrl", () => {
         rooms: ["1", "2"],
         deal: "Аренда",
       }),
-    ).toBe(
-      "/zhilaya/catalog?types=%D0%9A%D0%B2%D0%B0%D1%80%D1%82%D0%B8%D1%80%D0%B0&rooms=1%2C2&deal=%D0%90%D1%80%D0%B5%D0%BD%D0%B4%D0%B0",
-    );
+    ).toBe("/snyat/kvartiry?rooms=1%2C2");
   });
 
   test("builds made-to-order house filter url", () => {
-    expect(
-      buildCatalogUrl({
-        segment: "residential",
-        types: ["Дом", "Коттедж", "Дача"],
-        market: "На заказ",
-        deal: "Продажа",
-      }),
-    ).toContain("market=%D0%9D%D0%B0+%D0%B7%D0%B0%D0%BA%D0%B0%D0%B7");
+    const url = buildCatalogUrl({
+      segment: "residential",
+      types: ["Дом", "Коттедж", "Дача"],
+      market: "На заказ",
+      deal: "Продажа",
+    });
+    expect(url.startsWith("/kupit/doma")).toBe(true);
+    expect(url).toContain("market=%D0%9D%D0%B0+%D0%B7%D0%B0%D0%BA%D0%B0%D0%B7");
   });
 });
 

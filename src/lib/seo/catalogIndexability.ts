@@ -1,10 +1,11 @@
 /**
  * Query-параметры каталога (фильтры, sort, page) дают дубли контента.
- * Canonical всегда на чистый путь; при наличии query — noindex,follow.
+ * Canonical всегда на чистый path категории (/kupit/kvartiry);
+ * при наличии soft-query — noindex,follow.
  */
 const INDEXABLE_EMPTY = new Set([""]);
 
-/** Параметры, которые не считаем «фильтром» (редко; по умолчанию любой query → noindex). */
+/** Параметры, которые не считаем «фильтром» (utm и т.п.). */
 const IGNORED_KEYS = new Set([
   "utm_source",
   "utm_medium",
@@ -14,7 +15,7 @@ const IGNORED_KEYS = new Set([
   "fbclid",
   "gclid",
   "yclid",
-  "tab", // вкладки каталога риелторов/агентств
+  "tab",
 ]);
 
 export function catalogHasFilterQuery(
@@ -33,4 +34,9 @@ export function catalogHasFilterQuery(
     }
   }
   return false;
+}
+
+/** Чистый path категории без query — indexable. */
+export function catalogCanonicalPath(pathname: string): string {
+  return pathname.replace(/\/+$/, "") || "/";
 }

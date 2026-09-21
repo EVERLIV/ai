@@ -29,13 +29,14 @@ import AccountPage from "./pages/AccountPage.tsx";
 import AdsCatalog from "./pages/AdsCatalog.tsx";
 import AgencyPublicPage from "./pages/AgencyPublicPage.tsx";
 import Auth from "./pages/Auth.tsx";
-import Catalog from "./pages/Catalog.tsx";
+import CatalogByPath, {
+  LegacyCatalogRedirect,
+} from "./pages/CatalogByPath.tsx";
 import SupportPage from "./pages/SupportPage.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import DocsHandbookPage from "./pages/DocsHandbookPage.tsx";
 import HelpCenterPage from "./pages/HelpCenterPage.tsx";
 import Index from "./pages/Index.tsx";
-import LandPage from "./pages/LandPage.tsx";
 import LegalDocPage from "./pages/LegalDocPage.tsx";
 import ListProperty from "./pages/ListProperty.tsx";
 import SmartListingPage from "./pages/SmartListingPage.tsx";
@@ -43,29 +44,20 @@ import NedvijimostPage from "./pages/NedvijimostPage.tsx";
 import NewsPage from "./pages/NewsPage.tsx";
 import NewsPostPage from "./pages/NewsPostPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
-import OfficesPage from "./pages/OfficesPage.tsx";
 import ComparePage from "./pages/ComparePage.tsx";
 import PropertyDetail from "./pages/PropertyDetail.tsx";
 import RealtorPublicPage from "./pages/RealtorPublicPage.tsx";
 import RecommendationsPage from "./pages/RecommendationsPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
-import RetailPage from "./pages/RetailPage.tsx";
 import SpecialistsCatalog from "./pages/SpecialistsCatalog.tsx";
 import DevelopersCatalog from "./pages/DevelopersCatalog.tsx";
 import DeveloperPublicPage from "./pages/DeveloperPublicPage.tsx";
 import DeveloperProjectPage from "./pages/DeveloperProjectPage.tsx";
 import DevelopersLandingPage from "./pages/DevelopersLandingPage.tsx";
-import ApartmentsPage from "./pages/residential/ApartmentsPage.tsx";
-import HousesPage from "./pages/residential/HousesPage.tsx";
-import PlotsPage from "./pages/residential/PlotsPage.tsx";
-import ResidentialCatalog from "./pages/residential/ResidentialCatalog.tsx";
 import ResidentialHomePage from "./pages/residential/ResidentialHomePage.tsx";
-import RoomsPage from "./pages/residential/RoomsPage.tsx";
-import LandCatalog from "./pages/land/LandCatalog.tsx";
 import LandHomePage from "./pages/land/LandHomePage.tsx";
 import UnsubscribePage from "./pages/UnsubscribePage.tsx";
 import VacanciesPage from "./pages/VacanciesPage.tsx";
-import WarehousesPage from "./pages/WarehousesPage.tsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -129,15 +121,15 @@ const App = () => {
                       path="/NEDVIJIMOST"
                       element={<Navigate to="/nedvijimost" replace />}
                     />
-                    <Route path="/catalog" element={<Catalog showSuggestions />} />
+                    <Route path="/catalog" element={<LegacyCatalogRedirect />} />
                     <Route path="/property/:id" element={<PropertyDetail />} />
                     <Route path="/compare" element={<ComparePage />} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/offices" element={<OfficesPage />} />
-                    <Route path="/retail" element={<RetailPage />} />
-                    <Route path="/warehouses" element={<WarehousesPage />} />
-                    <Route path="/land" element={<LandPage />} />
+                    <Route path="/offices" element={<LegacyCatalogRedirect />} />
+                    <Route path="/retail" element={<LegacyCatalogRedirect />} />
+                    <Route path="/warehouses" element={<LegacyCatalogRedirect />} />
+                    <Route path="/land" element={<LegacyCatalogRedirect />} />
                     <Route path="/ads" element={<AdsCatalog />} />
                     <Route path="/list-property" element={<ListProperty />} />
                     <Route
@@ -196,15 +188,15 @@ const App = () => {
                     <Route path="/zhilaya" element={<ResidentialHomePage />} />
                     <Route
                       path="/zhilaya/catalog"
-                      element={<ResidentialCatalog />}
+                      element={<LegacyCatalogRedirect />}
                     />
                     <Route
                       path="/zhilaya/kvartiry"
-                      element={<ApartmentsPage />}
+                      element={<LegacyCatalogRedirect />}
                     />
-                    <Route path="/zhilaya/doma" element={<HousesPage />} />
-                    <Route path="/zhilaya/komnaty" element={<RoomsPage />} />
-                    <Route path="/zhilaya/uchastki" element={<PlotsPage />} />
+                    <Route path="/zhilaya/doma" element={<LegacyCatalogRedirect />} />
+                    <Route path="/zhilaya/komnaty" element={<LegacyCatalogRedirect />} />
+                    <Route path="/zhilaya/uchastki" element={<LegacyCatalogRedirect />} />
                     <Route
                       path="/zhilaya/list-property"
                       element={<ListProperty segment="residential" />}
@@ -214,7 +206,7 @@ const App = () => {
                       element={<SmartListingPage segment="residential" />}
                     />
                     <Route path="/zemlya" element={<LandHomePage />} />
-                    <Route path="/zemlya/catalog" element={<LandCatalog />} />
+                    <Route path="/zemlya/catalog" element={<LegacyCatalogRedirect />} />
                     <Route
                       path="/zemlya/list-property"
                       element={<ListProperty segment="land" />}
@@ -293,6 +285,10 @@ const App = () => {
                           <TaskAnalyticsPage />
                         </Suspense>
                       }
+                    />
+                    <Route
+                      path="/:deal/:category/:subtype?"
+                      element={<CatalogByPath />}
                     />
                     <Route path="*" element={<NotFound />} />
                   </Routes>

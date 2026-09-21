@@ -1,6 +1,15 @@
 import { ChevronDown } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  type CatalogCategoryId,
+  type CatalogDealSlug,
+  DEAL_PATHS,
+  FILTER_SCHEMA_BY_CATEGORY,
+  categoriesForDeal,
+  filterSchemaHas,
+  getCategoryById,
+} from "@/config/catalogTaxonomy";
 import type { ListingSellerFilter } from "@/lib/listingSource";
 import {
   BUILDING_TYPES,
@@ -8,6 +17,25 @@ import {
   MARKET_OPTIONS,
   ROOMS_OPTIONS,
 } from "@/lib/propertyOptions";
+
+const COMMERCIAL_BUILDING_TYPES = [
+  "Бизнес-центр",
+  "Торговый центр",
+  "Административное здание",
+  "Жилой дом",
+  "Другой",
+] as const;
+
+const LAYOUT_OPTIONS = [
+  "Студия",
+  "Евро",
+  "Свободная планировка",
+] as const;
+
+const DEAL_TRANSACTION_OPTIONS = [
+  { value: "direct", label: "Прямая продажа" },
+  { value: "assignment", label: "Переуступка" },
+] as const;
 import { LAND_TYPE_LABEL } from "@/lib/propertyLand";
 import { cn } from "@/lib/utils";
 
@@ -91,10 +119,46 @@ function FilterBlock({
   );
 }
 
+function PathSelect({
+  id,
+  value,
+  onChange,
+  options,
+  label,
+}: {
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  label: string;
+}) {
+  return (
+    <div className="relative min-w-0">
+      <label className="sr-only" htmlFor={id}>
+        {label}
+      </label>
+      <select
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full min-w-0 appearance-none h-9 rounded-md bg-muted/70 border border-transparent px-2.5 pr-8 text-xs font-medium text-foreground focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25 cursor-pointer"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+    </div>
+  );
+}
+
 export type CatalogFiltersSidebarProps = {
-  dealType: string;
-  dealOptions: string[];
-  onDealType: (v: string) => void;
+  categoryId: CatalogCategoryId;
+  dealSlug: CatalogDealSlug;
+  onDealSlug: (slug: CatalogDealSlug) => void;
+  onCategoryId: (id: CatalogCategoryId) => void;
   types: string[];
   selectedTypes: string[];
   onToggleType: (t: string) => void;
@@ -113,9 +177,6 @@ export type CatalogFiltersSidebarProps = {
   sellerOptions: { value: ListingSellerFilter; label: string }[];
   searchQuery: string;
   onSearchQuery: (v: string) => void;
-  isResidential: boolean;
-  isCommercial: boolean;
-  isLand: boolean;
   selectedRooms: string[];
   onToggleRoom: (v: string) => void;
   selectedMarket: string[];
@@ -137,15 +198,24 @@ export type CatalogFiltersSidebarProps = {
   landUseOptions: string[];
   selectedLandUses: string[];
   onToggleLandUse: (v: string) => void;
+  selectedLayouts: string[];
+  onToggleLayout: (v: string) => void;
+  trustedSeller: boolean;
+  onTrustedSeller: (v: boolean) => void;
+  dealTransaction: string[];
+  onToggleDealTransaction: (v: string) => void;
+  withPhoto: boolean;
+  onWithPhoto: (v: boolean) => void;
   activeFiltersCount: number;
   onReset: () => void;
   className?: string;
 };
 
 export default function CatalogFiltersSidebar({
-  dealType,
-  dealOptions,
-  onDealType,
+  categoryId,
+  dealSlug,
+  onDealSlug,
+  onCategoryId,
   types,
   selectedTypes,
   onToggleType,
@@ -164,9 +234,6 @@ export default function CatalogFiltersSidebar({
   sellerOptions,
   searchQuery,
   onSearchQuery,
-  isResidential,
-  isCommercial,
-  isLand,
   selectedRooms,
   onToggleRoom,
   selectedMarket,
@@ -188,10 +255,32 @@ export default function CatalogFiltersSidebar({
   landUseOptions,
   selectedLandUses,
   onToggleLandUse,
+  selectedLayouts,
+  onToggleLayout,
+  trustedSeller,
+  onTrustedSeller,
+  dealTransaction,
+  onToggleDealTransaction,
+  withPhoto,
+  onWithPhoto,
   activeFiltersCount,
   onReset,
   className,
 }: CatalogFiltersSidebarProps) {
+  const schema = FILTER_SCHEMA_BY_CATEGORY[categoryId];
+  const has = (block: (typeof schema)[number]) =>
+    filterSchemaHas(categoryId, block);
+
+  const category = getCategoryById(categoryId);
+  const dealOptions = (category?.allowedDeals || []).map((slug) => ({
+    value: slug,
+    label: DEAL_PATHS[slug].label,
+  }));
+  const categoryOptions = categoriesForDeal(dealSlug).map((c) => ({
+    value: c.id,
+    label: c.label,
+  }));
+
   return (
     <aside
       className={cn(
@@ -199,144 +288,162 @@ export default function CatalogFiltersSidebar({
         className,
       )}
     >
-      {/* Тип сделки */}
-      <div className="mb-3">
-        <label className="sr-only" htmlFor="catalog-deal-select">
-          Тип сделки
-        </label>
-        <div className="relative min-w-0">
-          <select
-            id="catalog-deal-select"
-            value={dealType}
-            onChange={(e) => onDealType(e.target.value)}
-            className="w-full min-w-0 appearance-none h-9 rounded-md bg-muted/70 border border-transparent px-2.5 pr-8 text-xs font-medium text-foreground focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25 cursor-pointer"
-          >
-            {dealOptions.map((d) => (
-              <option key={d} value={d}>
-                {d === "Все" ? "Любая сделка" : d}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-        </div>
+      <div className="mb-3 flex flex-col gap-2">
+        <PathSelect
+          id="catalog-category-select"
+          label="Категория"
+          value={categoryId}
+          onChange={(v) => onCategoryId(v as CatalogCategoryId)}
+          options={categoryOptions}
+        />
+        <PathSelect
+          id="catalog-deal-select"
+          label="Сделка"
+          value={dealSlug}
+          onChange={(v) => onDealSlug(v as CatalogDealSlug)}
+          options={dealOptions}
+        />
       </div>
 
-      <FilterBlock title="Вид объекта" defaultOpen>
-        <div className="space-y-2">
-          {types.map((t) => {
-            const checked = selectedTypes.includes(t);
-            return (
-              <label
-                key={t}
-                className="flex items-center gap-2 cursor-pointer text-xs text-foreground min-w-0"
-              >
-                <Checkbox
-                  checked={checked}
-                  onCheckedChange={() => onToggleType(t)}
-                  className="shrink-0"
-                />
-                <span className="truncate">{t}</span>
-              </label>
-            );
-          })}
-        </div>
-      </FilterBlock>
+      {has("trustedSeller") && (
+        <FilterBlock title="Надёжный выбор" defaultOpen>
+          <label className="flex items-center gap-2 cursor-pointer text-xs text-foreground min-w-0">
+            <Checkbox
+              checked={trustedSeller}
+              onCheckedChange={(v) => onTrustedSeller(v === true)}
+              className="shrink-0"
+            />
+            <span className="truncate">Подтверждённый собственник</span>
+          </label>
+        </FilterBlock>
+      )}
 
-      <FilterBlock title="Где искать" defaultOpen>
-        <button
-          type="button"
-          onClick={onOpenLocation}
-          className="w-full min-w-0 h-9 rounded-md bg-muted/70 border border-transparent px-2.5 text-left text-xs truncate focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25"
-        >
-          <span
-            className={
-              district !== "Все"
-                ? "text-foreground font-medium"
-                : "text-muted-foreground"
-            }
+      {has("location") && (
+        <FilterBlock title="Где искать" defaultOpen>
+          <button
+            type="button"
+            onClick={onOpenLocation}
+            className="w-full min-w-0 h-9 rounded-md bg-muted/70 border border-transparent px-2.5 text-left text-xs truncate focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25"
           >
-            {district !== "Все" ? district : "Все регионы"}
-          </span>
-        </button>
-      </FilterBlock>
+            <span
+              className={
+                district !== "Все"
+                  ? "text-foreground font-medium"
+                  : "text-muted-foreground"
+              }
+            >
+              {district !== "Все" ? district : "Город, район, метро"}
+            </span>
+          </button>
+        </FilterBlock>
+      )}
 
-      <FilterBlock title="Цена, ₽" defaultOpen>
-        <div className="grid grid-cols-2 gap-1.5 min-w-0">
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="От"
-            value={priceMin > 0 ? priceMin : ""}
-            onChange={(e) =>
-              onPriceMin(e.target.value === "" ? 0 : Number(e.target.value))
-            }
-            className="h-9 w-full min-w-0 rounded-md border border-transparent bg-muted/70 px-2 text-xs focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25"
-          />
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="до"
-            value={priceMax < CATALOG_PRICE_MAX ? priceMax : ""}
-            onChange={(e) =>
-              onPriceMax(
-                e.target.value === ""
-                  ? CATALOG_PRICE_MAX
-                  : Number(e.target.value),
-              )
-            }
-            className="h-9 w-full min-w-0 rounded-md border border-transparent bg-muted/70 px-2 text-xs focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25"
-          />
-        </div>
-      </FilterBlock>
+      {has("objectTypes") && types.length > 0 && (
+        <FilterBlock title="Вид объекта" defaultOpen>
+          <div className="flex flex-col gap-2">
+            {types.map((t) => {
+              const checked = selectedTypes.includes(t);
+              return (
+                <label
+                  key={t}
+                  className="flex items-center gap-2 cursor-pointer text-xs text-foreground min-w-0"
+                >
+                  <Checkbox
+                    checked={checked}
+                    onCheckedChange={() => onToggleType(t)}
+                    className="shrink-0"
+                  />
+                  <span className="truncate">{t}</span>
+                </label>
+              );
+            })}
+          </div>
+        </FilterBlock>
+      )}
 
-      <FilterBlock title="Площадь, м²" defaultOpen>
-        <div className="grid grid-cols-2 gap-1.5 min-w-0">
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="От"
-            value={areaMin > 0 ? areaMin : ""}
-            onChange={(e) =>
-              onAreaMin(e.target.value === "" ? 0 : Number(e.target.value))
-            }
-            className="h-9 w-full min-w-0 rounded-md border border-transparent bg-muted/70 px-2 text-xs focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25"
-          />
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="до"
-            value={areaMax < CATALOG_AREA_MAX ? areaMax : ""}
-            onChange={(e) =>
-              onAreaMax(
-                e.target.value === ""
-                  ? CATALOG_AREA_MAX
-                  : Number(e.target.value),
-              )
-            }
-            className="h-9 w-full min-w-0 rounded-md border border-transparent bg-muted/70 px-2 text-xs focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25"
-          />
-        </div>
-      </FilterBlock>
+      {has("price") && (
+        <FilterBlock title="Цена, ₽" defaultOpen>
+          <div className="grid grid-cols-2 gap-1.5 min-w-0">
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="От"
+              value={priceMin > 0 ? priceMin : ""}
+              onChange={(e) =>
+                onPriceMin(e.target.value === "" ? 0 : Number(e.target.value))
+              }
+              className="h-9 w-full min-w-0 rounded-md border border-transparent bg-muted/70 px-2 text-xs focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25"
+            />
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="до"
+              value={priceMax < CATALOG_PRICE_MAX ? priceMax : ""}
+              onChange={(e) =>
+                onPriceMax(
+                  e.target.value === ""
+                    ? CATALOG_PRICE_MAX
+                    : Number(e.target.value),
+                )
+              }
+              className="h-9 w-full min-w-0 rounded-md border border-transparent bg-muted/70 px-2 text-xs focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25"
+            />
+          </div>
+        </FilterBlock>
+      )}
 
-      <FilterBlock title="Продавцы" defaultOpen>
-        <Segmented
-          options={sellerOptions.map((o) => ({
-            value: o.value,
-            label:
-              o.value === "owner"
-                ? "Частные"
-                : o.value === "agency"
-                  ? "Агентства"
-                  : o.value === "developer"
-                    ? "Застройщики"
-                    : "Все",
-          }))}
-          value={seller}
-          onChange={(v) => onSeller(v as ListingSellerFilter)}
-        />
-      </FilterBlock>
+      {has("area") && (
+        <FilterBlock title="Площадь, м²" defaultOpen>
+          <div className="grid grid-cols-2 gap-1.5 min-w-0">
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="От"
+              value={areaMin > 0 ? areaMin : ""}
+              onChange={(e) =>
+                onAreaMin(e.target.value === "" ? 0 : Number(e.target.value))
+              }
+              className="h-9 w-full min-w-0 rounded-md border border-transparent bg-muted/70 px-2 text-xs focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25"
+            />
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="до"
+              value={areaMax < CATALOG_AREA_MAX ? areaMax : ""}
+              onChange={(e) =>
+                onAreaMax(
+                  e.target.value === ""
+                    ? CATALOG_AREA_MAX
+                    : Number(e.target.value),
+                )
+              }
+              className="h-9 w-full min-w-0 rounded-md border border-transparent bg-muted/70 px-2 text-xs focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25"
+            />
+          </div>
+        </FilterBlock>
+      )}
 
-      {isResidential && (
+      {has("sellers") && (
+        <FilterBlock title="Продавцы" defaultOpen>
+          <Segmented
+            options={sellerOptions.map((o) => ({
+              value: o.value,
+              label:
+                o.value === "owner"
+                  ? "Частные"
+                  : o.value === "agency"
+                    ? "Агентства"
+                    : o.value === "developer"
+                      ? "Застройщики"
+                      : "Все",
+            }))}
+            value={seller}
+            onChange={(v) => onSeller(v as ListingSellerFilter)}
+          />
+        </FilterBlock>
+      )}
+
+      {has("rooms") && (
         <FilterBlock title="Комнаты" defaultOpen>
           <div className="flex flex-wrap gap-1.5">
             {ROOMS_OPTIONS.map((room) => (
@@ -358,7 +465,49 @@ export default function CatalogFiltersSidebar({
         </FilterBlock>
       )}
 
-      {isResidential && (
+      {has("layouts") && (
+        <FilterBlock title="Планировка" defaultOpen={false}>
+          <div className="flex flex-wrap gap-1.5">
+            {LAYOUT_OPTIONS.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => onToggleLayout(item)}
+                className={cn(
+                  "px-2 py-1 rounded-md text-[10px] font-medium border transition-colors max-w-full truncate",
+                  selectedLayouts.includes(item)
+                    ? "bg-foreground text-background border-foreground"
+                    : "border-border bg-muted/40 text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </FilterBlock>
+      )}
+
+      {has("dealTransaction") && (
+        <FilterBlock title="Тип сделки" defaultOpen={false}>
+          <div className="flex flex-col gap-2">
+            {DEAL_TRANSACTION_OPTIONS.map((opt) => (
+              <label
+                key={opt.value}
+                className="flex items-center gap-2 cursor-pointer text-xs text-foreground min-w-0"
+              >
+                <Checkbox
+                  checked={dealTransaction.includes(opt.value)}
+                  onCheckedChange={() => onToggleDealTransaction(opt.value)}
+                  className="shrink-0"
+                />
+                <span className="truncate">{opt.label}</span>
+              </label>
+            ))}
+          </div>
+        </FilterBlock>
+      )}
+
+      {has("market") && (
         <FilterBlock title="Рынок" defaultOpen={false}>
           <div className="flex flex-wrap gap-1.5">
             {MARKET_OPTIONS.map((item) => (
@@ -380,7 +529,7 @@ export default function CatalogFiltersSidebar({
         </FilterBlock>
       )}
 
-      {isResidential && (
+      {has("buildingType") && (
         <FilterBlock title="Тип дома" defaultOpen={false}>
           <div className="flex flex-wrap gap-1.5">
             {BUILDING_TYPES.map((item) => (
@@ -402,7 +551,7 @@ export default function CatalogFiltersSidebar({
         </FilterBlock>
       )}
 
-      {isResidential && (
+      {has("furniture") && (
         <FilterBlock title="Мебель" defaultOpen={false}>
           <div className="flex flex-wrap gap-1.5">
             {FURNITURE_OPTIONS.map((item) => (
@@ -424,9 +573,9 @@ export default function CatalogFiltersSidebar({
         </FilterBlock>
       )}
 
-      {isLand && landUseOptions.length > 0 && (
+      {has("landUse") && landUseOptions.length > 0 && (
         <FilterBlock title={`${LAND_TYPE_LABEL} участка`} defaultOpen>
-          <div className="space-y-2.5">
+          <div className="flex flex-col gap-2.5">
             {landUseOptions.map((l) => (
               <label
                 key={l}
@@ -443,7 +592,7 @@ export default function CatalogFiltersSidebar({
         </FilterBlock>
       )}
 
-      {isCommercial && (
+      {has("propertyClass") && (
         <FilterBlock title="Класс" defaultOpen={false}>
           <div className="flex flex-wrap gap-1.5">
             {classOptions.map((c) => (
@@ -465,7 +614,7 @@ export default function CatalogFiltersSidebar({
         </FilterBlock>
       )}
 
-      {!isLand && (
+      {has("condition") && (
         <FilterBlock title="Состояние" defaultOpen={false}>
           <div className="flex flex-wrap gap-1.5">
             {conditionOptions.map((c) => (
@@ -487,9 +636,9 @@ export default function CatalogFiltersSidebar({
         </FilterBlock>
       )}
 
-      {isCommercial && (
+      {has("ceilingParking") && (
         <FilterBlock title="Дополнительно" defaultOpen={false}>
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3">
             <div>
               <p className="text-xs text-muted-foreground mb-1.5">
                 Высота потолков
@@ -525,15 +674,50 @@ export default function CatalogFiltersSidebar({
         </FilterBlock>
       )}
 
-      <FilterBlock title="Слова в описании" defaultOpen={false}>
-        <input
-          type="search"
-          value={searchQuery}
-          onChange={(e) => onSearchQuery(e.target.value)}
-          placeholder="Что важно"
-          className="w-full min-w-0 h-9 rounded-md bg-muted/70 border border-transparent px-2.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25 focus:ring-offset-0"
-        />
-      </FilterBlock>
+      {has("buildingTypeCommercial") && (
+        <FilterBlock title="Тип здания" defaultOpen={false}>
+          <div className="flex flex-col gap-2">
+            {COMMERCIAL_BUILDING_TYPES.map((item) => (
+              <label
+                key={item}
+                className="flex items-center gap-2 cursor-pointer text-xs text-foreground min-w-0"
+              >
+                <Checkbox
+                  checked={selectedBuildingTypes.includes(item)}
+                  onCheckedChange={() => onToggleBuildingType(item)}
+                  className="shrink-0"
+                />
+                <span className="truncate">{item}</span>
+              </label>
+            ))}
+          </div>
+        </FilterBlock>
+      )}
+
+      {has("withPhoto") && (
+        <FilterBlock title="Дополнительно" defaultOpen={false}>
+          <label className="flex items-center gap-2 cursor-pointer text-xs text-foreground min-w-0">
+            <Checkbox
+              checked={withPhoto}
+              onCheckedChange={(v) => onWithPhoto(v === true)}
+              className="shrink-0"
+            />
+            <span className="truncate">Только с фото</span>
+          </label>
+        </FilterBlock>
+      )}
+
+      {has("query") && (
+        <FilterBlock title="Слова в описании" defaultOpen={false}>
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => onSearchQuery(e.target.value)}
+            placeholder="Что важно"
+            className="w-full min-w-0 h-9 rounded-md bg-muted/70 border border-transparent px-2.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/25 focus:ring-offset-0"
+          />
+        </FilterBlock>
+      )}
 
       {activeFiltersCount > 0 && (
         <button

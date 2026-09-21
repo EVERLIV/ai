@@ -1,13 +1,10 @@
-import {
-  type PropertySegment,
-  SEGMENT_ROUTES,
-} from "@/config/propertySegments";
+import type { PropertySegment } from "@/config/propertySegments";
 import {
   type ListingSellerFilter,
   normalizeListingSeller,
 } from "@/lib/listingSource";
 
-type CatalogLinkParams = {
+export type CatalogLinkParams = {
   segment?: PropertySegment;
   types?: string | string[];
   rooms?: string | string[];
@@ -41,139 +38,6 @@ export function parseCatalogTypes(searchParams: URLSearchParams): string[] {
   const type = searchParams.get("type");
   return type ? [type.trim()].filter(Boolean) : [];
 }
-
-export function buildCatalogUrl(params: CatalogLinkParams = {}): string {
-  const search = new URLSearchParams();
-  const basePath =
-    params.segment === "residential"
-      ? SEGMENT_ROUTES.residential.catalog
-      : params.segment === "land"
-        ? SEGMENT_ROUTES.land.catalog
-        : SEGMENT_ROUTES.commercial.catalog;
-
-  if (params.types) {
-    const types = (Array.isArray(params.types) ? params.types : [params.types])
-      .map((value) => value.trim())
-      .filter(Boolean);
-    if (types.length > 0) search.set("types", types.join(","));
-  }
-
-  if (params.rooms) {
-    const rooms = (Array.isArray(params.rooms) ? params.rooms : [params.rooms])
-      .map((value) => value.trim())
-      .filter(Boolean);
-    if (rooms.length > 0) search.set("rooms", rooms.join(","));
-  }
-
-  if (params.market) {
-    const market = (
-      Array.isArray(params.market) ? params.market : [params.market]
-    )
-      .map((value) => value.trim())
-      .filter(Boolean);
-    if (market.length > 0) search.set("market", market.join(","));
-  }
-
-  if (params.buildingType) {
-    const buildingType = (
-      Array.isArray(params.buildingType)
-        ? params.buildingType
-        : [params.buildingType]
-    )
-      .map((value) => value.trim())
-      .filter(Boolean);
-    if (buildingType.length > 0) search.set("bld", buildingType.join(","));
-  }
-
-  if (params.furniture) {
-    const furniture = (
-      Array.isArray(params.furniture) ? params.furniture : [params.furniture]
-    )
-      .map((value) => value.trim())
-      .filter(Boolean);
-    if (furniture.length > 0) search.set("furniture", furniture.join(","));
-  }
-
-  if (params.landUse) {
-    const landUse = (
-      Array.isArray(params.landUse) ? params.landUse : [params.landUse]
-    )
-      .map((value) => value.trim())
-      .filter(Boolean);
-    if (landUse.length > 0) search.set("land_use", landUse.join(","));
-  }
-
-  if (params.district?.trim()) search.set("district", params.district.trim());
-
-  const deal = normalizeCatalogDeal(params.deal);
-  if (deal !== "Все") search.set("deal", deal);
-
-  if (params.q?.trim()) search.set("q", params.q.trim());
-
-  const seller = normalizeListingSeller(params.seller);
-  if (seller !== "Все") search.set("seller", seller);
-  if (params.agency?.trim()) search.set("agency", params.agency.trim());
-
-  const query = search.toString();
-  return query ? `${basePath}?${query}` : basePath;
-}
-
-export const footerSectionLinks = [
-  { label: "Офисы", href: buildCatalogUrl({ types: "Офис" }) },
-  { label: "Торговые площади", href: buildCatalogUrl({ types: "Торговая" }) },
-  { label: "Склады", href: buildCatalogUrl({ types: "Склад" }) },
-  { label: "Земельные участки", href: buildCatalogUrl({ segment: "land" }) },
-  { label: "Производство", href: buildCatalogUrl({ types: "Производство" }) },
-];
-
-export const footerCityLinks = [
-  { label: "Иркутск", href: buildCatalogUrl({ q: "Иркутск" }) },
-  { label: "Ангарск", href: buildCatalogUrl({ district: "Ангарск" }) },
-  { label: "Шелехов", href: buildCatalogUrl({ district: "Шелехов" }) },
-  {
-    label: "Усолье-Сибирское",
-    href: buildCatalogUrl({ district: "Усолье-Сибирское" }),
-  },
-  { label: "Братск", href: buildCatalogUrl({ district: "Братск" }) },
-];
-
-export const footerResidentialLinks = [
-  { label: "Каталог жилья", href: buildCatalogUrl({ segment: "residential" }) },
-  {
-    label: "Квартиры",
-    href: buildCatalogUrl({ segment: "residential", types: "Квартира" }),
-  },
-  {
-    label: "Дома",
-    href: buildCatalogUrl({ segment: "residential", types: "Дом" }),
-  },
-  {
-    label: "Комнаты",
-    href: buildCatalogUrl({ segment: "residential", types: "Комната" }),
-  },
-  {
-    label: "Таунхаусы",
-    href: buildCatalogUrl({ segment: "residential", types: "Таунхаус" }),
-  },
-  {
-    label: "Апартаменты",
-    href: buildCatalogUrl({ segment: "residential", types: "Апартаменты" }),
-  },
-  { label: "Участки", href: buildCatalogUrl({ segment: "land" }) },
-  {
-    label: "Новостройки",
-    href: buildCatalogUrl({ segment: "residential", market: "Новостройка" }),
-  },
-  {
-    label: "Дом на заказ",
-    href: buildCatalogUrl({
-      segment: "residential",
-      types: ["Дом на заказ", "Дом", "Коттедж", "Дача"],
-      market: "На заказ",
-      deal: "Продажа",
-    }),
-  },
-];
 
 function parseCsvParam(searchParams: URLSearchParams, key: string): string[] {
   return (searchParams.get(key) || "")
@@ -211,6 +75,9 @@ export function readCatalogFiltersFromSearchParams(
     selectedLandUses: parseCsvParam(searchParams, "land_use"),
     seller: normalizeListingSeller(searchParams.get("seller")),
     agencyId: searchParams.get("agency") || "",
+    trustedSeller: searchParams.get("trusted") === "1",
+    dealTransaction: parseCsvParam(searchParams, "tx"),
+    withPhoto: searchParams.get("photo") === "1",
   };
 }
 
@@ -265,5 +132,10 @@ export function serializeCatalogSearchParams(
   }
   if (filters.seller !== "Все") p.set("seller", String(filters.seller));
   if (filters.agencyId) p.set("agency", filters.agencyId);
+  if (filters.trustedSeller) p.set("trusted", "1");
+  if ((filters.dealTransaction ?? []).length > 0) {
+    p.set("tx", filters.dealTransaction!.join(","));
+  }
+  if (filters.withPhoto) p.set("photo", "1");
   return p.toString();
 }

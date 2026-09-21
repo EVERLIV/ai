@@ -22,14 +22,7 @@ const COMMERCIAL_PLACEHOLDER_BANNER: CatalogHorizontalBannerItem = {
   footer: "Рекламное место в каталоге. Свяжитесь с нами для размещения.",
 };
 
-const COMMERCIAL_BANNER_SLOTS: CatalogBannerSlot[] = [
-  {
-    id: "commercial-slot-1",
-    segment: "commercial",
-    afterIndex: 5,
-    banner: COMMERCIAL_PLACEHOLDER_BANNER,
-  },
-];
+const COMMERCIAL_BANNER_SLOTS: CatalogBannerSlot[] = [];
 
 export function getCatalogHorizontalBannerSlots(
   segment: PropertySegment,

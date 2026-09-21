@@ -28,6 +28,10 @@ export type HomeMainCategory = {
   deals: readonly HomeDealChoice[];
   /** Показать фильтр «Комнаты» */
   showRooms?: boolean;
+  /** Рынок зафиксирован (Новостройка / Вторичка) */
+  market?: string;
+  /** ID родительской категории (для визуальной группировки checkboxes) */
+  parentId?: string;
 };
 
 /**
@@ -52,44 +56,30 @@ export const HOME_MAIN_CATEGORIES: readonly HomeMainCategory[] = [
   },
   {
     id: "houses",
-    label: "Дома",
+    label: "Дома, дачи, коттеджи",
     segment: "residential",
     types: ["Дом", "Коттедж", "Дача", "Таунхаус", "Дом на заказ"],
     deals: ["Аренда", "Продажа", "Посуточно"],
   },
   {
+    id: "land",
+    label: "Земельные участки",
+    segment: "land",
+    types: ["Земля", "Участок"],
+    deals: ["Аренда", "Продажа"],
+  },
+  {
     id: "garages",
-    label: "Гаражи",
+    label: "Гаражи и машиноместа",
     segment: "residential",
     types: ["Гараж", "Машиноместо"],
     deals: ["Аренда", "Продажа"],
   },
   {
-    id: "offices",
-    label: "Офисы",
+    id: "commercial",
+    label: "Коммерческая недвижимость",
     segment: "commercial",
-    types: ["Офис"],
-    deals: ["Аренда", "Продажа"],
-  },
-  {
-    id: "retail",
-    label: "Торговая",
-    segment: "commercial",
-    types: ["Торговая", "Павильон", "Общепит"],
-    deals: ["Аренда", "Продажа"],
-  },
-  {
-    id: "warehouses",
-    label: "Склады",
-    segment: "commercial",
-    types: ["Склад", "Производство", "Автосервис"],
-    deals: ["Аренда", "Продажа"],
-  },
-  {
-    id: "land",
-    label: "Земля",
-    segment: "land",
-    types: ["Земля", "Участок"],
+    types: ["Офис", "Торговая", "Павильон", "Общепит", "Склад", "Производство", "Автосервис", "ПСН"],
     deals: ["Аренда", "Продажа"],
   },
 ] as const;

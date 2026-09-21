@@ -1,5 +1,5 @@
 import { SEGMENT_ROUTES } from "@/config/propertySegments";
-import { buildCatalogUrl } from "@/lib/catalogLinks";
+import { buildCatalogUrl } from "@/lib/catalogPaths";
 import { placementCtaPath } from "@/lib/listPropertyLinks";
 
 export type MegaLink = { label: string; href: string };
@@ -37,8 +37,8 @@ function c(params: Parameters<typeof buildCatalogUrl>[0]) {
   return buildCatalogUrl({ segment: "commercial", ...params });
 }
 
-function dealIs(search: string, deal: string) {
-  return new URLSearchParams(search).get("deal") === deal;
+function pathDealIs(pathname: string, dealSlug: "kupit" | "snyat" | "posutochno") {
+  return pathname.startsWith(`/${dealSlug}/`);
 }
 
 function marketIs(search: string, market: string) {
@@ -67,12 +67,7 @@ export function commercialTypeHref(
   type: string,
   deal?: "Аренда" | "Продажа",
 ): string {
-  if (!deal) {
-    if (type === "Офис") return "/offices";
-    if (type === "Торговая") return "/retail";
-    if (type === "Склад") return "/warehouses";
-  }
-  return c({ types: type, ...(deal ? { deal } : {}) });
+  return c({ types: type, ...(deal ? { deal } : { deal: "Аренда" }) });
 }
 
 function commercialDealLinks(
@@ -101,7 +96,7 @@ export function getMainNavMegaMenus(
   ).filter((t) => t !== "Земля" && t !== "Участок");
 
   const listRent = placementCtaPath("residential", "rent", isLoggedIn);
-  const listSale = placementCtaPath("residential", "rent", isLoggedIn);
+  const listSale = placementCtaPath("residential", "sale", isLoggedIn);
   const listCommercial = placementCtaPath("commercial", "rent", isLoggedIn);
   const listLand = placementCtaPath("land", "rent", isLoggedIn);
 
@@ -110,9 +105,10 @@ export function getMainNavMegaMenus(
       id: "rent",
       triggerLabel: "Аренда",
       catalogHref: r({ deal: "Аренда" }),
-      match: (pathname, search) =>
-        (pathname.startsWith("/zhilaya") || pathname === "/catalog") &&
-        dealIs(search, "Аренда"),
+      match: (pathname) =>
+        pathDealIs(pathname, "snyat") &&
+        !pathname.includes("/kommercheskaya") &&
+        !pathname.includes("/zemlya"),
       columns: [
         {
           sections: [
@@ -190,10 +186,12 @@ export function getMainNavMegaMenus(
       triggerLabel: "Продажа",
       catalogHref: r({ deal: "Продажа" }),
       match: (pathname, search) =>
-        (pathname.startsWith("/zhilaya") || pathname === "/catalog") &&
-        dealIs(search, "Продажа") &&
-        !marketIs(search, "Новостройка") &&
-        !marketIs(search, "На заказ"),
+        (pathDealIs(pathname, "kupit") &&
+          !pathname.includes("/kommercheskaya") &&
+          !pathname.includes("/zemlya") &&
+          !pathname.includes("/novostroyki") &&
+          !marketIs(search, "На заказ")) ||
+        false,
       columns: [
         {
           sections: [
@@ -264,9 +262,9 @@ export function getMainNavMegaMenus(
     {
       id: "newbuilds",
       triggerLabel: "Новостройки",
-      catalogHref: r({ market: "Новостройка" }),
-      match: (pathname, search) =>
-        pathname.startsWith("/zhilaya") && marketIs(search, "Новостройка"),
+      catalogHref: "/kupit/kvartiry/novostroyki",
+      match: (pathname) =>
+        pathname.includes("/novostroyki") || pathname.includes("/vtorichka"),
       columns: [
         {
           sections: [
@@ -275,29 +273,15 @@ export function getMainNavMegaMenus(
               links: [
                 {
                   label: "Все новостройки",
-                  href: r({ market: "Новостройка" }),
+                  href: "/kupit/kvartiry/novostroyki",
                 },
                 {
-                  label: "Квартиры",
-                  href: r({
-                    types: "Квартира",
-                    market: "Новостройка",
-                  }),
-                },
-                {
-                  label: "Апартаменты",
-                  href: r({
-                    types: "Апартаменты",
-                    market: "Новостройка",
-                  }),
+                  label: "Квартиры (вторичка)",
+                  href: "/kupit/kvartiry/vtorichka",
                 },
                 {
                   label: "Дом на заказ",
-                  href: r({
-                    types: ["Дом на заказ", "Дом", "Коттедж", "Дача"],
-                    market: "На заказ",
-                    deal: "Продажа",
-                  }),
+                  href: "/kupit/doma/na-zakaz",
                 },
                 { label: "Застройщики", href: "/zastroyshchiki" },
               ],
@@ -328,18 +312,10 @@ export function getMainNavMegaMenus(
       triggerLabel: "Дома",
       catalogHref: r({ types: ["Дом", "Коттедж", "Дача"] }),
       match: (pathname, search) => {
-        if (pathname.startsWith("/zemlya") || pathname.startsWith("/land"))
+        if (pathname.includes("/zemlya") || pathname.startsWith("/land"))
           return false;
-        if (pathname.startsWith("/zhilaya/uchastki")) return false;
         if (marketIs(search, "На заказ")) return true;
-        const types = new URLSearchParams(search).get("types") || "";
-        return (
-          pathname.startsWith("/zhilaya") &&
-          (types.includes("Дом") ||
-            types.includes("Коттедж") ||
-            types.includes("Дача") ||
-            types.includes("Таунхаус"))
-        );
+        return pathname.includes("/doma");
       },
       columns: [
         {
@@ -363,15 +339,11 @@ export function getMainNavMegaMenus(
                 },
                 {
                   label: "Дом на заказ",
-                  href: r({
-                    types: ["Дом на заказ", "Дом", "Коттедж", "Дача"],
-                    market: "На заказ",
-                    deal: "Продажа",
-                  }),
+                  href: "/kupit/doma/na-zakaz",
                 },
                 {
                   label: "Таунхаусы",
-                  href: r({ types: "Таунхаус" }),
+                  href: "/kupit/doma/taunhausy",
                 },
               ],
             },
@@ -384,11 +356,7 @@ export function getMainNavMegaMenus(
               links: [
                 {
                   label: "Все дома на заказ",
-                  href: r({
-                    types: ["Дом", "Коттедж", "Дача"],
-                    market: "На заказ",
-                    deal: "Продажа",
-                  }),
+                  href: "/kupit/doma/na-zakaz",
                 },
                 {
                   label: "Деревянные / каркас",
@@ -418,11 +386,7 @@ export function getMainNavMegaMenus(
         title: "Дом на заказ",
         text: "Индивидуальная сборка: каркас, брус, модули — под ваш участок",
         cta: "Смотреть",
-        href: r({
-          types: ["Дом", "Коттедж", "Дача"],
-          market: "На заказ",
-          deal: "Продажа",
-        }),
+        href: "/kupit/doma/na-zakaz",
       },
     },
     {
@@ -430,7 +394,8 @@ export function getMainNavMegaMenus(
       triggerLabel: "Коммерческая",
       catalogHref: SEGMENT_ROUTES.commercial.catalog,
       match: (pathname) =>
-        pathname === "/catalog" ||
+        pathname.includes("/kommercheskaya") ||
+        pathname.startsWith("/catalog") ||
         pathname.startsWith("/offices") ||
         pathname.startsWith("/retail") ||
         pathname.startsWith("/warehouses"),
@@ -472,7 +437,9 @@ export function getMainNavMegaMenus(
       triggerLabel: "Земля",
       catalogHref: SEGMENT_ROUTES.land.catalog,
       match: (pathname) =>
-        pathname.startsWith("/zemlya") || pathname.startsWith("/land"),
+        pathname.includes("/zemlya") ||
+        pathname.startsWith("/land") ||
+        pathname.startsWith("/zemlya"),
       columns: [
         {
           sections: [
