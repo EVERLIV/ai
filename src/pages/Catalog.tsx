@@ -664,10 +664,11 @@ export default function Catalog({
   const toggleType = (t: string) => {
     if (subtypeSlug) {
       const sub = category.subtypes?.find((s) => s.types.includes(t));
+      // Clicking the active subtype deselects it (go back to parent category)
       navigateCatalog(
         dealSlug,
         categoryId,
-        sub?.slug ?? null,
+        sub?.slug === subtypeSlug ? null : (sub?.slug ?? null),
         softFiltersPayload,
       );
       return;
@@ -930,7 +931,7 @@ export default function Catalog({
       navigateCatalog(slug, categoryId, subtypeSlug, softFiltersPayload),
     onCategoryId: (id: CatalogCategoryId) =>
       navigateCatalog(dealSlug, id, null, softFiltersPayload),
-    types: TYPES,
+    types: subtypeSlug ? [...category.types] : TYPES,
     selectedTypes: selectedTypes.length ? selectedTypes : subtypeSlug ? TYPES : [],
     onToggleType: toggleType,
     district,
