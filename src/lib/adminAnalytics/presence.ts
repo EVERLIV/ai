@@ -33,19 +33,14 @@ export async function upsertPresence(opts?: {
     (typeof window !== "undefined" ? window.location.pathname : null);
 
   const row = {
-    session_id,
-    user_id: opts?.userId ?? null,
-    last_seen_at: new Date().toISOString(),
-    path,
+    p_session_id: session_id,
+    p_user_id: opts?.userId ?? null,
+    p_path: path,
   };
 
   inFlight = true;
   try {
-    const res = await analyticsPost(
-      "/rest/v1/site_presence?on_conflict=session_id",
-      row,
-      "resolution=merge-duplicates,return=minimal",
-    );
+    const res = await analyticsPost("/rest/v1/rpc/upsert_site_presence", row);
     if (res.ok || res.status === 200 || res.status === 201) {
       failStreak = 0;
       nextAllowedAt = 0;
