@@ -1065,6 +1065,17 @@ export default function DocsHandbookPage() {
                   </DocLink>
                   . Ниже — форма для гостей, если нашли ошибку на сайте.
                 </p>
+                <Callout title="Агентствам недвижимости">
+                  Презентация с условиями бесплатного размещения объектов —{" "}
+                  <a
+                    href="/ДАДАТУТ-бесплатное размещение объектов.pdf"
+                    download
+                    className="text-primary font-medium hover:underline"
+                  >
+                    скачать PDF
+                  </a>
+                  .
+                </Callout>
                 <BugReportForm />
               </section>
 
