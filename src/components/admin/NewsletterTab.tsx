@@ -59,6 +59,7 @@ type Subscriber = {
   email: string;
   full_name: string | null;
   marketing_opt_in: boolean;
+  confirmed_at: string | null;
   unsubscribed_at: string | null;
   created_at: string;
 };
@@ -189,7 +190,7 @@ export default function NewsletterTab() {
     queryKey: ["newsletter-subscribers"],
     queryFn: () =>
       serviceFetch<Subscriber[]>(
-        "newsletter_subscribers?select=id,email,full_name,marketing_opt_in,unsubscribed_at,created_at&order=created_at.desc&limit=200",
+        "newsletter_subscribers?select=id,email,full_name,marketing_opt_in,confirmed_at,unsubscribed_at,created_at&order=created_at.desc&limit=200",
       ),
   });
 
@@ -197,7 +198,7 @@ export default function NewsletterTab() {
     queryKey: ["newsletter-active-count"],
     queryFn: async () => {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/newsletter_subscribers?select=id&marketing_opt_in=eq.true&unsubscribed_at=is.null`,
+        `${SUPABASE_URL}/rest/v1/newsletter_subscribers?select=id&marketing_opt_in=eq.true&confirmed_at=not.is.null&unsubscribed_at=is.null`,
         {
           headers: {
             ...serviceHeaders,
@@ -339,10 +340,12 @@ export default function NewsletterTab() {
       }
 
       const name = newName.trim();
+      const now = new Date().toISOString();
       const rows = unique.map((email) => ({
         email,
         full_name: unique.length === 1 ? name : name || "",
         marketing_opt_in: true,
+        confirmed_at: now,
         unsubscribed_at: null,
         source: "admin",
       }));
@@ -694,8 +697,10 @@ export default function NewsletterTab() {
                     <TableCell>
                       {s.unsubscribed_at ? (
                         <Badge variant="outline">Отписан</Badge>
-                      ) : s.marketing_opt_in ? (
+                      ) : s.marketing_opt_in && s.confirmed_at ? (
                         <Badge variant="secondary">Активен</Badge>
+                      ) : s.marketing_opt_in ? (
+                        <Badge variant="outline">Не подтверждён</Badge>
                       ) : (
                         <Badge variant="outline">Неактивен</Badge>
                       )}

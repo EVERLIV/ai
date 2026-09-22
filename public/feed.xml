@@ -5,7 +5,7 @@
     <link>https://dadatut.ru</link>
     <description>У вас вся недвижимость региона? Дада, тут! Новые объявления недвижимости в Иркутске и области — ДАДАТУТ.</description>
     <language>ru</language>
-    <lastBuildDate>Tue, 22 Sep 2026 10:24:53 GMT</lastBuildDate>
+    <lastBuildDate>Tue, 22 Sep 2026 12:46:12 GMT</lastBuildDate>
     <item>
       <title>Аренда — помещение — г. Ангарск — 76 квартал, 1 — 90 тыс ₽/мес</title>
       <link>https://dadatut.ru/property/94a05ca7-69df-45a0-af4b-f4ff20c08777</link>
@@ -238,6 +238,14 @@
       <enclosure url="https://arendacity.com/mock/wooden-houses/01-karkas-baikal.jpg" type="image/jpeg" />
     </item>
     <item>
+      <title>Продажа — квартира — г. Иркутск, Свердловский — ул. Байкальская, 280к1, кв. 64 — 12 млн ₽</title>
+      <link>https://dadatut.ru/property/d1000000-0000-4000-8000-000000000005</link>
+      <guid isPermaLink="true">https://dadatut.ru/property/d1000000-0000-4000-8000-000000000005</guid>
+      <description>квартира · 92 м² · 12 млн ₽ · Свердловский. Трёхкомнатная семейная квартира 92 м²: мастер-спальня с гардеробом, две детские/кабинеты, кухня-гостиная, два санузла. Оптимально для семьи с двумя детьми. Во дворе — безопасная площадка и зоны… ДАДА ТУТ! — У вас вся недвижимость региона? Дада, тут!</description>
+      <pubDate>Tue, 25 Aug 2026 08:51:32 GMT</pubDate>
+      <enclosure url="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&amp;fit=crop&amp;w=1600&amp;q=80" type="image/jpeg" />
+    </item>
+    <item>
       <title>Продажа — квартира — г. Иркутск, Свердловский — ул. Байкальская, 280к1, кв. 112 — 10 млн ₽</title>
       <link>https://dadatut.ru/property/d1000000-0000-4000-8000-000000000004</link>
       <guid isPermaLink="true">https://dadatut.ru/property/d1000000-0000-4000-8000-000000000004</guid>
@@ -260,14 +268,6 @@
       <description>квартира · 108 м² · 16 млн ₽ · Свердловский. Премиальная трёхкомнатная квартира 108 м² на 15 этаже с видом на город. Высокие потолки 2,9 м, мастер-спальня с собственной ванной, кухня-гостиная 28 м², постирочная. В цену входит одно машиноместо… ДАДА ТУТ! — У вас вся недвижимость региона? Дада, тут!</description>
       <pubDate>Tue, 25 Aug 2026 08:51:32 GMT</pubDate>
       <enclosure url="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&amp;fit=crop&amp;w=1600&amp;q=80" type="image/jpeg" />
-    </item>
-    <item>
-      <title>Продажа — квартира — г. Иркутск, Свердловский — ул. Байкальская, 280к1, кв. 64 — 12 млн ₽</title>
-      <link>https://dadatut.ru/property/d1000000-0000-4000-8000-000000000005</link>
-      <guid isPermaLink="true">https://dadatut.ru/property/d1000000-0000-4000-8000-000000000005</guid>
-      <description>квартира · 92 м² · 12 млн ₽ · Свердловский. Трёхкомнатная семейная квартира 92 м²: мастер-спальня с гардеробом, две детские/кабинеты, кухня-гостиная, два санузла. Оптимально для семьи с двумя детьми. Во дворе — безопасная площадка и зоны… ДАДА ТУТ! — У вас вся недвижимость региона? Дада, тут!</description>
-      <pubDate>Tue, 25 Aug 2026 08:51:32 GMT</pubDate>
-      <enclosure url="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&amp;fit=crop&amp;w=1600&amp;q=80" type="image/jpeg" />
     </item>
     <item>
       <title>Продажа — квартира — г. Иркутск, Свердловский — ул. Байкальская, 280к1, кв. 12 — 4.5 млн ₽</title>
