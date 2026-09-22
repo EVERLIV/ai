@@ -1,6 +1,7 @@
 import { Bell } from "lucide-react";
 import { useMemo } from "react";
 import CatalogMiniMap from "@/components/catalog/CatalogMiniMap";
+import NewsletterSubscribeCard from "@/components/newsletter/NewsletterSubscribeCard";
 import type { DbProperty } from "@/hooks/useProperties";
 import { cn } from "@/lib/utils";
 
@@ -78,6 +79,8 @@ export default function CatalogResultsSidebar({
         <Bell className="w-3 h-3 shrink-0 mt-0.5" />
         Уведомить о новых
       </button>
+
+      <NewsletterSubscribeCard compact source="catalog-sidebar" />
     </aside>
   );
 }

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
+import NewsletterSubscribeCard from "@/components/newsletter/NewsletterSubscribeCard";
 import SeoHead from "@/components/SeoHead";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
@@ -180,8 +181,7 @@ export default function AgencyPublicPage() {
                 </div>
                 <div className="font-medium mt-0.5 inline-flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5 text-muted-foreground" />
-                  {managers.length} спец. ·{" "}
-                  {propsLoading ? "…" : objectsCount}{" "}
+                  {managers.length} спец. · {propsLoading ? "…" : objectsCount}{" "}
                   {!propsLoading && pluralObjects(objectsCount)}
                 </div>
               </div>
@@ -283,12 +283,16 @@ export default function AgencyPublicPage() {
           </div>
 
           <aside className="lg:w-[340px] shrink-0">
-            <div className="sticky top-24">
+            <div className="sticky top-24 space-y-4">
               <SpecialistContactForm
                 title="Свяжитесь с агентством"
                 source="agency_contact"
                 targetLabel={agency.name}
                 agencyId={agency.id}
+              />
+              <NewsletterSubscribeCard
+                source="agency-page"
+                description="Новые объекты агентств и застройщиков — письмом."
               />
             </div>
           </aside>

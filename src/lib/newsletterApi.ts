@@ -29,10 +29,17 @@ export const NEWSLETTER_TEMPLATES = [
 export type NewsletterTemplateKey =
   (typeof NEWSLETTER_TEMPLATES)[number]["key"];
 
-const SEND_URL = getEdgeFunctionUrl("send-newsletter", "VITE_SEND_NEWSLETTER_URL");
+const SEND_URL = getEdgeFunctionUrl(
+  "send-newsletter",
+  "VITE_SEND_NEWSLETTER_URL",
+);
 const UNSUB_URL = getEdgeFunctionUrl(
   "newsletter-unsubscribe",
   "VITE_NEWSLETTER_UNSUBSCRIBE_URL",
+);
+const SUBSCRIBE_URL = getEdgeFunctionUrl(
+  "newsletter-subscribe",
+  "VITE_NEWSLETTER_SUBSCRIBE_URL",
 );
 
 const NOTIFY_SECRET = import.meta.env.VITE_NOTIFY_EMAIL_SECRET as
@@ -137,4 +144,43 @@ export async function unsubscribeNewsletter(token: string) {
     );
   }
   return data as { ok?: boolean; unsubscribed?: boolean };
+}
+
+async function postSubscribe(body: Record<string, unknown>) {
+  const res = await fetch(SUBSCRIBE_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      typeof data?.error === "string" ? data.error : `HTTP ${res.status}`,
+    );
+  }
+  return data;
+}
+
+/**
+ * Заявка на подписку. Подписчик становится активным только после перехода
+ * по ссылке из письма, поэтому ответ всегда pending.
+ */
+export async function subscribeNewsletter(opts: {
+  email: string;
+  fullName?: string;
+  source?: string;
+}) {
+  return (await postSubscribe({
+    email: opts.email,
+    fullName: opts.fullName ?? "",
+    source: opts.source ?? "site",
+  })) as { ok?: boolean; pending?: boolean; mailed?: boolean };
+}
+
+/** Подтверждение подписки по токену из письма */
+export async function confirmNewsletterSubscription(token: string) {
+  return (await postSubscribe({ mode: "confirm", token })) as {
+    ok?: boolean;
+    confirmed?: boolean;
+  };
 }

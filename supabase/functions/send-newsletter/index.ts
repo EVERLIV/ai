@@ -335,6 +335,7 @@ Deno.serve(async (req) => {
         .from("newsletter_subscribers")
         .select("id, email, unsubscribe_token, full_name")
         .eq("marketing_opt_in", true)
+        .not("confirmed_at", "is", null)
         .is("unsubscribed_at", null)
         .order("created_at", { ascending: true })
         .limit(MAX_CAMPAIGN);
@@ -595,6 +596,7 @@ Deno.serve(async (req) => {
       .from("newsletter_subscribers")
       .select("id, email, unsubscribe_token, full_name")
       .eq("marketing_opt_in", true)
+      .not("confirmed_at", "is", null)
       .is("unsubscribed_at", null)
       .order("created_at", { ascending: true })
       .limit(Math.min(MAX_CAMPAIGN, 500));

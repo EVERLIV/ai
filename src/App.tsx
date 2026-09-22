@@ -56,6 +56,7 @@ import DeveloperProjectPage from "./pages/DeveloperProjectPage.tsx";
 import DevelopersLandingPage from "./pages/DevelopersLandingPage.tsx";
 import ResidentialHomePage from "./pages/residential/ResidentialHomePage.tsx";
 import LandHomePage from "./pages/land/LandHomePage.tsx";
+import NewsletterConfirmPage from "./pages/NewsletterConfirmPage.tsx";
 import UnsubscribePage from "./pages/UnsubscribePage.tsx";
 import VacanciesPage from "./pages/VacanciesPage.tsx";
 
@@ -176,6 +177,10 @@ const App = () => {
                       element={<LegalDocPage kind="terms" />}
                     />
                     <Route path="/unsubscribe" element={<UnsubscribePage />} />
+                    <Route
+                      path="/newsletter/confirm"
+                      element={<NewsletterConfirmPage />}
+                    />
                     <Route path="/help" element={<HelpCenterPage />} />
                     <Route path="/app" element={<AppInstallPage />} />
                     <Route path="/docs" element={<DocsHandbookPage />} />

@@ -3,7 +3,7 @@
 # Requires: NOTIFY_EMAIL_SECRET, SUPABASE edge URL.
 #
 # Crontab example (VPS):
-#   */5 * * * * /opt/arendacity-ai/scripts/newsletter-queue-cron.sh >> /var/log/newsletter-queue.log 2>&1
+#   */5 * * * * /opt/dadatut-ai/scripts/newsletter-queue-cron.sh >> /var/log/newsletter-queue.log 2>&1
 #
 # Env file (optional): /root/newsletter-cron.env
 #   NOTIFY_EMAIL_SECRET=...
