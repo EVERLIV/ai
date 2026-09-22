@@ -78,7 +78,7 @@ export const properties: Property[] = [
     views: 187,
     agent: {
       name: "ДАДАТУТ",
-      company: "ИП Кореневский А. О.",
+      company: "ИП Панова М.Г.",
       phone: "",
     },
   },
@@ -120,7 +120,7 @@ export const properties: Property[] = [
     views: 312,
     agent: {
       name: "ДАДАТУТ",
-      company: "ИП Кореневский А. О.",
+      company: "ИП Панова М.Г.",
       phone: "",
     },
   },
@@ -162,7 +162,7 @@ export const properties: Property[] = [
     views: 98,
     agent: {
       name: "ДАДАТУТ",
-      company: "ИП Кореневский А. О.",
+      company: "ИП Панова М.Г.",
       phone: "",
     },
   },
@@ -203,7 +203,7 @@ export const properties: Property[] = [
     views: 134,
     agent: {
       name: "ДАДАТУТ",
-      company: "ИП Кореневский А. О.",
+      company: "ИП Панова М.Г.",
       phone: "",
     },
   },
@@ -243,7 +243,7 @@ export const properties: Property[] = [
     views: 76,
     agent: {
       name: "ДАДАТУТ",
-      company: "ИП Кореневский А. О.",
+      company: "ИП Панова М.Г.",
       phone: "",
     },
   },
@@ -285,7 +285,7 @@ export const properties: Property[] = [
     views: 45,
     agent: {
       name: "ДАДАТУТ",
-      company: "ИП Кореневский А. О.",
+      company: "ИП Панова М.Г.",
       phone: "",
     },
   },

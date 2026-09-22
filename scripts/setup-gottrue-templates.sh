@@ -10,7 +10,7 @@ set -euo pipefail
 
 ENV_FILE="${ENV_FILE:-/opt/supabase/.env}"
 COMPOSE_DIR="${COMPOSE_DIR:-/opt/supabase}"
-SITE_URL="${SITE_URL:-https://arendacity.com}"
+SITE_URL="${SITE_URL:-https://dadatut.ru}"
 OVERRIDE="${COMPOSE_DIR}/docker-compose.override.yml"
 
 if [[ ! -f "$ENV_FILE" ]]; then
@@ -38,14 +38,14 @@ upsert() {
   fi
 }
 
-upsert SMTP_SENDER_NAME "АрендаСити"
+upsert SMTP_SENDER_NAME "ДАДАТУТ"
 
-upsert MAILER_SUBJECTS_CONFIRMATION '"Подтвердите email — АрендаСити"'
-upsert MAILER_SUBJECTS_RECOVERY '"Сброс пароля — АрендаСити"'
-upsert MAILER_SUBJECTS_MAGIC_LINK '"Вход в кабинет — АрендаСити"'
-upsert MAILER_SUBJECTS_INVITE '"Приглашение в АрендаСити"'
-upsert MAILER_SUBJECTS_EMAIL_CHANGE '"Подтвердите новый email — АрендаСити"'
-upsert MAILER_SUBJECTS_REAUTHENTICATION '"Код подтверждения — АрендаСити"'
+upsert MAILER_SUBJECTS_CONFIRMATION '"Подтвердите email — ДАДАТУТ"'
+upsert MAILER_SUBJECTS_RECOVERY '"Сброс пароля — ДАДАТУТ"'
+upsert MAILER_SUBJECTS_MAGIC_LINK '"Вход в кабинет — ДАДАТУТ"'
+upsert MAILER_SUBJECTS_INVITE '"Приглашение в ДАДАТУТ"'
+upsert MAILER_SUBJECTS_EMAIL_CHANGE '"Подтвердите новый email — ДАДАТУТ"'
+upsert MAILER_SUBJECTS_REAUTHENTICATION '"Код подтверждения — ДАДАТУТ"'
 
 upsert MAILER_TEMPLATES_CONFIRMATION "${SITE_URL}/email/confirm.html"
 upsert MAILER_TEMPLATES_RECOVERY "${SITE_URL}/email/recovery.html"
