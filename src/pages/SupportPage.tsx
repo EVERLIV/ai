@@ -175,6 +175,22 @@ export default function SupportPage() {
                       </div>
                     </Link>
                   </div>
+
+                  <a
+                    href="/ДАДАТУТ-бесплатное размещение объектов.pdf"
+                    download
+                    className="flex items-start gap-3 border border-border bg-card px-3 py-3 hover:border-foreground/20 transition-colors"
+                  >
+                    <FileText className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-semibold text-foreground">
+                        Агентствам недвижимости
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Скачать презентацию — бесплатное размещение объектов (PDF)
+                      </p>
+                    </div>
+                  </a>
                 </div>
 
                 <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
