@@ -424,6 +424,13 @@ export default function Catalog({
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   const applyingUrlRef = useRef(false);
+  /** pathTypes приходит новым массивом на каждый рендер — сравниваем по содержимому */
+  const pathTypesKey = (pathTypes ?? []).join("|");
+  const stablePathTypes = useMemo(
+    () => (pathTypesKey ? pathTypesKey.split("|") : []),
+    [pathTypesKey],
+  );
+  const prevSubtypeRef = useRef<string | null>(subtypeSlug ?? null);
 
   const navigateCatalog = useCallback(
     (
@@ -505,17 +512,24 @@ export default function Catalog({
 
   // Keep path types in sync when category/deal path changes
   useEffect(() => {
-    if (subtypeSlug && pathTypes?.length) {
-      setSelectedTypes([...pathTypes]);
+    const leftSubtype = prevSubtypeRef.current !== null && !subtypeSlug;
+    prevSubtypeRef.current = subtypeSlug ?? null;
+
+    if (subtypeSlug && stablePathTypes.length) {
+      setSelectedTypes([...stablePathTypes]);
       return;
     }
-    if (pathTypes?.length) {
+    // Ушли с подкатегории на всю категорию («Все объекты») — сбрасываем тип,
+    // иначе он переживает переход: pathTypes категории содержит все её типы.
+    if (leftSubtype) {
+      setSelectedTypes([]);
+    } else if (stablePathTypes.length) {
       setSelectedTypes((prev) =>
-        prev.filter((t) => pathTypes.includes(t)),
+        prev.filter((t) => stablePathTypes.includes(t)),
       );
     }
     if (marketPreset) setSelectedMarket([marketPreset]);
-  }, [dealSlug, categoryId, subtypeSlug, pathTypes, marketPreset]);
+  }, [dealSlug, categoryId, subtypeSlug, stablePathTypes, marketPreset]);
 
   const conditions = useMemo(() => {
     if (isResidential) return ["Все", ...RESIDENTIAL_CONDITIONS];
