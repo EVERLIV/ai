@@ -53,7 +53,9 @@ export function commercialTypeMenuLabel(type: string): string {
     Торговая: "Торговые площади",
     Склад: "Склады",
     Производство: "Производство",
+    Помещение: "Помещения",
     Павильон: "Павильоны",
+    Киоск: "Киоски",
     ПСН: "ПСН",
     Общепит: "Общепит",
     Автосервис: "Автосервис",
@@ -92,7 +94,15 @@ export function getMainNavMegaMenus(
   const commercialTypes = (
     opts.commercialTypes?.length
       ? opts.commercialTypes
-      : ["Офис", "Торговая", "Склад", "Производство", "Павильон", "ПСН"]
+      : [
+          "Офис",
+          "Торговая",
+          "Склад",
+          "Производство",
+          "Помещение",
+          "Павильон",
+          "ПСН",
+        ]
   ).filter((t) => t !== "Земля" && t !== "Участок");
 
   const listRent = placementCtaPath("residential", "rent", isLoggedIn);

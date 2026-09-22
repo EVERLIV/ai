@@ -53,9 +53,7 @@ export default function CatalogByPath() {
       pathTypes={parsed.types}
       marketPreset={parsed.marketPreset}
       subtypeSlug={parsed.subtypeSlug}
-      showSuggestions={
-        parsed.categoryId === "kommercheskaya" && !parsed.subtypeSlug
-      }
+      showSuggestions={parsed.categoryId === "kommercheskaya"}
     />
   );
 }
