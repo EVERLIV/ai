@@ -105,7 +105,7 @@ const App = () => {
             <Toaster />
             <Sonner />
             <MotionConfig reducedMotion="user">
-              <BrowserRouter>
+              <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
                 <ScrollToTop />
                 <AnalyticsBeacon />
                 <InstallPrompt />
