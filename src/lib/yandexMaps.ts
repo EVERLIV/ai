@@ -16,15 +16,6 @@ let loadPromise: Promise<any> | null = null;
 const FAIL_FLAG = "ymaps3_js_unavailable_until";
 const FAIL_TTL_MS = 5 * 60 * 1000; // 5 минут — не сессия целиком
 
-function isLocalhost(): boolean {
-  if (typeof location === "undefined") return false;
-  return (
-    location.hostname === "localhost" ||
-    location.hostname === "127.0.0.1" ||
-    location.hostname.endsWith(".local")
-  );
-}
-
 export function getYandexMapsApiKey(): string {
   return (
     (import.meta.env.VITE_YANDEX_MAPS_API_KEY as string | undefined)?.trim() ??
@@ -81,33 +72,6 @@ async function resolveYmaps3(): Promise<any> {
   return ymaps3;
 }
 
-/**
- * Проверка ключа до вставки script (иначе 403 → шум в консоли).
- * При CORS-ограничениях возвращает null (= пробуем грузить script как раньше).
- */
-async function probeMapsApiKey(
-  apiKey: string,
-): Promise<"ok" | "bad" | "unknown"> {
-  try {
-    const url = `https://api-maps.yandex.ru/v3/?${new URLSearchParams({
-      apikey: apiKey,
-      lang: "ru_RU",
-    }).toString()}`;
-    const res = await fetch(url, {
-      method: "GET",
-      mode: "cors",
-      credentials: "omit",
-      cache: "no-store",
-    });
-    if (res.status === 403 || res.status === 401) return "bad";
-    if (res.ok) return "ok";
-    return "unknown";
-  } catch {
-    // CORS / network — статус неизвестен, пусть пробует script
-    return "unknown";
-  }
-}
-
 export function loadYandexMaps(): Promise<any> {
   if (typeof window === "undefined") return Promise.reject(new Error("SSR"));
   if (shouldUseYandexMapWidget()) {
@@ -126,17 +90,6 @@ export function loadYandexMaps(): Promise<any> {
   if (loadPromise) return loadPromise;
 
   loadPromise = (async () => {
-    const probe = await probeMapsApiKey(apiKey);
-    if (probe === "bad") {
-      markJsApiUnavailable();
-      loadPromise = null;
-      throw new Error(
-        isLocalhost()
-          ? "Ключ отклонён на localhost — проверьте, что localhost добавлен в Referer-ограничения ключа в кабинете Яндекса"
-          : "Yandex Maps API key is invalid or forbidden",
-      );
-    }
-
     return await new Promise<any>((resolve, reject) => {
       const fail = (err: Error) => {
         markJsApiUnavailable();
