@@ -74,8 +74,8 @@ export default function AppInstallHero({ platform, onSelectPlatform }: Props) {
                 aria-hidden
                 className={cn(iconClass, isActive ? "bg-white" : "bg-[#f0dfdf]")}
                 style={{
-                  mask: `url(${icon}) center / contain no-repeat`,
-                  WebkitMask: `url(${icon}) center / contain no-repeat`,
+                  mask: `url("${icon}") center / contain no-repeat`,
+                  WebkitMask: `url("${icon}") center / contain no-repeat`,
                 }}
               />
               <span
