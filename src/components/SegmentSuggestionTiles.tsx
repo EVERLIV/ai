@@ -60,7 +60,7 @@ export default function SegmentSuggestionTiles({
 
   return (
     <section className={cn("bg-background border-b border-border/50", className)}>
-      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 max-w-[1600px] mx-auto w-full">
+      <div className="container mx-auto px-4 lg:px-8 py-4 sm:py-5 w-full">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
           {title}
         </p>

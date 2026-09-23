@@ -237,7 +237,7 @@ function FadeIn({
 function CtaBanner({ segment = "commercial" }: { segment?: PropertySegment }) {
   const listHref = listPropertyPath(segment, "rent");
   return (
-    <div className="px-6 lg:px-12 xl:px-20 pb-10">
+    <div className="container mx-auto px-4 lg:px-8 pb-10">
       <motion.div
         initial={{ opacity: 0, y: 32 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -1181,7 +1181,7 @@ export default function Catalog({
 
         {/* Slim toolbar: filters (mobile), count, alert, sort, view */}
         <div className="sticky top-[100px] z-30 bg-background border-b border-border/40">
-          <div className="px-3 sm:px-4 lg:px-8 py-2.5 sm:py-3 flex flex-wrap items-center gap-x-2 gap-y-2 min-w-0">
+          <div className="container mx-auto px-3 sm:px-4 lg:px-8 py-2.5 sm:py-3 flex flex-wrap items-center gap-x-2 gap-y-2 min-w-0">
             <button
               type="button"
               onClick={() => setMobileFilters(true)}
@@ -1314,7 +1314,7 @@ export default function Catalog({
         )}
 
         {/* Results + left filters sidebar */}
-        <div className="flex gap-4 xl:gap-5 px-4 lg:px-6 xl:px-8 py-4 flex-1 min-w-0">
+        <div className="container mx-auto w-full flex gap-4 xl:gap-5 px-4 lg:px-8 py-4 flex-1 min-w-0">
           <div className="hidden lg:block w-[220px] xl:w-[240px] shrink-0 self-start">
             <CatalogFiltersSidebar {...filtersSidebarProps} />
           </div>
