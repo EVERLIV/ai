@@ -122,7 +122,9 @@ export function buildNewsletterHtml(content: NewsletterContent): string {
         <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;">
           <tr>
             <td align="center" style="padding:0 0 28px;">
-              <img src="${logo}" width="220" height="35" alt="ДАДАТУТ.РУ — недвижимость" style="display:block;border:0;max-width:220px;height:auto;" />
+              <a href="${site}" style="display:inline-block;text-decoration:none;">
+                <img src="${logo}" width="220" height="35" alt="ДАДАТУТ.РУ — недвижимость" style="display:block;border:0;max-width:220px;height:auto;" />
+              </a>
             </td>
           </tr>
         </table>
