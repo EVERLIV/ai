@@ -1,96 +1,52 @@
+import glow from "@/assets/app-install/glow.svg";
+import phoneMockup from "@/assets/app-install/phone-mockup.png";
+import step2Screen from "@/assets/app-install/step2-screen.png";
+import step3Screen from "@/assets/app-install/step3-screen.png";
 import type { InstallStep, InstallTip } from "@/lib/appInstallContent";
 import { cn } from "@/lib/utils";
 
-function PhoneMockup({ children, className }: { children: React.ReactNode; className?: string }) {
+const ROW_TOPS = ["lg:top-0", "lg:top-[105px]", "lg:top-[172px]"];
+
+function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div
+    <span
       className={cn(
-        "mx-auto w-[140px] rounded-[1.25rem] border-[3px] border-foreground/15 bg-background p-1.5 shadow-sm",
+        "flex size-[30px] shrink-0 items-center justify-center rounded-full bg-[#a2c8cd] text-sm font-semibold leading-[26px] text-white",
         className,
       )}
     >
-      <div className="rounded-[0.9rem] bg-muted/60 overflow-hidden aspect-[9/16] flex flex-col">
-        {children}
-      </div>
-    </div>
+      {children}
+    </span>
   );
 }
 
-function StepMockContent({ index, platform }: { index: number; platform: "ios" | "android" }) {
-  if (platform === "ios") {
-    if (index === 0) {
-      return (
-        <>
-          <div className="h-5 bg-foreground/10" />
-          <div className="flex-1 p-2 space-y-1">
-            <div className="h-2 w-3/4 rounded bg-primary/30" />
-            <div className="h-2 w-full rounded bg-muted-foreground/20" />
-            <div className="h-2 w-5/6 rounded bg-muted-foreground/20" />
-          </div>
-          <div className="h-6 bg-foreground/10 flex items-center justify-center text-[8px] text-muted-foreground">
-            Safari
-          </div>
-        </>
-      );
-    }
-    if (index === 1) {
-      return (
-        <>
-          <div className="flex-1 p-2 bg-muted/40" />
-          <div className="h-10 bg-background border-t border-border flex items-center justify-around px-1">
-            <span className="text-[7px] text-muted-foreground">⋯</span>
-            <span className="text-[8px] font-semibold text-primary">↑ Поделиться</span>
-            <span className="text-[7px] text-muted-foreground">□</span>
-          </div>
-        </>
-      );
-    }
-    return (
-      <>
-        <div className="flex-1 p-2 flex flex-col justify-end">
-          <div className="rounded-lg bg-background border border-border p-2 space-y-1">
-            <div className="text-[7px] font-medium">На экран «Домой»</div>
-            <div className="h-4 rounded bg-primary/20 text-[7px] flex items-center justify-center font-semibold text-primary">
-              Добавить
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  if (index === 0) {
-    return (
-      <>
-        <div className="h-5 bg-foreground/10" />
-        <div className="flex-1 p-2 space-y-1">
-          <div className="h-2 w-3/4 rounded bg-primary/30" />
-          <div className="h-2 w-full rounded bg-muted-foreground/20" />
-        </div>
-        <div className="h-6 bg-foreground/10 flex items-center justify-center text-[8px] text-muted-foreground">
-          Chrome
-        </div>
-      </>
-    );
-  }
-  if (index === 1) {
-    return (
-      <>
-        <div className="flex-1 p-2" />
-        <div className="mx-2 mb-2 rounded-lg border border-border bg-background p-2 space-y-1">
-          <div className="text-[7px] text-muted-foreground">Меню ⋮</div>
-          <div className="text-[7px] font-medium">Установить приложение</div>
-        </div>
-      </>
-    );
-  }
+function StepRows({ steps, absolute }: { steps: InstallStep[]; absolute: boolean }) {
   return (
-    <>
-      <div className="h-6 bg-foreground text-background text-[7px] flex items-center justify-center font-semibold">
-        Установить
-      </div>
-      <div className="flex-1 p-2" />
-    </>
+    <ol
+      className={cn(
+        "relative space-y-6",
+        absolute && "lg:absolute lg:left-[333px] lg:top-[14px] lg:h-[240px] lg:w-[667px] lg:space-y-0",
+      )}
+    >
+      {steps.map((step, index) => (
+        <li key={step.title} className={cn("flex gap-[10px]", absolute && "lg:absolute lg:left-0", absolute && ROW_TOPS[index])}>
+          <Badge>{index + 1}</Badge>
+          <div className="pt-[2px]">
+            <h3 className="text-[18px] font-semibold leading-[26px] text-foreground">{step.title}</h3>
+            <p className="mt-px text-sm leading-[18px] text-muted-foreground">{step.description}</p>
+            {step.hint && <p className="mt-1 text-sm leading-[18px] text-[#e9c8c9]">{step.hint}</p>}
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function ScreenCard({ src, alt, imgClass, className }: { src: string; alt: string; imgClass: string; className?: string }) {
+  return (
+    <div className={cn("relative h-[315px] w-[294px] shrink-0 overflow-hidden rounded-[28px] border border-[#f2f2f4] bg-white", className)}>
+      <img src={src} alt={alt} className={cn("absolute max-w-none", imgClass)} />
+    </div>
   );
 }
 
@@ -102,49 +58,67 @@ type Props = {
 };
 
 export default function AppInstallSteps({ steps, platform, tip, note }: Props) {
+  const isIos = platform === "ios";
+
   return (
-    <div className="space-y-8">
-      <div className="grid gap-4 md:grid-cols-3">
-        {steps.map((step, index) => (
-          <div
-            key={step.title}
-            className="rounded-2xl border border-border bg-muted/30 p-5 flex flex-col"
-          >
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-              {index + 1}
-            </span>
-            <h3 className="mt-3 font-display text-base font-semibold text-foreground">
-              {step.title}
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground flex-1">
-              {step.description}
-            </p>
-            {step.hint && (
-              <p className="mt-2 text-xs text-muted-foreground/80">{step.hint}</p>
-            )}
-            <div className="mt-4 pt-2">
-              <PhoneMockup>
-                <StepMockContent index={index} platform={platform} />
-              </PhoneMockup>
+    <>
+      <section className={cn("relative", isIos && "lg:h-[671px]")}>
+        {isIos && (
+          <img
+            src={glow}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute left-[-249px] top-[-81px] hidden size-[785px] max-w-none lg:block"
+          />
+        )}
+
+        <StepRows steps={steps} absolute={isIos} />
+
+        {isIos && (
+          <div className="mt-10 flex flex-col items-center gap-6 lg:mt-0">
+            <div className="relative h-[618px] w-[360px] shrink-0 overflow-hidden lg:absolute lg:left-[-36px] lg:top-0">
+              <img
+                src={phoneMockup}
+                alt="Шаг 1: сайт dadatut.ru в Safari"
+                className="absolute left-[-83%] top-[-24.59%] h-[147.36%] w-[252.97%] max-w-none"
+              />
+              <Badge className="absolute left-[242px] top-[517px]">1</Badge>
+            </div>
+
+            <div className="relative lg:absolute lg:left-[333px] lg:top-[289px]">
+              <ScreenCard
+                src={step2Screen}
+                alt="Шаг 2: меню «Поделиться»"
+                imgClass="left-0 top-[-102.44%] h-[202.45%] w-full"
+              />
+              <Badge className="absolute left-[80px] top-[74px]">2</Badge>
+            </div>
+
+            <div className="relative lg:absolute lg:left-[666px] lg:top-[289px]">
+              <ScreenCard
+                src={step3Screen}
+                alt="Шаг 3: «Добавить на экран Домой»"
+                imgClass="left-[-0.02%] top-[-10.79%] h-[202.22%] w-[100.04%]"
+              />
+              <Badge className="absolute left-[-9px] top-[202px]">3</Badge>
             </div>
           </div>
-        ))}
-      </div>
+        )}
+      </section>
 
       {tip && (
-        <div className="rounded-2xl border border-border bg-muted/20 p-5 sm:p-6">
-          <h3 className="font-display text-base font-semibold text-foreground">
-            {tip.title}
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground">{tip.description}</p>
-        </div>
+        <section className="relative mt-12 flex gap-[11px] lg:mt-0 lg:h-[141px]">
+          <span className="flex size-[30px] shrink-0 items-center justify-center rounded-full border border-[#a2c8cd] text-sm font-semibold text-[#a2c8cd]">
+            !
+          </span>
+          <div className="pt-[6px]">
+            <h3 className="text-[18px] font-semibold leading-[18px] text-foreground">{tip.title}</h3>
+            <p className="mt-[7px] text-sm leading-[18px] text-muted-foreground">{tip.description}</p>
+          </div>
+        </section>
       )}
 
-      {note && (
-        <p className="text-sm text-muted-foreground text-center sm:text-left">
-          {note}
-        </p>
-      )}
-    </div>
+      {note && <p className="mt-8 text-sm text-muted-foreground">{note}</p>}
+    </>
   );
 }
