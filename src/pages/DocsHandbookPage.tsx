@@ -1068,7 +1068,7 @@ export default function DocsHandbookPage() {
                 <Callout title="Агентствам недвижимости">
                   Презентация с условиями бесплатного размещения объектов —{" "}
                   <a
-                    href="/ДАДАТУТ-бесплатное размещение объектов.pdf"
+                    href="/dadatut-presentation.pdf"
                     download
                     className="text-primary font-medium hover:underline"
                   >

@@ -177,7 +177,7 @@ export default function SupportPage() {
                   </div>
 
                   <a
-                    href="/ДАДАТУТ-бесплатное размещение объектов.pdf"
+                    href="/dadatut-presentation.pdf"
                     download
                     className="flex items-start gap-3 border border-border bg-card px-3 py-3 hover:border-foreground/20 transition-colors"
                   >
