@@ -75,7 +75,10 @@ import {
 } from "@/lib/developerListingRules";
 import { normalizeDeveloperSubtype } from "@/lib/developerTypes";
 import { notifyPropertyEmail } from "@/lib/notifyPropertyEmail";
-import { processPropertyPhotoFile } from "@/lib/processPropertyPhoto";
+import {
+  processPropertyPhotoFile,
+  processPropertyPhotoFiles,
+} from "@/lib/processPropertyPhoto";
 import { isDailyDeal, isLongTermRent, isSaleDeal } from "@/lib/propertyDeal";
 import {
   buildPropertyPayload,
@@ -556,16 +559,22 @@ export default function PropertySubmissionWizard({
     }));
   };
 
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setPhotoFiles((prev) => [...prev, ...files]);
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (ev) =>
-        setPhotoPreviews((prev) => [...prev, ev.target?.result as string]);
-      reader.readAsDataURL(file);
-    });
     e.target.value = "";
+    if (!files.length) return;
+    const { files: processed, previewUrls } =
+      await processPropertyPhotoFiles(files);
+    if (!processed.length) {
+      toast({
+        title: "Не удалось обработать фото",
+        description: "Попробуйте другой файл (JPG/PNG).",
+        variant: "destructive",
+      });
+      return;
+    }
+    setPhotoFiles((prev) => [...prev, ...processed]);
+    setPhotoPreviews((prev) => [...prev, ...previewUrls]);
   };
 
   const removePhoto = (index: number) => {
@@ -584,9 +593,9 @@ export default function PropertySubmissionWizard({
   const uploadPhotos = async (propertyId: string) => {
     const urls: string[] = [...existingPhotos];
 
+    // photoFiles уже с водяным знаком ДАДАТУТ (см. handlePhotoSelect)
     for (const file of photoFiles) {
-      const processed = await processPropertyPhotoFile(file);
-      urls.push(await uploadMyPropertyPhotoApi(propertyId, processed));
+      urls.push(await uploadMyPropertyPhotoApi(propertyId, file));
     }
     const cover = urls[coverIndex] || urls[0] || "";
     return { urls, cover };
@@ -2545,6 +2554,9 @@ export default function PropertySubmissionWizard({
               >
                 <Upload className="w-4 h-4 mr-1" /> Загрузить фото
               </Button>
+              <p className="text-xs text-muted-foreground">
+                На каждое фото ставится водяной знак ДАДАТУТ
+              </p>
               {allPhotoUrls.length > 0 && (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-1">
                   {allPhotoUrls.map((src, i) => (

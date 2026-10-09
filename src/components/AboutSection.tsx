@@ -1,6 +1,6 @@
 import { Ban, Handshake, MapPinned, Quote, Unlock } from "lucide-react";
 import { Link } from "react-router-dom";
-import managerPhoto from "@/assets/manager-arenda-city.jpg";
+import aboutPhoto from "@/assets/cta-rent-out.jpg";
 import { COMPANY } from "@/config/company";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 
@@ -52,8 +52,8 @@ export default function AboutSection() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-7 relative overflow-hidden bg-foreground min-h-[440px]">
             <img
-              src={managerPhoto}
-              alt="Менеджер ДАДАТУТ"
+              src={aboutPhoto}
+              alt="Коммерческая недвижимость — ДАДАТУТ"
               loading="lazy"
               className="absolute inset-0 w-full h-full object-cover opacity-95"
             />

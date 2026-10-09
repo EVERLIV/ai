@@ -7,6 +7,7 @@ import {
   footerResidentialLinks,
   footerSectionLinks,
 } from "@/lib/catalogPaths";
+import logoDvaait from "@/assets/logo-dvaait.png";
 
 type FooterLink = { label: string; href: string; external?: boolean };
 
@@ -185,19 +186,28 @@ export default function SiteFooter() {
           </Link>
         </div>
 
-        <div className="container mx-auto px-4 lg:px-8 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="container mx-auto px-4 lg:px-8 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <p className="text-[11px] text-[#8a94a6]">
             © {year} {COMPANY.shortName} Все права защищены.
           </p>
-          <p className="text-[11px] text-[#8a94a6]">
-            Создано в{" "}
+          <p className="inline-flex items-center gap-2 text-[11px] text-[#8a94a6]">
+            <span>Создано в</span>
             <a
               href="https://dvaait.com"
               target="_blank"
-              rel="noreferrer"
-              className="text-[#6b7280] hover:text-foreground transition-colors font-medium"
+              rel="noopener noreferrer"
+              className="inline-flex opacity-70 hover:opacity-100 transition-opacity"
+              aria-label="DA Digital — dvaait.com"
             >
-              2А Цифровые Решения
+              <img
+                src={logoDvaait}
+                alt="DA Digital"
+                className="h-5 w-auto"
+                width={99}
+                height={30}
+                loading="lazy"
+                decoding="async"
+              />
             </a>
           </p>
         </div>

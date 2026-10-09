@@ -111,7 +111,7 @@ import {
   parseCoordInput,
   parseCoordPair,
 } from "@/lib/propertyGeo";
-import { processPropertyPhotoFile } from "@/lib/processPropertyPhoto";
+import { processPropertyPhotoFiles } from "@/lib/processPropertyPhoto";
 import {
   isLandProperty,
   LAND_BUILDING_FIELD_DEFAULTS,
@@ -460,13 +460,13 @@ export default function Dashboard() {
   ): Promise<{ urls: string[]; cover: string }> => {
     const urls: string[] = [...existingPhotos];
 
+    // photoFiles уже с водяным знаком ДАДАТУТ (см. handleFileSelect)
     for (const file of photoFiles) {
-      const processed = await processPropertyPhotoFile(file);
       const path = `${propertyId}/${crypto.randomUUID()}.jpg`;
       const { error } = await supabaseAdmin.storage.upload(
         "property-photos",
         path,
-        processed,
+        file,
       );
       if (error) throw new Error(error);
       urls.push(supabaseAdmin.storage.getPublicUrl("property-photos", path));
@@ -839,17 +839,25 @@ export default function Dashboard() {
     });
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    if (e.target) e.target.value = "";
     const totalCount = existingPhotos.length + photoFiles.length + files.length;
     if (totalCount > 15) {
       toast({ title: "Максимум 15 фото", variant: "destructive" });
       return;
     }
-    const newPreviews = files.map((f) => URL.createObjectURL(f));
-    setPhotoFiles((prev) => [...prev, ...files]);
-    setPhotoPreviews((prev) => [...prev, ...newPreviews]);
-    if (e.target) e.target.value = "";
+    const { files: processed, previewUrls } =
+      await processPropertyPhotoFiles(files);
+    if (!processed.length) {
+      toast({
+        title: "Не удалось обработать фото",
+        variant: "destructive",
+      });
+      return;
+    }
+    setPhotoFiles((prev) => [...prev, ...processed]);
+    setPhotoPreviews((prev) => [...prev, ...previewUrls]);
   };
 
   const removeExistingPhoto = (idx: number) => {

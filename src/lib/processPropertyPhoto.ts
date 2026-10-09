@@ -58,7 +58,7 @@ function drawWatermark(
 }
 
 /**
- * Resize, apply center watermark, export JPEG for property photo upload.
+ * Resize, apply center ДАДАТУТ watermark, export JPEG for property photo upload.
  */
 export async function processPropertyPhotoFile(file: File): Promise<File> {
   const [source, watermark] = await Promise.all([
@@ -80,7 +80,7 @@ export async function processPropertyPhotoFile(file: File): Promise<File> {
   ctx.drawImage(source, 0, 0, canvasW, canvasH);
   drawWatermark(ctx, canvasW, canvasH, watermark);
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     canvas.toBlob(
       (blob) => {
         if (!blob) {
@@ -88,15 +88,32 @@ export async function processPropertyPhotoFile(file: File): Promise<File> {
           return;
         }
         resolve(
-          new File(
-            [blob],
-            file.name.replace(/\.\w+$/i, "") + ".jpg",
-            { type: "image/jpeg" },
-          ),
+          new File([blob], file.name.replace(/\.\w+$/i, "") + ".jpg", {
+            type: "image/jpeg",
+          }),
         );
       },
       "image/jpeg",
       jpegQuality,
     );
   });
+}
+
+/** Обработать пачку фото (водяной знак ДАДАТУТ). Битые файлы пропускаем. */
+export async function processPropertyPhotoFiles(
+  files: File[],
+): Promise<{ files: File[]; previewUrls: string[] }> {
+  const outFiles: File[] = [];
+  const previewUrls: string[] = [];
+  for (const file of files) {
+    if (!file.type.startsWith("image/")) continue;
+    try {
+      const processed = await processPropertyPhotoFile(file);
+      outFiles.push(processed);
+      previewUrls.push(URL.createObjectURL(processed));
+    } catch {
+      // без водяного знака не кладём — чтобы не ушло «сырое» фото
+    }
+  }
+  return { files: outFiles, previewUrls };
 }

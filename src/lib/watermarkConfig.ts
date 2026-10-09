@@ -8,5 +8,5 @@ export const WATERMARK_CONFIG = {
   /** Horizontal logo — wider than square mark */
   widthRatio: 0.42,
   /** Opacity when baking watermark into uploaded JPEG */
-  opacity: 0.4,
+  opacity: 0.45,
 } as const;
