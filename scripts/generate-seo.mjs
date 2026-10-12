@@ -608,11 +608,16 @@ const newsPosts = await fetchAll(
 
 if (SUPABASE_URL && SUPABASE_KEY && properties.length === 0) {
   console.warn(
-    "[generate-seo] WARNING: 0 published properties — sitemap will miss /property/* cards. Check anon key / RLS.",
+    "[generate-seo] WARNING: 0 published properties from API — keeping existing sitemap/og/feed in public/ (do not wipe).",
   );
-} else {
-  console.log(`[generate-seo] properties=${properties.length}, news=${newsPosts.length}`);
+  writeRobotsTxt();
+  console.log("[generate-seo] Done (robots only).");
+  process.exit(0);
 }
+
+console.log(
+  `[generate-seo] properties=${properties.length}, news=${newsPosts.length}`,
+);
 
 writeRobotsTxt();
 writeSitemap(properties, newsPosts);
