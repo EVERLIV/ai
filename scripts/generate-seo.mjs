@@ -318,11 +318,20 @@ function writeSitemap(properties, newsPosts) {
   }
 
   for (const p of properties) {
+    // Канонический URL карточки (SPA для людей; боты — через nginx rewrite или JS).
     urls.push({
       loc: absoluteUrl(`/property/${p.id}`),
       lastmod: formatW3CDate(p.updated_at),
       changefreq: "weekly",
       priority: "0.7",
+    });
+    // Статический HTML с title/description/og:image — надёжно индексируется
+    // на Timeweb Frontend (без nginx bot-rewrite). canonical внутри → /property/{id}.
+    urls.push({
+      loc: absoluteUrl(`/og/property/${p.id}.html`),
+      lastmod: formatW3CDate(p.updated_at),
+      changefreq: "weekly",
+      priority: "0.55",
     });
   }
 
