@@ -15,9 +15,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, "..");
 const publicDir = join(rootDir, "public");
 
-function loadEnvFile() {
+function loadEnvFile(fileName) {
   try {
-    const raw = readFileSync(join(rootDir, ".env"), "utf8");
+    const raw = readFileSync(join(rootDir, fileName), "utf8");
     for (const line of raw.split(/\r?\n/)) {
       const trimmed = line.trim();
       if (!trimmed || trimmed.startsWith("#")) continue;
@@ -36,11 +36,13 @@ function loadEnvFile() {
       }
     }
   } catch {
-    // .env optional
+    // optional
   }
 }
 
-loadEnvFile();
+// .env.production — в репо (публичные ключи); .env — локально. Не затираем уже заданные env.
+loadEnvFile(".env.production");
+loadEnvFile(".env");
 
 const SUPABASE_URL = (
   process.env.VITE_SUPABASE_URL ||
