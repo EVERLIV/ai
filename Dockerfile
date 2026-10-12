@@ -17,7 +17,12 @@ RUN npm ci
 
 COPY . .
 # Vite reads .env.production on its own; generate-seo.mjs only sees process.env.
-RUN set -a && . ./.env.production && set +a && npm run build
+RUN set -a && . ./.env.production && set +a && npm run build \
+  && test -f dist/sitemap.xml \
+  && test -f dist/robots.txt \
+  && grep -q '/property/' dist/sitemap.xml \
+  && test -d dist/og/property \
+  && ls dist/og/property/*.html >/dev/null
 
 FROM nginx:1.27-alpine
 COPY deploy/nginx-frontend.conf /etc/nginx/conf.d/default.conf

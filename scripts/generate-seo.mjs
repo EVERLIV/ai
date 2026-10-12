@@ -595,7 +595,7 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 const properties = await fetchAll(
   "properties",
   "id,created_at,updated_at,deal_type,type,extras,address,district,price,area,description,cover_photo",
-  "is_active=eq.true&order=updated_at.desc",
+  "is_active=eq.true&moderation_status=eq.published&order=updated_at.desc",
 );
 
 const newsPosts = await fetchAll(
@@ -603,6 +603,14 @@ const newsPosts = await fetchAll(
   "slug,title,excerpt,status,published_at,created_at,updated_at",
   "status=eq.published&order=published_at.desc",
 );
+
+if (SUPABASE_URL && SUPABASE_KEY && properties.length === 0) {
+  console.warn(
+    "[generate-seo] WARNING: 0 published properties — sitemap will miss /property/* cards. Check anon key / RLS.",
+  );
+} else {
+  console.log(`[generate-seo] properties=${properties.length}, news=${newsPosts.length}`);
+}
 
 writeRobotsTxt();
 writeSitemap(properties, newsPosts);

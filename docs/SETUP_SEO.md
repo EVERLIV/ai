@@ -59,16 +59,24 @@ https://arendacity.com/feed.xml
 
 В ленте — заголовки объектов по шаблону «Аренда — офис — район — цена» и ссылки на карточки.
 
-## OpenGraph и превью в соцсетях
+## OpenGraph и превью в соцсетях / индексация карточек
 
-- Дефолтная картинка: `https://arendacity.com/og-default.jpg` (1200×630).
-- На карточках объекта meta выставляется клиентским `SeoHead` (после загрузки JS).
-- Проверка:
-  - [Telegram](https://t.me) — отправить ссылку в «Избранное»;
-  - [Яндекс Валидатор](https://webmaster.yandex.ru/tools/microtest/);
-  - [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/) (подходит и для многих мессенджеров).
+- Дефолтная картинка: `https://dadatut.ru/og-default.jpg?v=3` (1200×630).
+- При `prebuild` генерируются:
+  - `sitemap.xml` со всеми `/property/{id}`
+  - статичные страницы `public/og/property/{id}.html` (title, description, og:image, JSON-LD)
+- Nginx (`deploy/nginx-frontend.conf`) для Googlebot / YandexBot / соцсетей отдаёт этот HTML вместо пустого SPA `#root`.
+- Люди по-прежнему получают React-приложение.
 
-Для 100% превью каждой карточки без JS позже можно добавить prerender/SSR — не входит в текущий этап.
+Проверка после деплоя:
+
+```bash
+curl -sS https://dadatut.ru/sitemap.xml | grep -c '/property/'
+curl -sS -A "Googlebot" https://dadatut.ru/property/<UUID> | grep -E 'og:image|application/ld\+json'
+curl -sS https://dadatut.ru/og/property/<UUID>.html | grep og:title
+```
+
+Ожидание: в sitemap сотни `/property/…`, у Googlebot — rich HTML (не только `<div id="root">`).
 
 ## Favicon и OG-картинки
 
